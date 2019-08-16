@@ -52,11 +52,14 @@ class App(tk.Frame):
         r = 0
         self.canvas.create_image(c*100,r*100, anchor='nw', image=self.greenface, tags='greenface')
         self.img_dict['greenface'] = [c,r]
-        # add position [c,r] to grid
         grid[c][r] = 'greenface'
-#         print('grid pos ',c,' ',r,' holds ', grid[c][r])
         # END test image
-
+        self.orangeface = ImageTk.PhotoImage(Image.open("orangeface.png").resize((100,100)))
+        c = 5
+        r = 2
+        self.canvas.create_image(c*100,r*100, anchor='nw', image=self.orangeface, tags='orangeface')
+        self.img_dict['orangeface'] = [c,r]
+        grid[c][r] = 'orangeface'
 
     def create_map_curs(self):
         # CANVAS
@@ -76,7 +79,7 @@ class App(tk.Frame):
                               command=self.master.destroy)
         self.quit.pack(side="bottom")
     
-    # 
+    # needs to delete object from grid on pickup
     def pickup_putdown(self, event):
         global object_selected, selected, curs_pos, grid
         # 'pick up' unit, check what/if unit in space, remove from img_dict, put in selected
@@ -85,7 +88,7 @@ class App(tk.Frame):
             unit = current_pos()
             del self.img_dict[unit]
             selected = unit
-            
+            grid[curs_pos[0]][curs_pos[1]] = ''
         # 'put down' unit, check that grid is empty, remove unit from selected, put in img_dict
         elif object_selected == True and current_pos() == '':
             object_selected = False
