@@ -1,3 +1,5 @@
+# need to hold references to all images outside of 'creation' functions, maybe dict with name/tag corresponding to opened photoimage object
+
 # real-life educational material, reveal information/artifacts related to real life events/people
 # use this information/artifacts in game
 # ie discover davinci ornithopter for limited flying (obvious use)
@@ -11,6 +13,16 @@
 import tkinter as tk
 from PIL import ImageTk,Image
 
+# CURSOR GLOBALS
+curs_pos = [0, 0]
+object_selected = False
+selected = ''
+
+# MAP POSITION GLOBALS
+map_pos = [0, 0]
+
+# GRID GLOBALS grid[0][0] to grid[35][23]
+grid_pos = [0,0]
 # probably wont need this, was for checking position of cursor relative to grid
 # grid should indicate what is located where on map, ie what 'units' are on a given coordinate
 col = 24
@@ -32,13 +44,14 @@ class App(tk.Frame):
         
         
     def create_units(self):
-        self.img_list = []
+        # maybe make this dict for easy retrieval/removal
+        self.img_dict = {}
         # test image/unit process
         self.greenface = ImageTk.PhotoImage(Image.open("greenface.png").resize((100,100)))
         c = 3
         r = 0
         self.canvas.create_image(c*100,r*100, anchor='nw', image=self.greenface, tags='greenface')
-        self.img_list.append(['greenface', [c,r]])
+        self.img_dict['greenface'] = [c,r]
         # add position [c,r] to grid
         grid[c][r] = 'greenface'
 #         print('grid pos ',c,' ',r,' holds ', grid[c][r])
@@ -63,13 +76,34 @@ class App(tk.Frame):
                               command=self.master.destroy)
         self.quit.pack(side="bottom")
     
-    def depress_curs(self, event):
+    # 
+    def pickup_putdown(self, event):
+        global object_selected, selected, curs_pos, grid
+        # 'pick up' unit, check what/if unit in space, remove from img_dict, put in selected
+        if object_selected == False and current_pos() != '':
+            object_selected = True
+            unit = current_pos()
+            del self.img_dict[unit]
+            selected = unit
+            
+        # 'put down' unit, check that grid is empty, remove unit from selected, put in img_dict
+        elif object_selected == True and current_pos() == '':
+            object_selected = False
+            unit = selected
+            selected = ''
+            self.img_dict[unit] = curs_pos[:]
+            grid[curs_pos[0]][curs_pos[1]] = unit
+
+            
         # show visual cue that cursor is depressed
         # change cursor global is_depressed
         # memo objects in current space as 'selected'
         print(curs_pos)
         print(grid_pos)
         print(grid[curs_pos[0]][curs_pos[1]])
+        # if grid pos is not empty, remove object from img_list(to prevent 'pinning' to background),
+        # and correlate movement of object with cursor instead
+        
     
     # from start pos, update grid_pos with every keypress UNLESS not moving curs OR map (at edge)
     # just need to reverse grid_pos xy
@@ -77,6 +111,7 @@ class App(tk.Frame):
         if event.keysym == 'Left':
             if curs_pos[0] > 0:
                 self.canvas.move('curs', -100, 0)
+                self.canvas.move(selected, -100, 0)
                 curs_pos[0] -= 1
                 grid_pos[0] -= 1
             elif map_pos[0] > 0:
@@ -86,6 +121,7 @@ class App(tk.Frame):
         elif event.keysym == 'Right':
             if curs_pos[0] < 11:
                 self.canvas.move('curs', 100, 0)
+                self.canvas.move(selected, 100, 0)
                 curs_pos[0] += 1
                 grid_pos[0] += 1
             elif map_pos[0] < 12:
@@ -95,6 +131,7 @@ class App(tk.Frame):
         elif event.keysym == 'Up':
             if curs_pos[1] > 0:
                 self.canvas.move('curs', 0, -100)
+                self.canvas.move(selected, 0, -100)
                 curs_pos[1] -= 1
                 grid_pos[1] -= 1
             elif map_pos[1] > 0:
@@ -104,6 +141,7 @@ class App(tk.Frame):
         elif event.keysym == 'Down':
             if curs_pos[1] < 6:
                 self.canvas.move('curs', 0, 100)
+                self.canvas.move(selected, 0, 100)
                 curs_pos[1] += 1
                 grid_pos[1] += 1
             elif map_pos[1] < 29:
@@ -112,7 +150,7 @@ class App(tk.Frame):
                 grid_pos[1] += 1
         # DEBUG
 #         print('grid pos is ', grid_pos)
-        print('curs pos is ', curs_pos)
+#         print('curs pos is ', curs_pos)
 #         print('grid value at pos it ', grid[grid_pos[1]][grid_pos[0]])
         # DEBUG
 
@@ -120,33 +158,28 @@ class App(tk.Frame):
     def move_map(self, direction):
         if direction == 'Left':
             self.canvas.move('map', 100, 0)
-            for img in self.img_list:
-                self.canvas.move(img[0], 100, 0)
+            for img in self.img_dict.keys():
+                self.canvas.move(img, 100, 0)
         elif direction == 'Right':
             self.canvas.move('map', -100, 0)
-            for img in self.img_list:
-                self.canvas.move(img[0], -100, 0)
+            for img in self.img_dict.keys():
+                self.canvas.move(img, -100, 0)
         elif direction == 'Up':
             self.canvas.move('map', 0, -100)
-            for img in self.img_list:
-                self.canvas.move(img[0], 0, -100)
+            for img in self.img_dict.keys():
+                self.canvas.move(img, 0, -100)
         elif direction == 'Down':
             self.canvas.move('map', 0, 100)
-            for img in self.img_list:
-                self.canvas.move(img[0], 0, 100)
+            for img in self.img_dict.keys():
+                self.canvas.move(img, 0, 100)
 
 
-# make cursor position corespond to grid/map position
-# CURSOR GLOBALS
-curs_pos = [0, 0]
-is_depressed = 0
 
-# MAP POSITION GLOBALS
-map_pos = [0, 0]
 
-# GRID GLOBALS grid[0][0] to grid[35][23]
-grid_pos = [0,0]
 
+# Helper functions
+def current_pos():
+    return grid[curs_pos[0]][curs_pos[1]]
 
 
 root = tk.Tk()
@@ -156,7 +189,7 @@ root.bind('<Right>', app.move_curs)
 root.bind('<Left>', app.move_curs)
 root.bind('<Up>', app.move_curs)
 root.bind('<Down>', app.move_curs)
-root.bind('<space>', app.depress_curs)
+root.bind('<space>', app.pickup_putdown)
 
 
 # set window size to screen size
