@@ -1,3 +1,6 @@
+# !!!!!! grid_pos is actual correct position, curs_pos only influences 'visual area' or 'edge of screen' 
+# get rid of extraneous references to curs_pos
+
 # need to hold references to all images outside of 'creation' functions, maybe dict with name/tag corresponding to opened photoimage object
 
 # real-life educational material, reveal information/artifacts related to real life events/people
@@ -23,16 +26,9 @@ map_pos = [0, 0]
 
 # GRID GLOBALS grid[0][0] to grid[35][23]
 grid_pos = [0,0]
-# probably wont need this, was for checking position of cursor relative to grid
-# grid should indicate what is located where on map, ie what 'units' are on a given coordinate
 col = 24
 row = 36
-# z = [[x,y] for x in range(col) for y in range(row)]
-# z.reverse()
-grid = [[''] * col for i in range(row)]
-# for i in range(col):
-#     for j in range(row):
-#         grid[j][i] = z.pop()
+grid = [[''] * row for i in range(col)]
 
 class App(tk.Frame):
     def __init__(self, master=None):
@@ -44,7 +40,6 @@ class App(tk.Frame):
         
         
     def create_units(self):
-        # maybe make this dict for easy retrieval/removal
         self.img_dict = {}
         # test image/unit process
         self.greenface = ImageTk.PhotoImage(Image.open("greenface.png").resize((100,100)))
@@ -88,19 +83,22 @@ class App(tk.Frame):
             unit = current_pos()
             del self.img_dict[unit]
             selected = unit
-            grid[curs_pos[0]][curs_pos[1]] = ''
+            grid[grid_pos[0]][grid_pos[1]] = ''
         # 'put down' unit, check that grid is empty, remove unit from selected, put in img_dict
         elif object_selected == True and current_pos() == '':
             object_selected = False
             unit = selected
             selected = ''
-            self.img_dict[unit] = curs_pos[:]
-            grid[curs_pos[0]][curs_pos[1]] = unit
+            self.img_dict[unit] = grid_pos[:]
+            grid[grid_pos[0]][grid_pos[1]] = unit
 
             
         # show visual cue that cursor is depressed
         # change cursor global is_depressed
         # memo objects in current space as 'selected'
+        # !!!!!!!!!!!! grid pos is changing but cursor pos is not changing when going 'off screen' right or down
+        # then curs_pos is checked for pickup_putdown(), which is not reset until going 'back' left or up
+        # maybe just use grid_pos?
         print(curs_pos)
         print(grid_pos)
         print(grid[curs_pos[0]][curs_pos[1]])
@@ -108,8 +106,13 @@ class App(tk.Frame):
         # and correlate movement of object with cursor instead
         
     
-    # from start pos, update grid_pos with every keypress UNLESS not moving curs OR map (at edge)
-    # just need to reverse grid_pos xy
+    # !!!!!! what is happening is the curs_pos does not change on 'map edge', the background and images move in relation to the cursor
+    # so i do need to track the cursor position relative to screen edge so that cursor stays visible
+    # but the actual 'curs_pos' will not be the same as the 'grid_pos' once moving off screen
+    # the visible position of the cursor IS always over the correct grid_pos
+    # so somehow separate movement of selected object FROM the cursor movement
+    
+    # possibly just update curs_pos when moving 'back'
     def move_curs(self, event):
         if event.keysym == 'Left':
             if curs_pos[0] > 0:
@@ -182,7 +185,7 @@ class App(tk.Frame):
 
 # Helper functions
 def current_pos():
-    return grid[curs_pos[0]][curs_pos[1]]
+    return grid[grid_pos[0]][grid_pos[1]]
 
 
 root = tk.Tk()
