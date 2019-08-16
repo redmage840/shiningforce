@@ -1,6 +1,3 @@
-# !!!!!! grid_pos is actual correct position, curs_pos only influences 'visual area' or 'edge of screen' 
-# get rid of extraneous references to curs_pos
-
 # need to hold references to all images outside of 'creation' functions, maybe dict with name/tag corresponding to opened photoimage object
 
 # real-life educational material, reveal information/artifacts related to real life events/people
@@ -94,25 +91,11 @@ class App(tk.Frame):
 
             
         # show visual cue that cursor is depressed
-        # change cursor global is_depressed
-        # memo objects in current space as 'selected'
-        # !!!!!!!!!!!! grid pos is changing but cursor pos is not changing when going 'off screen' right or down
-        # then curs_pos is checked for pickup_putdown(), which is not reset until going 'back' left or up
-        # maybe just use grid_pos?
         print(curs_pos)
         print(grid_pos)
         print(grid[curs_pos[0]][curs_pos[1]])
-        # if grid pos is not empty, remove object from img_list(to prevent 'pinning' to background),
-        # and correlate movement of object with cursor instead
         
     
-    # !!!!!! what is happening is the curs_pos does not change on 'map edge', the background and images move in relation to the cursor
-    # so i do need to track the cursor position relative to screen edge so that cursor stays visible
-    # but the actual 'curs_pos' will not be the same as the 'grid_pos' once moving off screen
-    # the visible position of the cursor IS always over the correct grid_pos
-    # so somehow separate movement of selected object FROM the cursor movement
-    
-    # possibly just update curs_pos when moving 'back'
     def move_curs(self, event):
         if event.keysym == 'Left':
             if curs_pos[0] > 0:
