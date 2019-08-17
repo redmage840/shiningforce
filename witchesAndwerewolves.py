@@ -11,6 +11,7 @@
 # constrain 'magic numbers' to size relative to screen/frame size instead of pixels except with movement/borders to avoid partial fractions
 
 import tkinter as tk
+import os
 from PIL import ImageTk,Image
 
 # CURSOR GLOBALS
@@ -32,12 +33,17 @@ class App(tk.Frame):
         super().__init__(master)
         self.master = master
         self.pack()
-        self.create_map_curs()
-        self.create_units()
+        self.img_dict = {}
         
+        self.choose_map()
+#         self.create_map_curs()
+#         self.create_units()
+        
+        
+    def place_witch(self):
+        pass
         
     def create_units(self):
-        self.img_dict = {}
         # test image/unit process
         self.greenface = ImageTk.PhotoImage(Image.open("greenface.png").resize((100,100)))
         c = 3
@@ -52,13 +58,41 @@ class App(tk.Frame):
         self.canvas.create_image(c*100,r*100, anchor='nw', image=self.orangeface, tags='orangeface')
         self.img_dict['orangeface'] = [c,r]
         grid[c][r] = 'orangeface'
-
+        #
+        self.scrawl = ImageTk.PhotoImage(Image.open("scrawl.png").resize((100,100)))
+        c = 6
+        r = 3
+        self.canvas.create_image(c*100,r*100, anchor='nw', image=self.scrawl, tags='scrawl')
+        self.img_dict['scrawl'] = [c,r]
+        grid[c][r] = 'scrawl'
+        #
+        self.wolfy = ImageTk.PhotoImage(Image.open("wolfy.png").resize((100,100)))
+        c = 7
+        r = 3
+        self.canvas.create_image(c*100,r*100, anchor='nw', image=self.wolfy, tags='wolfy')
+        self.img_dict['wolfy'] = [c,r]
+        grid[c][r] = 'wolfy'
+        #
+    
+    def choose_map(self):
+        self.marquee = tk.Label(root, text = 'Choose your map', font=("Helvetica", 36))
+        self.marquee.pack(side = 'top')
+        # CHOOSE MAPS
+        maps = [m for r,d,m in os.walk('./maps')][0]
+        for i,map in enumerate(maps):
+            self.b = tk.Button(root)
+            photo = ImageTk.PhotoImage(Image.open('./maps/' + map).resize((200,200)))
+            self.img_dict['map'+str(i)] = photo
+            self.b.config(image = self.img_dict['map'+str(i)], width="200", height="200")
+            self.b.pack(side = 'left')
+            
     def create_map_curs(self):
         # CANVAS
         self.canvas = tk.Canvas(root, width = root.winfo_screenwidth(), height = root.winfo_screenheight())  
         self.canvas.pack()
         
         # MAP, gives 24X36 grid
+        # !! be able to load different maps dynamically, no static size requirements
         self.map_img = ImageTk.PhotoImage(Image.open("map.jpg").resize((2400, 3600)))
         self.canvas.create_image(0, 0, anchor='nw', image=self.map_img, tags='map')
         print(self.canvas.bbox('map'))
