@@ -11,6 +11,7 @@
 # constrain 'magic numbers' to size relative to screen/frame size instead of pixels except with movement/borders to avoid partial fractions
 
 import tkinter as tk
+from tkinter import ttk
 import os
 from PIL import ImageTk,Image
 
@@ -73,7 +74,7 @@ class App(tk.Frame):
         self.img_dict['wolfy'] = [c,r]
         grid[c][r] = 'wolfy'
         #
-    
+#width="200", height="200"
     def choose_map(self):
         self.marquee = tk.Label(root, text = 'Choose your map', font=("Helvetica", 36))
         self.marquee.pack(side = 'top')
@@ -81,27 +82,27 @@ class App(tk.Frame):
         maps = [m for r,d,m in os.walk('./maps')][0]
         self.button_list = []
         for i,map in enumerate(maps):
-            b = tk.Button(root)
+            b = ttk.Button(root)
             cmd = lambda indx = i : self.load_map(indx)
-            photo = ImageTk.PhotoImage(Image.open('./maps/' + map).resize((200,200)))
+            photo = ImageTk.PhotoImage(Image.open('./maps/' + map).resize((300,300)))
             self.img_dict['map'+str(i)] = photo
-            b.config(image = self.img_dict['map'+str(i)], width="200", height="200", command = cmd)
+            b.config(image = self.img_dict['map'+str(i)], command = cmd)
             b.pack(side = 'left')
             self.button_list.append(b)
             
     def load_map(self, map_number):
+        self.marquee.destroy()
         for b in self.button_list:
-            print(b.config)
-        print(map_number)
+            b.destroy()
+        self.create_map_curs(map_number)
             
-    def create_map_curs(self):
+    def create_map_curs(self, map_number):
         # CANVAS
         self.canvas = tk.Canvas(root, width = root.winfo_screenwidth(), height = root.winfo_screenheight())  
         self.canvas.pack()
         
         # MAP, gives 24X36 grid
-        # !! be able to load different maps dynamically, no static size requirements
-        self.map_img = ImageTk.PhotoImage(Image.open("map.jpg").resize((2400, 3600)))
+        self.map_img = ImageTk.PhotoImage(Image.open('./maps/map'+str(map_number)+'.jpg').resize((2400, 3600)))
         self.canvas.create_image(0, 0, anchor='nw', image=self.map_img, tags='map')
         print(self.canvas.bbox('map'))
         
@@ -112,6 +113,8 @@ class App(tk.Frame):
         self.quit = tk.Button(self, text="QUIT", fg="red",
                               command=self.master.destroy)
         self.quit.pack(side="bottom")
+        
+        self.create_units()
     
     # needs to delete object from grid on pickup
     def pickup_putdown(self, event):
@@ -216,6 +219,7 @@ def current_pos():
 root = tk.Tk()
 app = App(master=root)
 
+
 root.bind('<Right>', app.move_curs)
 root.bind('<Left>', app.move_curs)
 root.bind('<Up>', app.move_curs)
@@ -224,8 +228,8 @@ root.bind('<space>', app.pickup_putdown)
 
 
 # set window size to screen size
-width = root.winfo_screenwidth()
-height = root.winfo_screenheight()
-root.geometry('%sx%s' % (width, height))
+# width = root.winfo_screenwidth()
+# height = root.winfo_screenheight()
+# root.geometry('%sx%s' % (width, height))
 
 app.mainloop()
