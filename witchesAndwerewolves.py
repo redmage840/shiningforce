@@ -79,12 +79,20 @@ class App(tk.Frame):
         self.marquee.pack(side = 'top')
         # CHOOSE MAPS
         maps = [m for r,d,m in os.walk('./maps')][0]
+        self.button_list = []
         for i,map in enumerate(maps):
-            self.b = tk.Button(root)
+            b = tk.Button(root)
+            cmd = lambda indx = i : self.load_map(indx)
             photo = ImageTk.PhotoImage(Image.open('./maps/' + map).resize((200,200)))
             self.img_dict['map'+str(i)] = photo
-            self.b.config(image = self.img_dict['map'+str(i)], width="200", height="200")
-            self.b.pack(side = 'left')
+            b.config(image = self.img_dict['map'+str(i)], width="200", height="200", command = cmd)
+            b.pack(side = 'left')
+            self.button_list.append(b)
+            
+    def load_map(self, map_number):
+        for b in self.button_list:
+            print(b.config)
+        print(map_number)
             
     def create_map_curs(self):
         # CANVAS
