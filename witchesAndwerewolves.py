@@ -11,13 +11,20 @@ from PIL import ImageTk,Image
 
 
 import pygame
-# Witches... Theme
+# Witches... Theme, edit track for use as background
 # background_music = "bloodMilkandSky.mp3"
 # os.system("afplay " + background_music)
 
-pygame.mixer.init()
+# set up the mixer
+freq = 44100     # audio CD quality
+bitsize = -16    # unsigned 16 bit
+channels = 1     # 1 is mono, 2 is stereo
+buffer = 1024    # number of samples (experiment to get right sound)
+pygame.mixer.init(freq, bitsize, channels, buffer)
+pygame.mixer.music.set_volume(0.7) # optional volume 0 to 1.0
 pygame.mixer.music.load('bloodMilkandSky.mp3')
-pygame.mixer.music.play(999)
+pygame.mixer.music.play(-1, 0)
+
 
 # CURSOR GLOBALS
 curs_pos = [0, 0]
@@ -88,8 +95,18 @@ class App(tk.Frame):
         root.after(700, self.place_witch)
         
     def place_witch(self):
-        top = tk.Toplevel()
-        top.title('Choose Your Witch')
+        avatar_popup = tk.Toplevel()
+        avatar_popup.title('Choose Your Witch')
+        witches = [w for r,d,w in os.walk('./avatars')][0]
+        self.witch_buttons = []
+        for i,witch in enumerate(witches):
+            b = ttk.Button(avatar_popup)
+            cmd = lambda indx = i : self.load_witch(indx)
+            photo = ImageTk.PhotoImage(Image.open('./avatars/' + witch).resize((200,200)))
+            self.img_dict['witch'+str(i)] = photo
+            b.config(image = self.img_dict['witch'+str(i)], command = cmd)
+            b.pack(side = 'left')
+            self.witch_buttons.append(b)
 
         msg = tk.Message(top, text='about_message')
         msg.pack()
