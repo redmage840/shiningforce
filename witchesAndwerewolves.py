@@ -1,10 +1,3 @@
-# need to hold references to all images outside of 'creation' functions, maybe dict with name/tag corresponding to opened photoimage object
-
-# real-life educational material, reveal information/artifacts related to real life events/people
-# use this information/artifacts in game
-# ie discover davinci ornithopter for limited flying (obvious use)
-# besides obvious use, esoteric knowledge to actually give creative insight, ie use of contextual/historical period symbology in order to 'decode' written messages...
-
 # make 'animations', image is updated using 'after' to rotate through series of images
 # so each animation will have corresponding dictionary/atlas? of images
 
@@ -14,6 +7,17 @@ import tkinter as tk
 from tkinter import ttk
 import os
 from PIL import ImageTk,Image
+
+
+
+import pygame
+# Witches... Theme
+# background_music = "bloodMilkandSky.mp3"
+# os.system("afplay " + background_music)
+
+pygame.mixer.init()
+pygame.mixer.music.load('bloodMilkandSky.mp3')
+pygame.mixer.music.play(999)
 
 # CURSOR GLOBALS
 curs_pos = [0, 0]
@@ -35,45 +39,13 @@ class App(tk.Frame):
         self.master = master
         self.pack()
         self.img_dict = {}
-        
         self.choose_map()
 #         self.create_map_curs()
 #         self.create_units()
         
         
-    def place_witch(self):
-        pass
         
-    def create_units(self):
-        # test image/unit process
-        self.greenface = ImageTk.PhotoImage(Image.open("greenface.png").resize((100,100)))
-        c = 3
-        r = 0
-        self.canvas.create_image(c*100,r*100, anchor='nw', image=self.greenface, tags='greenface')
-        self.img_dict['greenface'] = [c,r]
-        grid[c][r] = 'greenface'
-        # END test image
-        self.orangeface = ImageTk.PhotoImage(Image.open("orangeface.png").resize((100,100)))
-        c = 5
-        r = 2
-        self.canvas.create_image(c*100,r*100, anchor='nw', image=self.orangeface, tags='orangeface')
-        self.img_dict['orangeface'] = [c,r]
-        grid[c][r] = 'orangeface'
-        #
-        self.scrawl = ImageTk.PhotoImage(Image.open("scrawl.png").resize((100,100)))
-        c = 6
-        r = 3
-        self.canvas.create_image(c*100,r*100, anchor='nw', image=self.scrawl, tags='scrawl')
-        self.img_dict['scrawl'] = [c,r]
-        grid[c][r] = 'scrawl'
-        #
-        self.wolfy = ImageTk.PhotoImage(Image.open("wolfy.png").resize((100,100)))
-        c = 7
-        r = 3
-        self.canvas.create_image(c*100,r*100, anchor='nw', image=self.wolfy, tags='wolfy')
-        self.img_dict['wolfy'] = [c,r]
-        grid[c][r] = 'wolfy'
-        #
+
 #width="200", height="200"
     def choose_map(self):
         self.marquee = tk.Label(root, text = 'Choose your map', font=("Helvetica", 36))
@@ -113,8 +85,49 @@ class App(tk.Frame):
         self.quit = tk.Button(self, text="QUIT", fg="red",
                               command=self.master.destroy)
         self.quit.pack(side="bottom")
+        root.after(700, self.place_witch)
         
-        self.create_units()
+    def place_witch(self):
+        top = tk.Toplevel()
+        top.title('Choose Your Witch')
+
+        msg = tk.Message(top, text='about_message')
+        msg.pack()
+
+        button = tk.Button(top, text="Dismiss", command=top.destroy)
+        button.pack()
+    
+    # This should just choose/place initial avatar and any terrain/barriers
+    def create_units(self):
+        # test image/unit process
+        self.greenface = ImageTk.PhotoImage(Image.open("greenface.png").resize((100,100)))
+        c = 3
+        r = 0
+        self.canvas.create_image(c*100,r*100, anchor='nw', image=self.greenface, tags='greenface')
+        self.img_dict['greenface'] = [c,r]
+        grid[c][r] = 'greenface'
+        # END test image
+        self.orangeface = ImageTk.PhotoImage(Image.open("orangeface.png").resize((100,100)))
+        c = 5
+        r = 2
+        self.canvas.create_image(c*100,r*100, anchor='nw', image=self.orangeface, tags='orangeface')
+        self.img_dict['orangeface'] = [c,r]
+        grid[c][r] = 'orangeface'
+        #
+        self.scrawl = ImageTk.PhotoImage(Image.open("scrawl.png").resize((100,100)))
+        c = 6
+        r = 3
+        self.canvas.create_image(c*100,r*100, anchor='nw', image=self.scrawl, tags='scrawl')
+        self.img_dict['scrawl'] = [c,r]
+        grid[c][r] = 'scrawl'
+        #
+        self.wolfy = ImageTk.PhotoImage(Image.open("wolfy.png").resize((100,100)))
+        c = 7
+        r = 3
+        self.canvas.create_image(c*100,r*100, anchor='nw', image=self.wolfy, tags='wolfy')
+        self.img_dict['wolfy'] = [c,r]
+        grid[c][r] = 'wolfy'
+        #
     
     # needs to delete object from grid on pickup
     def pickup_putdown(self, event):
