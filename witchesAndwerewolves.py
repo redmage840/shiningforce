@@ -195,16 +195,13 @@ class App(tk.Frame):
             selected = ''
             self.img_dict[unit] = grid_pos[:]
             grid[grid_pos[0]][grid_pos[1]] = unit
+        # DEBUG
+        print('current grid pos is ', grid_pos)
+        print('current curs_pos is ', curs_pos)
+        print('current map_pos is ', map_pos)
+        # END DEBUG
     
-    # map-    2400, 36000
-    # screen- 1280, 800
-    # cx - 11 or 1280//100 minus 1
-    # mx - 12 or 2400//100 minus (cx+1)
-    # cy - 6 or 800//100 minus 2 (reason for minus 2 here is for space from other vertical widgets)
-    # my - 29 or 3600//100 minus (cy+1)
-    # replace static values with variables described beside them
-    
-    # Need to constrain cursor_pos/map_pos/grid_pos to max of grid_size?
+    # max grid_pos is one less than dimension of map//100, so neither cursor NOR map should be moved if...for each direction
     # below works unless window gets manually resized in between movement, which allows cursor to move 'off map'
     def move_curs(self, event):
         frame_width = root.winfo_width()
@@ -220,6 +217,8 @@ class App(tk.Frame):
                 self.move_map('Left')
                 grid_pos[0] -= 1
         elif event.keysym == 'Right':
+            if grid_pos[0] == ((self.map_width//100) - 1):
+                return
             if curs_pos[0] < ((frame_width//100)-1): # 11 or width of ((framesize//100)-1)
                 self.canvas.move('curs', 100, 0)
                 self.canvas.move(selected, 100, 0)
@@ -240,6 +239,8 @@ class App(tk.Frame):
                 map_pos[1] -= 1
                 grid_pos[1] -= 1
         elif event.keysym == 'Down':
+            if grid_pos[1] == ((self.map_height//100)-1):
+                return
             if curs_pos[1] < ((frame_height//100)-1): # 6 or screenheight//100 minus 2
                 self.canvas.move('curs', 0, 100)
                 self.canvas.move(selected, 0, 100)
