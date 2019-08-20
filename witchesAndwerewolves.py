@@ -1,5 +1,8 @@
+# maybe use .resizable() to make sure window sizes according to screen size and then is not further resizable
+
 # what about when map dimension is smaller than the screen/frame size? currently the cursor moves to the edge of the frame, not the true map edge unless map is bigger than the frame
 # in the above case, should restrain/resize the dimensions of the root frame to the dimensions of the map
+# ie, should never be able to move cursor past 'edge of map', not just to edge of frame/window
 
 # be able to load different size maps and still move background/cursor
 # to do this: on load get screensize width/height and round down to the nearest 100pixels, freeze window size/no resizing OR on each screen resize event will have to redo grid fitting, 
@@ -86,15 +89,22 @@ class App(tk.Frame):
         self.create_map_curs(map_number)
             
     def create_map_curs(self, map_number):
-        # CANVAS
-        self.canvas = tk.Canvas(root, width = root.winfo_screenwidth(), height = root.winfo_screenheight())  
-        self.canvas.pack()
+        # Get map dimensions
         filename = 'map_info/map' + str(map_number) + '.txt'
         with open(filename) as f:
             map_size = f.read().splitlines() 
-        # MAP, gives 24X36 grid
         self.map_width = int(map_size[0])
         self.map_height = int(map_size[1])
+        # CANVAS
+        width = root.winfo_screenwidth()
+        height = root.winfo_screenheight()
+        if self.map_width < width:
+            width = self.map_width
+        if self.map_height < height:
+            height = self.map_height
+        self.canvas = tk.Canvas(root, width = width, height = height)  
+        self.canvas.pack()
+        # MAP
         self.map_img = ImageTk.PhotoImage(Image.open('./maps/map'+str(map_number)+'.jpg').resize((self.map_width, self.map_height)))
         self.canvas.create_image(0, 0, anchor='nw', image=self.map_img, tags='map')
         print(self.canvas.bbox('map'))
@@ -280,10 +290,10 @@ root.bind('<space>', app.pickup_putdown)
 
 
 # set window size to screen size
-width = root.winfo_screenwidth()
-height = root.winfo_screenheight()
+# width = root.winfo_screenwidth()
+# height = root.winfo_screenheight()
 # root.geometry('%sx%s' % (width, height))
-print('width is ', width)
-print('height is ', height)
+# print('width is ', width)
+# print('height is ', height)
 
 app.mainloop()
