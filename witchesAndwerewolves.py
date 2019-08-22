@@ -1,3 +1,7 @@
+# change cursor image to something cool
+
+# img.thumbnail() instead of .resize() will preserve aspect ratio, still takes two int tuple of MAX dimensions
+
 # maybe use .resizable() to make sure window sizes according to screen size and then is not further resizable
 
 # what about when map dimension is smaller than the screen/frame size? currently the cursor moves to the edge of the frame, not the true map edge unless map is bigger than the frame
@@ -20,6 +24,7 @@ import tkinter as tk
 from tkinter import ttk
 import os
 from PIL import ImageTk,Image
+from random import choice
 
 
 
@@ -47,54 +52,66 @@ selected = ''
 # MAP POSITION GLOBALS
 map_pos = [0, 0]
 
-# GRID GLOBALS grid[0][0] to grid[35][23]
-# should constrain this dynamically by variable size of map
+# this needs to not be static !!!!!!!!!
+# create on map selection
 grid_pos = [0,0]
-col = 24
-row = 36
-grid = [[''] * row for i in range(col)]
+# col = 24
+# row = 36
+# grid = [[''] * row for i in range(col)]
 
 class App(tk.Frame):
     def __init__(self, master=None):
         super().__init__(master)
         self.master = master
         self.pack()
+        # img_dict currently 'shortnames' to grid_pos of images with tag same as shortname (for small images)
+        # also holds reference to map, maybe dont need this since can just do self.map
+        # so img_dict info is not homogeneous, is confusing
         self.img_dict = {}
+        # maybe use above for just shortname to image object, use loc_dict for shortname to grid location !!!!!!!!!!!
+        self.loc_dict = {}
+        
+        
         self.choose_map()
-#         self.create_map_curs()
-#         self.create_units()
         
-        
-        
-
     def choose_map(self):
         self.marquee = tk.Label(root, text = 'Choose your map', font=("Helvetica", 36))
         self.marquee.pack(side = 'top')
         # CHOOSE MAPS
         maps = [m for r,d,m in os.walk('./maps')][0]
         self.map_button_list = []
+        self.tmp_mapimg_dict = {}
         for i,map in enumerate(maps):
             b = ttk.Button(root)
             cmd = lambda indx = i : self.load_map(indx)
             photo = ImageTk.PhotoImage(Image.open('./maps/' + map).resize((300,300)))
-            self.img_dict['map'+str(i)] = photo
-            b.config(image = self.img_dict['map'+str(i)], command = cmd)
+            # should use temp img_dict tied to this popup, currently is not a popup !!!!!!!!!
+            # or just destroy the unused img_dict entries
+            self.tmp_mapimg_dict['map'+str(i)] = photo
+            b.config(image = self.tmp_mapimg_dict['map'+str(i)], command = cmd)
             b.pack(side = 'left')
             self.map_button_list.append(b)
             
     def load_map(self, map_number):
         self.marquee.destroy()
+        del self.tmp_mapimg_dict
         for b in self.map_button_list:
             b.destroy()
+        del self.map_button_list
         self.create_map_curs(map_number)
             
     def create_map_curs(self, map_number):
         # Get map dimensions
         filename = 'map_info/map' + str(map_number) + '.txt'
         with open(filename) as f:
-            map_size = f.read().splitlines() 
+            map_size = f.read().splitlines()
+        self.map = 'map' + str(map_number)
         self.map_width = int(map_size[0])
         self.map_height = int(map_size[1])
+        # CREATE GRID FROM MAP DIMENSIONS
+        col = self.map_width//100
+        row = self.map_height//100
+        self.grid = [[''] * row for i in range(col)]
         # CANVAS
         width = root.winfo_screenwidth()
         height = root.winfo_screenheight()
@@ -107,7 +124,7 @@ class App(tk.Frame):
         # MAP
         self.map_img = ImageTk.PhotoImage(Image.open('./maps/map'+str(map_number)+'.jpg').resize((self.map_width, self.map_height)))
         self.canvas.create_image(0, 0, anchor='nw', image=self.map_img, tags='map')
-        print(self.canvas.bbox('map'))
+#         print(self.canvas.bbox('map'))
         
         # CURSOR
         self.cursor_img = ImageTk.PhotoImage(Image.open("cursor.png").resize((100,100)))
@@ -117,7 +134,6 @@ class App(tk.Frame):
                               command=self.master.destroy)
         self.quit.pack(side="bottom")
         self.choose_witch()
-#         root.after(700, self.place_witch)
         
     def choose_witch(self):
         self.avatar_popup = tk.Toplevel()
@@ -126,6 +142,7 @@ class App(tk.Frame):
         self.avatar_popup.title('Choose Your Witch')
         witches = [w for r,d,w in os.walk('./avatars')][0]
         self.avatar_popup.witch_widgets = []
+        self.avatar_popup.img_dict = {}
         # for each witch, create frame pack left, create image button pack top, create info/name button pack center bottom
         for i,witch in enumerate(witches):
             f = tk.Frame(self.avatar_popup)
@@ -133,9 +150,10 @@ class App(tk.Frame):
             self.avatar_popup.witch_widgets.append(f)
             b = ttk.Button(f)
             cmd = lambda w = witch[:-4] : self.load_witch(w)
+            # Make higher resolution images for here, upsampling and losing image quality !!!!!!!!!!
             photo = ImageTk.PhotoImage(Image.open('./avatars/' + witch).resize((200,200)))
-            self.img_dict[witch] = photo
-            b.config(image = self.img_dict[witch], command = cmd)
+            self.avatar_popup.img_dict[witch] = photo
+            b.config(image = self.avatar_popup.img_dict[witch], command = cmd)
             b.pack(side = 'top')
             info = lambda w = witch[:-4] : self.show_avatar_info(w)
             b2 = tk.Button(f)
@@ -158,51 +176,59 @@ class App(tk.Frame):
         close.pack()
     
     def load_witch(self, witch):
-        print(witch)
         # destroy avatar_popup, destroy img_dict items, place witch at 0,0, place an opposing witch, kickoff play
-        self.img_dict = {}
-        self.witch_tag = witch
-        self.protag_witch = ImageTk.PhotoImage(Image.open('avatars/' + witch +'.png').resize((100, 100)))
-        self.canvas.create_image(0, 0, anchor='nw', image = self.protag_witch, tags = self.witch_tag)
-        self.img_dict[witch] = [0,0]
-        grid[0][0] = witch
+        self.protag_witch_img = ImageTk.PhotoImage(Image.open('avatars/' + witch +'.png'))
+        self.protag_witch_name = witch
+        self.img_dict[witch] = self.protag_witch_img
+        self.canvas.create_image(50, 50, image = self.img_dict[witch], tags = witch)
+        
+        #this is confusing, not an actual dict of images, just the names of objects represented by images
+        # use of img_dict above is different, 'shortname' points to actual image object  
+        self.loc_dict[witch] = [0,0]
+        self.grid[0][0] = witch
         self.avatar_popup.destroy()
+        # after placing witch, place antag witch
+        self.place_antag()
     
-    def create_units(self):
-        #
-        self.wolfy = ImageTk.PhotoImage(Image.open("wolfy.png").resize((100,100)))
-        c = 7
-        r = 3
-        self.canvas.create_image(c*100,r*100, anchor='nw', image=self.wolfy, tags = 'wolfy')
-        self.img_dict['wolfy'] = [c,r]
-        grid[c][r] = 'wolfy'
-        #
+    def place_antag(self):
+        remain_witches = [w for r,d,w in os.walk('./avatars')][0]
+        remain_witches = [w[:-4] for w in remain_witches[:]] 
+        remain_witches.remove(self.protag_witch_name)
+        antag_witch = choice(remain_witches)
+        self.antag_witch_img = ImageTk.PhotoImage(Image.open('avatars/' + antag_witch +'.png'))
+        self.img_dict[antag_witch] = self.antag_witch_img
+        # coords
+        self.canvas.create_image(self.map_width-50, self.map_height-50, image = self.img_dict[antag_witch], tags = antag_witch)
+        # img_dict should just store image not coords
+        self.loc_dict[antag_witch] = [(self.map_height-50),(self.map_width-50)]
+        
+        self.grid[(self.map_width//100)-1][(self.map_height//100)-1] = antag_witch
+        
     
-    # needs to delete object from grid on pickup
     def pickup_putdown(self, event):
-        global is_object_selected, selected, curs_pos, grid
-        # 'pick up' unit, check what/if unit in space, remove from img_dict, put in selected
-        if is_object_selected == False and current_pos() != '':
+        global is_object_selected, selected, curs_pos
+        # 'pick up' unit, check what/if unit in space, remove from loc_dict, put in selected
+        if is_object_selected == False and self.current_pos() != '':
             is_object_selected = True
-            unit = current_pos()
-            del self.img_dict[unit]
+            unit = self.current_pos()
+            del self.loc_dict[unit]
             selected = unit
-            grid[grid_pos[0]][grid_pos[1]] = ''
-        # 'put down' unit, check that grid is empty, remove unit from selected, put in img_dict
-        elif is_object_selected == True and current_pos() == '':
+            self.grid[grid_pos[0]][grid_pos[1]] = ''
+        # 'put down' unit, check that grid is empty, remove unit from selected, put in loc_dict
+        elif is_object_selected == True and self.current_pos() == '':
             is_object_selected = False
             unit = selected
             selected = ''
-            self.img_dict[unit] = grid_pos[:]
-            grid[grid_pos[0]][grid_pos[1]] = unit
+            self.loc_dict[unit] = grid_pos[:]
+            self.grid[grid_pos[0]][grid_pos[1]] = unit
         # DEBUG
-        print('current grid pos is ', grid_pos)
-        print('current curs_pos is ', curs_pos)
-        print('current map_pos is ', map_pos)
+#         print('current grid pos is ', grid_pos)
+#         print('current curs_pos is ', curs_pos)
+#         print('current map_pos is ', map_pos)
+#         print(globals().items())
+#         print(locals().items())
         # END DEBUG
     
-    # max grid_pos is one less than dimension of map//100, so neither cursor NOR map should be moved if...for each direction
-    # below works unless window gets manually resized in between movement, which allows cursor to move 'off map'
     def move_curs(self, event):
         frame_width = root.winfo_width()
         frame_height = root.winfo_height()
@@ -219,12 +245,12 @@ class App(tk.Frame):
         elif event.keysym == 'Right':
             if grid_pos[0] == ((self.map_width//100) - 1):
                 return
-            if curs_pos[0] < ((frame_width//100)-1): # 11 or width of ((framesize//100)-1)
+            if curs_pos[0] < ((frame_width//100)-1):
                 self.canvas.move('curs', 100, 0)
                 self.canvas.move(selected, 100, 0)
                 curs_pos[0] += 1
                 grid_pos[0] += 1
-            elif map_pos[0] < ((self.map_width//100)-(frame_width//100)): # 12 or rightmost position of map, width of (map_size//100) minus frame_width//100 plus 1
+            elif map_pos[0] < ((self.map_width//100)-(frame_width//100)):
                 self.move_map('Right')
                 map_pos[0] += 1
                 grid_pos[0] += 1
@@ -241,12 +267,12 @@ class App(tk.Frame):
         elif event.keysym == 'Down':
             if grid_pos[1] == ((self.map_height//100)-1):
                 return
-            if curs_pos[1] < ((frame_height//100)-1): # 6 or screenheight//100 minus 2
+            if curs_pos[1] < ((frame_height//100)-1):
                 self.canvas.move('curs', 0, 100)
                 self.canvas.move(selected, 0, 100)
                 curs_pos[1] += 1
                 grid_pos[1] += 1
-            elif map_pos[1] < ((self.map_height//100)-(frame_height//100)): # 29 or mapheight//100 minus (cy+1)
+            elif map_pos[1] < ((self.map_height//100)-(frame_height//100)):
                 self.move_map('Up')
                 map_pos[1] += 1
                 grid_pos[1] += 1
@@ -255,28 +281,28 @@ class App(tk.Frame):
     def move_map(self, direction):
         if direction == 'Left':
             self.canvas.move('map', 100, 0)
-            for img in self.img_dict.keys():
+            for img in self.loc_dict.keys():
                 self.canvas.move(img, 100, 0)
         elif direction == 'Right':
             self.canvas.move('map', -100, 0)
-            for img in self.img_dict.keys():
+            for img in self.loc_dict.keys():
                 self.canvas.move(img, -100, 0)
         elif direction == 'Up':
             self.canvas.move('map', 0, -100)
-            for img in self.img_dict.keys():
+            for img in self.loc_dict.keys():
                 self.canvas.move(img, 0, -100)
         elif direction == 'Down':
             self.canvas.move('map', 0, 100)
-            for img in self.img_dict.keys():
+            for img in self.loc_dict.keys():
                 self.canvas.move(img, 0, 100)
 
 
 
 
 
-# Helper functions
-def current_pos():
-    return grid[grid_pos[0]][grid_pos[1]]
+    # Helper functions
+    def current_pos(self):
+        return self.grid[grid_pos[0]][grid_pos[1]]
 
 
 root = tk.Tk()
