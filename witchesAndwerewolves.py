@@ -1,15 +1,9 @@
-# change cursor image to something cool
+# create struct of objects so each 'unit/character' on map can access attributes by name, like witch1.movement to access legal move squares, struct could also hold the appropriate image associated with unit, can also hold location
+
 
 # img.thumbnail() instead of .resize() will preserve aspect ratio, still takes two int tuple of MAX dimensions
 
 # maybe use .resizable() to make sure window sizes according to screen size and then is not further resizable
-
-# what about when map dimension is smaller than the screen/frame size? currently the cursor moves to the edge of the frame, not the true map edge unless map is bigger than the frame
-# in the above case, should restrain/resize the dimensions of the root frame to the dimensions of the map
-# ie, should never be able to move cursor past 'edge of map', not just to edge of frame/window
-
-# be able to load different size maps and still move background/cursor
-# to do this: on load get screensize width/height and round down to the nearest 100pixels, freeze window size/no resizing OR on each screen resize event will have to redo grid fitting, 
 
 # make different resolution images for portrait and in-game display
 
@@ -18,16 +12,14 @@
 # make 'animations', image is updated using 'after' to rotate through series of images
 # so each animation will have corresponding dictionary/atlas? of images
 
-# constrain 'magic numbers' to size relative to screen/frame size instead of pixels except with movement/borders to avoid partial fractions
-
 import tkinter as tk
 from tkinter import ttk
+# make sure import os works same for win/mac/linux
 import os
 from PIL import ImageTk,Image
 from random import choice
 
-
-
+# make sure works on win/mac/linux
 # import pygame
 # Witches... Theme, edit track for use as background
 # background_music = "bloodMilkandSky.mp3"
@@ -44,20 +36,24 @@ from random import choice
 # pygame.mixer.music.play(-1, 0)
 
 
-# CURSOR GLOBALS
+# CURSOR GLOBALS, for determining where cursor is relative to edge of SCREEN/rootframe (not necessarily map)?
 curs_pos = [0, 0]
+# Used to determine if an object has been selected by the cursor
 is_object_selected = False
 selected = ''
 
-# MAP POSITION GLOBALS
+# MAP POSITION GLOBALS, can i get rid of this and just use grid_pos????????
 map_pos = [0, 0]
 
-# this needs to not be static !!!!!!!!!
-# create on map selection
+# GRID POSITION GLOBAL
 grid_pos = [0,0]
-# col = 24
-# row = 36
-# grid = [[''] * row for i in range(col)]
+
+class Entity():
+    def __init__(self, name, img, loc, mov):
+        self.name = name
+        self.img = img
+        self.loc = loc
+        self.mov = mov
 
 class App(tk.Frame):
     def __init__(self, master=None):
@@ -70,7 +66,8 @@ class App(tk.Frame):
         self.img_dict = {}
         # maybe use above for just shortname to image object, use loc_dict for shortname to grid location !!!!!!!!!!!
         self.loc_dict = {}
-        
+        # experimental map of shortname/tag to class object for each Entity
+        self.ent_dict = {}
         
         self.choose_map()
         
@@ -176,16 +173,22 @@ class App(tk.Frame):
         close.pack()
     
     def load_witch(self, witch):
+        # 
+        protag_witch_img = ImageTk.PhotoImage(Image.open('avatars/' + witch +'.png'))
+        self.ent_dict[witch] = Entity(name = witch, img = protag_witch_img, loc = [0, 0], mov = [1,2,3,4])
+        self.canvas.create_image(50, 50, image = self.ent_dict[witch].img, tags = witch)
+        
+        
         # destroy avatar_popup, destroy img_dict items, place witch at 0,0, place an opposing witch, kickoff play
-        self.protag_witch_img = ImageTk.PhotoImage(Image.open('avatars/' + witch +'.png'))
-        self.protag_witch_name = witch
-        self.img_dict[witch] = self.protag_witch_img
-        self.canvas.create_image(50, 50, image = self.img_dict[witch], tags = witch)
+#         self.protag_witch_img = ImageTk.PhotoImage(Image.open('avatars/' + witch +'.png'))
+#         self.protag_witch_name = witch
+#         self.img_dict[witch] = self.protag_witch_img
+#         self.canvas.create_image(50, 50, image = self.img_dict[witch], tags = witch)
         
         #this is confusing, not an actual dict of images, just the names of objects represented by images
         # use of img_dict above is different, 'shortname' points to actual image object  
         self.loc_dict[witch] = [0,0]
-        self.grid[0][0] = witch
+        self.grid[self.ent_dict[witch].loc[0]][self.ent_dict[witch].loc[1]] = witch
         self.avatar_popup.destroy()
         # after placing witch, place antag witch
         self.place_antag()
@@ -211,7 +214,9 @@ class App(tk.Frame):
         if is_object_selected == False and self.current_pos() != '':
             is_object_selected = True
             unit = self.current_pos()
-            del self.loc_dict[unit]
+            # replace below with: insert tmp nulls into obj.loc
+            self.ent_dict[unit].loc = [None, None]
+#             del self.loc_dict[unit]
             selected = unit
             self.grid[grid_pos[0]][grid_pos[1]] = ''
         # 'put down' unit, check that grid is empty, remove unit from selected, put in loc_dict
@@ -219,7 +224,9 @@ class App(tk.Frame):
             is_object_selected = False
             unit = selected
             selected = ''
-            self.loc_dict[unit] = grid_pos[:]
+            # insert location into obj.loc
+            self.ent_dict[unit].loc = grid_pos[:]
+#             self.loc_dict[unit] = grid_pos[:]
             self.grid[grid_pos[0]][grid_pos[1]] = unit
         # DEBUG
 #         print('current grid pos is ', grid_pos)
@@ -279,22 +286,29 @@ class App(tk.Frame):
 
 
     def move_map(self, direction):
+        tmp = self.ent_dict.keys()
+        ents = [x for x in tmp if x != selected]
         if direction == 'Left':
             self.canvas.move('map', 100, 0)
-            for img in self.loc_dict.keys():
-                self.canvas.move(img, 100, 0)
+            # move all besides 'selected'
+            for ent in ents:
+#             for img in self.loc_dict.keys():
+                self.canvas.move(ent, 100, 0)
         elif direction == 'Right':
             self.canvas.move('map', -100, 0)
-            for img in self.loc_dict.keys():
-                self.canvas.move(img, -100, 0)
+            for ent in ents:
+#             for img in self.loc_dict.keys():
+                self.canvas.move(ent, -100, 0)
         elif direction == 'Up':
             self.canvas.move('map', 0, -100)
-            for img in self.loc_dict.keys():
-                self.canvas.move(img, 0, -100)
+            for ent in ents:
+#             for img in self.loc_dict.keys():
+                self.canvas.move(ent, 0, -100)
         elif direction == 'Down':
             self.canvas.move('map', 0, 100)
-            for img in self.loc_dict.keys():
-                self.canvas.move(img, 0, 100)
+            for ent in ents:
+#             for img in self.loc_dict.keys():
+                self.canvas.move(ent, 0, 100)
 
 
 
