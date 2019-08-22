@@ -1,3 +1,7 @@
+# inital location of antag_witch is not grid_pos but instead is absolute pixel placement, doesnt matter yet/fixed on first pickup, but could matter later...
+
+# make sure values correct in ent dict
+
 # create struct of objects so each 'unit/character' on map can access attributes by name, like witch1.movement to access legal move squares, struct could also hold the appropriate image associated with unit, can also hold location
 
 
@@ -49,11 +53,32 @@ map_pos = [0, 0]
 grid_pos = [0,0]
 
 class Entity():
-    def __init__(self, name, img, loc, mov):
+    def __init__(self, name, img, loc, mov, owner):
         self.name = name
         self.img = img
         self.loc = loc
         self.mov = mov
+        self.owner = owner
+        
+        self.anim_dict = {}
+        self.anim_counter = 0
+        # Create ref to each animation image
+        print('name is ', name)
+        anims = [a for r,d,a in os.walk('./animations/' + self.name + '/')][0]
+        print(anims)
+        anims = [a for a in anims[:] if a[-3:] == 'png']
+        print(anims)
+        for i, anim in enumerate(anims):
+            a = ImageTk.PhotoImage(Image.open('animations/' + self.name + '/' + anim))
+            self.anim_dict[i] = a
+            
+    def rotate_image(self):
+        total_imgs = len(self.anim_dict.keys())-1
+        if self.anim_counter == total_imgs:
+            self.anim_counter = 0
+        else:
+            self.anim_counter += 1
+        self.img = self.anim_dict[self.anim_counter]
 
 class App(tk.Frame):
     def __init__(self, master=None):
@@ -65,9 +90,12 @@ class App(tk.Frame):
         # so img_dict info is not homogeneous, is confusing
         self.img_dict = {}
         # maybe use above for just shortname to image object, use loc_dict for shortname to grid location !!!!!!!!!!!
-        self.loc_dict = {}
+#         self.loc_dict = {}
         # experimental map of shortname/tag to class object for each Entity
         self.ent_dict = {}
+        self.active_player = 'p1'
+        # computer or human
+        self.opponent = 'computer'
         
         self.choose_map()
         
@@ -173,9 +201,9 @@ class App(tk.Frame):
         close.pack()
     
     def load_witch(self, witch):
-        # 
+        self.protag_witch = witch
         protag_witch_img = ImageTk.PhotoImage(Image.open('avatars/' + witch +'.png'))
-        self.ent_dict[witch] = Entity(name = witch, img = protag_witch_img, loc = [0, 0], mov = [1,2,3,4])
+        self.ent_dict[witch] = Entity(name = witch, img = protag_witch_img, loc = [0, 0], mov = [1,2,3,4], owner = 'p1')
         self.canvas.create_image(50, 50, image = self.ent_dict[witch].img, tags = witch)
         
         
@@ -187,7 +215,7 @@ class App(tk.Frame):
         
         #this is confusing, not an actual dict of images, just the names of objects represented by images
         # use of img_dict above is different, 'shortname' points to actual image object  
-        self.loc_dict[witch] = [0,0]
+#         self.loc_dict[witch] = [0,0]
         self.grid[self.ent_dict[witch].loc[0]][self.ent_dict[witch].loc[1]] = witch
         self.avatar_popup.destroy()
         # after placing witch, place antag witch
@@ -196,17 +224,48 @@ class App(tk.Frame):
     def place_antag(self):
         remain_witches = [w for r,d,w in os.walk('./avatars')][0]
         remain_witches = [w[:-4] for w in remain_witches[:]] 
-        remain_witches.remove(self.protag_witch_name)
-        antag_witch = choice(remain_witches)
-        self.antag_witch_img = ImageTk.PhotoImage(Image.open('avatars/' + antag_witch +'.png'))
-        self.img_dict[antag_witch] = self.antag_witch_img
+        remain_witches.remove(self.protag_witch)
+        self.antag_witch = choice(remain_witches)
+        antag_witch_img = ImageTk.PhotoImage(Image.open('avatars/' + self.antag_witch +'.png'))
+        self.ent_dict[self.antag_witch] = Entity(name = self.antag_witch, img = antag_witch_img, loc = [self.map_width-50, self.map_height-50], mov = [1,2,3], owner = 'p2')
+#         self.img_dict[antag_witch] = self.antag_witch_img
         # coords
-        self.canvas.create_image(self.map_width-50, self.map_height-50, image = self.img_dict[antag_witch], tags = antag_witch)
+        self.canvas.create_image(self.ent_dict[self.antag_witch].loc[0], self.ent_dict[self.antag_witch].loc[1], image = self.ent_dict[self.antag_witch].img, tags = self.antag_witch)
         # img_dict should just store image not coords
-        self.loc_dict[antag_witch] = [(self.map_height-50),(self.map_width-50)]
+#         self.loc_dict[antag_witch] = [(self.map_height-50),(self.map_width-50)]
+        self.grid[(self.map_width//100)-1][(self.map_height//100)-1] = self.antag_witch
         
-        self.grid[(self.map_width//100)-1][(self.map_height//100)-1] = antag_witch
+        self.animate()
+        self.start_action()
         
+        # Should start animation here
+        
+        # Should now call 'FIRST TURN'
+        # 1 player at first, but keep in mind 2nd player action
+        # make struct of actions-taken/takeable
+        # allow for move/summon/spell/summon-action in any order
+        # each entity tracks 'if moved' per turn, reset end of round
+        # on cursor over, if owned by 'active-player', pickup shows potential move-squares, 'i' shows 'info'
+        # 'z' brings up context menu for 'selected', on 'place'-->are you sure place here?, prevent misclick likelihood,
+        # on each turn switch 'focus' bring cursor to avatar,
+    
+    def start_action(self):
+#         p = self.active_player
+        print('start action')
+        
+    # Just need to translate between pixel location and grid_pos
+    # Messes up when moving map/images-on-map, because of another call to canvas.create_image()
+    def animate(self):
+        if selected != self.protag_witch:
+            self.ent_dict[self.protag_witch].rotate_image()
+            self.canvas.create_image(self.ent_dict[self.protag_witch].loc[0]*100+50, self.ent_dict[self.protag_witch].loc[1]*100+50, image = self.ent_dict[self.protag_witch].img, tags = self.protag_witch)
+        print('test')
+        root.after(1000, self.animate)
+        # Start with dummy-animation: Every X ticks swap each Entity.img with reversed version of img
+#         for x in range(0 ,100):
+#             c.move(oval,a,b)
+#             gui.update()
+#             time.sleep(.01)
     
     def pickup_putdown(self, event):
         global is_object_selected, selected, curs_pos
@@ -229,6 +288,9 @@ class App(tk.Frame):
 #             self.loc_dict[unit] = grid_pos[:]
             self.grid[grid_pos[0]][grid_pos[1]] = unit
         # DEBUG
+        for name, ent in self.ent_dict.items():
+            print(name)
+            print(vars(ent))
 #         print('current grid pos is ', grid_pos)
 #         print('current curs_pos is ', curs_pos)
 #         print('current map_pos is ', map_pos)
@@ -328,6 +390,8 @@ root.bind('<Left>', app.move_curs)
 root.bind('<Up>', app.move_curs)
 root.bind('<Down>', app.move_curs)
 root.bind('<space>', app.pickup_putdown)
+# Animate experiment
+
 
 
 # set window size to screen size
