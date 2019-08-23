@@ -1,9 +1,18 @@
+# instead of opening image each time with ImageTk.PhotoImage(Image.open()), just open each file once and save ref
+
+# maybe use update_idletasks() to force 'redraw' while blocking/prevent race conditions
+
+# can call self.canvas.delete('tag') to delete images
+
+# check if 'memory leaking' a bunch of images on canvas.create_image() calls
+
+# fix start location of antag witch
+
+# speed up responsiveness by only animating 'on-screen' entities
+# only call rotate_image() of 'on-screen' entities
+# how to determine what is 'on-screen'?
+
 # inital location of antag_witch is not grid_pos but instead is absolute pixel placement, doesnt matter yet/fixed on first pickup, but could matter later...
-
-# make sure values correct in ent dict
-
-# create struct of objects so each 'unit/character' on map can access attributes by name, like witch1.movement to access legal move squares, struct could also hold the appropriate image associated with unit, can also hold location
-
 
 # img.thumbnail() instead of .resize() will preserve aspect ratio, still takes two int tuple of MAX dimensions
 
@@ -230,7 +239,8 @@ class App(tk.Frame):
         remain_witches.remove(self.protag_witch)
         self.antag_witch = choice(remain_witches)
         antag_witch_img = ImageTk.PhotoImage(Image.open('avatars/' + self.antag_witch +'.png'))
-        self.ent_dict[self.antag_witch] = Entity(name = self.antag_witch, img = antag_witch_img, loc = [self.map_width-50, self.map_height-50], mov = [1,2,3], owner = 'p2')
+        self.ent_dict[self.antag_witch] = Entity(name = self.antag_witch, img = antag_witch_img, loc = [self.map_width//100-1, self.map_height//100-1], mov = [1,2,3], owner = 'p2')
+        print('antag loc ', self.ent_dict[self.antag_witch].loc)
 #         self.img_dict[antag_witch] = self.antag_witch_img
         # coords
         self.canvas.create_image(self.ent_dict[self.antag_witch].loc[0], self.ent_dict[self.antag_witch].loc[1], image = self.ent_dict[self.antag_witch].img, tags = self.antag_witch)
@@ -264,9 +274,15 @@ class App(tk.Frame):
         # Then add or subtract that amount to position of canvas.create_image
         # For every entity (on screen/frame?), call ent.rotate_image, then remove it from the canvas, then call canvas.create_image with location equal to:
         # ent.loc[0]*100-self.moved_right, ent.loc[1]*100-self.moved_down
-        if selected != self.protag_witch:
-            self.ent_dict[self.protag_witch].rotate_image()
-            self.canvas.create_image(self.ent_dict[self.protag_witch].loc[0]*100+50-self.moved_right, self.ent_dict[self.protag_witch].loc[1]*100+50-self.moved_down, image = self.ent_dict[self.protag_witch].img, tags = self.protag_witch)
+        
+        for ent in self.ent_dict.keys():
+            if ent != selected:
+                self.ent_dict[ent].rotate_image()
+                self.canvas.delete(ent)
+                self.canvas.create_image(self.ent_dict[ent].loc[0]*100+50-self.moved_right, self.ent_dict[ent].loc[1]*100+50-self.moved_down, image = self.ent_dict[ent].img, tags = ent)
+#         if selected != self.protag_witch:
+#             self.ent_dict[self.protag_witch].rotate_image()
+#             self.canvas.create_image(self.ent_dict[self.protag_witch].loc[0]*100+50-self.moved_right, self.ent_dict[self.protag_witch].loc[1]*100+50-self.moved_down, image = self.ent_dict[self.protag_witch].img, tags = self.protag_witch)
         root.after(1000, self.animate)
     
     def pickup_putdown(self, event):
