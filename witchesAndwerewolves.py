@@ -1,18 +1,8 @@
-# instead of opening image each time with ImageTk.PhotoImage(Image.open()), just open each file once and save ref
-
 # maybe use update_idletasks() to force 'redraw' while blocking/prevent race conditions
-
-# can call self.canvas.delete('tag') to delete images
-
-# check if 'memory leaking' a bunch of images on canvas.create_image() calls
-
-# fix start location of antag witch
 
 # speed up responsiveness by only animating 'on-screen' entities
 # only call rotate_image() of 'on-screen' entities
 # how to determine what is 'on-screen'?
-
-# inital location of antag_witch is not grid_pos but instead is absolute pixel placement, doesnt matter yet/fixed on first pickup, but could matter later...
 
 # img.thumbnail() instead of .resize() will preserve aspect ratio, still takes two int tuple of MAX dimensions
 
@@ -35,9 +25,6 @@ from random import choice
 # make sure works on win/mac/linux
 # import pygame
 # Witches... Theme, edit track for use as background
-# background_music = "bloodMilkandSky.mp3"
-# os.system("afplay " + background_music)
-
 # set up the mixer
 # freq = 44100     # audio CD quality
 # bitsize = -16    # unsigned 16 bit
@@ -94,18 +81,10 @@ class App(tk.Frame):
         super().__init__(master)
         self.master = master
         self.pack()
-        # img_dict currently 'shortnames' to grid_pos of images with tag same as shortname (for small images)
-        # also holds reference to map, maybe dont need this since can just do self.map
-        # so img_dict info is not homogeneous, is confusing
         self.img_dict = {}
-        # maybe use above for just shortname to image object, use loc_dict for shortname to grid location !!!!!!!!!!!
-#         self.loc_dict = {}
-        # experimental map of shortname/tag to class object for each Entity
         self.ent_dict = {}
-        self.active_player = 'p1'
-        # computer or human
+        self.active_player = 'p1'n
         self.opponent = 'computer'
-        # Background Map moved relative to screen
         self.moved_right = 0
         self.moved_down = 0
         
@@ -161,7 +140,6 @@ class App(tk.Frame):
         # MAP
         self.map_img = ImageTk.PhotoImage(Image.open('./maps/map'+str(map_number)+'.jpg').resize((self.map_width, self.map_height)))
         self.canvas.create_image(0, 0, anchor='nw', image=self.map_img, tags='map')
-#         print(self.canvas.bbox('map'))
         
         # CURSOR
         self.cursor_img = ImageTk.PhotoImage(Image.open("cursor.png").resize((100,100)))
@@ -180,7 +158,6 @@ class App(tk.Frame):
         witches = [w for r,d,w in os.walk('./avatars')][0]
         self.avatar_popup.witch_widgets = []
         self.avatar_popup.img_dict = {}
-        # for each witch, create frame pack left, create image button pack top, create info/name button pack center bottom
         for i,witch in enumerate(witches):
             f = tk.Frame(self.avatar_popup)
             f.pack(side = 'left')
@@ -201,7 +178,6 @@ class App(tk.Frame):
             self.avatar_popup.witch_widgets.append(b)
 
     def show_avatar_info(self, witch):
-        # create popup window with text for corresponding avatar
         info_popup = tk.Toplevel()
         info_popup.title(witch)
         text = open('avatar_info/' + witch + '.txt', 'r').read()
@@ -217,20 +193,8 @@ class App(tk.Frame):
         protag_witch_img = ImageTk.PhotoImage(Image.open('avatars/' + witch +'.png'))
         self.ent_dict[witch] = Entity(name = witch, img = protag_witch_img, loc = [0, 0], mov = [1,2,3,4], owner = 'p1')
         self.canvas.create_image(50, 50, image = self.ent_dict[witch].img, tags = witch)
-        
-        
-        # destroy avatar_popup, destroy img_dict items, place witch at 0,0, place an opposing witch, kickoff play
-#         self.protag_witch_img = ImageTk.PhotoImage(Image.open('avatars/' + witch +'.png'))
-#         self.protag_witch_name = witch
-#         self.img_dict[witch] = self.protag_witch_img
-#         self.canvas.create_image(50, 50, image = self.img_dict[witch], tags = witch)
-        
-        #this is confusing, not an actual dict of images, just the names of objects represented by images
-        # use of img_dict above is different, 'shortname' points to actual image object  
-#         self.loc_dict[witch] = [0,0]
         self.grid[self.ent_dict[witch].loc[0]][self.ent_dict[witch].loc[1]] = witch
         self.avatar_popup.destroy()
-        # after placing witch, place antag witch
         self.place_antag()
     
     def place_antag(self):
@@ -240,18 +204,12 @@ class App(tk.Frame):
         self.antag_witch = choice(remain_witches)
         antag_witch_img = ImageTk.PhotoImage(Image.open('avatars/' + self.antag_witch +'.png'))
         self.ent_dict[self.antag_witch] = Entity(name = self.antag_witch, img = antag_witch_img, loc = [self.map_width//100-1, self.map_height//100-1], mov = [1,2,3], owner = 'p2')
-        print('antag loc ', self.ent_dict[self.antag_witch].loc)
-#         self.img_dict[antag_witch] = self.antag_witch_img
-        # coords
         self.canvas.create_image(self.ent_dict[self.antag_witch].loc[0], self.ent_dict[self.antag_witch].loc[1], image = self.ent_dict[self.antag_witch].img, tags = self.antag_witch)
-        # img_dict should just store image not coords
-#         self.loc_dict[antag_witch] = [(self.map_height-50),(self.map_width-50)]
         self.grid[(self.map_width//100)-1][(self.map_height//100)-1] = self.antag_witch
-        
+        # ANIMATE / START_ACTION
         self.animate()
         self.start_action()
         
-        # Should start animation here
         
         # Should now call 'FIRST TURN'
         # 1 player at first, but keep in mind 2nd player action
@@ -266,59 +224,30 @@ class App(tk.Frame):
 #         p = self.active_player
         print('start action')
         
-    # Just need to translate between pixel location and grid_pos
-    # Messes up when moving map/images-on-map, because of another call to canvas.create_image()
     def animate(self):
-        # Maybe need to track how much the background/map has moved relative to frame !!!!
-        # That would mean: every time map moves in a direction, accumulate/decrement that amount
-        # Then add or subtract that amount to position of canvas.create_image
-        # For every entity (on screen/frame?), call ent.rotate_image, then remove it from the canvas, then call canvas.create_image with location equal to:
-        # ent.loc[0]*100-self.moved_right, ent.loc[1]*100-self.moved_down
-        
         for ent in self.ent_dict.keys():
             if ent != selected:
                 self.ent_dict[ent].rotate_image()
                 self.canvas.delete(ent)
                 self.canvas.create_image(self.ent_dict[ent].loc[0]*100+50-self.moved_right, self.ent_dict[ent].loc[1]*100+50-self.moved_down, image = self.ent_dict[ent].img, tags = ent)
-#         if selected != self.protag_witch:
-#             self.ent_dict[self.protag_witch].rotate_image()
-#             self.canvas.create_image(self.ent_dict[self.protag_witch].loc[0]*100+50-self.moved_right, self.ent_dict[self.protag_witch].loc[1]*100+50-self.moved_down, image = self.ent_dict[self.protag_witch].img, tags = self.protag_witch)
         root.after(1000, self.animate)
     
     def pickup_putdown(self, event):
         global is_object_selected, selected, curs_pos
-        # 'pick up' unit, check what/if unit in space, remove from loc_dict, put in selected
+        # PICK UP
         if is_object_selected == False and self.current_pos() != '':
             is_object_selected = True
             unit = self.current_pos()
-            # replace below with: insert tmp nulls into obj.loc
             self.ent_dict[unit].loc = [None, None]
-#             del self.loc_dict[unit]
             selected = unit
             self.grid[grid_pos[0]][grid_pos[1]] = ''
-        # 'put down' unit, check that grid is empty, remove unit from selected, put in loc_dict
+        # PUT DOWN
         elif is_object_selected == True and self.current_pos() == '':
             is_object_selected = False
             unit = selected
             selected = ''
-            # insert location into obj.loc
             self.ent_dict[unit].loc = grid_pos[:]
-#             self.loc_dict[unit] = grid_pos[:]
             self.grid[grid_pos[0]][grid_pos[1]] = unit
-        # DEBUG
-        print('moved_right ', self.moved_right)
-        print('moved_down ', self.moved_down)
-        print('cursor_pos ', curs_pos)
-        print('grid_pos ', grid_pos)
-#         for name, ent in self.ent_dict.items():
-#             print(name)
-#             print(vars(ent))
-#         print('current grid pos is ', grid_pos)
-#         print('current curs_pos is ', curs_pos)
-#         print('current map_pos is ', map_pos)
-#         print(globals().items())
-#         print(locals().items())
-        # END DEBUG
     
     def move_curs(self, event):
         frame_width = root.winfo_width()
@@ -375,37 +304,27 @@ class App(tk.Frame):
         if direction == 'Left':
             self.canvas.move('map', 100, 0)
             self.moved_right -= 100
-            # move all besides 'selected'
             for ent in ents:
-#             for img in self.loc_dict.keys():
                 self.canvas.move(ent, 100, 0)
         elif direction == 'Right':
             self.canvas.move('map', -100, 0)
             self.moved_right += 100
             for ent in ents:
-#             for img in self.loc_dict.keys():
                 self.canvas.move(ent, -100, 0)
         elif direction == 'Up':
             self.canvas.move('map', 0, -100)
             self.moved_down += 100
             for ent in ents:
-#             for img in self.loc_dict.keys():
                 self.canvas.move(ent, 0, -100)
         elif direction == 'Down':
             self.canvas.move('map', 0, 100)
             self.moved_down -= 100
             for ent in ents:
-#             for img in self.loc_dict.keys():
                 self.canvas.move(ent, 0, 100)
-
-
-
-
 
     # Helper functions
     def current_pos(self):
         return self.grid[grid_pos[0]][grid_pos[1]]
-
 
 root = tk.Tk()
 app = App(master=root)
@@ -416,15 +335,9 @@ root.bind('<Left>', app.move_curs)
 root.bind('<Up>', app.move_curs)
 root.bind('<Down>', app.move_curs)
 root.bind('<space>', app.pickup_putdown)
-# Animate experiment
 
-
-
-# set window size to screen size
 # width = root.winfo_screenwidth()
 # height = root.winfo_screenheight()
 # root.geometry('%sx%s' % (width, height))
-# print('width is ', width)
-# print('height is ', height)
 
 app.mainloop()
