@@ -83,7 +83,7 @@ class App(tk.Frame):
         self.pack()
         self.img_dict = {}
         self.ent_dict = {}
-        self.active_player = 'p1'n
+        self.active_player = 'p1'
         self.opponent = 'computer'
         self.moved_right = 0
         self.moved_down = 0
