@@ -96,6 +96,9 @@ class App(tk.Frame):
         self.active_player = 'p1'
         # computer or human
         self.opponent = 'computer'
+        # Background Map moved relative to screen
+        self.moved_right = 0
+        self.moved_down = 0
         
         self.choose_map()
         
@@ -256,16 +259,15 @@ class App(tk.Frame):
     # Just need to translate between pixel location and grid_pos
     # Messes up when moving map/images-on-map, because of another call to canvas.create_image()
     def animate(self):
+        # Maybe need to track how much the background/map has moved relative to frame !!!!
+        # That would mean: every time map moves in a direction, accumulate/decrement that amount
+        # Then add or subtract that amount to position of canvas.create_image
+        # For every entity (on screen/frame?), call ent.rotate_image, then remove it from the canvas, then call canvas.create_image with location equal to:
+        # ent.loc[0]*100-self.moved_right, ent.loc[1]*100-self.moved_down
         if selected != self.protag_witch:
             self.ent_dict[self.protag_witch].rotate_image()
-            self.canvas.create_image(self.ent_dict[self.protag_witch].loc[0]*100+50, self.ent_dict[self.protag_witch].loc[1]*100+50, image = self.ent_dict[self.protag_witch].img, tags = self.protag_witch)
-        print('test')
+            self.canvas.create_image(self.ent_dict[self.protag_witch].loc[0]*100+50-self.moved_right, self.ent_dict[self.protag_witch].loc[1]*100+50-self.moved_down, image = self.ent_dict[self.protag_witch].img, tags = self.protag_witch)
         root.after(1000, self.animate)
-        # Start with dummy-animation: Every X ticks swap each Entity.img with reversed version of img
-#         for x in range(0 ,100):
-#             c.move(oval,a,b)
-#             gui.update()
-#             time.sleep(.01)
     
     def pickup_putdown(self, event):
         global is_object_selected, selected, curs_pos
@@ -288,9 +290,13 @@ class App(tk.Frame):
 #             self.loc_dict[unit] = grid_pos[:]
             self.grid[grid_pos[0]][grid_pos[1]] = unit
         # DEBUG
-        for name, ent in self.ent_dict.items():
-            print(name)
-            print(vars(ent))
+        print('moved_right ', self.moved_right)
+        print('moved_down ', self.moved_down)
+        print('cursor_pos ', curs_pos)
+        print('grid_pos ', grid_pos)
+#         for name, ent in self.ent_dict.items():
+#             print(name)
+#             print(vars(ent))
 #         print('current grid pos is ', grid_pos)
 #         print('current curs_pos is ', curs_pos)
 #         print('current map_pos is ', map_pos)
@@ -352,22 +358,26 @@ class App(tk.Frame):
         ents = [x for x in tmp if x != selected]
         if direction == 'Left':
             self.canvas.move('map', 100, 0)
+            self.moved_right -= 100
             # move all besides 'selected'
             for ent in ents:
 #             for img in self.loc_dict.keys():
                 self.canvas.move(ent, 100, 0)
         elif direction == 'Right':
             self.canvas.move('map', -100, 0)
+            self.moved_right += 100
             for ent in ents:
 #             for img in self.loc_dict.keys():
                 self.canvas.move(ent, -100, 0)
         elif direction == 'Up':
             self.canvas.move('map', 0, -100)
+            self.moved_down += 100
             for ent in ents:
 #             for img in self.loc_dict.keys():
                 self.canvas.move(ent, 0, -100)
         elif direction == 'Down':
             self.canvas.move('map', 0, 100)
+            self.moved_down -= 100
             for ent in ents:
 #             for img in self.loc_dict.keys():
                 self.canvas.move(ent, 0, 100)
