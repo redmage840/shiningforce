@@ -1,3 +1,5 @@
+# FINISH PICKUP after squares
+
 # on curs_pickup, if ent.owner == active_player show movement(if any) and legal actions(if any)
 # if not active_player owned, show info
 
@@ -300,6 +302,10 @@ class App(tk.Frame):
                 self.ent_dict[ent].rotate_image()
                 self.canvas.delete(ent)
                 self.canvas.create_image(self.ent_dict[ent].loc[0]*100+50-self.moved_right, self.ent_dict[ent].loc[1]*100+50-self.moved_down, image = self.ent_dict[ent].img, tags = ent)
+        for sqr in self.sqr_dict.keys():
+            self.sqr_dict[sqr].rotate_image()
+            self.canvas.delete(sqr)
+            self.canvas.create_image(self.sqr_dict[sqr].loc[0]*100+50-self.moved_right, self.sqr_dict[sqr].loc[1]*100+50-self.moved_down, image = self.sqr_dict[sqr].img, tags = sqr)
         root.after(1000, self.animate)
     
     def pickup_putdown(self, event):
@@ -315,13 +321,10 @@ class App(tk.Frame):
                 # show 'highlight image' over legal sqrs
                 for i, sqr in enumerate(sqrs):
                     img = ImageTk.PhotoImage(Image.open('animations/move/0.png'))
-                    self.sqr_dict[i] = Sqr(img, sqr)
-                    self.canvas.create_image(sqr[0]*100+50, sqr[1]*100+50, image = self.sqr_dict[i].img)
-                    # NEED to 'pin' these squares to background, move them with map
-                    # need to animate sqrs
-                    # need to delete sqrs on PUTDOWN
+                    self.sqr_dict['sqr'+str(i)] = Sqr(img, sqr)
+                    # sqr location needs to be modified by moved_up/down
+                    self.canvas.create_image(sqr[0]*100+50-self.moved_right, sqr[1]*100+50-self.moved_down, image = self.sqr_dict['sqr'+str(i)].img, tags = 'sqr'+str(i))
                     
-                
             # Only change loc/move if able (owned by active_player
             self.ent_dict[unit].loc = [None, None]
             selected = unit
@@ -329,6 +332,8 @@ class App(tk.Frame):
         # PUT DOWN
         elif is_object_selected == True and self.current_pos() == '':
             # erase old sqrs
+            for sqr in self.sqr_dict.keys():
+                self.canvas.delete(sqr)
             self.sqr_dict = {}
             is_object_selected = False
             unit = selected
@@ -396,21 +401,29 @@ class App(tk.Frame):
             self.moved_right -= 100
             for ent in ents:
                 self.canvas.move(ent, 100, 0)
+            for sqr in self.sqr_dict.keys():
+                self.canvas.move(sqr, 100, 0)
         elif direction == 'Right':
             self.canvas.move('map', -100, 0)
             self.moved_right += 100
             for ent in ents:
                 self.canvas.move(ent, -100, 0)
+            for sqr in self.sqr_dict.keys():
+                self.canvas.move(sqr, -100, 0)
         elif direction == 'Up':
             self.canvas.move('map', 0, -100)
             self.moved_down += 100
             for ent in ents:
                 self.canvas.move(ent, 0, -100)
+            for sqr in self.sqr_dict.keys():
+                self.canvas.move(sqr, 0, -100)
         elif direction == 'Down':
             self.canvas.move('map', 0, 100)
             self.moved_down -= 100
             for ent in ents:
                 self.canvas.move(ent, 0, 100)
+            for sqr in self.sqr_dict.keys():
+                self.canvas.move(sqr, 0, 100)
 
     # Helper functions
     def current_pos(self):
