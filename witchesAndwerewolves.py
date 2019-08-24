@@ -317,6 +317,9 @@ class App(tk.Frame):
                     img = ImageTk.PhotoImage(Image.open('animations/move/0.png'))
                     self.sqr_dict[i] = Sqr(img, sqr)
                     self.canvas.create_image(sqr[0]*100+50, sqr[1]*100+50, image = self.sqr_dict[i].img)
+                    # NEED to 'pin' these squares to background, move them with map
+                    # need to animate sqrs
+                    # need to delete sqrs on PUTDOWN
                     
                 
             # Only change loc/move if able (owned by active_player
@@ -325,6 +328,8 @@ class App(tk.Frame):
             self.grid[grid_pos[0]][grid_pos[1]] = ''
         # PUT DOWN
         elif is_object_selected == True and self.current_pos() == '':
+            # erase old sqrs
+            self.sqr_dict = {}
             is_object_selected = False
             unit = selected
             selected = ''
