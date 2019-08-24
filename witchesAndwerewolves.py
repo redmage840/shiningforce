@@ -1,3 +1,8 @@
+# on curs_pickup, if ent.owner == active_player show movement(if any) and legal actions(if any)
+# if not active_player owned, show info
+
+# ent.mov should be a 'type', types return legal move squares given a starting square given a populated grid
+
 # maybe use update_idletasks() to force 'redraw' while blocking/prevent race conditions
 
 # speed up responsiveness by only animating 'on-screen' entities
@@ -11,9 +16,6 @@
 # make different resolution images for portrait and in-game display
 
 # maybe have 'summons' move independently once created, for instance the fullmoon auspice makes its 'forward movement' every turn
-
-# make 'animations', image is updated using 'after' to rotate through series of images
-# so each animation will have corresponding dictionary/atlas? of images
 
 import tkinter as tk
 from tkinter import ttk
@@ -48,26 +50,75 @@ map_pos = [0, 0]
 # GRID POSITION GLOBAL
 grid_pos = [0,0]
 
+class Dummy():
+    def __init__(self):
+        pass
+
+class Sqr():
+    def __init__(self, img, loc):
+        self.img = img
+        self.loc = loc
+        self.anim_dict = {}
+        self.anim_counter = 0
+        anims = [a for r,d,a in os.walk('animations/move/')][0]
+        anims = [a for a in anims[:] if a[0] != '.']
+        for i, anim in enumerate(anims):
+            a = ImageTk.PhotoImage(Image.open('animations/move/' + anim))
+            self.anim_dict[i] = a
+            
+    def rotate_image(self):
+        total_imgs = len(self.anim_dict.keys())-1
+        if self.anim_counter == total_imgs:
+            self.anim_counter = 0
+        else:
+            self.anim_counter += 1
+        self.img = self.anim_dict[self.anim_counter]
+
 class Entity():
     def __init__(self, name, img, loc, mov, owner):
         self.name = name
         self.img = img
         self.loc = loc
+        # mov is one of witch, full, half, new, wax, wane
         self.mov = mov
         self.owner = owner
         
         self.anim_dict = {}
         self.anim_counter = 0
-        # Create ref to each animation image
-        print('name is ', name)
         anims = [a for r,d,a in os.walk('./animations/' + self.name + '/')][0]
-        print(anims)
         anims = [a for a in anims[:] if a[-3:] == 'png']
-        print(anims)
         for i, anim in enumerate(anims):
             a = ImageTk.PhotoImage(Image.open('animations/' + self.name + '/' + anim))
             self.anim_dict[i] = a
             
+    def legal_moves(self, width, height, grid):
+        move_list = []
+        # return list of tups (legal grid coords can move to)
+        # move types witch, fullmoon, halfmoon, newmoon, waxing, waning
+        if self.mov == 'witch':
+            total_move = 3
+            coord_pairs = [[x,y] for x in range(width//100) for y in range(height//100)]
+            # for every coord pair in grid,
+            # if abs(grid_pos[0]-ent.loc[0]) + abs(grid_pos[1]-ent.loc[1]) <= total_move(3),
+            # if grid_pos is empty,
+            # then add grid coord to legal moves list
+            for coord in coord_pairs:
+                if abs(coord[0] - self.loc[0]) + abs(coord[1] - self.loc[1]) <= total_move:
+                    if grid[coord[0]][coord[1]] == '':
+                        move_list.append(coord)
+            return move_list
+            
+        elif self.mov == 'full':
+            pass
+        elif self.mov == 'half':
+            pass
+        elif self.mov == 'new':
+            pass
+        elif self.mov == 'wax':
+            pass
+        elif self.mov == 'wane':
+            pass
+    
     def rotate_image(self):
         total_imgs = len(self.anim_dict.keys())-1
         if self.anim_counter == total_imgs:
@@ -83,6 +134,7 @@ class App(tk.Frame):
         self.pack()
         self.img_dict = {}
         self.ent_dict = {}
+        self.sqr_dict = {}
         self.active_player = 'p1'
         self.opponent = 'computer'
         self.moved_right = 0
@@ -156,6 +208,7 @@ class App(tk.Frame):
 #         somewhere need to pair the above line with avatar_popup.grab_release()
         self.avatar_popup.title('Choose Your Witch')
         witches = [w for r,d,w in os.walk('./avatars')][0]
+        witches = [w for w in witches[:] if w[0] != '.']
         self.avatar_popup.witch_widgets = []
         self.avatar_popup.img_dict = {}
         for i,witch in enumerate(witches):
@@ -191,19 +244,20 @@ class App(tk.Frame):
     def load_witch(self, witch):
         self.protag_witch = witch
         protag_witch_img = ImageTk.PhotoImage(Image.open('avatars/' + witch +'.png'))
-        self.ent_dict[witch] = Entity(name = witch, img = protag_witch_img, loc = [0, 0], mov = [1,2,3,4], owner = 'p1')
-        self.canvas.create_image(50, 50, image = self.ent_dict[witch].img, tags = witch)
+        self.ent_dict[witch] = Entity(name = witch, img = protag_witch_img, loc = [1, 1], mov = 'witch', owner = 'p1')
+        self.canvas.create_image(self.ent_dict[witch].loc[0], self.ent_dict[witch].loc[1], image = self.ent_dict[witch].img, tags = witch)
         self.grid[self.ent_dict[witch].loc[0]][self.ent_dict[witch].loc[1]] = witch
         self.avatar_popup.destroy()
         self.place_antag()
     
     def place_antag(self):
         remain_witches = [w for r,d,w in os.walk('./avatars')][0]
+        remain_witches = [w for w in remain_witches[:] if w[0] != '.']
         remain_witches = [w[:-4] for w in remain_witches[:]] 
         remain_witches.remove(self.protag_witch)
         self.antag_witch = choice(remain_witches)
         antag_witch_img = ImageTk.PhotoImage(Image.open('avatars/' + self.antag_witch +'.png'))
-        self.ent_dict[self.antag_witch] = Entity(name = self.antag_witch, img = antag_witch_img, loc = [self.map_width//100-1, self.map_height//100-1], mov = [1,2,3], owner = 'p2')
+        self.ent_dict[self.antag_witch] = Entity(name = self.antag_witch, img = antag_witch_img, loc = [self.map_width//100-1, self.map_height//100-1], mov = 'witch', owner = 'p2')
         self.canvas.create_image(self.ent_dict[self.antag_witch].loc[0], self.ent_dict[self.antag_witch].loc[1], image = self.ent_dict[self.antag_witch].img, tags = self.antag_witch)
         self.grid[(self.map_width//100)-1][(self.map_height//100)-1] = self.antag_witch
         # ANIMATE / START_ACTION
@@ -221,8 +275,24 @@ class App(tk.Frame):
         # on each turn switch 'focus' bring cursor to avatar,
     
     def start_action(self):
-#         p = self.active_player
+        p = self.active_player
         print('start action')
+        # Focus on protag
+        w = self.protag_witch if p == 'p1' else self.antag_witch
+        self.get_focus(w)
+        # 
+        
+            
+        
+    def get_focus(self, w):
+        while grid_pos[0] < self.ent_dict[w].loc[0]:
+            self.move_curs(dir = 'Right')
+        while grid_pos[0] > self.ent_dict[w].loc[0]:
+            self.move_curs(dir = 'Left')
+        while grid_pos[1] < self.ent_dict[w].loc[1]:
+            self.move_curs(dir = 'Down')
+        while grid_pos[1] > self.ent_dict[w].loc[1]:
+            self.move_curs(dir = 'Up')
         
     def animate(self):
         for ent in self.ent_dict.keys():
@@ -238,6 +308,18 @@ class App(tk.Frame):
         if is_object_selected == False and self.current_pos() != '':
             is_object_selected = True
             unit = self.current_pos()
+            # check if owned
+            if self.ent_dict[unit].owner == self.active_player:
+                # show mov (if any), avail actions (if any)
+                sqrs = self.ent_dict[unit].legal_moves(self.map_width, self.map_height, self.grid)
+                # show 'highlight image' over legal sqrs
+                for i, sqr in enumerate(sqrs):
+                    img = ImageTk.PhotoImage(Image.open('animations/move/0.png'))
+                    self.sqr_dict[i] = Sqr(img, sqr)
+                    self.canvas.create_image(sqr[0]*100+50, sqr[1]*100+50, image = self.sqr_dict[i].img)
+                    
+                
+            # Only change loc/move if able (owned by active_player
             self.ent_dict[unit].loc = [None, None]
             selected = unit
             self.grid[grid_pos[0]][grid_pos[1]] = ''
@@ -249,10 +331,13 @@ class App(tk.Frame):
             self.ent_dict[unit].loc = grid_pos[:]
             self.grid[grid_pos[0]][grid_pos[1]] = unit
     
-    def move_curs(self, event):
+    def move_curs(self, event = None, dir = None):
+        if event == None:
+            event = Dummy()
+            event.keysym = None
         frame_width = root.winfo_width()
         frame_height = root.winfo_height()
-        if event.keysym == 'Left':
+        if event.keysym == 'Left' or dir == 'Left':
             if curs_pos[0] > 0: # leftmost possible cursor position, always zero
                 self.canvas.move('curs', -100, 0)
                 self.canvas.move(selected, -100, 0)
@@ -262,7 +347,7 @@ class App(tk.Frame):
                 map_pos[0] -= 1
                 self.move_map('Left')
                 grid_pos[0] -= 1
-        elif event.keysym == 'Right':
+        elif event.keysym == 'Right' or dir == 'Right':
             if grid_pos[0] == ((self.map_width//100) - 1):
                 return
             if curs_pos[0] < ((frame_width//100)-1):
@@ -274,7 +359,7 @@ class App(tk.Frame):
                 self.move_map('Right')
                 map_pos[0] += 1
                 grid_pos[0] += 1
-        elif event.keysym == 'Up':
+        elif event.keysym == 'Up' or dir == 'Up':
             if curs_pos[1] > 0: # topmost, always zero
                 self.canvas.move('curs', 0, -100)
                 self.canvas.move(selected, 0, -100)
@@ -284,7 +369,7 @@ class App(tk.Frame):
                 self.move_map('Down')
                 map_pos[1] -= 1
                 grid_pos[1] -= 1
-        elif event.keysym == 'Down':
+        elif event.keysym == 'Down' or dir == 'Down':
             if grid_pos[1] == ((self.map_height//100)-1):
                 return
             if curs_pos[1] < ((frame_height//100)-1):
