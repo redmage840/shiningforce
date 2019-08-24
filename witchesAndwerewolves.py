@@ -1,4 +1,4 @@
-# FINISH PICKUP after squares
+# FINISH PICKUP after squares, restrict PUTDOWN to legal sqrs
 
 # on curs_pickup, if ent.owner == active_player show movement(if any) and legal actions(if any)
 # if not active_player owned, show info
@@ -209,7 +209,7 @@ class App(tk.Frame):
 #         avatar_popup.grab_set()
 #         somewhere need to pair the above line with avatar_popup.grab_release()
         self.avatar_popup.title('Choose Your Witch')
-        witches = [w for r,d,w in os.walk('./avatars')][0]
+        witches = [w for r,d,w in os.walk('./portraits/')][0]
         witches = [w for w in witches[:] if w[0] != '.']
         self.avatar_popup.witch_widgets = []
         self.avatar_popup.img_dict = {}
@@ -220,7 +220,7 @@ class App(tk.Frame):
             b = ttk.Button(f)
             cmd = lambda w = witch[:-4] : self.load_witch(w)
             # Make higher resolution images for here, upsampling and losing image quality !!!!!!!!!!
-            photo = ImageTk.PhotoImage(Image.open('./avatars/' + witch).resize((200,200)))
+            photo = ImageTk.PhotoImage(Image.open('./portraits/' + witch))
             self.avatar_popup.img_dict[witch] = photo
             b.config(image = self.avatar_popup.img_dict[witch], command = cmd)
             b.pack(side = 'top')
@@ -306,34 +306,36 @@ class App(tk.Frame):
             self.sqr_dict[sqr].rotate_image()
             self.canvas.delete(sqr)
             self.canvas.create_image(self.sqr_dict[sqr].loc[0]*100+50-self.moved_right, self.sqr_dict[sqr].loc[1]*100+50-self.moved_down, image = self.sqr_dict[sqr].img, tags = sqr)
-        root.after(1000, self.animate)
+        root.after(500, self.animate)
     
     def pickup_putdown(self, event):
         global is_object_selected, selected, curs_pos
         # PICK UP
         if is_object_selected == False and self.current_pos() != '':
-            is_object_selected = True
             unit = self.current_pos()
-            # check if owned
             if self.ent_dict[unit].owner == self.active_player:
-                # show mov (if any), avail actions (if any)
+                is_object_selected = True
+                # SQUARES / MOVEMENT
                 sqrs = self.ent_dict[unit].legal_moves(self.map_width, self.map_height, self.grid)
-                # show 'highlight image' over legal sqrs
                 for i, sqr in enumerate(sqrs):
                     img = ImageTk.PhotoImage(Image.open('animations/move/0.png'))
                     self.sqr_dict['sqr'+str(i)] = Sqr(img, sqr)
                     # sqr location needs to be modified by moved_up/down
                     self.canvas.create_image(sqr[0]*100+50-self.moved_right, sqr[1]*100+50-self.moved_down, image = self.sqr_dict['sqr'+str(i)].img, tags = 'sqr'+str(i))
-                    
-            # Only change loc/move if able (owned by active_player
-            self.ent_dict[unit].loc = [None, None]
-            selected = unit
-            self.grid[grid_pos[0]][grid_pos[1]] = ''
+                self.ent_dict[unit].loc = [None, None]
+                selected = unit
+                self.grid[grid_pos[0]][grid_pos[1]] = ''
+            # ELSE SHOW INFO
+            elif self.ent_dict[unit].owner != self.active_player:
+                print('not yours')
+                
+                
         # PUT DOWN
         elif is_object_selected == True and self.current_pos() == '':
             # erase old sqrs
             for sqr in self.sqr_dict.keys():
                 self.canvas.delete(sqr)
+            # Restrict movement
             self.sqr_dict = {}
             is_object_selected = False
             unit = selected
