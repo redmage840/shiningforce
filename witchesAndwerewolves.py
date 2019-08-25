@@ -99,35 +99,6 @@ class Entity():
             a = ImageTk.PhotoImage(Image.open('animations/' + self.name + '/' + anim))
             self.anim_dict[i] = a
             
-    def legal_moves(self, width, height, grid):
-        if self.has_moved == True:
-            return []
-        move_list = []
-        # return list of tups (legal grid coords can move to)
-        # move types witch, fullmoon, halfmoon, newmoon, waxing, waning
-        if self.mov == 'witch':
-            total_move = 3
-            coord_pairs = [[x,y] for x in range(width//100) for y in range(height//100)]
-            # for every coord pair in grid,
-            # if abs(grid_pos[0]-ent.loc[0]) + abs(grid_pos[1]-ent.loc[1]) <= total_move(3),
-            # if grid_pos is empty,
-            # then add grid coord to legal moves list
-            for coord in coord_pairs:
-                if abs(coord[0] - self.loc[0]) + abs(coord[1] - self.loc[1]) <= total_move:
-                    if grid[coord[0]][coord[1]] == '':
-                        move_list.append(coord)
-            return move_list
-            
-        elif self.mov == 'full':
-            pass
-        elif self.mov == 'half':
-            pass
-        elif self.mov == 'new':
-            pass
-        elif self.mov == 'wax':
-            pass
-        elif self.mov == 'wane':
-            pass
     
     def rotate_image(self):
         total_imgs = len(self.anim_dict.keys())-1
@@ -136,6 +107,29 @@ class Entity():
         else:
             self.anim_counter += 1
         self.img = self.anim_dict[self.anim_counter]
+
+class Witch(Entity):
+    def __init__(self, name, img, loc, mov, owner):
+        self.actions = {'spell':self.spell, 'summon':self.summon}
+        super().__init__(name, img, loc, mov, owner)
+        
+    def spell(self):
+        print('spell cast')
+    
+    def summon(self):
+        print('summon')
+        
+    def legal_moves(self, width, height, grid):
+        if self.has_moved == True:
+            return []
+        move_list = []
+        total_move = 3
+        coord_pairs = [[x,y] for x in range(width//100) for y in range(height//100)]
+        for coord in coord_pairs:
+            if abs(coord[0] - self.loc[0]) + abs(coord[1] - self.loc[1]) <= total_move:
+                if grid[coord[0]][coord[1]] == '':
+                    move_list.append(coord)
+        return move_list
 
 class App(tk.Frame):
     def __init__(self, master=None):
@@ -191,13 +185,15 @@ class App(tk.Frame):
         row = self.map_height//100
         self.grid = [[''] * row for i in range(col)]
         # CANVAS
+        self.canvas_frame = tk.Frame(root)
+        self.canvas_frame.pack()
         width = root.winfo_screenwidth()
         height = root.winfo_screenheight()
         if self.map_width < width:
             width = self.map_width
         if self.map_height < height:
             height = self.map_height
-        self.canvas = tk.Canvas(root, width = width, height = height)  
+        self.canvas = tk.Canvas(self.canvas_frame, width = width, height = height, bd = 0, highlightthickness=0, borderwidth=0)
         self.canvas.pack()
         # MAP
         self.map_img = ImageTk.PhotoImage(Image.open('./maps/map'+str(map_number)+'.jpg').resize((self.map_width, self.map_height)))
@@ -206,10 +202,15 @@ class App(tk.Frame):
         # CURSOR
         self.cursor_img = ImageTk.PhotoImage(Image.open("cursor.png").resize((100,100)))
         self.canvas.create_image(0,0, anchor='nw', image=self.cursor_img, tags='curs')
-        
-        self.quit = tk.Button(self, text="QUIT", fg="red",
+        # QUIT
+        self.context_menu = tk.Frame(self, bg = 'black')
+        self.context_menu.pack(side = 'top', fill = 'x', expand = 'true')
+        self.quit = tk.Button(self.context_menu, text="QUIT", font = ('chalkduster', 24), fg="red",
                               command=self.master.destroy)
-        self.quit.pack(side="bottom")
+        self.quit.pack(side="right")
+        # CONTEXT MENU
+        self.context_label = tk.Label(self.context_menu, text = 'context menu')
+        self.context_label.pack(side = 'left')
         self.choose_witch()
         
     def choose_witch(self):
@@ -229,12 +230,12 @@ class App(tk.Frame):
             cmd = lambda w = witch[:-4] : self.load_witch(w)
             photo = ImageTk.PhotoImage(Image.open('./portraits/' + witch))
             self.avatar_popup.img_dict[witch] = photo
-            b.config(image = self.avatar_popup.img_dict[witch],highlightbackground='black', command = cmd)
+            b.config(image = self.avatar_popup.img_dict[witch],highlightbackground='silver', command = cmd)
             b.pack(side = 'top')
             info = lambda w = witch[:-4] : self.show_avatar_info(w)
             b2 = tk.Button(f)
             whtspc_txt = witch[:-4].replace('_', ' ')
-            b2.config(text = whtspc_txt + '\n' + 'info', highlightbackground='darkgray', font = ('chalkduster', 24), command = info)
+            b2.config(text = whtspc_txt + '\n', highlightbackground='darkgray', highlightthickness= 2, fg = 'tan4', font = ('chalkduster', 24), command = info)
             b2.pack(side = 'bottom')
             self.avatar_popup.witch_widgets.append(b2)
             self.avatar_popup.witch_widgets.append(b)
@@ -247,13 +248,13 @@ class App(tk.Frame):
         f.pack()
         l = tk.Label(f, text = text, font = ('chalkduster', 24))
         l.pack()
-        close = tk.Button(info_popup, text = 'close', command = info_popup.destroy)
+        close = tk.Button(info_popup, text = 'close', font = ('chalkduster', 24), command = info_popup.destroy)
         close.pack()
     
     def load_witch(self, witch):
         self.protag_witch = witch
         protag_witch_img = ImageTk.PhotoImage(Image.open('avatars/' + witch +'.png'))
-        self.ent_dict[witch] = Entity(name = witch, img = protag_witch_img, loc = [1, 1], mov = 'witch', owner = 'p1')
+        self.ent_dict[witch] = Witch(name = witch, img = protag_witch_img, loc = [1, 1], mov = 'witch', owner = 'p1')
         self.canvas.create_image(self.ent_dict[witch].loc[0], self.ent_dict[witch].loc[1], image = self.ent_dict[witch].img, tags = witch)
         self.grid[self.ent_dict[witch].loc[0]][self.ent_dict[witch].loc[1]] = witch
         self.avatar_popup.destroy()
@@ -266,7 +267,7 @@ class App(tk.Frame):
         remain_witches.remove(self.protag_witch)
         self.antag_witch = choice(remain_witches)
         antag_witch_img = ImageTk.PhotoImage(Image.open('avatars/' + self.antag_witch +'.png'))
-        self.ent_dict[self.antag_witch] = Entity(name = self.antag_witch, img = antag_witch_img, loc = [self.map_width//100-1, self.map_height//100-1], mov = 'witch', owner = 'p2')
+        self.ent_dict[self.antag_witch] = Witch(name = self.antag_witch, img = antag_witch_img, loc = [self.map_width//100-1, self.map_height//100-1], mov = 'witch', owner = 'p2')
         self.canvas.create_image(self.ent_dict[self.antag_witch].loc[0], self.ent_dict[self.antag_witch].loc[1], image = self.ent_dict[self.antag_witch].img, tags = self.antag_witch)
         self.grid[(self.map_width//100)-1][(self.map_height//100)-1] = self.antag_witch
         # ANIMATE / START_ACTION
@@ -274,14 +275,6 @@ class App(tk.Frame):
         self.start_action()
         
         
-        # Should now call 'FIRST TURN'
-        # 1 player at first, but keep in mind 2nd player action
-        # make struct of actions-taken/takeable
-        # allow for move/summon/spell/summon-action in any order
-        # each entity tracks 'if moved' per turn, reset end of round
-        # on cursor over, if owned by 'active-player', pickup shows potential move-squares, 'i' shows 'info'
-        # 'z' brings up context menu for 'selected', on 'place'-->are you sure place here?, prevent misclick likelihood,
-        # on each turn switch 'focus' bring cursor to avatar,
     
     def start_action(self):
         p = self.active_player
@@ -315,8 +308,14 @@ class App(tk.Frame):
             self.canvas.create_image(self.sqr_dict[sqr].loc[0]*100+50-self.moved_right, self.sqr_dict[sqr].loc[1]*100+50-self.moved_down, image = self.sqr_dict[sqr].img, tags = sqr)
         root.after(500, self.animate)
     
-    def action(self, event):
-        print('action')
+    def populate_context(self, w):
+        act_dict = self.ent_dict[w].actions
+        for act, call in act_dict.items():
+            b = tk.Button(self.context_menu, text = act, command = call)
+            b.pack() 
+        
+    def depopulate_context(self, w):
+        print('depop')
     
     def cancel_pickup(self, event):
         global is_object_selected, selected
@@ -333,7 +332,6 @@ class App(tk.Frame):
             w = selected
             is_object_selected = False
             selected = ''
-            root.unbind('<a>')
             self.get_focus(w)
     
     def pickup_putdown(self, event):
@@ -343,7 +341,6 @@ class App(tk.Frame):
             unit = self.current_pos()
             if self.ent_dict[unit].owner == self.active_player:
                 is_object_selected = True
-                root.bind('<a>', app.action)
                 # SQUARES / MOVEMENT
                 sqrs = self.ent_dict[unit].legal_moves(self.map_width, self.map_height, self.grid)
                 for i, sqr in enumerate(sqrs):
@@ -353,19 +350,21 @@ class App(tk.Frame):
                 self.ent_dict[unit].origin = self.ent_dict[unit].loc[:]
                 self.ent_dict[unit].loc = [None, None]
                 selected = unit
+                # POPULATE CONTEXT MENU
+                self.populate_context(selected)
+                # REMOVE UNIT FROM GRID
                 self.grid[grid_pos[0]][grid_pos[1]] = ''
             # ELSE SHOW INFO
             elif self.ent_dict[unit].owner != self.active_player:
                 print('not yours')
         # PUT DOWN
         elif is_object_selected == True and self.current_pos() == '':
-            # UNBIND ACTION
-            root.unbind('<a>')
             # Restrict movement, if grid_pos is within highlighted sqrs
             sqrs = [self.sqr_dict[s].loc for s in self.sqr_dict.keys()]
             if grid_pos not in sqrs:
                 return
-            
+            # DEPOPULATE CONTEXT MENU
+            self.depopulate_context(selected)
             # erase old sqrs
             for sqr in self.sqr_dict.keys():
                 self.canvas.delete(sqr)
@@ -475,8 +474,6 @@ root.bind('<Up>', app.move_curs)
 root.bind('<Down>', app.move_curs)
 root.bind('<space>', app.pickup_putdown)
 root.bind('<z>', app.cancel_pickup)
-# if is_object_selected == True:
-#     root.bind('<a>', app.action)
 
 # width = root.winfo_screenwidth()
 # height = root.winfo_screenheight()
