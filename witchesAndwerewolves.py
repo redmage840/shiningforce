@@ -84,7 +84,8 @@ class Entity():
         # mov is one of witch, full, half, new, wax, wane
         self.mov = mov
         self.owner = owner
-        
+        self.has_moved = False
+        self.origin = []
         self.anim_dict = {}
         self.anim_counter = 0
         anims = [a for r,d,a in os.walk('./animations/' + self.name + '/')][0]
@@ -94,6 +95,8 @@ class Entity():
             self.anim_dict[i] = a
             
     def legal_moves(self, width, height, grid):
+        if self.has_moved == True:
+            return []
         move_list = []
         # return list of tups (legal grid coords can move to)
         # move types witch, fullmoon, halfmoon, newmoon, waxing, waning
@@ -307,6 +310,23 @@ class App(tk.Frame):
             self.canvas.create_image(self.sqr_dict[sqr].loc[0]*100+50-self.moved_right, self.sqr_dict[sqr].loc[1]*100+50-self.moved_down, image = self.sqr_dict[sqr].img, tags = sqr)
         root.after(500, self.animate)
     
+    def cancel_pickup(self, event):
+        global is_object_selected, selected
+        if is_object_selected == True:
+            for sqr in self.sqr_dict.keys():
+                self.canvas.delete(sqr)
+            self.sqr_dict = {}
+            self.grid[self.ent_dict[selected].origin[0]][self.ent_dict[selected].origin[1]] = selected
+            # return selected entity to sqr of origin
+            # need to delete the image from canvas, create_image at origin loc
+            self.canvas.delete(selected)
+            self.canvas.create_image(self.ent_dict[selected].origin[0]*100+50-self.moved_right, self.ent_dict[selected].origin[1]*100+50-self.moved_down, image = self.ent_dict[selected].img, tags = selected)
+            self.ent_dict[selected].loc = self.ent_dict[selected].origin[:]
+            w = selected
+            is_object_selected = False
+            selected = ''
+            self.get_focus(w)
+    
     def pickup_putdown(self, event):
         global is_object_selected, selected, curs_pos
         # PICK UP
@@ -320,6 +340,8 @@ class App(tk.Frame):
                     img = ImageTk.PhotoImage(Image.open('animations/move/0.png'))
                     self.sqr_dict['sqr'+str(i)] = Sqr(img, sqr)
                     self.canvas.create_image(sqr[0]*100+50-self.moved_right, sqr[1]*100+50-self.moved_down, image = self.sqr_dict['sqr'+str(i)].img, tags = 'sqr'+str(i))
+                # need to 'save' location for cancel_pickup
+                self.ent_dict[unit].origin = self.ent_dict[unit].loc[:]
                 self.ent_dict[unit].loc = [None, None]
                 selected = unit
                 self.grid[grid_pos[0]][grid_pos[1]] = ''
@@ -343,6 +365,7 @@ class App(tk.Frame):
             unit = selected
             selected = ''
             self.ent_dict[unit].loc = grid_pos[:]
+            self.ent_dict[unit].origin = grid_pos[:]
             self.grid[grid_pos[0]][grid_pos[1]] = unit
     
     def move_curs(self, event = None, dir = None):
@@ -442,6 +465,7 @@ root.bind('<Left>', app.move_curs)
 root.bind('<Up>', app.move_curs)
 root.bind('<Down>', app.move_curs)
 root.bind('<space>', app.pickup_putdown)
+root.bind('<z>', app.cancel_pickup)
 
 # width = root.winfo_screenwidth()
 # height = root.winfo_screenheight()
