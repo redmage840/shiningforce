@@ -1,26 +1,31 @@
+# bind different key for 'actions', separate from 'movement/pickup_putdown'
+# actions include summon, spell, summon-actions(attack or special)
+# should 'place barrier' be separate action or result of spell?
+
+# start thinking about what map and map animation to use
+
+# maybe take photo for portrait background instead of scroll texture
+
+# re-test visual elements interaction with manual screen resizing between things happening on-screen
+
+# began using ttk buttons as workaround for 'button animation' not working with tk buttons
+# this only applies to the first window presented
+# potentially have 'splash/title screen' instead, so able to get rid of ttk buttons
+# get rid of ttk buttons, just use tk buttons, they work better anyway for styling
+# how does styling work on dif platforms after freezing dependencies?
+
 # FINISH PICKUP after squares, restrict PUTDOWN to legal sqrs
-
-# on curs_pickup, if ent.owner == active_player show movement(if any) and legal actions(if any)
-# if not active_player owned, show info
-
-# ent.mov should be a 'type', types return legal move squares given a starting square given a populated grid
-
-# maybe use update_idletasks() to force 'redraw' while blocking/prevent race conditions
 
 # speed up responsiveness by only animating 'on-screen' entities
 # only call rotate_image() of 'on-screen' entities
 # how to determine what is 'on-screen'?
 
-# img.thumbnail() instead of .resize() will preserve aspect ratio, still takes two int tuple of MAX dimensions
-
 # maybe use .resizable() to make sure window sizes according to screen size and then is not further resizable
-
-# make different resolution images for portrait and in-game display
 
 # maybe have 'summons' move independently once created, for instance the fullmoon auspice makes its 'forward movement' every turn
 
 import tkinter as tk
-from tkinter import ttk
+# from tkinter import ttk
 # make sure import os works same for win/mac/linux
 import os
 from PIL import ImageTk,Image
@@ -148,14 +153,14 @@ class App(tk.Frame):
         self.choose_map()
         
     def choose_map(self):
-        self.marquee = tk.Label(root, text = 'Choose your map', font=("Helvetica", 36))
+        self.marquee = tk.Label(root, text = 'Choose your map', font=("chalkduster", 36))
         self.marquee.pack(side = 'top')
         # CHOOSE MAPS
         maps = [m for r,d,m in os.walk('./maps')][0]
         self.map_button_list = []
         self.tmp_mapimg_dict = {}
         for i,map in enumerate(maps):
-            b = ttk.Button(root)
+            b = tk.Button(root)
             cmd = lambda indx = i : self.load_map(indx)
             photo = ImageTk.PhotoImage(Image.open('./maps/' + map).resize((300,300)))
             # should use temp img_dict tied to this popup, currently is not a popup !!!!!!!!!
@@ -224,12 +229,12 @@ class App(tk.Frame):
             cmd = lambda w = witch[:-4] : self.load_witch(w)
             photo = ImageTk.PhotoImage(Image.open('./portraits/' + witch))
             self.avatar_popup.img_dict[witch] = photo
-            b.config(image = self.avatar_popup.img_dict[witch],highlightbackground='darkgray', command = cmd)
+            b.config(image = self.avatar_popup.img_dict[witch],highlightbackground='black', command = cmd)
             b.pack(side = 'top')
             info = lambda w = witch[:-4] : self.show_avatar_info(w)
             b2 = tk.Button(f)
             whtspc_txt = witch[:-4].replace('_', ' ')
-            b2.config(text = whtspc_txt + '\n' + 'info', highlightbackground='darkgray', command = info)
+            b2.config(text = whtspc_txt + '\n' + 'info', highlightbackground='darkgray', font = ('chalkduster', 24), command = info)
             b2.pack(side = 'bottom')
             self.avatar_popup.witch_widgets.append(b2)
             self.avatar_popup.witch_widgets.append(b)
@@ -240,7 +245,7 @@ class App(tk.Frame):
         text = open('avatar_info/' + witch + '.txt', 'r').read()
         f = tk.Frame(info_popup)
         f.pack()
-        l = tk.Label(f, text = text)
+        l = tk.Label(f, text = text, font = ('chalkduster', 24))
         l.pack()
         close = tk.Button(info_popup, text = 'close', command = info_popup.destroy)
         close.pack()
@@ -310,6 +315,9 @@ class App(tk.Frame):
             self.canvas.create_image(self.sqr_dict[sqr].loc[0]*100+50-self.moved_right, self.sqr_dict[sqr].loc[1]*100+50-self.moved_down, image = self.sqr_dict[sqr].img, tags = sqr)
         root.after(500, self.animate)
     
+    def action(self, event):
+        print('action')
+    
     def cancel_pickup(self, event):
         global is_object_selected, selected
         if is_object_selected == True:
@@ -325,6 +333,7 @@ class App(tk.Frame):
             w = selected
             is_object_selected = False
             selected = ''
+            root.unbind('<a>')
             self.get_focus(w)
     
     def pickup_putdown(self, event):
@@ -334,13 +343,13 @@ class App(tk.Frame):
             unit = self.current_pos()
             if self.ent_dict[unit].owner == self.active_player:
                 is_object_selected = True
+                root.bind('<a>', app.action)
                 # SQUARES / MOVEMENT
                 sqrs = self.ent_dict[unit].legal_moves(self.map_width, self.map_height, self.grid)
                 for i, sqr in enumerate(sqrs):
                     img = ImageTk.PhotoImage(Image.open('animations/move/0.png'))
                     self.sqr_dict['sqr'+str(i)] = Sqr(img, sqr)
                     self.canvas.create_image(sqr[0]*100+50-self.moved_right, sqr[1]*100+50-self.moved_down, image = self.sqr_dict['sqr'+str(i)].img, tags = 'sqr'+str(i))
-                # need to 'save' location for cancel_pickup
                 self.ent_dict[unit].origin = self.ent_dict[unit].loc[:]
                 self.ent_dict[unit].loc = [None, None]
                 selected = unit
@@ -349,9 +358,9 @@ class App(tk.Frame):
             elif self.ent_dict[unit].owner != self.active_player:
                 print('not yours')
         # PUT DOWN
-        # NEED to be able to 'unselect' or 'put back without moving from start sqr'
-        # maybe make 'cancel' button
         elif is_object_selected == True and self.current_pos() == '':
+            # UNBIND ACTION
+            root.unbind('<a>')
             # Restrict movement, if grid_pos is within highlighted sqrs
             sqrs = [self.sqr_dict[s].loc for s in self.sqr_dict.keys()]
             if grid_pos not in sqrs:
@@ -466,6 +475,8 @@ root.bind('<Up>', app.move_curs)
 root.bind('<Down>', app.move_curs)
 root.bind('<space>', app.pickup_putdown)
 root.bind('<z>', app.cancel_pickup)
+# if is_object_selected == True:
+#     root.bind('<a>', app.action)
 
 # width = root.winfo_screenwidth()
 # height = root.winfo_screenheight()
