@@ -214,20 +214,19 @@ class App(tk.Frame):
         self.avatar_popup.witch_widgets = []
         self.avatar_popup.img_dict = {}
         for i,witch in enumerate(witches):
-            f = tk.Frame(self.avatar_popup)
+            f = tk.Frame(self.avatar_popup, bg = 'black')
             f.pack(side = 'left')
             self.avatar_popup.witch_widgets.append(f)
-            b = ttk.Button(f)
+            b = tk.Button(f)
             cmd = lambda w = witch[:-4] : self.load_witch(w)
-            # Make higher resolution images for here, upsampling and losing image quality !!!!!!!!!!
             photo = ImageTk.PhotoImage(Image.open('./portraits/' + witch))
             self.avatar_popup.img_dict[witch] = photo
-            b.config(image = self.avatar_popup.img_dict[witch], command = cmd)
+            b.config(image = self.avatar_popup.img_dict[witch],highlightbackground='darkgray', command = cmd)
             b.pack(side = 'top')
             info = lambda w = witch[:-4] : self.show_avatar_info(w)
             b2 = tk.Button(f)
             whtspc_txt = witch[:-4].replace('_', ' ')
-            b2.config(text = whtspc_txt + '\n' + 'info', command = info)
+            b2.config(text = whtspc_txt + '\n' + 'info', highlightbackground='darkgray', command = info)
             b2.pack(side = 'bottom')
             self.avatar_popup.witch_widgets.append(b2)
             self.avatar_popup.witch_widgets.append(b)
@@ -320,7 +319,6 @@ class App(tk.Frame):
                 for i, sqr in enumerate(sqrs):
                     img = ImageTk.PhotoImage(Image.open('animations/move/0.png'))
                     self.sqr_dict['sqr'+str(i)] = Sqr(img, sqr)
-                    # sqr location needs to be modified by moved_up/down
                     self.canvas.create_image(sqr[0]*100+50-self.moved_right, sqr[1]*100+50-self.moved_down, image = self.sqr_dict['sqr'+str(i)].img, tags = 'sqr'+str(i))
                 self.ent_dict[unit].loc = [None, None]
                 selected = unit
@@ -328,14 +326,18 @@ class App(tk.Frame):
             # ELSE SHOW INFO
             elif self.ent_dict[unit].owner != self.active_player:
                 print('not yours')
-                
-                
         # PUT DOWN
+        # NEED to be able to 'unselect' or 'put back without moving from start sqr'
+        # maybe make 'cancel' button
         elif is_object_selected == True and self.current_pos() == '':
+            # Restrict movement, if grid_pos is within highlighted sqrs
+            sqrs = [self.sqr_dict[s].loc for s in self.sqr_dict.keys()]
+            if grid_pos not in sqrs:
+                return
+            
             # erase old sqrs
             for sqr in self.sqr_dict.keys():
                 self.canvas.delete(sqr)
-            # Restrict movement
             self.sqr_dict = {}
             is_object_selected = False
             unit = selected
