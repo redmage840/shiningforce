@@ -1,3 +1,10 @@
+# NOTE - tkinter canvas image tags cannot be an 'int' even if actually a string int, ie '0' (a string) does not work,
+# but 'a0' does work, this is in addition to 'tags cannot contain whitespace' rule
+
+# is initial witch placement correct or does it just fix itself after first animation?
+
+# separate stuff into different files, classes, helper functions
+
 # put 'instructions', bound keys in context menu, maybe use same key for all 'cancels' ie cancel move/context buttons
 
 # bind different key for 'actions', separate from 'movement/pickup_putdown'
@@ -160,6 +167,12 @@ class Witch(Entity):
     
     def place_warrior(self):
         print('summon warrior')
+        # unbind 'q' during placement, ideally have 'q' cancel depending on context ie change 'q' behavior 
+        # from cancel context_menu to cancel placement
+        root.unbind('<q>')
+        # bind 'q' to 'cancel placement' until end of placement
+        
+        # rebind 'q', SUMMONS need movement, actions
         self.summon_popup.destroy()
         sqrs = self.legal_moves(app.map_width, app.map_height, app.grid)
         app.animate_squares(sqrs)
@@ -171,15 +184,15 @@ class Witch(Entity):
         
         
     def place(self, summon, sqrs):
-        if curs_pos not in sqrs:
+        if grid_pos not in sqrs:
             return
-        number = str(len(self.summon_dict.keys()))
+        number = 'a' + str(len(self.summon_dict.keys()))
         name = 'warrior'
         img = ImageTk.PhotoImage(Image.open('warrior.png'))
         s = Summon(name = name, img = img, loc = grid_pos[:], owner = app.active_player, number = number)
         app.ent_dict[number] = s
-        self.summon_dict[number] = s
-        app.canvas.create_image(grid_pos[0]*100+50-app.moved_right, grid_pos[0]*100+50-app.moved_down, image = img, tags = number)
+#         self.summon_dict[number] = s
+        app.canvas.create_image(grid_pos[0]*100+50-app.moved_right, grid_pos[1]*100+50-app.moved_down, image = img, tags = number)
         app.grid[grid_pos[0]][grid_pos[1]] = number
         for s in app.sqr_dict.keys():
             app.canvas.delete(s)
@@ -188,6 +201,10 @@ class Witch(Entity):
             b.destroy()
         app.context_buttons = []
         self.summon_used = True
+#         print('debug line 201 app.ent_dict keys ', app.ent_dict.keys())
+#         print('debug next line inst.summon_dict keys ', self.summon_dict.keys())
+#         print('next line inst.summon_dict items ', self.summon_dict.items())
+#         print('next line app.ent_dict items ', app.ent_dict.items())
         
         
     def enchant(self):
