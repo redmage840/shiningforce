@@ -1,3 +1,5 @@
+# put 'instructions', bound keys in context menu, maybe use same key for all 'cancels' ie cancel move/context buttons
+
 # bind different key for 'actions', separate from 'movement/pickup_putdown'
 # actions include summon, spell, summon-actions(attack or special)
 # should 'place barrier' be separate action or result of spell?
@@ -6,21 +8,11 @@
 
 # maybe take photo for portrait background instead of scroll texture
 
-# re-test visual elements interaction with manual screen resizing between things happening on-screen
-
-# began using ttk buttons as workaround for 'button animation' not working with tk buttons
-# this only applies to the first window presented
-# potentially have 'splash/title screen' instead, so able to get rid of ttk buttons
-# get rid of ttk buttons, just use tk buttons, they work better anyway for styling
-# how does styling work on dif platforms after freezing dependencies?
-
-# FINISH PICKUP after squares, restrict PUTDOWN to legal sqrs
+# splash screen?
 
 # speed up responsiveness by only animating 'on-screen' entities
 # only call rotate_image() of 'on-screen' entities
 # how to determine what is 'on-screen'?
-
-# maybe use .resizable() to make sure window sizes according to screen size and then is not further resizable
 
 # maybe have 'summons' move independently once created, for instance the fullmoon auspice makes its 'forward movement' every turn
 
@@ -45,13 +37,13 @@ from random import choice
 # pygame.mixer.music.play(-1, 0)
 
 
-# CURSOR GLOBALS, for determining where cursor is relative to edge of SCREEN/rootframe (not necessarily map)?
+# CURSOR GLOBALS
 curs_pos = [0, 0]
 # Used to determine if an object has been selected by the cursor
 is_object_selected = False
 selected = ''
 
-# MAP POSITION GLOBALS, can i get rid of this and just use grid_pos????????
+# MAP POSITION GLOBAL
 map_pos = [0, 0]
 
 # GRID POSITION GLOBAL
@@ -82,13 +74,10 @@ class Sqr():
         self.img = self.anim_dict[self.anim_counter]
 
 class Entity():
-    def __init__(self, name, img, loc, mov, owner):
+    def __init__(self, name, img, loc, owner):
         self.name = name
         self.img = img
         self.loc = loc
-        # CHANGE NOW THAT SUBCLASSED
-        # mov is one of witch, full, half, new, wax, wane
-        self.mov = mov
         self.owner = owner
         self.has_moved = False
         self.origin = []
@@ -100,6 +89,12 @@ class Entity():
             a = ImageTk.PhotoImage(Image.open('animations/' + self.name + '/' + anim))
             self.anim_dict[i] = a
             
+    def info(self):
+        self.info_popup = tk.Toplevel()
+        info_label = tk.Label(self.info_popup, text = self.name +'/n'+ self.__class__.__name__)
+        info_label.pack()
+        close = tk.Button(self.info_popup, text = 'close', command = self.info_popup.destroy)
+        close.pack()
     
     def rotate_image(self):
         total_imgs = len(self.anim_dict.keys())-1
@@ -110,16 +105,53 @@ class Entity():
         self.img = self.anim_dict[self.anim_counter]
 
 class Witch(Entity):
-    def __init__(self, name, img, loc, mov, owner):
+    def __init__(self, name, img, loc, owner):
         self.actions = {'spell':self.spell, 'summon':self.summon}
-        super().__init__(name, img, loc, mov, owner)
+        self.spell_used = False
+        self.summon_used = False
+        self.spell_dict = {}
+        if name == 'Agnes_Sampson':
+            self.spell_dict['horrid wilting'] = self.horrid_wilting
+        elif name == 'Fakir_Ali':
+            self.spell_dict['plague'] = self.plague
+        elif name == 'Morgan_LeFay':
+            self.spell_dict['enchant'] = self.enchant
+            
+        super().__init__(name, img, loc, owner)
         
     def spell(self):
+        # if spell_used == False, create spell popup, upon cast set self.spell_used = True
+        if self.spell_used == True:
+            return
         print('spell cast')
+        # spell Toplevel
+        self.spell_popup = tk.Toplevel()
+        for name, spell in self.spell_dict.items():
+            b1 = tk.Button(self.spell_popup, text = name, command = self.spell_dict[name])
+            b1.pack()
     
     def summon(self):
+        # if summon_used == False, create summon popup, upon summon set self.summon_used = True
+        if self.summon_used == True:
+            return
         print('summon')
+        self.summon_used = True
         
+    def enchant(self):
+        print('enchant')
+        self.spell_used = True
+        self.spell_popup.destroy()
+        
+    def plague(self):
+        print('plague')
+        self.spell_used = True
+        self.spell_popup.destroy()
+        
+    def horrid_wilting(self):
+        print('wilt')
+        self.spell_used = True
+        self.spell_popup.destroy()
+    
     def legal_moves(self, width, height, grid):
         if self.has_moved == True:
             return []
@@ -255,7 +287,7 @@ class App(tk.Frame):
     def load_witch(self, witch):
         self.protag_witch = witch
         protag_witch_img = ImageTk.PhotoImage(Image.open('avatars/' + witch +'.png'))
-        self.ent_dict[witch] = Witch(name = witch, img = protag_witch_img, loc = [1, 1], mov = 'witch', owner = 'p1')
+        self.ent_dict[witch] = Witch(name = witch, img = protag_witch_img, loc = [1, 1], owner = 'p1')
         self.canvas.create_image(self.ent_dict[witch].loc[0], self.ent_dict[witch].loc[1], image = self.ent_dict[witch].img, tags = witch)
         self.grid[self.ent_dict[witch].loc[0]][self.ent_dict[witch].loc[1]] = witch
         self.avatar_popup.destroy()
@@ -268,7 +300,7 @@ class App(tk.Frame):
         remain_witches.remove(self.protag_witch)
         self.antag_witch = choice(remain_witches)
         antag_witch_img = ImageTk.PhotoImage(Image.open('avatars/' + self.antag_witch +'.png'))
-        self.ent_dict[self.antag_witch] = Witch(name = self.antag_witch, img = antag_witch_img, loc = [self.map_width//100-1, self.map_height//100-1], mov = 'witch', owner = 'p2')
+        self.ent_dict[self.antag_witch] = Witch(name = self.antag_witch, img = antag_witch_img, loc = [self.map_width//100-1, self.map_height//100-1], owner = 'p2')
         self.canvas.create_image(self.ent_dict[self.antag_witch].loc[0], self.ent_dict[self.antag_witch].loc[1], image = self.ent_dict[self.antag_witch].img, tags = self.antag_witch)
         self.grid[(self.map_width//100)-1][(self.map_height//100)-1] = self.antag_witch
         # ANIMATE / START_ACTION
@@ -314,9 +346,14 @@ class App(tk.Frame):
         e = self.current_pos()
         if e == '':
             return
+        if self.context_menu.pack_slaves() != []:
+            return
         act_dict = self.ent_dict[e].actions
+        b = tk.Button(self.context_menu, text = e, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = self.ent_dict[e].info)
+        b.pack(side = 'left')
+        # remove buttons after used
         for act, call in act_dict.items():
-            b = tk.Button(self.context_menu, text = act, command = call)
+            b = tk.Button(self.context_menu, text = act, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = call)
             b.pack(side = 'left') 
         
     def depopulate_context(self, event):
@@ -332,7 +369,6 @@ class App(tk.Frame):
             self.sqr_dict = {}
             self.grid[self.ent_dict[selected].origin[0]][self.ent_dict[selected].origin[1]] = selected
             # return selected entity to sqr of origin
-            # need to delete the image from canvas, create_image at origin loc
             self.canvas.delete(selected)
             self.canvas.create_image(self.ent_dict[selected].origin[0]*100+50-self.moved_right, self.ent_dict[selected].origin[1]*100+50-self.moved_down, image = self.ent_dict[selected].img, tags = selected)
             self.ent_dict[selected].loc = self.ent_dict[selected].origin[:]
@@ -346,7 +382,7 @@ class App(tk.Frame):
         # PICK UP
         if is_object_selected == False and self.current_pos() != '':
             unit = self.current_pos()
-            if self.ent_dict[unit].owner == self.active_player:
+            if self.ent_dict[unit].owner == self.active_player and self.ent_dict[unit].has_moved == False:
                 is_object_selected = True
                 # SQUARES / MOVEMENT
                 sqrs = self.ent_dict[unit].legal_moves(self.map_width, self.map_height, self.grid)
@@ -368,6 +404,7 @@ class App(tk.Frame):
             sqrs = [self.sqr_dict[s].loc for s in self.sqr_dict.keys()]
             if grid_pos not in sqrs:
                 return
+            self.ent_dict[selected].has_moved = True
             # erase old sqrs
             for sqr in self.sqr_dict.keys():
                 self.canvas.delete(sqr)
@@ -481,7 +518,6 @@ root.bind('<a>', app.populate_context)
 root.bind('<q>', app.depopulate_context)
 
 root.configure(background = 'black')
-root.resizable(False, False)
 
 # width = root.winfo_screenwidth()
 # height = root.winfo_screenheight()
