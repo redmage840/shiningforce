@@ -158,10 +158,13 @@ class Witch(Entity):
     
     def place_warrior(self):
         print('summon warrior')
-        self.summmon_used = True
+#         self.summmon_used = True
         # destroy self.summon_popup, show legal placement sqrs, show context message 'place warrior', enable cancel,
         # bind/press 'p' on legal sqr, instantiate warrior entity as entry in self.summon_dict, name is str(len(summon_dict.keys())), summon used = true
         # img is generic warrior image, loc is sqr pressed, owner is self.active_player, other info handled by subclass
+        self.summon_popup.destroy()
+        sqrs = self.legal_moves(app.map_width, app.map_height, app.grid)
+        app.animate_squares(sqrs)
         
         
     def enchant(self):
@@ -180,8 +183,6 @@ class Witch(Entity):
         self.spell_popup.destroy()
     
     def legal_moves(self, width, height, grid):
-        if self.has_moved == True:
-            return []
         move_list = []
         total_move = 3
         coord_pairs = [[x,y] for x in range(width//100) for y in range(height//100)]
@@ -251,7 +252,7 @@ class App(tk.Frame):
         self.close.pack()
             
     def create_map_curs_context(self, map_number):
-        # Get map dimensions
+        # GET MAP DIMENSIONS
         filename = 'map_info/map' + str(map_number) + '.txt'
         with open(filename) as f:
             map_size = f.read().splitlines()
@@ -439,11 +440,11 @@ class App(tk.Frame):
             if self.ent_dict[unit].owner == self.active_player and self.ent_dict[unit].has_moved == False:
                 is_object_selected = True
                 # SQUARES / MOVEMENT
-                sqrs = self.ent_dict[unit].legal_moves(self.map_width, self.map_height, self.grid)
-                for i, sqr in enumerate(sqrs):
-                    img = ImageTk.PhotoImage(Image.open('animations/move/0.png'))
-                    self.sqr_dict['sqr'+str(i)] = Sqr(img, sqr)
-                    self.canvas.create_image(sqr[0]*100+50-self.moved_right, sqr[1]*100+50-self.moved_down, image = self.sqr_dict['sqr'+str(i)].img, tags = 'sqr'+str(i))
+                if self.ent_dict[unit].has_moved == False:
+                    sqrs = self.ent_dict[unit].legal_moves(self.map_width, self.map_height, self.grid)
+                else:
+                    sqrs = []
+                self.animate_squares(sqrs)
                 self.ent_dict[unit].origin = self.ent_dict[unit].loc[:]
                 self.ent_dict[unit].loc = [None, None]
                 selected = unit
@@ -555,6 +556,12 @@ class App(tk.Frame):
                 self.canvas.move(sqr, 0, 100)
 
     # Helper functions
+    def animate_squares(self, sqrs):
+        for i, sqr in enumerate(sqrs):
+            img = ImageTk.PhotoImage(Image.open('animations/move/0.png'))
+            self.sqr_dict['sqr'+str(i)] = Sqr(img, sqr)
+            self.canvas.create_image(sqr[0]*100+50-self.moved_right, sqr[1]*100+50-self.moved_down, image = self.sqr_dict['sqr'+str(i)].img, tags = 'sqr'+str(i))
+    
     def current_pos(self):
         return self.grid[grid_pos[0]][grid_pos[1]]
 
