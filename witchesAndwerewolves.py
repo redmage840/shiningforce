@@ -25,7 +25,7 @@
 # maybe have 'summons' move independently once created, for instance the fullmoon auspice makes its 'forward movement' every turn
 
 import tkinter as tk
-# from tkinter import ttk
+from tkinter import ttk
 # make sure import os works same for win/mac/linux
 import os
 from PIL import ImageTk,Image
@@ -86,6 +86,7 @@ class Entity():
         self.name = name
         self.img = img
         self.loc = loc
+        # CHANGE NOW THAT SUBCLASSED
         # mov is one of witch, full, half, new, wax, wane
         self.mov = mov
         self.owner = owner
@@ -147,7 +148,7 @@ class App(tk.Frame):
         self.choose_map()
         
     def choose_map(self):
-        self.marquee = tk.Label(root, text = 'Choose your map', font=("chalkduster", 36))
+        self.marquee = tk.Label(root, text = 'Choose your map', fg = 'tan3', bg = 'black', font=("chalkduster", 36))
         self.marquee.pack(side = 'top')
         # CHOOSE MAPS
         maps = [m for r,d,m in os.walk('./maps')][0]
@@ -157,10 +158,8 @@ class App(tk.Frame):
             b = tk.Button(root)
             cmd = lambda indx = i : self.load_map(indx)
             photo = ImageTk.PhotoImage(Image.open('./maps/' + map).resize((300,300)))
-            # should use temp img_dict tied to this popup, currently is not a popup !!!!!!!!!
-            # or just destroy the unused img_dict entries
             self.tmp_mapimg_dict['map'+str(i)] = photo
-            b.config(image = self.tmp_mapimg_dict['map'+str(i)], command = cmd)
+            b.config(image = self.tmp_mapimg_dict['map'+str(i)], bg = 'black', highlightbackground = 'tan4', command = cmd)
             b.pack(side = 'left')
             self.map_button_list.append(b)
             
@@ -170,9 +169,9 @@ class App(tk.Frame):
         for b in self.map_button_list:
             b.destroy()
         del self.map_button_list
-        self.create_map_curs(map_number)
+        self.create_map_curs_context(map_number)
             
-    def create_map_curs(self, map_number):
+    def create_map_curs_context(self, map_number):
         # Get map dimensions
         filename = 'map_info/map' + str(map_number) + '.txt'
         with open(filename) as f:
@@ -184,6 +183,16 @@ class App(tk.Frame):
         col = self.map_width//100
         row = self.map_height//100
         self.grid = [[''] * row for i in range(col)]
+        # CONTEXT MENU
+        self.con_bg = ImageTk.PhotoImage(Image.open('scroll.png').resize((root.winfo_screenwidth(), 50)))
+        self.context_menu = tk.Canvas(root, bg = 'black', bd=0, highlightthickness=0, relief='ridge', width = root.winfo_screenwidth(), height = 50)
+        self.context_menu.pack_propagate(0)
+        self.context_menu.pack(side = 'top', fill = 'both', expand = 'false')
+        self.context_menu.create_image(0, 0, anchor = 'nw', image = self.con_bg)
+        # quit should have 'are you sure' popup
+        self.quit = tk.Button(self.context_menu, text="QUIT", font = ('chalkduster', 24), fg="tan4", highlightbackground = 'tan3',
+                              command=self.master.destroy)
+        bw = self.context_menu.create_window(root.winfo_screenwidth(), 0, anchor='ne', window=self.quit)
         # CANVAS
         self.canvas_frame = tk.Frame(root)
         self.canvas_frame.pack()
@@ -193,24 +202,16 @@ class App(tk.Frame):
             width = self.map_width
         if self.map_height < height:
             height = self.map_height
-        self.canvas = tk.Canvas(self.canvas_frame, width = width, height = height, bd = 0, highlightthickness=0, borderwidth=0)
+        self.canvas = tk.Canvas(self.canvas_frame, width = width, bg = 'black', height = height, bd=0, highlightthickness=0, relief='ridge')
         self.canvas.pack()
         # MAP
         self.map_img = ImageTk.PhotoImage(Image.open('./maps/map'+str(map_number)+'.jpg').resize((self.map_width, self.map_height)))
         self.canvas.create_image(0, 0, anchor='nw', image=self.map_img, tags='map')
+
         
         # CURSOR
         self.cursor_img = ImageTk.PhotoImage(Image.open("cursor.png").resize((100,100)))
         self.canvas.create_image(0,0, anchor='nw', image=self.cursor_img, tags='curs')
-        # QUIT
-        self.context_menu = tk.Frame(self, bg = 'black')
-        self.context_menu.pack(side = 'top', fill = 'x', expand = 'true')
-        self.quit = tk.Button(self.context_menu, text="QUIT", font = ('chalkduster', 24), fg="red",
-                              command=self.master.destroy)
-        self.quit.pack(side="right")
-        # CONTEXT MENU
-        self.context_label = tk.Label(self.context_menu, text = 'context menu')
-        self.context_label.pack(side = 'left')
         self.choose_witch()
         
     def choose_witch(self):
@@ -230,12 +231,12 @@ class App(tk.Frame):
             cmd = lambda w = witch[:-4] : self.load_witch(w)
             photo = ImageTk.PhotoImage(Image.open('./portraits/' + witch))
             self.avatar_popup.img_dict[witch] = photo
-            b.config(image = self.avatar_popup.img_dict[witch],highlightbackground='silver', command = cmd)
+            b.config(image = self.avatar_popup.img_dict[witch],highlightbackground='tan3', highlightthickness = 1, command = cmd)
             b.pack(side = 'top')
             info = lambda w = witch[:-4] : self.show_avatar_info(w)
             b2 = tk.Button(f)
             whtspc_txt = witch[:-4].replace('_', ' ')
-            b2.config(text = whtspc_txt + '\n', highlightbackground='darkgray', highlightthickness= 2, fg = 'tan4', font = ('chalkduster', 24), command = info)
+            b2.config(text = whtspc_txt, highlightbackground='tan3', highlightthickness= 1, fg = 'tan3', font = ('chalkduster', 24), command = info)
             b2.pack(side = 'bottom')
             self.avatar_popup.witch_widgets.append(b2)
             self.avatar_popup.witch_widgets.append(b)
@@ -308,13 +309,19 @@ class App(tk.Frame):
             self.canvas.create_image(self.sqr_dict[sqr].loc[0]*100+50-self.moved_right, self.sqr_dict[sqr].loc[1]*100+50-self.moved_down, image = self.sqr_dict[sqr].img, tags = sqr)
         root.after(500, self.animate)
     
-    def populate_context(self, w):
-        act_dict = self.ent_dict[w].actions
+    def populate_context(self, event):
+        # should show name of ent that populated
+        e = self.current_pos()
+        if e == '':
+            return
+        act_dict = self.ent_dict[e].actions
         for act, call in act_dict.items():
             b = tk.Button(self.context_menu, text = act, command = call)
-            b.pack() 
+            b.pack(side = 'left') 
         
-    def depopulate_context(self, w):
+    def depopulate_context(self, event):
+        for b in self.context_menu.pack_slaves():
+            b.destroy()
         print('depop')
     
     def cancel_pickup(self, event):
@@ -350,8 +357,6 @@ class App(tk.Frame):
                 self.ent_dict[unit].origin = self.ent_dict[unit].loc[:]
                 self.ent_dict[unit].loc = [None, None]
                 selected = unit
-                # POPULATE CONTEXT MENU
-                self.populate_context(selected)
                 # REMOVE UNIT FROM GRID
                 self.grid[grid_pos[0]][grid_pos[1]] = ''
             # ELSE SHOW INFO
@@ -363,8 +368,6 @@ class App(tk.Frame):
             sqrs = [self.sqr_dict[s].loc for s in self.sqr_dict.keys()]
             if grid_pos not in sqrs:
                 return
-            # DEPOPULATE CONTEXT MENU
-            self.depopulate_context(selected)
             # erase old sqrs
             for sqr in self.sqr_dict.keys():
                 self.canvas.delete(sqr)
@@ -474,6 +477,11 @@ root.bind('<Up>', app.move_curs)
 root.bind('<Down>', app.move_curs)
 root.bind('<space>', app.pickup_putdown)
 root.bind('<z>', app.cancel_pickup)
+root.bind('<a>', app.populate_context)
+root.bind('<q>', app.depopulate_context)
+
+root.configure(background = 'black')
+root.resizable(False, False)
 
 # width = root.winfo_screenwidth()
 # height = root.winfo_screenheight()
