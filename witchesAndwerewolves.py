@@ -91,7 +91,7 @@ class Entity():
             
     def info(self):
         self.info_popup = tk.Toplevel()
-        info_label = tk.Label(self.info_popup, text = self.name +'/n'+ self.__class__.__name__)
+        info_label = tk.Label(self.info_popup, text = self.name +'\n'+ self.__class__.__name__)
         info_label.pack()
         close = tk.Button(self.info_popup, text = 'close', command = self.info_popup.destroy)
         close.pack()
@@ -104,12 +104,17 @@ class Entity():
             self.anim_counter += 1
         self.img = self.anim_dict[self.anim_counter]
 
+class Summon(Entity):
+    def __init__(self, name, img, loc, owner):
+        super().__init__(name, img, loc, owner)
+
 class Witch(Entity):
     def __init__(self, name, img, loc, owner):
         self.actions = {'spell':self.spell, 'summon':self.summon}
         self.spell_used = False
         self.summon_used = False
         self.spell_dict = {}
+        self.summon_dict = {}
         if name == 'Agnes_Sampson':
             self.spell_dict['horrid wilting'] = self.horrid_wilting
         elif name == 'Fakir_Ali':
@@ -129,13 +134,35 @@ class Witch(Entity):
         for name, spell in self.spell_dict.items():
             b1 = tk.Button(self.spell_popup, text = name, command = self.spell_dict[name])
             b1.pack()
+        b2 = tk.Button(self.spell_popup, text = 'Cancel', command = self.spell_popup.destroy)
+        b2.pack()
     
     def summon(self):
         # if summon_used == False, create summon popup, upon summon set self.summon_used = True
         if self.summon_used == True:
             return
         print('summon')
-        self.summon_used = True
+        self.summon_popup = tk.Toplevel()
+        b1 = tk.Button(self.summon_popup, text = 'Warrior', command = self.place_warrior)
+        b1.pack()
+#         b2 = tk.Button(self.summon_popup, text = 'Trickster', command = self.place_trickster)
+#         b2.pack()
+#         b3 = tk.Button(self.summon_popup, text = 'Shadow', command = self.place_shadow)
+#         b3.pack()
+#         b4 = tk.Button(self.summon_popup, text = 'Bard', command = self.place_bard)
+#         b4.pack()
+#         b5 = tk.Button(self.summon_popup, text = 'Plaguebearer', command = self.place_plaguebearer)
+#         b5.pack()
+        b6 = tk.Button(self.summon_popup, text = 'Cancel', command = self.summon_popup.destroy)
+        b6.pack()
+    
+    def place_warrior(self):
+        print('summon warrior')
+        self.summmon_used = True
+        # destroy self.summon_popup, show legal placement sqrs, show context message 'place warrior', enable cancel,
+        # bind/press 'p' on legal sqr, instantiate warrior entity as entry in self.summon_dict, name is str(len(summon_dict.keys())), summon used = true
+        # img is generic warrior image, loc is sqr pressed, owner is self.active_player, other info handled by subclass
+        
         
     def enchant(self):
         print('enchant')
@@ -176,6 +203,8 @@ class App(tk.Frame):
         self.opponent = 'computer'
         self.moved_right = 0
         self.moved_down = 0
+        self.context_buttons = []
+        
         
         self.choose_map()
         
@@ -203,6 +232,24 @@ class App(tk.Frame):
         del self.map_button_list
         self.create_map_curs_context(map_number)
             
+    def help(self):
+        self.help_popup = tk.Toplevel()
+        self.text = tk.Label(self.help_popup, text = 'help test')
+        self.text.pack()
+        help_text = '''
+        You control witch in top left corner\n
+        Spacebar selects an object for movement\n
+        Press 'z' to cancel movement context\n
+        Arrow keys move cursor around map\n
+        Cursor over an object you control and press 'a' to see action options\n
+        Press 'q' to cancel the context menu for a selected object\n
+        Cursor over enemy controlled object and press 'a' for available info\n
+        Your witch can cast one spell AND use one summon per turn AND move once\n
+        Your summons can move AND use one action per turn\n
+        '''
+        self.close = tk.Button(self.help_popup, text = help_text, command = self.help_popup.destroy)
+        self.close.pack()
+            
     def create_map_curs_context(self, map_number):
         # Get map dimensions
         filename = 'map_info/map' + str(map_number) + '.txt'
@@ -221,10 +268,12 @@ class App(tk.Frame):
         self.context_menu.pack_propagate(0)
         self.context_menu.pack(side = 'top', fill = 'both', expand = 'false')
         self.context_menu.create_image(0, 0, anchor = 'nw', image = self.con_bg)
-        # quit should have 'are you sure' popup
-        self.quit = tk.Button(self.context_menu, text="QUIT", font = ('chalkduster', 24), fg="tan4", highlightbackground = 'tan3',
-                              command=self.master.destroy)
-        bw = self.context_menu.create_window(root.winfo_screenwidth(), 0, anchor='ne', window=self.quit)
+        # QUIT should have 'are you sure' popup
+        self.quit = tk.Button(self.context_menu, text="QUIT", font = ('chalkduster', 24), fg="tan4", highlightbackground = 'tan3', command=self.master.destroy)
+        self.quit.pack(side = 'right')
+        # HELP
+        self.help_b = tk.Button(self.context_menu, text = 'Help', font = ('chalkduster', 24), fg="tan4", highlightbackground = 'tan3', command = self.help)
+        self.help_b.pack(side = 'right')
         # CANVAS
         self.canvas_frame = tk.Frame(root)
         self.canvas_frame.pack()
@@ -346,19 +395,24 @@ class App(tk.Frame):
         e = self.current_pos()
         if e == '':
             return
-        if self.context_menu.pack_slaves() != []:
+        if self.context_buttons != []:
             return
         act_dict = self.ent_dict[e].actions
-        b = tk.Button(self.context_menu, text = e, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = self.ent_dict[e].info)
+        expanded_name = e.replace('_',' ')
+        b = tk.Button(self.context_menu, text = expanded_name, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = self.ent_dict[e].info)
         b.pack(side = 'left')
+        self.context_buttons.append(b)
         # remove buttons after used
         for act, call in act_dict.items():
             b = tk.Button(self.context_menu, text = act, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = call)
-            b.pack(side = 'left') 
+            b.pack(side = 'left')
+            self.context_buttons.append(b)
         
     def depopulate_context(self, event):
-        for b in self.context_menu.pack_slaves():
+        for b in self.context_buttons:
+            print(b)
             b.destroy()
+        self.context_buttons = []
         print('depop')
     
     def cancel_pickup(self, event):
