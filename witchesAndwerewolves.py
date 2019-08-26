@@ -91,6 +91,7 @@ class Entity():
             
     def info(self):
         self.info_popup = tk.Toplevel()
+        # DEBUG, protags are referred to as .name, summons are disambiguated by .number
         info_label = tk.Label(self.info_popup, text = self.name +'\n'+ self.__class__.__name__)
         info_label.pack()
         close = tk.Button(self.info_popup, text = 'close', command = self.info_popup.destroy)
@@ -105,7 +106,8 @@ class Entity():
         self.img = self.anim_dict[self.anim_counter]
 
 class Summon(Entity):
-    def __init__(self, name, img, loc, owner):
+    def __init__(self, name, img, loc, owner, number):
+        self.number = number
         super().__init__(name, img, loc, owner)
 
 class Witch(Entity):
@@ -158,13 +160,34 @@ class Witch(Entity):
     
     def place_warrior(self):
         print('summon warrior')
-#         self.summmon_used = True
-        # destroy self.summon_popup, show legal placement sqrs, show context message 'place warrior', enable cancel,
-        # bind/press 'p' on legal sqr, instantiate warrior entity as entry in self.summon_dict, name is str(len(summon_dict.keys())), summon used = true
-        # img is generic warrior image, loc is sqr pressed, owner is self.active_player, other info handled by subclass
         self.summon_popup.destroy()
         sqrs = self.legal_moves(app.map_width, app.map_height, app.grid)
         app.animate_squares(sqrs)
+        cmd = lambda x = 'warrior', y = sqrs : self.place(x, y)
+        # maybe put cancel here
+        b = tk.Button(app.context_menu, text = 'Place Warrior', command = cmd)
+        b.pack(side = 'left')
+        app.context_buttons.append(b)
+        
+        
+    def place(self, summon, sqrs):
+        if curs_pos not in sqrs:
+            return
+        number = str(len(self.summon_dict.keys()))
+        name = 'warrior'
+        img = ImageTk.PhotoImage(Image.open('warrior.png'))
+        s = Summon(name = name, img = img, loc = grid_pos[:], owner = app.active_player, number = number)
+        app.ent_dict[number] = s
+        self.summon_dict[number] = s
+        app.canvas.create_image(grid_pos[0]*100+50-app.moved_right, grid_pos[0]*100+50-app.moved_down, image = img, tags = number)
+        app.grid[grid_pos[0]][grid_pos[1]] = number
+        for s in app.sqr_dict.keys():
+            app.canvas.delete(s)
+        app.sqr_dict = {}
+        for b in app.context_buttons:
+            b.destroy()
+        app.context_buttons = []
+        self.summon_used = True
         
         
     def enchant(self):
@@ -182,6 +205,7 @@ class Witch(Entity):
         self.spell_used = True
         self.spell_popup.destroy()
     
+    # Maybe change name, used not only for finding legal moves, but sqrs within 3 spaces of entity that are unoccupied
     def legal_moves(self, width, height, grid):
         move_list = []
         total_move = 3
@@ -393,6 +417,7 @@ class App(tk.Frame):
     
     def populate_context(self, event):
         # should show name of ent that populated
+        # DEBUG grid holds 'numbers' for summons, they have same name
         e = self.current_pos()
         if e == '':
             return
@@ -400,6 +425,12 @@ class App(tk.Frame):
             return
         act_dict = self.ent_dict[e].actions
         expanded_name = e.replace('_',' ')
+        # Get 'type' name of summons here
+        try:
+            num = int(e)
+            expanded_name = self.ent_dict[e].name
+        except:
+            pass
         b = tk.Button(self.context_menu, text = expanded_name, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = self.ent_dict[e].info)
         b.pack(side = 'left')
         self.context_buttons.append(b)
