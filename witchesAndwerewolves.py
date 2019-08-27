@@ -165,7 +165,6 @@ class Trickster(Summon):
                     move_list.append(coord)
                 elif abs(coord[0] - self.loc[0]) == 2 and abs(coord[1] - self.loc[1]) == 1:
                     move_list.append(coord)
-        print('move list ', move_list)
         return move_list
         
 class Warrior(Summon):
@@ -238,7 +237,7 @@ class Warrior(Summon):
                     if self.loc[0] == coord[0] and self.loc[1] < coord[1] < self.loc[1]+4:
                         move_list.append(coord)
                 elif app.active_player == 'p2':
-                    if self.loc[0] == coord[0] and self.loc[1] < coord[1] < self.loc[1]-4:
+                    if self.loc[0] == coord[0] and self.loc[1]-4 < coord[1] < self.loc[1]:
                         move_list.append(coord)
         return move_list
                     
@@ -318,7 +317,10 @@ class Witch(Entity):
     def place(self, summon, sqrs):
         if grid_pos not in sqrs:
             return
-        number = 'a' + str(len(self.summon_dict.keys()))
+        if app.active_player == 'p1':
+            number = 'a' + str(len(self.summon_dict.keys()))
+        elif app.active_player == 'p2':
+            number = 'b' + str(len(self.summon_dict.keys()))
         if summon == Warrior:
             name = 'warrior'
             img = ImageTk.PhotoImage(Image.open('warrior.png'))
@@ -449,6 +451,9 @@ class App(tk.Frame):
         # QUIT should have 'are you sure' popup
         self.quit = tk.Button(self.context_menu, text="QUIT", font = ('chalkduster', 24), fg='indianred', highlightbackground = 'tan3', command=self.master.destroy)
         self.quit.pack(side = 'right')
+        # END TURN
+        self.end = tk.Button(self.context_menu, text = 'End Turn', font = ('chalkduster', 24), highlightbackground = 'tan3', command = self.end_turn)
+        self.end.pack(side = 'right')
         # HELP
         self.help_b = tk.Button(self.context_menu, text = 'Help', font = ('chalkduster', 24), fg='indianred', highlightbackground = 'tan3', command = self.help)
         self.help_b.pack(side = 'right')
@@ -532,18 +537,30 @@ class App(tk.Frame):
         self.grid[(self.map_width//100)-1][(self.map_height//100)-1] = self.antag_witch
         # ANIMATE / START_ACTION
         self.animate()
-        self.start_action()
+        self.start_turn()
         
         
     # might not need this
-    def start_action(self):
+    def start_turn(self):
         p = self.active_player
         print('start action')
         # Focus on protag
         w = self.protag_witch if p == 'p1' else self.antag_witch
         self.get_focus(w)
+        # create end turn button
         
-            
+        
+    def end_turn(self):
+        print('end turn')
+        self.depopulate_context(event = None)
+        if self.active_player == 'p1':
+            self.active_player = 'p2'
+        else:
+            self.active_player = 'p1'
+        # clean all entity 'has_x'
+        self.start_turn()
+        
+        
         
     def get_focus(self, w):
         while grid_pos[0] < self.ent_dict[w].loc[0]:
@@ -592,7 +609,6 @@ class App(tk.Frame):
         
     def depopulate_context(self, event):
         for b in self.context_buttons:
-            print(b)
             b.destroy()
         self.context_buttons = []
     
@@ -614,6 +630,8 @@ class App(tk.Frame):
     
     def pickup_putdown(self, event):
         global is_object_selected, selected, curs_pos
+        # DEBUG
+        print(app.grid)
         # PICK UP
         if is_object_selected == False and self.current_pos() != '':
             unit = self.current_pos()
