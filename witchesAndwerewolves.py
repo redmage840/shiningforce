@@ -1,21 +1,13 @@
+
 # is initial witch placement correct or does it just fix itself after first animation?
 
 # separate stuff into different files, classes, helper functions
-
-# put 'instructions', bound keys in context menu, maybe use same key for all 'cancels' ie cancel move/context buttons
-
-# bind different key for 'actions', separate from 'movement/pickup_putdown'
-# actions include summon, spell, summon-actions(attack or special)
-# should 'place barrier' be separate action or result of spell?
 
 # start thinking about what map and map animation to use
 
 # maybe take photo for portrait background instead of scroll texture
 
 # splash screen?
-
-# NOTE - tkinter canvas image tags cannot be an 'int' even if actually a string int, ie '0' (a string) does not work,
-# but 'a0' does work, this is in addition to 'tags cannot contain whitespace' rule
 
 # speed up responsiveness by only animating 'on-screen' entities
 # only call rotate_image() of 'on-screen' entities
@@ -30,6 +22,18 @@ import os
 from PIL import ImageTk,Image
 from random import choice
 
+# CURSOR GLOBALS
+curs_pos = [0, 0]
+# Used to determine if an object has been selected by the cursor
+is_object_selected = False
+selected = ''
+
+# MAP POSITION GLOBAL
+map_pos = [0, 0]
+
+# GRID POSITION GLOBAL
+grid_pos = [0,0]
+
 # make sure works on win/mac/linux
 # import pygame
 # Witches... Theme, edit track for use as background
@@ -42,19 +46,6 @@ from random import choice
 # pygame.mixer.music.set_volume(0.7) # optional volume 0 to 1.0
 # pygame.mixer.music.load('bloodMilkandSky.mp3')
 # pygame.mixer.music.play(-1, 0)
-
-
-# CURSOR GLOBALS
-curs_pos = [0, 0]
-# Used to determine if an object has been selected by the cursor
-is_object_selected = False
-selected = ''
-
-# MAP POSITION GLOBAL
-map_pos = [0, 0]
-
-# GRID POSITION GLOBAL
-grid_pos = [0,0]
 
 class Dummy():
     def __init__(self):
@@ -88,6 +79,7 @@ class Entity():
         self.owner = owner
         self.has_moved = False
         self.origin = []
+        self.placement_buttons = []
         self.anim_dict = {}
         self.anim_counter = 0
         anims = [a for r,d,a in os.walk('./animations/' + self.name + '/')][0]
@@ -99,6 +91,7 @@ class Entity():
     def info(self):
         self.info_popup = tk.Toplevel()
         # DEBUG, protags are referred to as .name, summons are disambiguated by .number
+        # this is fine here, but displays summon 'number', maybe should hide completely
         info_label = tk.Label(self.info_popup, text = self.name +'\n'+ self.__class__.__name__)
         info_label.pack()
         close = tk.Button(self.info_popup, text = 'close', command = self.info_popup.destroy)
@@ -115,17 +108,64 @@ class Entity():
 class Summon(Entity):
     def __init__(self, name, img, loc, owner, number):
         self.number = number
-        # ADD MOVEMENT / ACTIONS
         super().__init__(name, img, loc, owner)
         
 class Warrior(Summon):
     def __init__(self, name, img, loc, owner, number):
-        self.actions = {'attack':self.attack}
+        self.actions = {'attack':self.warrior_attack}
         super().__init__(name, img, loc, owner, number)
         
-    def attack(self):
-        print('attack')
+        
+    def warrior_attack(self):
+        # after button press, highlight legal sqrs, cursor over sqr, 'confirm target' button which only
+        # has effect when over legal target/sqr, 'confirm target' legal press should destroy buttons, destroy
+        # sqrs, set self.has_acted? to True, plus actual effects of attack
+        sqrs = []
+        coord_pairs = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        if app.active_player == 'p1':
+            for coord in coord_pairs:
+                if abs(coord[0] - self.loc[0]) == 1 and coord[1] == self.loc[1]:
+                    sqrs.append(coord)
+                elif abs(coord[0] - self.loc[0]) == 1 and coord[1]-1 == self.loc[1]:
+                    sqrs.append(coord)
+                elif coord[0] == self.loc[0] and coord[1]-1 == self.loc[1]:
+                    sqrs.append(coord)
+        elif app.active_player == 'p2':
+            for coord in coord_pairs:
+                if abs(coord[0] - self.loc[0]) == 1 and coord[1] == self.loc[1]:
+                    sqrs.append(coord)
+                elif abs(coord[0] - self.loc[0]) == 1 and coord[1]+1 == self.loc[1]:
+                    sqrs.append(coord)
+                elif coord[0] == self.loc[0] and coord[1]+1 == self.loc[1]:
+                    sqrs.append(coord)
+        app.animate_squares(sqrs)
+        # create 'confirm attack' button
+        cmd = lambda s = sqrs: self.do_attack(s)
+        b = tk.Button(app.context_menu, text = 'Confirm Attack', command = cmd)
+        b.pack(side = 'left')
+        app.context_buttons.append(b)
+        self.placement_buttons.append(b)
+        root.unbind('<q>')
+        root.bind('<q>', self.cancel_attack)
+        
+    def do_attack(self, sqrs):
+        if grid_pos not in sqrs:
+            return
+        print('successful attack')
+        # On successful attack, destroy confirm attack button, destroy sqrs
+        
     
+    def cancel_attack(self, event):
+        for b in self.placement_buttons:
+            b.destroy()
+        for s in app.sqr_dict.keys():
+            app.canvas.delete(s)
+        app.sqr_dict = {}
+        root.unbind('<q>')
+        root.bind('<q>', app.depopulate_context)
+    
+    # could pass in these args or freeze them on map instantiate....?
+    # pattern repeats a lot
     def legal_moves(self, width, height, grid):
         move_list = []
         total_move = 3
@@ -147,7 +187,6 @@ class Witch(Entity):
         self.summon_used = False
         self.spell_dict = {}
         self.summon_dict = {}
-        self.placement_buttons = []
         if name == 'Agnes_Sampson':
             self.spell_dict['horrid wilting'] = self.horrid_wilting
         elif name == 'Fakir_Ali':
@@ -195,6 +234,7 @@ class Witch(Entity):
         for s in app.sqr_dict.keys():
             app.canvas.delete(s)
         app.sqr_dict = {}
+        root.unbind('<q>')
         root.bind('<q>', app.depopulate_context)
 
     
@@ -232,11 +272,6 @@ class Witch(Entity):
         self.summon_used = True
         root.unbind('<q>')
         root.bind('<q>', app.depopulate_context)
-
-#         print('debug line 201 app.ent_dict keys ', app.ent_dict.keys())
-#         print('debug next line inst.summon_dict keys ', self.summon_dict.keys())
-#         print('next line inst.summon_dict items ', self.summon_dict.items())
-#         print('next line app.ent_dict items ', app.ent_dict.items())
         
         
     def enchant(self):
@@ -264,6 +299,7 @@ class Witch(Entity):
                 if grid[coord[0]][coord[1]] == '':
                     move_list.append(coord)
         return move_list
+
 
 class App(tk.Frame):
     def __init__(self, master=None):
@@ -295,7 +331,8 @@ class App(tk.Frame):
             photo = ImageTk.PhotoImage(Image.open('./maps/' + map).resize((300,300)))
             self.tmp_mapimg_dict['map'+str(i)] = photo
             b.config(image = self.tmp_mapimg_dict['map'+str(i)], bg = 'black', highlightbackground = 'tan4', command = cmd)
-            b.pack(side = 'left')
+            # DEBUG packing will have to be fixed here for different screen sizes
+            b.pack(side = 'left', padx = 55)
             self.map_button_list.append(b)
             
     def load_map(self, map_number):
@@ -349,18 +386,13 @@ class App(tk.Frame):
         self.help_b = tk.Button(self.context_menu, text = 'Help', font = ('chalkduster', 24), fg="tan4", highlightbackground = 'tan3', command = self.help)
         self.help_b.pack(side = 'right')
         # CANVAS
-        self.canvas_frame = tk.Frame(root)
-        self.canvas_frame.pack()
-        # DEBUG THIS SHOULD NOT BE
-        # setting inner frame/canvas to screenheight, when adding 'context menu' height, total is greater than screen
-        # maybe subtract height of context menu
         width = root.winfo_screenwidth()
         height = root.winfo_screenheight()
         if self.map_width < width:
             width = self.map_width
         if self.map_height < height:
             height = self.map_height
-        self.canvas = tk.Canvas(self.canvas_frame, width = width, bg = 'black', height = height, bd=0, highlightthickness=0, relief='ridge')
+        self.canvas = tk.Canvas(root, width = width, bg = 'black', height = height, bd=0, highlightthickness=0, relief='ridge')
         self.canvas.pack()
         # MAP
         self.map_img = ImageTk.PhotoImage(Image.open('./maps/map'+str(map_number)+'.jpg').resize((self.map_width, self.map_height)))
@@ -559,8 +591,8 @@ class App(tk.Frame):
         if event == None:
             event = Dummy()
             event.keysym = None
-        frame_width = root.winfo_width()
-        frame_height = root.winfo_height()
+        frame_width = self.canvas.winfo_width()
+        frame_height = self.canvas.winfo_height()
         if event.keysym == 'Left' or dir == 'Left':
             if curs_pos[0] > 0: # leftmost possible cursor position, always zero
                 self.canvas.move('curs', -100, 0)
@@ -656,7 +688,6 @@ class App(tk.Frame):
 root = tk.Tk()
 app = App(master=root)
 
-
 root.bind('<Right>', app.move_curs)
 root.bind('<Left>', app.move_curs)
 root.bind('<Up>', app.move_curs)
@@ -667,13 +698,7 @@ root.bind('<a>', app.populate_context)
 root.bind('<q>', app.depopulate_context)
 root.bind('<Escape>', app.exit_fullscreen)
 
-
 root.configure(background = 'black')
-
-
-# root.attributes('-transparentcolor', root['bg'])
-# this works for fullscreen with transparent tiles
-# but bottom of canvas is chopped off, maybe size root frame to screen size first, avoid sizing map/canvas/other frames to screen
 
 root.attributes('-transparent', True)
 root.attributes("-fullscreen", True)
@@ -683,11 +708,3 @@ height = root.winfo_screenheight()
 root.geometry('%sx%s' % (width, height))
 
 app.mainloop()
-
-# dont need these
-# root.overrideredirect(True)
-# root.wait_visibility(root)
-# root.wm_attributes("-alpha", 0.0)
-# root.wait_visibility(root) ????
-# PAIR WITH A BIND TO MAYBE ESCAPE AND THE FOLLOWING IN A FUNC SOMEWHERE:
-# root.attributes("-fullscreen", False)
