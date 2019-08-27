@@ -1,3 +1,8 @@
+# make 'end turn' button with confirm
+
+# also/instead of 'antag_witch', make 'levels' or just a bunch of units that will be easier to program AI for
+# currently would be extremely difficult to make challenging AI with equal sides
+
 # could separate classes into separate file by changing all functions that refer to global state (globals, app, root) to passing those values to the functions and eliminating refers... maybe... i think some functions are methods called within own class that refer to global state...
 
 # is initial witch placement correct or does it just fix itself after first animation?
@@ -101,6 +106,68 @@ class Summon(Entity):
         self.number = number
         super().__init__(name, img, loc, owner)
         
+class Trickster(Summon):
+    def __init__(self, name, img, loc, owner, number):
+        self.actions = {'confuse':self.trickster_attack}
+        self.attack_used = False
+        super().__init__(name, img, loc, owner, number)
+        
+        
+    def trickster_attack(self):
+        if self.attack_used == True:
+            return
+        sqrs = []
+        coord_pairs = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        # Confuse any adjacent
+        for coord in coord_pairs:
+            if abs(coord[0] - self.loc[0]) == 1 and coord[1] == self.loc[1]:
+                sqrs.append(coord)
+            elif coord[0] == self.loc[0] and abs(coord[1] - self.loc[1]) == 1:
+                sqrs.append(coord)
+        app.animate_squares(sqrs)
+        # create 'confirm attack' button
+        cmd = lambda s = sqrs: self.do_attack(s)
+        b = tk.Button(app.context_menu, text = 'Confirm Confuse', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = cmd)
+        b.pack(side = 'left')
+        app.context_buttons.append(b)
+        self.placement_buttons.append(b)
+        root.unbind('<q>')
+        root.bind('<q>', self.cancel_attack)
+        
+    def do_attack(self, sqrs):
+        if grid_pos not in sqrs:
+            return
+        # sqr must be occupied
+        # attack own units for now DEBUG
+        if app.current_pos() == '':
+            return
+        # Actual effects should happen here DEBUG
+        print('successful confuse')
+        self.attack_used = True
+        self.cancel_attack(event = None)
+    
+    def cancel_attack(self, event):
+        for b in self.placement_buttons:
+            b.destroy()
+        for s in app.sqr_dict.keys():
+            app.canvas.delete(s)
+        app.sqr_dict = {}
+        root.unbind('<q>')
+        root.bind('<q>', app.depopulate_context)
+    
+    # TRICKSTER MOVES
+    def legal_moves(self, width, height, grid):
+        move_list = []
+        coord_pairs = [[x,y] for x in range(width//100) for y in range(height//100)]
+        for coord in coord_pairs:
+            if grid[coord[0]][coord[1]] == '':
+                if abs(coord[0] - self.loc[0]) == 1 and abs(coord[1] - self.loc[1]) == 2:
+                    move_list.append(coord)
+                elif abs(coord[0] - self.loc[0]) == 2 and abs(coord[1] - self.loc[1]) == 1:
+                    move_list.append(coord)
+        print('move list ', move_list)
+        return move_list
+        
 class Warrior(Summon):
     def __init__(self, name, img, loc, owner, number):
         self.actions = {'attack':self.warrior_attack}
@@ -143,12 +210,11 @@ class Warrior(Summon):
         if grid_pos not in sqrs:
             return
         # sqr must be occupied
-        # attack own units?
+        # attack own units for now DEBUG
         if app.current_pos() == '':
             return
-        # Actual effects should happen here
+        # Actual effects should happen here DEBUG
         print('successful attack')
-        # On successful attack, destroy confirm attack button, destroy sqrs, set self.attack_used = True
         self.attack_used = True
         self.cancel_attack(event = None)
     
@@ -165,7 +231,6 @@ class Warrior(Summon):
     # pattern repeats a lot
     def legal_moves(self, width, height, grid):
         move_list = []
-        total_move = 3
         coord_pairs = [[x,y] for x in range(width//100) for y in range(height//100)]
         for coord in coord_pairs:
             if grid[coord[0]][coord[1]] == '':
@@ -207,15 +272,13 @@ class Witch(Entity):
         b2.pack()
     
     def summon(self):
-        # if summon_used == False, create summon popup, upon summon set self.summon_used = True
         if self.summon_used == True:
             return
-        print('summon')
         self.summon_popup = tk.Toplevel()
-        b1 = tk.Button(self.summon_popup, text = 'Warrior', font = ('chalkduster', 24), fg='tan3', command = self.place_warrior)
+        b1 = tk.Button(self.summon_popup, text = 'Warrior', font = ('chalkduster', 24), fg='tan3', command = lambda x = 'Warrior': self.place_summon(x))
         b1.pack()
-#         b2 = tk.Button(self.summon_popup, text = 'Trickster', command = self.place_trickster)
-#         b2.pack()
+        b2 = tk.Button(self.summon_popup, text = 'Trickster', command = lambda x = 'Trickster':self.place_summon(x))
+        b2.pack()
 #         b3 = tk.Button(self.summon_popup, text = 'Shadow', command = self.place_shadow)
 #         b3.pack()
 #         b4 = tk.Button(self.summon_popup, text = 'Bard', command = self.place_bard)
@@ -235,12 +298,16 @@ class Witch(Entity):
         root.bind('<q>', app.depopulate_context)
 
     
-    def place_warrior(self):
+    def place_summon(self, type):
         self.summon_popup.destroy()
         sqrs = self.legal_moves(app.map_width, app.map_height, app.grid)
         app.animate_squares(sqrs)
-        cmd = lambda x = Warrior, y = sqrs : self.place(x, y)
-        b = tk.Button(app.context_menu, text = 'Place Warrior', font = ('chalkduster', 24), fg='tan3', command = cmd)
+        if type == 'Warrior':
+            cls = Warrior
+        elif type == 'Trickster':
+            cls = Trickster
+        cmd = lambda x = cls, y = sqrs : self.place(x, y)
+        b = tk.Button(app.context_menu, text = 'Place '+type, font = ('chalkduster', 24), fg='tan3', command = cmd)
         b.pack(side = 'left')
         app.context_buttons.append(b)
         self.placement_buttons.append(b)
@@ -255,6 +322,9 @@ class Witch(Entity):
         if summon == Warrior:
             name = 'warrior'
             img = ImageTk.PhotoImage(Image.open('warrior.png'))
+        elif summon == Trickster:
+            name = 'trickster'
+            img = ImageTk.PhotoImage(Image.open('trickster.png'))
         s = summon(name = name, img = img, loc = grid_pos[:], owner = app.active_player, number = number)
         app.ent_dict[number] = s
         app.canvas.create_image(grid_pos[0]*100+50-app.moved_right, grid_pos[1]*100+50-app.moved_down, image = img, tags = number)
@@ -547,7 +617,7 @@ class App(tk.Frame):
         # PICK UP
         if is_object_selected == False and self.current_pos() != '':
             unit = self.current_pos()
-            print(unit)
+            print('unit ', unit)
             if self.ent_dict[unit].owner == self.active_player and self.ent_dict[unit].has_moved == False:
                 is_object_selected = True
                 # SQUARES / MOVEMENT
