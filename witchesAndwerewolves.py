@@ -1,3 +1,4 @@
+# could separate classes into separate file by changing all functions that refer to global state (globals, app, root) to passing those values to the functions and eliminating refers... maybe... i think some functions are methods called within own class that refer to global state...
 
 # is initial witch placement correct or does it just fix itself after first animation?
 
@@ -13,31 +14,21 @@
 # only call rotate_image() of 'on-screen' entities
 # how to determine what is 'on-screen'?
 
-# maybe have 'summons' move independently once created, for instance the fullmoon auspice makes its 'forward movement' every turn
-
 import tkinter as tk
 from tkinter import ttk
-# make sure import os works same for win/mac/linux
 import os
 from PIL import ImageTk,Image
 from random import choice
 
-# CURSOR GLOBALS
 curs_pos = [0, 0]
-# Used to determine if an object has been selected by the cursor
 is_object_selected = False
 selected = ''
 
-# MAP POSITION GLOBAL
 map_pos = [0, 0]
 
-# GRID POSITION GLOBAL
 grid_pos = [0,0]
 
-# make sure works on win/mac/linux
 # import pygame
-# Witches... Theme, edit track for use as background
-# set up the mixer
 # freq = 44100     # audio CD quality
 # bitsize = -16    # unsigned 16 bit
 # channels = 1     # 1 is mono, 2 is stereo
@@ -113,13 +104,13 @@ class Summon(Entity):
 class Warrior(Summon):
     def __init__(self, name, img, loc, owner, number):
         self.actions = {'attack':self.warrior_attack}
+        self.attack_used = False
         super().__init__(name, img, loc, owner, number)
         
         
     def warrior_attack(self):
-        # after button press, highlight legal sqrs, cursor over sqr, 'confirm target' button which only
-        # has effect when over legal target/sqr, 'confirm target' legal press should destroy buttons, destroy
-        # sqrs, set self.has_acted? to True, plus actual effects of attack
+        if self.attack_used == True:
+            return
         sqrs = []
         coord_pairs = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         if app.active_player == 'p1':
@@ -151,9 +142,15 @@ class Warrior(Summon):
     def do_attack(self, sqrs):
         if grid_pos not in sqrs:
             return
+        # sqr must be occupied
+        # attack own units?
+        if app.current_pos() == '':
+            return
+        # Actual effects should happen here
         print('successful attack')
-        # On successful attack, destroy confirm attack button, destroy sqrs
-        
+        # On successful attack, destroy confirm attack button, destroy sqrs, set self.attack_used = True
+        self.attack_used = True
+        self.cancel_attack(event = None)
     
     def cancel_attack(self, event):
         for b in self.placement_buttons:
@@ -511,8 +508,8 @@ class App(tk.Frame):
         expanded_name = e.replace('_',' ')
         # Get 'type' name of summons here
         try:
-            num = int(e)
-            expanded_name = self.ent_dict[e].name
+            num = int(e[-1])
+            expanded_name = self.ent_dict[e].__class__.__name__
         except:
             pass
         b = tk.Button(self.context_menu, text = expanded_name, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = self.ent_dict[e].info)
@@ -529,7 +526,6 @@ class App(tk.Frame):
             print(b)
             b.destroy()
         self.context_buttons = []
-        print('depop')
     
     def cancel_pickup(self, event):
         global is_object_selected, selected
@@ -566,7 +562,7 @@ class App(tk.Frame):
                 selected = unit
                 # REMOVE UNIT FROM GRID
                 self.grid[grid_pos[0]][grid_pos[1]] = ''
-            # ELSE SHOW INFO
+            # ELSE SHOW INFO DEBUG finish this
             elif self.ent_dict[unit].owner != self.active_player:
                 print('not yours')
         # PUT DOWN
