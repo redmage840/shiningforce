@@ -351,6 +351,9 @@ class App(tk.Frame):
         # CANVAS
         self.canvas_frame = tk.Frame(root)
         self.canvas_frame.pack()
+        # DEBUG THIS SHOULD NOT BE
+        # setting inner frame/canvas to screenheight, when adding 'context menu' height, total is greater than screen
+        # maybe subtract height of context menu
         width = root.winfo_screenwidth()
         height = root.winfo_screenheight()
         if self.map_width < width:
@@ -645,6 +648,10 @@ class App(tk.Frame):
     
     def current_pos(self):
         return self.grid[grid_pos[0]][grid_pos[1]]
+        
+    def exit_fullscreen(self, event):
+        root.attributes("-fullscreen", False)
+
 
 root = tk.Tk()
 app = App(master=root)
@@ -658,11 +665,29 @@ root.bind('<space>', app.pickup_putdown)
 root.bind('<z>', app.cancel_pickup)
 root.bind('<a>', app.populate_context)
 root.bind('<q>', app.depopulate_context)
+root.bind('<Escape>', app.exit_fullscreen)
+
 
 root.configure(background = 'black')
 
-# width = root.winfo_screenwidth()
-# height = root.winfo_screenheight()
-# root.geometry('%sx%s' % (width, height))
+
+# root.attributes('-transparentcolor', root['bg'])
+# this works for fullscreen with transparent tiles
+# but bottom of canvas is chopped off, maybe size root frame to screen size first, avoid sizing map/canvas/other frames to screen
+
+root.attributes('-transparent', True)
+root.attributes("-fullscreen", True)
+
+width = root.winfo_screenwidth()
+height = root.winfo_screenheight()
+root.geometry('%sx%s' % (width, height))
 
 app.mainloop()
+
+# dont need these
+# root.overrideredirect(True)
+# root.wait_visibility(root)
+# root.wm_attributes("-alpha", 0.0)
+# root.wait_visibility(root) ????
+# PAIR WITH A BIND TO MAYBE ESCAPE AND THE FOLLOWING IN A FUNC SOMEWHERE:
+# root.attributes("-fullscreen", False)
