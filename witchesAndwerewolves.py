@@ -115,8 +115,31 @@ class Entity():
 class Summon(Entity):
     def __init__(self, name, img, loc, owner, number):
         self.number = number
+        # ADD MOVEMENT / ACTIONS
         super().__init__(name, img, loc, owner)
-
+        
+class Warrior(Summon):
+    def __init__(self, name, img, loc, owner, number):
+        self.actions = {'attack':self.attack}
+        super().__init__(name, img, loc, owner, number)
+        
+    def attack(self):
+        print('attack')
+    
+    def legal_moves(self, width, height, grid):
+        move_list = []
+        total_move = 3
+        coord_pairs = [[x,y] for x in range(width//100) for y in range(height//100)]
+        for coord in coord_pairs:
+            if grid[coord[0]][coord[1]] == '':
+                if app.active_player == 'p1':
+                    if self.loc[0] == coord[0] and self.loc[1] < coord[1] < self.loc[1]+4:
+                        move_list.append(coord)
+                elif app.active_player == 'p2':
+                    if self.loc[0] == coord[0] and self.loc[1] < coord[1] < self.loc[1]-4:
+                        move_list.append(coord)
+        return move_list
+                    
 class Witch(Entity):
     def __init__(self, name, img, loc, owner):
         self.actions = {'spell':self.spell, 'summon':self.summon}
@@ -179,16 +202,12 @@ class Witch(Entity):
         self.summon_popup.destroy()
         sqrs = self.legal_moves(app.map_width, app.map_height, app.grid)
         app.animate_squares(sqrs)
-        cmd = lambda x = 'warrior', y = sqrs : self.place(x, y)
-        # maybe put cancel here
+        cmd = lambda x = Warrior, y = sqrs : self.place(x, y)
         b = tk.Button(app.context_menu, text = 'Place Warrior', command = cmd)
         b.pack(side = 'left')
         app.context_buttons.append(b)
         self.placement_buttons.append(b)
-        # unbind 'q' during placement, ideally have 'q' cancel depending on context ie change 'q' behavior 
-        # from cancel context_menu to cancel placement
         root.unbind('<q>')
-        # bind 'q' to 'cancel placement' until end of placement
         root.bind('<q>', self.cancel_placement)
         
         
@@ -196,9 +215,10 @@ class Witch(Entity):
         if grid_pos not in sqrs:
             return
         number = 'a' + str(len(self.summon_dict.keys()))
-        name = 'warrior'
-        img = ImageTk.PhotoImage(Image.open('warrior.png'))
-        s = Summon(name = name, img = img, loc = grid_pos[:], owner = app.active_player, number = number)
+        if summon == Warrior:
+            name = 'warrior'
+            img = ImageTk.PhotoImage(Image.open('warrior.png'))
+        s = summon(name = name, img = img, loc = grid_pos[:], owner = app.active_player, number = number)
         app.ent_dict[number] = s
         app.canvas.create_image(grid_pos[0]*100+50-app.moved_right, grid_pos[1]*100+50-app.moved_down, image = img, tags = number)
         app.grid[grid_pos[0]][grid_pos[1]] = number
@@ -497,6 +517,7 @@ class App(tk.Frame):
         # PICK UP
         if is_object_selected == False and self.current_pos() != '':
             unit = self.current_pos()
+            print(unit)
             if self.ent_dict[unit].owner == self.active_player and self.ent_dict[unit].has_moved == False:
                 is_object_selected = True
                 # SQUARES / MOVEMENT
