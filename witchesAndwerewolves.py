@@ -85,7 +85,7 @@ class Entity():
         # this is fine here, but displays summon 'number', maybe should hide completely
         info_label = tk.Label(self.info_popup, text = self.name +'\n'+ self.__class__.__name__)
         info_label.pack()
-        close = tk.Button(self.info_popup, text = 'close', command = self.info_popup.destroy)
+        close = tk.Button(self.info_popup, text = 'close', font = ('chalkduster', 24), fg='tan3', command = self.info_popup.destroy)
         close.pack()
     
     def rotate_image(self):
@@ -132,7 +132,7 @@ class Warrior(Summon):
         app.animate_squares(sqrs)
         # create 'confirm attack' button
         cmd = lambda s = sqrs: self.do_attack(s)
-        b = tk.Button(app.context_menu, text = 'Confirm Attack', command = cmd)
+        b = tk.Button(app.context_menu, text = 'Confirm Attack', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = cmd)
         b.pack(side = 'left')
         app.context_buttons.append(b)
         self.placement_buttons.append(b)
@@ -201,9 +201,9 @@ class Witch(Entity):
         # spell Toplevel
         self.spell_popup = tk.Toplevel()
         for name, spell in self.spell_dict.items():
-            b1 = tk.Button(self.spell_popup, text = name, command = self.spell_dict[name])
+            b1 = tk.Button(self.spell_popup, text = name, font = ('chalkduster', 24), fg='tan3', command = self.spell_dict[name])
             b1.pack()
-        b2 = tk.Button(self.spell_popup, text = 'Cancel', command = self.spell_popup.destroy)
+        b2 = tk.Button(self.spell_popup, text = 'Cancel', font = ('chalkduster', 24), fg='tan3', command = self.spell_popup.destroy)
         b2.pack()
     
     def summon(self):
@@ -212,7 +212,7 @@ class Witch(Entity):
             return
         print('summon')
         self.summon_popup = tk.Toplevel()
-        b1 = tk.Button(self.summon_popup, text = 'Warrior', command = self.place_warrior)
+        b1 = tk.Button(self.summon_popup, text = 'Warrior', font = ('chalkduster', 24), fg='tan3', command = self.place_warrior)
         b1.pack()
 #         b2 = tk.Button(self.summon_popup, text = 'Trickster', command = self.place_trickster)
 #         b2.pack()
@@ -222,7 +222,7 @@ class Witch(Entity):
 #         b4.pack()
 #         b5 = tk.Button(self.summon_popup, text = 'Plaguebearer', command = self.place_plaguebearer)
 #         b5.pack()
-        b6 = tk.Button(self.summon_popup, text = 'Cancel', command = self.summon_popup.destroy)
+        b6 = tk.Button(self.summon_popup, text = 'Cancel', font = ('chalkduster', 24), fg='tan3', command = self.summon_popup.destroy)
         b6.pack()
     
     def cancel_placement(self, event):
@@ -240,7 +240,7 @@ class Witch(Entity):
         sqrs = self.legal_moves(app.map_width, app.map_height, app.grid)
         app.animate_squares(sqrs)
         cmd = lambda x = Warrior, y = sqrs : self.place(x, y)
-        b = tk.Button(app.context_menu, text = 'Place Warrior', command = cmd)
+        b = tk.Button(app.context_menu, text = 'Place Warrior', font = ('chalkduster', 24), fg='tan3', command = cmd)
         b.pack(side = 'left')
         app.context_buttons.append(b)
         self.placement_buttons.append(b)
@@ -327,7 +327,7 @@ class App(tk.Frame):
             cmd = lambda indx = i : self.load_map(indx)
             photo = ImageTk.PhotoImage(Image.open('./maps/' + map).resize((300,300)))
             self.tmp_mapimg_dict['map'+str(i)] = photo
-            b.config(image = self.tmp_mapimg_dict['map'+str(i)], bg = 'black', highlightbackground = 'tan4', command = cmd)
+            b.config(image = self.tmp_mapimg_dict['map'+str(i)], bg = 'black', highlightbackground = 'tan3', command = cmd)
             # DEBUG packing will have to be fixed here for different screen sizes
             b.pack(side = 'left', padx = 55)
             self.map_button_list.append(b)
@@ -355,7 +355,7 @@ class App(tk.Frame):
         Your witch can cast one spell AND use one summon per turn AND move once\n
         Your summons can move AND use one action per turn\n
         '''
-        self.close = tk.Button(self.help_popup, text = help_text, command = self.help_popup.destroy)
+        self.close = tk.Button(self.help_popup, text = help_text, font = ('chalkduster', 24), fg='tan3', command = self.help_popup.destroy)
         self.close.pack()
             
     def create_map_curs_context(self, map_number):
@@ -377,10 +377,10 @@ class App(tk.Frame):
         self.context_menu.pack(side = 'top', fill = 'both', expand = 'false')
         self.context_menu.create_image(0, 0, anchor = 'nw', image = self.con_bg)
         # QUIT should have 'are you sure' popup
-        self.quit = tk.Button(self.context_menu, text="QUIT", font = ('chalkduster', 24), fg="tan4", highlightbackground = 'tan3', command=self.master.destroy)
+        self.quit = tk.Button(self.context_menu, text="QUIT", font = ('chalkduster', 24), fg='indianred', highlightbackground = 'tan3', command=self.master.destroy)
         self.quit.pack(side = 'right')
         # HELP
-        self.help_b = tk.Button(self.context_menu, text = 'Help', font = ('chalkduster', 24), fg="tan4", highlightbackground = 'tan3', command = self.help)
+        self.help_b = tk.Button(self.context_menu, text = 'Help', font = ('chalkduster', 24), fg='indianred', highlightbackground = 'tan3', command = self.help)
         self.help_b.pack(side = 'right')
         # CANVAS
         width = root.winfo_screenwidth()
@@ -456,6 +456,8 @@ class App(tk.Frame):
         self.antag_witch = choice(remain_witches)
         antag_witch_img = ImageTk.PhotoImage(Image.open('avatars/' + self.antag_witch +'.png'))
         self.ent_dict[self.antag_witch] = Witch(name = self.antag_witch, img = antag_witch_img, loc = [self.map_width//100-1, self.map_height//100-1], owner = 'p2')
+        # is this location correct? i dont think so
+        # should probably be .loc*100+50-self.moved_right....
         self.canvas.create_image(self.ent_dict[self.antag_witch].loc[0], self.ent_dict[self.antag_witch].loc[1], image = self.ent_dict[self.antag_witch].img, tags = self.antag_witch)
         self.grid[(self.map_width//100)-1][(self.map_height//100)-1] = self.antag_witch
         # ANIMATE / START_ACTION
@@ -463,14 +465,13 @@ class App(tk.Frame):
         self.start_action()
         
         
-    
+    # might not need this
     def start_action(self):
         p = self.active_player
         print('start action')
         # Focus on protag
         w = self.protag_witch if p == 'p1' else self.antag_witch
         self.get_focus(w)
-        # 
         
             
         
@@ -497,8 +498,6 @@ class App(tk.Frame):
         root.after(500, self.animate)
     
     def populate_context(self, event):
-        # should show name of ent that populated
-        # DEBUG grid holds 'numbers' for summons, they have same name
         e = self.current_pos()
         if e == '':
             return
@@ -506,7 +505,7 @@ class App(tk.Frame):
             return
         act_dict = self.ent_dict[e].actions
         expanded_name = e.replace('_',' ')
-        # Get 'type' name of summons here
+        # if generic summon (name ends with number), show class name instead of proper Noun
         try:
             num = int(e[-1])
             expanded_name = self.ent_dict[e].__class__.__name__
