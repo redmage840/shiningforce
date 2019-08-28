@@ -1,10 +1,12 @@
-# summons 'cancel_attack' doesnt app.depopulate_context_buttons, forcing to hit 'q' again to depop
+# fix avatar popup from going off screen, this one should probably be fullscreen
 
-# cancel attack or confuse (summons) with 'q' seems to be still marking self.attack_used = True
+# maybe prevent resizing on toplevels or force some to be fullscreen
 
-# show avatar popup is not attribute of 'self', other toplevels are... 
+# end turn needs to clean up attack_used, spell_used, summon_used for appropriate player
+# finish other unit movement/placement
+# make spells and attacks do stuff
 
-# make 'end turn' button with confirm
+# add 'confirm' to 'end turn' button
 
 # also/instead of 'antag_witch', make 'levels' or just a bunch of units that will be easier to program AI for
 # currently would be extremely difficult to make challenging AI with equal sides
@@ -14,6 +16,8 @@
 # is initial witch placement correct or does it just fix itself after first animation?
 
 # separate stuff into different files, classes, helper functions
+
+# one witch starts in corner, one at offset 1,1
 
 # start thinking about what map and map animation to use
 
@@ -571,8 +575,11 @@ class App(tk.Frame):
     def choose_witch(self):
         self.avatar_popup = tk.Toplevel()
         self.avatar_popup.attributes('-topmost', 'true')
+        self.avatar_popup.attributes("-fullscreen", True)
+        self.avatar_popup.config(bg = 'black')
         self.avatar_popup.grab_set()
-        self.avatar_popup.title('Choose Your Witch')
+        label = tk.Label(self.avatar_popup, text = 'Choose Your Witch', font = ('chalkduster', 36), fg = 'indianred', bg = 'black')
+        label.pack(side = 'top')
         witches = [w for r,d,w in os.walk('./portraits/')][0]
         witches = [w for w in witches[:] if w[0] != '.']
         self.avatar_popup.witch_widgets = []
@@ -594,7 +601,7 @@ class App(tk.Frame):
             photo = ImageTk.PhotoImage(Image.open('./portraits/' + witch))
             self.avatar_popup.img_dict[witch] = photo
             b.config(image = self.avatar_popup.img_dict[witch],highlightbackground='tan3', font = ('chalkduster', 24), highlightthickness = 1, command = cmd)
-            b.pack(side = 'top')
+            b.pack(side = 'top', padx = 45)
             info = lambda w = witch[:-4] : self.show_avatar_info(w)
             b2 = tk.Button(f)
             whtspc_txt = witch[:-4].replace('_', ' ')
