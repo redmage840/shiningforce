@@ -1,10 +1,10 @@
-# fix avatar popup from going off screen, this one should probably be fullscreen
-
-# maybe prevent resizing on toplevels or force some to be fullscreen
+# populate context with opposing units, what should it do?
 
 # end turn needs to clean up attack_used, spell_used, summon_used for appropriate player
 # finish other unit movement/placement
 # make spells and attacks do stuff
+
+# maybe prevent resizing on toplevels or force some to be fullscreen
 
 # add 'confirm' to 'end turn' button
 
@@ -84,7 +84,7 @@ class Entity():
         self.img = img
         self.loc = loc
         self.owner = owner
-        self.has_moved = False
+        self.move_used = False
         self.origin = []
         self.placement_buttons = []
         self.anim_dict = {}
@@ -423,6 +423,7 @@ class Witch(Entity):
             img = ImageTk.PhotoImage(Image.open('shadow.png'))
         s = summon(name = name, img = img, loc = grid_pos[:], owner = app.active_player, number = number)
         app.ent_dict[number] = s
+        self.summon_dict[number] = s
         app.canvas.create_image(grid_pos[0]*100+50-app.moved_right, grid_pos[1]*100+50-app.moved_down, image = img, tags = number)
         app.grid[grid_pos[0]][grid_pos[1]] = number
         # DELETE SQUARES
@@ -548,7 +549,7 @@ class App(tk.Frame):
         self.quit = tk.Button(self.context_menu, text="QUIT", font = ('chalkduster', 24), fg='indianred', highlightbackground = 'tan3', command=self.master.destroy)
         self.quit.pack(side = 'right')
         # END TURN
-        self.end = tk.Button(self.context_menu, text = 'End Turn', font = ('chalkduster', 24), highlightbackground = 'tan3', command = self.end_turn)
+        self.end = tk.Button(self.context_menu, text = 'End Turn', font = ('chalkduster', 24), highlightbackground = 'tan3', command = self.confirm_end)
         self.end.pack(side = 'right')
         # HELP
         self.help_b = tk.Button(self.context_menu, text = 'Help', font = ('chalkduster', 24), fg='indianred', highlightbackground = 'tan3', command = self.help)
@@ -658,16 +659,38 @@ class App(tk.Frame):
         # create end turn button
         
         
+    def confirm_end(self):
+        # make popup to confirm calling end_turn
+        # make Toplevel popup, grab_set, yes and no buttons, on yes call release_wrapper to grab_release destroy window call end_turn
+        # on no just call destroy_release
+        self.confirm_end_popup = tk.Toplevel()
+        self.confirm_end_popup.grab_set()
+        self.confirm_end_popup.attributes('-topmost', 'true')
+        self.confirm_end_popup.config(bg = 'black')
+        label = tk.Label(self.confirm_end_popup, text = 'End Your Turn?', fg = 'tan3', bg = 'black', font = ('chalkduster', 24))
+        label.pack(side = 'top')
+        b1 = tk.Button(self.confirm_end_popup, text = 'Yes', fg = 'tan3', font = ('chalkduster', 24), highlightbackground = 'tan3', command = lambda win = self.confirm_end_popup, func = self.end_turn : self.release_wrapper(win, func))
+        b1.pack(side = 'left')
+        b2 = tk.Button(self.confirm_end_popup, text = 'No', fg = 'tan3',font = ('chalkduster', 24), highlightbackground = 'tan3', command = lambda win = self.confirm_end_popup : self.destroy_release(win))
+        b2.pack(side = 'left')
+        
     def end_turn(self):
         print('end turn')
         self.depopulate_context(event = None)
+        # clean all entity 'has_x' for active_player
+        for ent in self.ent_dict.keys():
+            if self.ent_dict[ent].owner == self.active_player:
+                self.ent_dict[ent].move_used = False
+                if isinstance(self.ent_dict[ent], Witch):
+                    self.ent_dict[ent].spell_used = False
+                    self.ent_dict[ent].summon_used = False
+                elif isinstance(self.ent_dict[ent], Summon):
+                    self.ent_dict[ent].attack_used = False
         # IF NO HUMAN OPPONENT, INSERT BOT ACTION HERE
         if self.active_player == 'p1':
             self.active_player = 'p2'
         else:
             self.active_player = 'p1'
-        # clean all entity 'has_x'
-        
         self.start_turn()
         
         
@@ -697,6 +720,9 @@ class App(tk.Frame):
     def populate_context(self, event):
         e = self.current_pos()
         if e == '':
+            return
+        if self.ent_dict[e].owner != self.active_player:
+            # DEBUG MAYBE just show info
             return
         if self.context_buttons != []:
             print('error here app.context_buttons not empty')
@@ -745,10 +771,10 @@ class App(tk.Frame):
         if is_object_selected == False and self.current_pos() != '':
             unit = self.current_pos()
             print('unit ', unit)
-            if self.ent_dict[unit].owner == self.active_player and self.ent_dict[unit].has_moved == False:
+            if self.ent_dict[unit].owner == self.active_player and self.ent_dict[unit].move_used == False:
                 is_object_selected = True
                 # SQUARES / MOVEMENT
-                if self.ent_dict[unit].has_moved == False:
+                if self.ent_dict[unit].move_used == False:
                     sqrs = self.ent_dict[unit].legal_moves(self.map_width, self.map_height, self.grid)
                 else:
                     sqrs = []
@@ -767,7 +793,7 @@ class App(tk.Frame):
             sqrs = [self.sqr_dict[s].loc for s in self.sqr_dict.keys()]
             if grid_pos not in sqrs:
                 return
-            self.ent_dict[selected].has_moved = True
+            self.ent_dict[selected].move_used = True
             # erase old sqrs
             for sqr in self.sqr_dict.keys():
                 self.canvas.delete(sqr)
