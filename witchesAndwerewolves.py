@@ -1,3 +1,9 @@
+# summons 'cancel_attack' doesnt app.depopulate_context_buttons, forcing to hit 'q' again to depop
+
+# cancel attack or confuse (summons) with 'q' seems to be still marking self.attack_used = True
+
+# show avatar popup is not attribute of 'self', other toplevels are... 
+
 # make 'end turn' button with confirm
 
 # also/instead of 'antag_witch', make 'levels' or just a bunch of units that will be easier to program AI for
@@ -24,6 +30,7 @@ from tkinter import ttk
 import os
 from PIL import ImageTk,Image
 from random import choice
+from functools import partial
 
 curs_pos = [0, 0]
 is_object_selected = False
@@ -86,11 +93,13 @@ class Entity():
             
     def info(self):
         self.info_popup = tk.Toplevel()
+        self.info_popup.grab_set()
+        self.info_popup.attributes('-topmost', 'true')
         # DEBUG, protags are referred to as .name, summons are disambiguated by .number
         # this is fine here, but displays summon 'number', maybe should hide completely
         info_label = tk.Label(self.info_popup, text = self.name +'\n'+ self.__class__.__name__)
         info_label.pack()
-        close = tk.Button(self.info_popup, text = 'close', font = ('chalkduster', 24), fg='tan3', command = self.info_popup.destroy)
+        close = tk.Button(self.info_popup, text = 'close', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda win = self.info_popup : app.destroy_release(win))
         close.pack()
     
     def rotate_image(self):
@@ -114,6 +123,7 @@ class Trickster(Summon):
         
         
     def trickster_attack(self):
+        print('trickster attack called')
         if self.attack_used == True:
             return
         sqrs = []
@@ -126,6 +136,7 @@ class Trickster(Summon):
                 sqrs.append(coord)
         app.animate_squares(sqrs)
         # create 'confirm attack' button
+        app.depopulate_context(event = None)
         cmd = lambda s = sqrs: self.do_attack(s)
         b = tk.Button(app.context_menu, text = 'Confirm Confuse', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = cmd)
         b.pack(side = 'left')
@@ -147,6 +158,7 @@ class Trickster(Summon):
         self.cancel_attack(event = None)
     
     def cancel_attack(self, event):
+        app.depopulate_context(event = None)
         for b in self.placement_buttons:
             b.destroy()
         for s in app.sqr_dict.keys():
@@ -166,6 +178,69 @@ class Trickster(Summon):
                 elif abs(coord[0] - self.loc[0]) == 2 and abs(coord[1] - self.loc[1]) == 1:
                     move_list.append(coord)
         return move_list
+        
+
+class Shadow(Summon):
+    def __init__(self, name, img, loc, owner, number):
+        self.actions = {'attack':self.shadow_attack}
+        self.attack_used = False
+        super().__init__(name, img, loc, owner, number)
+        
+        
+    def shadow_attack(self):
+        if self.attack_used == True:
+            return
+        sqrs = []
+        coord_pairs = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        # same for both players, attack on diag
+        for coord in coord_pairs:
+            if abs(coord[0] - self.loc[0]) == 1 and abs(coord[1] - self.loc[1]) == 1:
+                sqrs.append(coord)
+        app.animate_squares(sqrs)
+        # create 'confirm attack' button
+        app.depopulate_context(event = None)
+        cmd = lambda s = sqrs: self.do_attack(s)
+        b = tk.Button(app.context_menu, text = 'Confirm Attack', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = cmd)
+        b.pack(side = 'left')
+        app.context_buttons.append(b)
+        self.placement_buttons.append(b)
+        root.unbind('<q>')
+        root.bind('<q>', self.cancel_attack)
+        
+    def do_attack(self, sqrs):
+        if grid_pos not in sqrs:
+            return
+        # sqr must be occupied
+        # attack own units for now DEBUG
+        if app.current_pos() == '':
+            return
+        # Actual effects should happen here DEBUG
+        print('successful shadow attack')
+        self.attack_used = True
+        self.cancel_attack(event = None)
+    
+    def cancel_attack(self, event):
+        app.depopulate_context(event = None)
+        for b in self.placement_buttons:
+            b.destroy()
+        for s in app.sqr_dict.keys():
+            app.canvas.delete(s)
+        app.sqr_dict = {}
+        root.unbind('<q>')
+        root.bind('<q>', app.depopulate_context)
+    
+    # could pass in these args or freeze them on map instantiate....?
+    # pattern repeats a lot
+    def legal_moves(self, width, height, grid):
+        move_list = []
+        coord_pairs = [[x,y] for x in range(width//100) for y in range(height//100)]
+        for coord in coord_pairs:
+        # move on diag, 3 sqrs, same for both players
+            if grid[coord[0]][coord[1]] == '':
+                if abs(coord[0] - self.loc[0]) == abs(coord[1] - self.loc[1]) and abs(coord[0] - self.loc[0]) <= 3:
+                    move_list.append(coord)
+        return move_list
+
         
 class Warrior(Summon):
     def __init__(self, name, img, loc, owner, number):
@@ -197,6 +272,7 @@ class Warrior(Summon):
                     sqrs.append(coord)
         app.animate_squares(sqrs)
         # create 'confirm attack' button
+        app.depopulate_context(event = None) 
         cmd = lambda s = sqrs: self.do_attack(s)
         b = tk.Button(app.context_menu, text = 'Confirm Attack', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = cmd)
         b.pack(side = 'left')
@@ -218,6 +294,7 @@ class Warrior(Summon):
         self.cancel_attack(event = None)
     
     def cancel_attack(self, event):
+        app.depopulate_context(event = None)
         for b in self.placement_buttons:
             b.destroy()
         for s in app.sqr_dict.keys():
@@ -262,32 +339,38 @@ class Witch(Entity):
         if self.spell_used == True:
             return
         print('spell cast')
-        # spell Toplevel
+        # SPELL
         self.spell_popup = tk.Toplevel()
+        self.spell_popup.grab_set()
+        self.spell_popup.attributes('-topmost', 'true')
         for name, spell in self.spell_dict.items():
-            b1 = tk.Button(self.spell_popup, text = name, font = ('chalkduster', 24), fg='tan3', command = self.spell_dict[name])
+            b1 = tk.Button(self.spell_popup, text = name, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda win = self.spell_popup, func = self.spell_dict[name] : app.release_wrapper(win, func))
             b1.pack()
-        b2 = tk.Button(self.spell_popup, text = 'Cancel', font = ('chalkduster', 24), fg='tan3', command = self.spell_popup.destroy)
+        b2 = tk.Button(self.spell_popup, text = 'Cancel', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda win = self.spell_popup : app.destroy_release(win))
         b2.pack()
     
     def summon(self):
         if self.summon_used == True:
             return
         self.summon_popup = tk.Toplevel()
-        b1 = tk.Button(self.summon_popup, text = 'Warrior', font = ('chalkduster', 24), fg='tan3', command = lambda x = 'Warrior': self.place_summon(x))
+        self.summon_popup.attributes('-topmost', 'true')
+        self.summon_popup.grab_set()
+        # commands need to pass through self.release_wrapper(win,partial) to grab_release
+        b1 = tk.Button(self.summon_popup, text = 'Warrior', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda x = partial(self.place_summon, 'Warrior') : app.release_wrapper(self.summon_popup, x))
         b1.pack()
-        b2 = tk.Button(self.summon_popup, text = 'Trickster', command = lambda x = 'Trickster':self.place_summon(x))
+        b2 = tk.Button(self.summon_popup, text = 'Trickster', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda x = partial(self.place_summon, 'Trickster') : app.release_wrapper(self.summon_popup, x))
         b2.pack()
-#         b3 = tk.Button(self.summon_popup, text = 'Shadow', command = self.place_shadow)
-#         b3.pack()
+        b3 = tk.Button(self.summon_popup, text = 'Shadow', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda x = partial(self.place_summon, 'Shadow') : app.release_wrapper(self.summon_popup, x))
+        b3.pack()
 #         b4 = tk.Button(self.summon_popup, text = 'Bard', command = self.place_bard)
 #         b4.pack()
 #         b5 = tk.Button(self.summon_popup, text = 'Plaguebearer', command = self.place_plaguebearer)
 #         b5.pack()
-        b6 = tk.Button(self.summon_popup, text = 'Cancel', font = ('chalkduster', 24), fg='tan3', command = self.summon_popup.destroy)
+        b6 = tk.Button(self.summon_popup, text = 'Cancel', font = ('chalkduster', 24), highlightbackground = 'tan3', fg='tan3', command = lambda win = self.summon_popup : self.destroy_release(win))
         b6.pack()
     
     def cancel_placement(self, event):
+        app.depopulate_context(event = None)
         for b in self.placement_buttons:
             b.destroy()
         for s in app.sqr_dict.keys():
@@ -299,14 +382,18 @@ class Witch(Entity):
     
     def place_summon(self, type):
         self.summon_popup.destroy()
+        # disable all context buttons
+        app.depopulate_context(event = None)
         sqrs = self.legal_moves(app.map_width, app.map_height, app.grid)
         app.animate_squares(sqrs)
         if type == 'Warrior':
             cls = Warrior
         elif type == 'Trickster':
             cls = Trickster
+        elif type == 'Shadow':
+            cls = Shadow
         cmd = lambda x = cls, y = sqrs : self.place(x, y)
-        b = tk.Button(app.context_menu, text = 'Place '+type, font = ('chalkduster', 24), fg='tan3', command = cmd)
+        b = tk.Button(app.context_menu, text = 'Place '+type, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = cmd)
         b.pack(side = 'left')
         app.context_buttons.append(b)
         self.placement_buttons.append(b)
@@ -327,6 +414,9 @@ class Witch(Entity):
         elif summon == Trickster:
             name = 'trickster'
             img = ImageTk.PhotoImage(Image.open('trickster.png'))
+        elif summon == Shadow:
+            name = 'shadow'
+            img = ImageTk.PhotoImage(Image.open('shadow.png'))
         s = summon(name = name, img = img, loc = grid_pos[:], owner = app.active_player, number = number)
         app.ent_dict[number] = s
         app.canvas.create_image(grid_pos[0]*100+50-app.moved_right, grid_pos[1]*100+50-app.moved_down, image = img, tags = number)
@@ -414,8 +504,8 @@ class App(tk.Frame):
             
     def help(self):
         self.help_popup = tk.Toplevel()
-        self.text = tk.Label(self.help_popup, text = 'help test')
-        self.text.pack()
+        self.help_popup.grab_set()
+        self.help_popup.attributes('-topmost', 'true')
         help_text = '''
         You control witch in top left corner\n
         Spacebar selects an object for movement\n
@@ -427,7 +517,9 @@ class App(tk.Frame):
         Your witch can cast one spell AND use one summon per turn AND move once\n
         Your summons can move AND use one action per turn\n
         '''
-        self.close = tk.Button(self.help_popup, text = help_text, font = ('chalkduster', 24), fg='tan3', command = self.help_popup.destroy)
+        self.text = tk.Label(self.help_popup, text = help_text, font = ('chalkduster', 24), fg='indianred', bg = 'black')
+        self.text.pack()
+        self.close = tk.Button(self.help_popup, text = 'Close', font = ('chalkduster', 24), fg='tan3', command = lambda win = self.help_popup : self.destroy_release(win))
         self.close.pack()
             
     def create_map_curs_context(self, map_number):
@@ -478,22 +570,30 @@ class App(tk.Frame):
         
     def choose_witch(self):
         self.avatar_popup = tk.Toplevel()
-#         avatar_popup.grab_set()
-#         somewhere need to pair the above line with avatar_popup.grab_release()
+        self.avatar_popup.attributes('-topmost', 'true')
+        self.avatar_popup.grab_set()
         self.avatar_popup.title('Choose Your Witch')
         witches = [w for r,d,w in os.walk('./portraits/')][0]
         witches = [w for w in witches[:] if w[0] != '.']
         self.avatar_popup.witch_widgets = []
         self.avatar_popup.img_dict = {}
+        self.wrapped_funcs = []
         for i,witch in enumerate(witches):
             f = tk.Frame(self.avatar_popup, bg = 'black')
             f.pack(side = 'left')
             self.avatar_popup.witch_widgets.append(f)
             b = tk.Button(f)
-            cmd = lambda w = witch[:-4] : self.load_witch(w)
+#             cmd = lambda w = witch[:-4] : self.load_witch(w)
+            # pass partial and window to self.release_wrapper to call grab_release
+#             w = witch[:-4]
+            p = partial(self.load_witch, witch[:-4])
+            cmd = lambda win = self.avatar_popup, p = p : self.release_wrapper(win, p)
+            self.wrapped_funcs.append(p)
+#             p = partial(self.release_wrapper, self.avatar_popup, cmd)
+#             cmd = self.release_wrapper(self.avatar_popup, p)
             photo = ImageTk.PhotoImage(Image.open('./portraits/' + witch))
             self.avatar_popup.img_dict[witch] = photo
-            b.config(image = self.avatar_popup.img_dict[witch],highlightbackground='tan3', highlightthickness = 1, command = cmd)
+            b.config(image = self.avatar_popup.img_dict[witch],highlightbackground='tan3', font = ('chalkduster', 24), highlightthickness = 1, command = cmd)
             b.pack(side = 'top')
             info = lambda w = witch[:-4] : self.show_avatar_info(w)
             b2 = tk.Button(f)
@@ -504,14 +604,16 @@ class App(tk.Frame):
             self.avatar_popup.witch_widgets.append(b)
 
     def show_avatar_info(self, witch):
-        info_popup = tk.Toplevel()
-        info_popup.title(witch)
+        self.info_popup = tk.Toplevel()
+        self.info_popup.grab_set()
+        self.info_popup.attributes('-topmost', 'true')
+        self.info_popup.title(witch)
         text = open('avatar_info/' + witch + '.txt', 'r').read()
-        f = tk.Frame(info_popup)
+        f = tk.Frame(self.info_popup)
         f.pack()
         l = tk.Label(f, text = text, font = ('chalkduster', 24))
         l.pack()
-        close = tk.Button(info_popup, text = 'close', font = ('chalkduster', 24), command = info_popup.destroy)
+        close = tk.Button(self.info_popup, text = 'close', font = ('chalkduster', 24), highlightbackground = 'tan3', command = lambda win = self.info_popup : self.destroy_release(win))
         close.pack()
     
     def load_witch(self, witch):
@@ -520,7 +622,6 @@ class App(tk.Frame):
         self.ent_dict[witch] = Witch(name = witch, img = protag_witch_img, loc = [1, 1], owner = 'p1')
         self.canvas.create_image(self.ent_dict[witch].loc[0], self.ent_dict[witch].loc[1], image = self.ent_dict[witch].img, tags = witch)
         self.grid[self.ent_dict[witch].loc[0]][self.ent_dict[witch].loc[1]] = witch
-        self.avatar_popup.destroy()
         self.place_antag()
     
     def place_antag(self):
@@ -553,11 +654,13 @@ class App(tk.Frame):
     def end_turn(self):
         print('end turn')
         self.depopulate_context(event = None)
+        # IF NO HUMAN OPPONENT, INSERT BOT ACTION HERE
         if self.active_player == 'p1':
             self.active_player = 'p2'
         else:
             self.active_player = 'p1'
         # clean all entity 'has_x'
+        
         self.start_turn()
         
         
@@ -589,6 +692,7 @@ class App(tk.Frame):
         if e == '':
             return
         if self.context_buttons != []:
+            print('error here app.context_buttons not empty')
             return
         act_dict = self.ent_dict[e].actions
         expanded_name = e.replace('_',' ')
@@ -630,8 +734,6 @@ class App(tk.Frame):
     
     def pickup_putdown(self, event):
         global is_object_selected, selected, curs_pos
-        # DEBUG
-        print(app.grid)
         # PICK UP
         if is_object_selected == False and self.current_pos() != '':
             unit = self.current_pos()
@@ -766,6 +868,15 @@ class App(tk.Frame):
         
     def exit_fullscreen(self, event):
         root.attributes("-fullscreen", False)
+        
+    def destroy_release(self, popup):
+        popup.grab_release()
+        popup.destroy()
+        
+    def release_wrapper(self, window, partial):
+        window.grab_release()
+        window.destroy()
+        partial()
 
 
 root = tk.Tk()
