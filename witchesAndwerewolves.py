@@ -1,3 +1,7 @@
+# do visualizations for warrior attack and damage, really need to make it obvious which summons are owned by who
+
+# change 'z' for cancel move to 'q'
+
 # fix dmg distribution
 
 # confirm 'quit'
@@ -194,16 +198,20 @@ class Trickster(Summon):
             self.success = tk.Label(app.context_menu, text = 'Confuse Hit', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
             self.success.pack(side = 'left')
             app.after(900, lambda s = sqrs, t = tar:self.do_attack(sqrs, tar))
-            print('successful confuse')
         else:
             self.miss = tk.Label(app.context_menu, text = 'Confuse Missed', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
             self.miss.pack(side = 'left')
-            print('confuse missed')
             app.after(900, lambda win = self.miss : self.cancel_attack( event = None, win = win))
         self.attack_used = True
         
     def do_attack(self, sqrs, tar):
         self.success.destroy()
+        # DEBUG need to rebind at least arrow keys to choose square, still need to be unbinding other keys 'a' 'q'
+        app.rebind_all()
+        # too late for cancel
+        root.unbind('q')
+        root.unbind('a')
+        # what about space bar? should just return from pickup_putdown since context_menu is populated
         dist = self.dmg(self.agl, app.ent_dict[tar].dodge)
         app.depopulate_context(event = None)
         for b in self.placement_buttons:
@@ -213,7 +221,6 @@ class Trickster(Summon):
         app.sqr_dict = {}
         sqrs = self.confuse_sqrs(dist)
         if sqrs == []:
-            print('debug no confuse square to move to')
             self.attack_used = True
             self.cancel_attack(event = None)
             return
@@ -293,7 +300,7 @@ class Shadow(Summon):
         app.animate_squares(sqrs)
         # create 'confirm attack' button
         app.depopulate_context(event = None)
-        cmd = lambda s = sqrs: self.do_attack(s)
+        cmd = lambda s = sqrs: self.check_hit(s)
         b = tk.Button(app.context_menu, text = 'Confirm Attack', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = cmd)
         b.pack(side = 'left')
         app.context_buttons.append(b)
@@ -301,27 +308,57 @@ class Shadow(Summon):
         root.unbind('<q>')
         root.bind('<q>', self.cancel_attack)
         
-    def do_attack(self, sqrs):
+    def check_hit(self, sqrs):
         if grid_pos not in sqrs:
             return
-        # sqr must be occupied
-        # attack own units for now DEBUG
         if app.current_pos() == '':
             return
-        # Actual effects should happen here DEBUG
-        print('successful shadow attack')
+        tar = app.current_pos()
+        app.unbind_all()
+        if self.to_hit(self.str, app.ent_dict[tar].end) == True:
+            print('successful shadow attack')
+            # VISUAL TO HIT, go ahead and show dmg here also
+            dmg = self.dmg(self.psyche, app.ent_dict[tar].psyche)
+            dmg //= 2
+            if dmg == 0: dmg = 1
+            self.success = tk.Label(app.context_menu, text = 'Attack Success!', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
+            self.success.pack(side = 'left')
+            self.damage = tk.Label(app.context_menu, text = str(dmg) + ' Spirit', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
+            self.damage.pack(side = 'left')
+            if isinstance(app.ent_dict[tar], Witch):
+                self.magdmg = tk.Label(app.context_menu, text = str(dmg) + ' Magick', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
+                self.magdmg.pack(side = 'left')
+            root.after(900, lambda id = tar, dmg = dmg : self.do_attack(id, dmg))
+        elif self.to_hit(self.str, app.ent_dict[tar].end) == False:
+            self.miss = tk.Label(app.context_menu, text = 'Attack Missed!', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
+            self.miss.pack(side = 'left')
+            root.after(900, lambda win = self.miss : self.cancel_attack(event = None, win = win))
         self.attack_used = True
-        self.cancel_attack(event = None)
     
-    def cancel_attack(self, event):
+    def do_attack(self, id, dmg):
+        self.success.destroy()
+        self.damage.destroy()
+        try:
+            self.magdmg.destroy()
+        except:
+            pass
+        if isinstance(app.ent_dict[id], Witch):
+            app.ent_dict[id].magick -= dmg
+        app.ent_dict[id].spirit -= dmg
+        if app.ent_dict[id].spirit <= 0:
+            app.kill(id)
+        self.cancel_attack( event = None)
+    
+    def cancel_attack(self, event, win = None):
+        if win:
+            win.destroy()
         app.depopulate_context(event = None)
         for b in self.placement_buttons:
             b.destroy()
         for s in app.sqr_dict.keys():
             app.canvas.delete(s)
         app.sqr_dict = {}
-        root.unbind('<q>')
-        root.bind('<q>', app.depopulate_context)
+        app.rebind_all()
     
     # could pass in these args or freeze them on map instantiate....?
     # pattern repeats a lot
