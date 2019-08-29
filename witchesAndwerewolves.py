@@ -1,8 +1,8 @@
+# prevent 'moving through occupied spaces' for some ents, ie witches when surrounded adjacently have no movement
+
 # how would 'prevent targeting with spells or attacks' without modifying every attack/spell
 
-# make placement of summons legal squares smaller, probably just adjacent
-
-# make trickster confuse shorter range
+# make trickster confuse shorter range, tried debuff agl, consider halving confuse dist
 
 # center end turn 'yes / no' buttons
 
@@ -187,7 +187,7 @@ class Trickster(Summon):
         self.actions = {'confuse':self.trickster_attack}
         self.attack_used = False
         self.str = 2
-        self.agl = 4
+        self.agl = 3
         self.end = 2
         self.dodge = 4
         self.psyche = 5
@@ -239,10 +239,8 @@ class Trickster(Summon):
         self.success.destroy()
         # DEBUG need to rebind at least arrow keys to choose square, still need to be unbinding other keys 'a' 'q'
         app.rebind_all()
-        # too late for cancel
         root.unbind('q')
         root.unbind('a')
-        # what about space bar? should just return from pickup_putdown since context_menu is populated
         dist = self.dmg(self.agl, app.ent_dict[tar].dodge)
         app.depopulate_context(event = None)
         for b in self.placement_buttons:
@@ -294,11 +292,11 @@ class Trickster(Summon):
         app.sqr_dict = {}
         app.rebind_all()
     
-    def legal_moves(self, width, height, grid):
+    def legal_moves(self):
         move_list = []
-        coord_pairs = [[x,y] for x in range(width//100) for y in range(height//100)]
+        coord_pairs = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         for coord in coord_pairs:
-            if grid[coord[0]][coord[1]] == '':
+            if app.grid[coord[0]][coord[1]] == '':
                 if abs(coord[0] - self.loc[0]) == 1 and abs(coord[1] - self.loc[1]) == 2:
                     move_list.append(coord)
                 elif abs(coord[0] - self.loc[0]) == 2 and abs(coord[1] - self.loc[1]) == 1:
@@ -393,12 +391,12 @@ class Shadow(Summon):
     
     # could pass in these args or freeze them on map instantiate....?
     # pattern repeats a lot
-    def legal_moves(self, width, height, grid):
+    def legal_moves(self):
         move_list = []
-        coord_pairs = [[x,y] for x in range(width//100) for y in range(height//100)]
+        coord_pairs = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         for coord in coord_pairs:
         # move on diag, 3 sqrs, same for both players
-            if grid[coord[0]][coord[1]] == '':
+            if app.grid[coord[0]][coord[1]] == '':
                 if abs(coord[0] - self.loc[0]) == abs(coord[1] - self.loc[1]) and abs(coord[0] - self.loc[0]) <= 3:
                     move_list.append(coord)
         return move_list
@@ -490,11 +488,11 @@ class Warrior(Summon):
             app.canvas.delete(s)
         app.sqr_dict = {}
     
-    def legal_moves(self, width, height, grid):
+    def legal_moves(self):
         move_list = []
-        coord_pairs = [[x,y] for x in range(width//100) for y in range(height//100)]
+        coord_pairs = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         for coord in coord_pairs:
-            if grid[coord[0]][coord[1]] == '':
+            if app.grid[coord[0]][coord[1]] == '':
                 if app.active_player == 'p1':
                     if self.loc[0] == coord[0] and self.loc[1] < coord[1] < self.loc[1]+5:
                         move_list.append(coord)
@@ -587,10 +585,10 @@ class Witch(Entity):
 
     
     def place_summon(self, type):
+        root.unbind('<q>')
+        root.bind('<q>', self.cancel_placement)
         self.summon_popup.destroy()
-        # disable all context buttons
         app.depopulate_context(event = None)
-#         sqrs = self.legal_moves(app.map_width, app.map_height, app.grid)
         coords = coord_pairs = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         sqrs = [c for c in coords if abs(c[0]-self.loc[0]) + abs(c[1]-self.loc[1]) == 1 and app.grid[c[0]][c[1]] == '']
         app.animate_squares(sqrs)
@@ -605,13 +603,13 @@ class Witch(Entity):
         b.pack(side = 'left')
         app.context_buttons.append(b)
         self.placement_buttons.append(b)
-        root.unbind('<q>')
-        root.bind('<q>', self.cancel_placement)
         
         
     def place(self, summon, sqrs):
         if grid_pos not in sqrs:
             return
+        root.unbind('<q>')
+        root.bind('<q>', app.depopulate_context)
         if app.active_player == 'p1':
             number = 'a' + str(len(self.summon_dict.keys()))
         elif app.active_player == 'p2':
@@ -638,8 +636,6 @@ class Witch(Entity):
             b.destroy()
         app.context_buttons = []
         self.summon_used = True
-        root.unbind('<q>')
-        root.bind('<q>', app.depopulate_context)
         
         
     def enchant(self):
@@ -658,15 +654,36 @@ class Witch(Entity):
         self.spell_popup.destroy()
     
     # Maybe change name, used not only for finding legal moves, but sqrs within 3 spaces of entity that are unoccupied
-    def legal_moves(self, width, height, grid):
-        move_list = []
-        total_move = 3
-        coord_pairs = [[x,y] for x in range(width//100) for y in range(height//100)]
-        for coord in coord_pairs:
-            if abs(coord[0] - self.loc[0]) + abs(coord[1] - self.loc[1]) <= total_move:
-                if grid[coord[0]][coord[1]] == '':
-                    move_list.append(coord)
-        return move_list
+    def legal_moves(self):
+        loc = self.loc
+
+        mvlist = []
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+
+
+        def findall(loc, start, dist):
+            if start > dist:
+                return
+            adj = [c for c in coords if abs(c[0] - loc[0]) + abs(c[1] - loc[1]) == 1 and app.grid[c[0]][c[1]] == '']
+            for s in adj:
+                mvlist.append(s)
+                findall(s, start+1, dist)
+
+        findall(loc, 1, 3) 
+        setlist = []
+        for l in mvlist:
+            if l not in setlist:
+                setlist.append(l)
+        return setlist
+#     def legal_moves(self, width, height, grid):
+#         move_list = []
+#         total_move = 3
+#         coord_pairs = [[x,y] for x in range(width//100) for y in range(height//100)]
+#         for coord in coord_pairs:
+#             if abs(coord[0] - self.loc[0]) + abs(coord[1] - self.loc[1]) <= total_move:
+#                 if grid[coord[0]][coord[1]] == '':
+#                     move_list.append(coord)
+#         return move_list
 
 
 class App(tk.Frame):
@@ -940,6 +957,7 @@ class App(tk.Frame):
         self.context_buttons = []
     
     def cancel_pickup(self, event):
+        root.bind('<a>', self.populate_context)
         global is_object_selected, selected
         if is_object_selected == True:
             for sqr in self.sqr_dict.keys():
@@ -967,7 +985,7 @@ class App(tk.Frame):
                 is_object_selected = True
                 # SQUARES / MOVEMENT
                 if self.ent_dict[unit].move_used == False:
-                    sqrs = self.ent_dict[unit].legal_moves(self.map_width, self.map_height, self.grid)
+                    sqrs = self.ent_dict[unit].legal_moves()
                 else:
                     sqrs = []
                 self.animate_squares(sqrs)
