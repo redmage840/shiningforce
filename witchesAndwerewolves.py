@@ -1,21 +1,20 @@
-# populate context with opposing units, what should it do?
+# fix dmg distribution
 
-# end turn needs to clean up attack_used, spell_used, summon_used for appropriate player
-# finish other unit movement/placement
-# make spells and attacks do stuff
+# confirm 'quit'
 
-# maybe prevent resizing on toplevels or force some to be fullscreen
+# remember: whenever a unit is 'moved', its loc updated, also need to update its origin
 
-# add 'confirm' to 'end turn' button
+# differentiate images for opposing players, color changes or overlays
+
+# when 'q' is rebinded to cancel stuff (attack, placement), also rebind 'a' to confirm instead of needed mouseclick
+# after populating context for selected unit you own, bind a key for each action?
+
+# To prevent windowbar in popups, Instead of toplevels make windows in canvas, increase size of context menu to fit
 
 # also/instead of 'antag_witch', make 'levels' or just a bunch of units that will be easier to program AI for
 # currently would be extremely difficult to make challenging AI with equal sides
 
-# could separate classes into separate file by changing all functions that refer to global state (globals, app, root) to passing those values to the functions and eliminating refers... maybe... i think some functions are methods called within own class that refer to global state...
-
 # is initial witch placement correct or does it just fix itself after first animation?
-
-# separate stuff into different files, classes, helper functions
 
 # one witch starts in corner, one at offset 1,1
 
@@ -25,16 +24,13 @@
 
 # splash screen?
 
-# speed up responsiveness by only animating 'on-screen' entities
-# only call rotate_image() of 'on-screen' entities
-# how to determine what is 'on-screen'?
-
 import tkinter as tk
 from tkinter import ttk
 import os
 from PIL import ImageTk,Image
-from random import choice
+from random import choice, randrange
 from functools import partial
+import time
 
 curs_pos = [0, 0]
 is_object_selected = False
@@ -85,7 +81,9 @@ class Entity():
         self.loc = loc
         self.owner = owner
         self.move_used = False
+        # when ent moved by effect other than regular movement, must update origin also (square of origin at begin of turn)
         self.origin = []
+        # buttons placed in context menu other than through 'populate_context', so they can be removed separately
         self.placement_buttons = []
         self.anim_dict = {}
         self.anim_counter = 0
@@ -95,14 +93,45 @@ class Entity():
             a = ImageTk.PhotoImage(Image.open('animations/' + self.name + '/' + anim))
             self.anim_dict[i] = a
             
+    def to_hit(self, a1, a2):
+        base = 5
+        dif = a1 - a2
+        base += dif
+        chance = base * 10
+        rand = randrange(1, 100)
+        if rand < chance:
+            return True
+        else:
+            return False
+            
+    # add random element?
+    def dmg(self, a1, a2):
+        base = 5
+        dif = a1 - a2
+        return base + dif
+            
     def info(self):
         self.info_popup = tk.Toplevel()
         self.info_popup.grab_set()
         self.info_popup.attributes('-topmost', 'true')
-        # DEBUG, protags are referred to as .name, summons are disambiguated by .number
-        # this is fine here, but displays summon 'number', maybe should hide completely
-        info_label = tk.Label(self.info_popup, text = self.name +'\n'+ self.__class__.__name__)
+        self.info_popup.config(bg = 'black')
+        info_label = tk.Label(self.info_popup, text = self.name +'\n'+ self.__class__.__name__, font = ('chalkduster', 20), fg = 'tan3', bg = 'black')
         info_label.pack()
+        strength = tk.Label(self.info_popup, text = 'Strength : ' + str(self.str), font = ('chalkduster', 20), fg = 'tan3', bg = 'black')
+        strength.pack()
+        agl = tk.Label(self.info_popup, text = 'Agility : ' + str(self.agl), font = ('chalkduster', 20), fg = 'tan3', bg = 'black')
+        agl.pack()
+        end = tk.Label(self.info_popup, text = 'Endurance : ' + str(self.end), font = ('chalkduster', 20), fg = 'tan3', bg = 'black')
+        end.pack()
+        dodge = tk.Label(self.info_popup, text = 'Dodge : ' + str(self.dodge), font = ('chalkduster', 20), fg = 'tan3', bg = 'black')
+        dodge.pack()
+        psyche = tk.Label(self.info_popup, text = 'Psyche : ' + str(self.psyche), font = ('chalkduster', 20), fg = 'tan3', bg = 'black')
+        psyche.pack()
+        spirit = tk.Label(self.info_popup, text = 'Spirit : ' + str(self.spirit), font = ('chalkduster', 20), fg = 'tan3', bg = 'black')
+        spirit.pack()
+        if isinstance(self, Witch):
+            magick = tk.Label(self.info_popup, text = 'Magick : ' + str(self.magick), font = ('chalkduster', 20), fg = 'tan3', bg = 'black')
+            magick.pack()
         close = tk.Button(self.info_popup, text = 'close', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda win = self.info_popup : app.destroy_release(win))
         close.pack()
     
@@ -123,6 +152,12 @@ class Trickster(Summon):
     def __init__(self, name, img, loc, owner, number):
         self.actions = {'confuse':self.trickster_attack}
         self.attack_used = False
+        self.str = 2
+        self.agl = 4
+        self.end = 2
+        self.dodge = 4
+        self.psyche = 5
+        self.spirit = 10
         super().__init__(name, img, loc, owner, number)
         
         
@@ -132,16 +167,14 @@ class Trickster(Summon):
             return
         sqrs = []
         coord_pairs = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        # Confuse any adjacent
         for coord in coord_pairs:
             if abs(coord[0] - self.loc[0]) == 1 and coord[1] == self.loc[1]:
                 sqrs.append(coord)
             elif coord[0] == self.loc[0] and abs(coord[1] - self.loc[1]) == 1:
                 sqrs.append(coord)
         app.animate_squares(sqrs)
-        # create 'confirm attack' button
         app.depopulate_context(event = None)
-        cmd = lambda s = sqrs: self.do_attack(s)
+        cmd = lambda s = sqrs: self.check_hit(s)
         b = tk.Button(app.context_menu, text = 'Confirm Confuse', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = cmd)
         b.pack(side = 'left')
         app.context_buttons.append(b)
@@ -149,29 +182,80 @@ class Trickster(Summon):
         root.unbind('<q>')
         root.bind('<q>', self.cancel_attack)
         
-    def do_attack(self, sqrs):
+        
+    def check_hit(self, sqrs):
         if grid_pos not in sqrs:
             return
-        # sqr must be occupied
-        # attack own units for now DEBUG
         if app.current_pos() == '':
             return
-        # Actual effects should happen here DEBUG
-        print('successful confuse')
+        tar = app.current_pos()
+        app.unbind_all()
+        if self.to_hit(self.psyche, app.ent_dict[tar].psyche) == True:
+            self.success = tk.Label(app.context_menu, text = 'Confuse Hit', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
+            self.success.pack(side = 'left')
+            app.after(900, lambda s = sqrs, t = tar:self.do_attack(sqrs, tar))
+            print('successful confuse')
+        else:
+            self.miss = tk.Label(app.context_menu, text = 'Confuse Missed', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
+            self.miss.pack(side = 'left')
+            print('confuse missed')
+            app.after(900, lambda win = self.miss : self.cancel_attack( event = None, win = win))
         self.attack_used = True
-        self.cancel_attack(event = None)
-    
-    def cancel_attack(self, event):
+        
+    def do_attack(self, sqrs, tar):
+        self.success.destroy()
+        dist = self.dmg(self.agl, app.ent_dict[tar].dodge)
         app.depopulate_context(event = None)
         for b in self.placement_buttons:
             b.destroy()
         for s in app.sqr_dict.keys():
             app.canvas.delete(s)
         app.sqr_dict = {}
-        root.unbind('<q>')
-        root.bind('<q>', app.depopulate_context)
+        sqrs = self.confuse_sqrs(dist)
+        if sqrs == []:
+            print('debug no confuse square to move to')
+            self.attack_used = True
+            self.cancel_attack(event = None)
+            return
+        app.animate_squares(sqrs)
+        b = tk.Button(app.context_menu, text = 'Choose Square', font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda id = tar, s = sqrs : self.confuse(id, s))
+        b.pack(side = 'left')
+        self.placement_buttons.append(b)
+
     
-    # TRICKSTER MOVES
+    def confuse(self, id, sqrs):
+        if grid_pos not in sqrs:
+            return
+        app.grid[app.ent_dict[id].loc[0]][app.ent_dict[id].loc[1]] = ''
+        app.canvas.delete(id)
+        oldloc = app.ent_dict[id].loc
+        app.ent_dict[id].loc = grid_pos[:]
+        app.ent_dict[id].origin = grid_pos[:]
+        app.grid[grid_pos[0]][grid_pos[1]] = id
+        app.canvas.create_image(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+50-app.moved_down, image = app.ent_dict[id].img, tags = id)
+        self.cancel_attack(event = None)
+    
+    def confuse_sqrs(self, dist):
+        sqr_list = []
+        coord_pairs = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        for coord in coord_pairs:
+            if app.grid[coord[0]][coord[1]] == '':
+                if abs(coord[0] - self.loc[0]) + abs(coord[1] - self.loc[1]) <= dist:
+                    sqr_list.append(coord)
+        return sqr_list
+    
+    # maybe rename to cleanup_attack and ensure every logical exit point goes here
+    def cancel_attack(self, event, win = None):
+        if win:
+            win.destroy()
+        app.depopulate_context(event = None)
+        for b in self.placement_buttons:
+            b.destroy()
+        for s in app.sqr_dict.keys():
+            app.canvas.delete(s)
+        app.sqr_dict = {}
+        app.rebind_all()
+    
     def legal_moves(self, width, height, grid):
         move_list = []
         coord_pairs = [[x,y] for x in range(width//100) for y in range(height//100)]
@@ -188,6 +272,12 @@ class Shadow(Summon):
     def __init__(self, name, img, loc, owner, number):
         self.actions = {'attack':self.shadow_attack}
         self.attack_used = False
+        self.str = 3
+        self.agl = 3
+        self.end = 2
+        self.dodge = 4
+        self.psyche = 4
+        self.spirit = 8
         super().__init__(name, img, loc, owner, number)
         
         
@@ -250,6 +340,12 @@ class Warrior(Summon):
     def __init__(self, name, img, loc, owner, number):
         self.actions = {'attack':self.warrior_attack}
         self.attack_used = False
+        self.str = 4
+        self.agl = 4
+        self.end = 4
+        self.dodge = 2
+        self.psyche = 2
+        self.spirit = 13
         super().__init__(name, img, loc, owner, number)
         
         
@@ -288,12 +384,25 @@ class Warrior(Summon):
     def do_attack(self, sqrs):
         if grid_pos not in sqrs:
             return
-        # sqr must be occupied
-        # attack own units for now DEBUG
+        # attack own units for now DEBUG, possibly keep in for 'effects' that force/control attack
         if app.current_pos() == '':
             return
-        # Actual effects should happen here DEBUG
-        print('successful attack')
+        tar = app.current_pos()
+        # to hit
+        if self.to_hit(self.agl, app.ent_dict[tar].dodge) == True:
+            print('hit')
+            # show visual to confirm hit
+            # show visual to confirm dmg
+            dmg = self.dmg(self.str, app.ent_dict[tar].end)
+            print('damage is ', dmg)
+            app.ent_dict[tar].spirit -= dmg
+            # check if spirit less than zero, if so remove
+            # need to remove image from canvas, entry in ent_dict, entry in owner.summon_dict, name/number from grid
+            if app.ent_dict[tar].spirit <= 0:
+                app.kill(tar)
+                print('target killed')
+        else:
+            print('miss')
         self.attack_used = True
         self.cancel_attack(event = None)
     
@@ -307,18 +416,16 @@ class Warrior(Summon):
         root.unbind('<q>')
         root.bind('<q>', app.depopulate_context)
     
-    # could pass in these args or freeze them on map instantiate....?
-    # pattern repeats a lot
     def legal_moves(self, width, height, grid):
         move_list = []
         coord_pairs = [[x,y] for x in range(width//100) for y in range(height//100)]
         for coord in coord_pairs:
             if grid[coord[0]][coord[1]] == '':
                 if app.active_player == 'p1':
-                    if self.loc[0] == coord[0] and self.loc[1] < coord[1] < self.loc[1]+4:
+                    if self.loc[0] == coord[0] and self.loc[1] < coord[1] < self.loc[1]+5:
                         move_list.append(coord)
                 elif app.active_player == 'p2':
-                    if self.loc[0] == coord[0] and self.loc[1]-4 < coord[1] < self.loc[1]:
+                    if self.loc[0] == coord[0] and self.loc[1]-5 < coord[1] < self.loc[1]:
                         move_list.append(coord)
         return move_list
                     
@@ -331,10 +438,31 @@ class Witch(Entity):
         self.summon_dict = {}
         if name == 'Agnes_Sampson':
             self.spell_dict['horrid wilting'] = self.horrid_wilting
+            self.str = 4
+            self.agl = 2
+            self.end = 3
+            self.dodge = 3
+            self.psyche = 4
+            self.spirit = 75
+            self.magick = 75
         elif name == 'Fakir_Ali':
             self.spell_dict['plague'] = self.plague
+            self.str = 3
+            self.agl = 2
+            self.end = 5
+            self.dodge = 3
+            self.psyche = 3
+            self.spirit = 85
+            self.magick = 70
         elif name == 'Morgan_LeFay':
             self.spell_dict['enchant'] = self.enchant
+            self.str = 2
+            self.agl = 4
+            self.end = 3
+            self.dodge = 4
+            self.psyche = 3
+            self.spirit = 70
+            self.magick = 85
             
         super().__init__(name, img, loc, owner)
         
@@ -591,14 +719,9 @@ class App(tk.Frame):
             f.pack(side = 'left')
             self.avatar_popup.witch_widgets.append(f)
             b = tk.Button(f)
-#             cmd = lambda w = witch[:-4] : self.load_witch(w)
-            # pass partial and window to self.release_wrapper to call grab_release
-#             w = witch[:-4]
             p = partial(self.load_witch, witch[:-4])
             cmd = lambda win = self.avatar_popup, p = p : self.release_wrapper(win, p)
             self.wrapped_funcs.append(p)
-#             p = partial(self.release_wrapper, self.avatar_popup, cmd)
-#             cmd = self.release_wrapper(self.avatar_popup, p)
             photo = ImageTk.PhotoImage(Image.open('./portraits/' + witch))
             self.avatar_popup.img_dict[witch] = photo
             b.config(image = self.avatar_popup.img_dict[witch],highlightbackground='tan3', font = ('chalkduster', 24), highlightthickness = 1, command = cmd)
@@ -628,7 +751,7 @@ class App(tk.Frame):
         self.protag_witch = witch
         protag_witch_img = ImageTk.PhotoImage(Image.open('avatars/' + witch +'.png'))
         self.ent_dict[witch] = Witch(name = witch, img = protag_witch_img, loc = [1, 1], owner = 'p1')
-        self.canvas.create_image(self.ent_dict[witch].loc[0], self.ent_dict[witch].loc[1], image = self.ent_dict[witch].img, tags = witch)
+        self.canvas.create_image(self.ent_dict[witch].loc[0]*100+50-self.moved_right, self.ent_dict[witch].loc[1]*100+50-self.moved_down, image = self.ent_dict[witch].img, tags = witch)
         self.grid[self.ent_dict[witch].loc[0]][self.ent_dict[witch].loc[1]] = witch
         self.place_antag()
     
@@ -639,30 +762,20 @@ class App(tk.Frame):
         remain_witches.remove(self.protag_witch)
         self.antag_witch = choice(remain_witches)
         antag_witch_img = ImageTk.PhotoImage(Image.open('avatars/' + self.antag_witch +'.png'))
-        self.ent_dict[self.antag_witch] = Witch(name = self.antag_witch, img = antag_witch_img, loc = [self.map_width//100-1, self.map_height//100-1], owner = 'p2')
-        # is this location correct? i dont think so
-        # should probably be .loc*100+50-self.moved_right....
-        self.canvas.create_image(self.ent_dict[self.antag_witch].loc[0], self.ent_dict[self.antag_witch].loc[1], image = self.ent_dict[self.antag_witch].img, tags = self.antag_witch)
-        self.grid[(self.map_width//100)-1][(self.map_height//100)-1] = self.antag_witch
+        self.ent_dict[self.antag_witch] = Witch(name = self.antag_witch, img = antag_witch_img, loc = [self.map_width//100-2, self.map_height//100-2], owner = 'p2')
+        self.canvas.create_image(self.ent_dict[self.antag_witch].loc[0]*100+50-self.moved_right, self.ent_dict[self.antag_witch].loc[1]*100+50-self.moved_down, image = self.ent_dict[self.antag_witch].img, tags = self.antag_witch)
+        self.grid[self.ent_dict[self.antag_witch].loc[0]][self.ent_dict[self.antag_witch].loc[1]] = self.antag_witch
         # ANIMATE / START_ACTION
         self.animate()
         self.start_turn()
         
-        
-    # might not need this
     def start_turn(self):
         p = self.active_player
         print('start action')
-        # Focus on protag
         w = self.protag_witch if p == 'p1' else self.antag_witch
         self.get_focus(w)
-        # create end turn button
-        
         
     def confirm_end(self):
-        # make popup to confirm calling end_turn
-        # make Toplevel popup, grab_set, yes and no buttons, on yes call release_wrapper to grab_release destroy window call end_turn
-        # on no just call destroy_release
         self.confirm_end_popup = tk.Toplevel()
         self.confirm_end_popup.grab_set()
         self.confirm_end_popup.attributes('-topmost', 'true')
@@ -721,13 +834,9 @@ class App(tk.Frame):
         e = self.current_pos()
         if e == '':
             return
-        if self.ent_dict[e].owner != self.active_player:
-            # DEBUG MAYBE just show info
-            return
         if self.context_buttons != []:
             print('error here app.context_buttons not empty')
             return
-        act_dict = self.ent_dict[e].actions
         expanded_name = e.replace('_',' ')
         # if generic summon (name ends with number), show class name instead of proper Noun
         try:
@@ -735,10 +844,15 @@ class App(tk.Frame):
             expanded_name = self.ent_dict[e].__class__.__name__
         except:
             pass
+        if self.ent_dict[e].owner != self.active_player:
+            b = tk.Button(self.context_menu, text = expanded_name, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = self.ent_dict[e].info)
+            b.pack(side = 'left')
+            self.context_buttons.append(b)
+            return
+        act_dict = self.ent_dict[e].actions
         b = tk.Button(self.context_menu, text = expanded_name, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = self.ent_dict[e].info)
         b.pack(side = 'left')
         self.context_buttons.append(b)
-        # remove buttons after used
         for act, call in act_dict.items():
             b = tk.Button(self.context_menu, text = act, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = call)
             b.pack(side = 'left')
@@ -910,7 +1024,40 @@ class App(tk.Frame):
         window.grab_release()
         window.destroy()
         partial()
+        
+    def kill(self, id):
+        # DEBUG handle if killing witch
+        # If witch is dead, show popup with victory/defeat
+        self.canvas.delete(id)
+        self.grid[self.ent_dict[id].loc[0]][self.ent_dict[id].loc[1]] = ''
+        del self.ent_dict[id]
+        # if id begins with 'a' belongs to protag_witch, else belongs to antag_witch
+        if id[0] == 'a':
+            del self.ent_dict[self.protag_witch].summon_dict[id]
+        elif id[0] == 'b':
+            del self.ent_dict[self.antag_witch].summon_dict[id]
+            
+    def unbind_all(self):
+        root.unbind('<Right>')
+        root.unbind('<Left>')
+        root.unbind('<Up>')
+        root.unbind('<Down>')
+        root.unbind('<space>')
+        root.unbind('<z>')
+        root.unbind('<a>')
+        root.unbind('<q>')
+        root.unbind('<Escape>')
 
+    def rebind_all(self):
+        root.bind('<Right>', app.move_curs)
+        root.bind('<Left>', app.move_curs)
+        root.bind('<Up>', app.move_curs)
+        root.bind('<Down>', app.move_curs)
+        root.bind('<space>', app.pickup_putdown)
+        root.bind('<z>', app.cancel_pickup)
+        root.bind('<a>', app.populate_context)
+        root.bind('<q>', app.depopulate_context)
+        root.bind('<Escape>', app.exit_fullscreen)
 
 root = tk.Tk()
 app = App(master=root)
