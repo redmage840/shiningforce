@@ -1,4 +1,12 @@
-# prevent 'moving through occupied spaces' for some ents, ie witches when surrounded adjacently have no movement
+# context menu: increase size, app holds lists of different 'areas', leftmost area holds portrait of active_player with 'turn' label on top of portrait which is always in view, next leftmost are context buttons which hold selected entity info/actions which are visible when able to be selected and not deferring to placement buttons, placement buttons are next leftmost and destroy other context buttons when selectable which are for confirming actions and selecting placement/choice of summons/attacks/spell effects, visualizations of attack/spell effects appear temporarily next to placement buttons, when effects of placement buttons happen or are canceled they are destroyed allowing for replacement of next selected context buttons, rightmost buttons are held in list called menu buttons which always stay in place during placement of context and placement buttons they are help/end turn/quit, when menu buttons are pressed quit/endturn destroy menu buttons and populate menu with 'confirm yes no' which when pressed destroy themselves and repopulate menu buttons, placement buttons take precedence and focus from all other buttons since no action should be taken until their effects/choices either happen or are canceled, context buttons disallow for further population of context until they are canceled with 'q' or turn ends or choice among them is made which populates placement buttons
+
+# what happens to context_menu when attempting to populate with more buttons than it can hold
+
+# what about Toplevel info screens allowing for 'exit' 'X' out? other events are blocked, should change to a large label over top of the main canvas which grab_set()
+
+# make Witch movement an attr so it can be modified (spells,effects) to increase/decrease movement range
+# make Warriors limited movement in same way as Witch, (cannot 'walk around' obstacles)
+# tricksters and shadows should not be limited in the same way
 
 # how would 'prevent targeting with spells or attacks' without modifying every attack/spell
 
@@ -109,6 +117,33 @@ class Entity():
             a = ImageTk.PhotoImage(Image.open('animations/' + self.name + '/' + anim))
             self.anim_dict[i] = a
             
+    def init_attack_anims(self):
+        self.anim_dict = {}
+        self.anim_counter = 0
+        anims = [a for r,d,a in os.walk('./attack_animations/' + self.name + '/')][0]
+        anims = [a for a in anims[:] if a[-3:] == 'png']
+        for i, anim in enumerate(anims):
+            a = ImageTk.PhotoImage(Image.open('attack_animations/' + self.name + '/' + anim))
+            self.anim_dict[i] = a
+            
+    def init_normal_anims(self):
+        self.anim_dict = {}
+        self.anim_counter = 0
+        anims = [a for r,d,a in os.walk('./animations/' + self.name + '/')][0]
+        anims = [a for a in anims[:] if a[-3:] == 'png']
+        for i, anim in enumerate(anims):
+            a = ImageTk.PhotoImage(Image.open('animations/' + self.name + '/' + anim))
+            self.anim_dict[i] = a
+            
+#     def rotate_attack_images(self):
+#         # clear out anim dict and replace with attack anims
+#         total_imgs = len(self.anim_dict.keys())-1
+#         if self.anim_counter == total_imgs:
+#             self.anim_counter = 0
+#         else:
+#             self.anim_counter += 1
+#         self.img = self.anim_dict[self.anim_counter]
+        
     def set_attr(self, attr, amount):
         if attr == 'str':
             self.str += amount
@@ -138,7 +173,7 @@ class Entity():
             return False
             
     # add random element?
-    def dmg(self, a1, a2):
+    def damage(self, a1, a2):
         base = 5
         dif = a1 - a2
         if base + dif < 1: return 1 
@@ -241,7 +276,7 @@ class Trickster(Summon):
         app.rebind_all()
         root.unbind('q')
         root.unbind('a')
-        dist = self.dmg(self.agl, app.ent_dict[tar].dodge)
+        dist = self.damage(self.agl, app.ent_dict[tar].dodge)
         app.depopulate_context(event = None)
         for b in self.placement_buttons:
             b.destroy()
@@ -347,7 +382,7 @@ class Shadow(Summon):
         if self.to_hit(self.str, app.ent_dict[tar].end) == True:
             print('successful shadow attack')
             # VISUAL TO HIT, go ahead and show dmg here also
-            dmg = self.dmg(self.psyche, app.ent_dict[tar].psyche)
+            dmg = self.damage(self.psyche, app.ent_dict[tar].psyche)
             dmg //= 2
             if dmg == 0: dmg = 1
             self.success = tk.Label(app.context_menu, text = 'Attack Success!', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
@@ -389,8 +424,6 @@ class Shadow(Summon):
         app.sqr_dict = {}
         app.rebind_all()
     
-    # could pass in these args or freeze them on map instantiate....?
-    # pattern repeats a lot
     def legal_moves(self):
         move_list = []
         coord_pairs = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
@@ -437,7 +470,6 @@ class Warrior(Summon):
                 elif coord[0] == self.loc[0] and coord[1]+1 == self.loc[1]:
                     sqrs.append(coord)
         app.animate_squares(sqrs)
-        # create 'confirm attack' button
         app.depopulate_context(event = None) 
         cmd = lambda s = sqrs: self.check_hit(s)
         b = tk.Button(app.context_menu, text = 'Confirm Attack', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = cmd)
@@ -456,16 +488,19 @@ class Warrior(Summon):
         app.unbind_all()
         if self.to_hit(self.agl, app.ent_dict[tar].dodge) == True:
             print('hit')
-            dmg = self.dmg(self.str, app.ent_dict[tar].end)
+            # call self.init_attack_anims() here to replace self.anim_dict with other images
+            # on exit, re init normal anims
+            self.init_attack_anims()
+            dmg = self.damage(self.str, app.ent_dict[tar].end)
             self.success = tk.Label(app.context_menu, text = 'Attack Hit!', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
             self.success.pack(side = 'left')
             self.dmg = tk.Label(app.context_menu, text = str(dmg) + ' Spirit', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
             self.dmg.pack(side = 'left')
-            root.after(900, lambda id = tar, dmg = dmg : self.do_attack(id, dmg))
+            root.after(1200, lambda id = tar, dmg = dmg : self.do_attack(id, dmg))
         else:
             self.miss = tk.Label(app.context_menu, text = 'Attack Missed!', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
             self.miss.pack(side = 'left')
-            root.after(900, lambda win = self.miss : self.cancel_attack(event = None, win = win))
+            root.after(1200, lambda win = self.miss : self.cancel_attack(event = None, win = win))
         self.attack_used = True
         
     def do_attack(self, id, dmg):
@@ -476,6 +511,8 @@ class Warrior(Summon):
             app.kill(id)
             print('target killed')
         self.cancel_attack(event = None)
+        # re init normal anims 
+        self.init_normal_anims()
     
     def cancel_attack(self, event, win = None):
         app.rebind_all()
@@ -487,19 +524,40 @@ class Warrior(Summon):
         for s in app.sqr_dict.keys():
             app.canvas.delete(s)
         app.sqr_dict = {}
+        self.init_normal_anims()
     
     def legal_moves(self):
-        move_list = []
-        coord_pairs = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        for coord in coord_pairs:
-            if app.grid[coord[0]][coord[1]] == '':
-                if app.active_player == 'p1':
-                    if self.loc[0] == coord[0] and self.loc[1] < coord[1] < self.loc[1]+5:
-                        move_list.append(coord)
-                elif app.active_player == 'p2':
-                    if self.loc[0] == coord[0] and self.loc[1]-5 < coord[1] < self.loc[1]:
-                        move_list.append(coord)
-        return move_list
+        loc = self.loc
+        mvlist = []
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        def findall(loc, start, dist):
+            if start > dist:
+                return
+            # need different 'front' depending on player
+            if app.active_player == 'p1':
+                front = [c for c in coords if c[0] == loc[0] and c[1]-1 == loc[1] and app.grid[c[0]][c[1]] == '']
+            elif app.active_player == 'p2':
+                front = [c for c in coords if c[0] == loc[0] and c[1]+1 == loc[1] and app.grid[c[0]][c[1]] == '']
+            for s in front:
+                mvlist.append(s)
+                findall(s, start+1, dist)
+        findall(loc, 1, 3) 
+        setlist = []
+        for l in mvlist:
+            if l not in setlist:
+                setlist.append(l)
+        return setlist
+#         move_list = []
+#         coord_pairs = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+#         for coord in coord_pairs:
+#             if app.grid[coord[0]][coord[1]] == '':
+#                 if app.active_player == 'p1':
+#                     if self.loc[0] == coord[0] and self.loc[1] < coord[1] < self.loc[1]+5:
+#                         move_list.append(coord)
+#                 elif app.active_player == 'p2':
+#                     if self.loc[0] == coord[0] and self.loc[1]-5 < coord[1] < self.loc[1]:
+#                         move_list.append(coord)
+#         return move_list
                     
 class Witch(Entity):
     def __init__(self, name, img, loc, owner):
@@ -656,11 +714,8 @@ class Witch(Entity):
     # Maybe change name, used not only for finding legal moves, but sqrs within 3 spaces of entity that are unoccupied
     def legal_moves(self):
         loc = self.loc
-
         mvlist = []
         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-
-
         def findall(loc, start, dist):
             if start > dist:
                 return
@@ -668,23 +723,12 @@ class Witch(Entity):
             for s in adj:
                 mvlist.append(s)
                 findall(s, start+1, dist)
-
         findall(loc, 1, 3) 
         setlist = []
         for l in mvlist:
             if l not in setlist:
                 setlist.append(l)
         return setlist
-#     def legal_moves(self, width, height, grid):
-#         move_list = []
-#         total_move = 3
-#         coord_pairs = [[x,y] for x in range(width//100) for y in range(height//100)]
-#         for coord in coord_pairs:
-#             if abs(coord[0] - self.loc[0]) + abs(coord[1] - self.loc[1]) <= total_move:
-#                 if grid[coord[0]][coord[1]] == '':
-#                     move_list.append(coord)
-#         return move_list
-
 
 class App(tk.Frame):
     def __init__(self, master=None):
@@ -699,6 +743,8 @@ class App(tk.Frame):
         self.moved_right = 0
         self.moved_down = 0
         self.context_buttons = []
+        # list to hold entity that is being animated as 'attacking'
+        self.attacking = []
         
         
         self.choose_map()
@@ -767,7 +813,7 @@ class App(tk.Frame):
         self.context_menu.pack(side = 'top', fill = 'both', expand = 'false')
         self.context_menu.create_image(0, 0, anchor = 'nw', image = self.con_bg)
         # QUIT should have 'are you sure' popup
-        self.quit = tk.Button(self.context_menu, text="QUIT", font = ('chalkduster', 24), fg='indianred', highlightbackground = 'tan3', command=self.master.destroy)
+        self.quit = tk.Button(self.context_menu, text="QUIT", font = ('chalkduster', 24), fg='indianred', highlightbackground = 'tan3', command=self.confirm_quit)
         self.quit.pack(side = 'right')
         # END TURN
         self.end = tk.Button(self.context_menu, text = 'End Turn', font = ('chalkduster', 24), highlightbackground = 'tan3', command = self.confirm_end)
@@ -793,6 +839,7 @@ class App(tk.Frame):
         self.cursor_img = ImageTk.PhotoImage(Image.open("cursor.png").resize((100,100)))
         self.canvas.create_image(0,0, anchor='nw', image=self.cursor_img, tags='curs')
         self.choose_witch()
+        
         
     def choose_witch(self):
         self.avatar_popup = tk.Toplevel()
@@ -873,6 +920,7 @@ class App(tk.Frame):
         self.confirm_end_popup.grab_set()
         self.confirm_end_popup.attributes('-topmost', 'true')
         self.confirm_end_popup.config(bg = 'black')
+        self.confirm_end_popup.protocol("WM_DELETE_WINDOW", lambda win = self.confirm_end_popup : self.destroy_release(win))
         label = tk.Label(self.confirm_end_popup, text = 'End Your Turn?', fg = 'tan3', bg = 'black', font = ('chalkduster', 24))
         label.pack(side = 'top')
         b1 = tk.Button(self.confirm_end_popup, text = 'Yes', fg = 'tan3', font = ('chalkduster', 24), highlightbackground = 'tan3', command = lambda win = self.confirm_end_popup, func = self.end_turn : self.release_wrapper(win, func))
@@ -912,6 +960,9 @@ class App(tk.Frame):
             self.move_curs(dir = 'Up')
         
     def animate(self):
+        # Prepare for attack animations, do them while showing hit/damage labels in do_attack
+        # when do_attack, add ent to 'atk list', here in animate if ent is in atk list, use alternate animation logic, 
+        # ent will need a func like rotate_image that cycles it through attack images, so for 2 seconds in tohit/damage 'afters' (currently 1.8 secs), object will be animated through atk animations instead
         for ent in self.ent_dict.keys():
             if ent != selected:
                 self.ent_dict[ent].rotate_image()
@@ -921,7 +972,11 @@ class App(tk.Frame):
             self.sqr_dict[sqr].rotate_image()
             self.canvas.delete(sqr)
             self.canvas.create_image(self.sqr_dict[sqr].loc[0]*100+50-self.moved_right, self.sqr_dict[sqr].loc[1]*100+50-self.moved_down, image = self.sqr_dict[sqr].img, tags = sqr)
-        root.after(500, self.animate)
+#             elif ent in self.attacking:
+#                 self.ent_dict[ent].rotate_attack_image()
+#                 self.canvas.delete(ent)
+#                 self.canvas.create_image(self.ent_dict[ent].loc[0]*100+50-self.moved_right, self.ent_dict[ent].loc[1]*100+50-self.moved_down, image = self.ent_dict[ent].img, tags = ent)
+        root.after(300, self.animate)
     
     def populate_context(self, event):
         e = self.current_pos()
@@ -1157,6 +1212,9 @@ class App(tk.Frame):
         root.bind('<a>', app.populate_context)
         root.bind('<q>', app.depopulate_context)
         root.bind('<Escape>', app.exit_fullscreen)
+
+    def confirm_quit(self):
+        pass
 
 root = tk.Tk()
 app = App(master=root)
