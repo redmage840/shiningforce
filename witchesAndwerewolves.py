@@ -1,3 +1,8 @@
+# to 'force focus / grab / prevent events' in canvases, have to do it manually with unbind/bind
+
+# can use         self.confirm_end_popup.protocol("WM_DELETE_WINDOW", lambda win = self.confirm_end_popup : self.destroy_release(win))  .... edit for appropriate context, handle exit through window manager 'X' for Toplevel popups
+
+
 # context menu: increase size, app holds lists of different 'areas', leftmost area holds portrait of active_player with 'turn' label on top of portrait which is always in view, next leftmost are context buttons which hold selected entity info/actions which are visible when able to be selected and not deferring to placement buttons, placement buttons are next leftmost and destroy other context buttons when selectable which are for confirming actions and selecting placement/choice of summons/attacks/spell effects, visualizations of attack/spell effects appear temporarily next to placement buttons, when effects of placement buttons happen or are canceled they are destroyed allowing for replacement of next selected context buttons, rightmost buttons are held in list called menu buttons which always stay in place during placement of context and placement buttons they are help/end turn/quit, when menu buttons are pressed quit/endturn destroy menu buttons and populate menu with 'confirm yes no' which when pressed destroy themselves and repopulate menu buttons, placement buttons take precedence and focus from all other buttons since no action should be taken until their effects/choices either happen or are canceled, context buttons disallow for further population of context until they are canceled with 'q' or turn ends or choice among them is made which populates placement buttons
 
 # what happens to context_menu when attempting to populate with more buttons than it can hold
@@ -114,8 +119,17 @@ class Entity():
         anims = [a for r,d,a in os.walk('./animations/' + self.name + '/')][0]
         anims = [a for a in anims[:] if a[-3:] == 'png']
         for i, anim in enumerate(anims):
+            print(anim)
             a = ImageTk.PhotoImage(Image.open('animations/' + self.name + '/' + anim))
             self.anim_dict[i] = a
+            
+    def rotate_image(self):
+        total_imgs = len(self.anim_dict.keys())-1
+        if self.anim_counter == total_imgs:
+            self.anim_counter = 0
+        else:
+            self.anim_counter += 1
+        self.img = self.anim_dict[self.anim_counter]
             
     def init_attack_anims(self):
         self.anim_dict = {}
@@ -204,13 +218,6 @@ class Entity():
         close = tk.Button(self.info_popup, text = 'close', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda win = self.info_popup : app.destroy_release(win))
         close.pack()
     
-    def rotate_image(self):
-        total_imgs = len(self.anim_dict.keys())-1
-        if self.anim_counter == total_imgs:
-            self.anim_counter = 0
-        else:
-            self.anim_counter += 1
-        self.img = self.anim_dict[self.anim_counter]
 
 class Summon(Entity):
     def __init__(self, name, img, loc, owner, number):
@@ -750,8 +757,12 @@ class App(tk.Frame):
         self.choose_map()
         
     def choose_map(self):
-        self.marquee = tk.Label(root, text = 'Choose your map', fg = 'tan3', bg = 'black', font=("chalkduster", 36))
+        self.marquee = tk.Label(root, text = 'This Game Brought to you by', fg = 'tan3', bg = 'black', font=("chalkduster", 36))
         self.marquee.pack(side = 'top')
+        self.production =tk.Label(root, text = '-HATRED-', fg = 'indianred', bg = 'black', font = ('herculanum', 46))
+        self.production.pack(side = 'top')
+        self.choosemap = tk.Label(root, text = 'Choose Map', fg = 'tan3', bg = 'black', font = ('chalkduster', 38))
+        self.choosemap.pack()
         # CHOOSE MAPS
         maps = [m for r,d,m in os.walk('./maps')][0]
         self.map_button_list = []
@@ -768,6 +779,8 @@ class App(tk.Frame):
             
     def load_map(self, map_number):
         self.marquee.destroy()
+        self.production.destroy()
+        self.choosemap.destroy()
         del self.tmp_mapimg_dict
         for b in self.map_button_list:
             b.destroy()
