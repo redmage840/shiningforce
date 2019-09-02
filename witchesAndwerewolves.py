@@ -1,4 +1,16 @@
-# Seems to be some kind of bug in shadow attack during confirm attack mouse clicks, have to click multiple times? maybe just not clicking properly with touchpad? yeah definitely had to click 2 or 3 times but only one print debug shows up 'succesful shadow attack' on hit
+# make single player campaign/maps, separate into 1-player and 2-player mode
+# 1 player 
+# choose num players
+# choose protag
+# start level 1
+# load level 1 map
+# load enemy ents
+# load victory conditions
+# on victory condition end map, load next map
+# player 1 turn
+# enemy turn, continue until victory condition
+
+# Differentiate visuals of summons in 'owner', dif owners have dif color overlays
 
 # During 'place summon' unbind/rebind 'a' to confirm placement
 
@@ -409,7 +421,8 @@ class Shadow(Summon):
                 self.magdmg = tk.Label(app.context_menu, text = str(dmg) + ' Magick', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
                 self.magdmg.pack(side = 'left')
             root.after(900, lambda id = tar, dmg = dmg : self.do_attack(id, dmg))
-        elif self.to_hit(self.str, app.ent_dict[tar].end) == False:
+        # DEBUG problem here, calling to_hit twice
+        else:
             self.miss = tk.Label(app.context_menu, text = 'Attack Missed!', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
             self.miss.pack(side = 'left')
             root.after(900, lambda win = self.miss : self.cancel_attack(event = None, win = win))
@@ -450,6 +463,237 @@ class Shadow(Summon):
                     move_list.append(coord)
         return move_list
 
+# change name to better fit generic flavor of witches
+# attack all adjacent units, must attack at end of turn, damage nearby on death?
+# abuse with trickster
+class Plaguebearer(Summon):
+    def __init__(self, name, img, loc, owner, number):
+        self.actions = {'attack':self.warrior_attack}
+        self.attack_used = False
+        self.str = 4
+        self.agl = 4
+        self.end = 4
+        self.dodge = 2
+        self.psyche = 2
+        self.spirit = 13
+        super().__init__(name, img, loc, owner, number)
+        
+        
+    def warrior_attack(self):
+        if self.attack_used == True:
+            return
+        sqrs = []
+        coord_pairs = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        if app.active_player == 'p1':
+            for coord in coord_pairs:
+                if abs(coord[0] - self.loc[0]) == 1 and coord[1] == self.loc[1]:
+                    sqrs.append(coord)
+                elif abs(coord[0] - self.loc[0]) == 1 and coord[1]-1 == self.loc[1]:
+                    sqrs.append(coord)
+                elif coord[0] == self.loc[0] and coord[1]-1 == self.loc[1]:
+                    sqrs.append(coord)
+        elif app.active_player == 'p2':
+            for coord in coord_pairs:
+                if abs(coord[0] - self.loc[0]) == 1 and coord[1] == self.loc[1]:
+                    sqrs.append(coord)
+                elif abs(coord[0] - self.loc[0]) == 1 and coord[1]+1 == self.loc[1]:
+                    sqrs.append(coord)
+                elif coord[0] == self.loc[0] and coord[1]+1 == self.loc[1]:
+                    sqrs.append(coord)
+        app.animate_squares(sqrs)
+        app.depopulate_context(event = None) 
+        cmd = lambda s = sqrs: self.check_hit(s)
+        b = tk.Button(app.context_menu, text = 'Confirm Attack', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = cmd)
+        b.pack(side = 'left')
+        app.context_buttons.append(b)
+        self.placement_buttons.append(b)
+        root.unbind('<q>')
+        root.bind('<q>', self.cancel_attack)
+        
+    def check_hit(self, sqrs):
+        if grid_pos not in sqrs:
+            return
+        if app.current_pos() == '':
+            return
+        tar = app.current_pos()
+        app.unbind_all()
+        if self.to_hit(self.agl, app.ent_dict[tar].dodge) == True:
+            print('hit')
+            # call self.init_attack_anims() here to replace self.anim_dict with other images
+            # on exit, re init normal anims
+            self.init_attack_anims()
+            dmg = self.damage(self.str, app.ent_dict[tar].end)
+            self.success = tk.Label(app.context_menu, text = 'Attack Hit!', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
+            self.success.pack(side = 'left')
+            self.dmg = tk.Label(app.context_menu, text = str(dmg) + ' Spirit', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
+            self.dmg.pack(side = 'left')
+            root.after(1200, lambda id = tar, dmg = dmg : self.do_attack(id, dmg))
+        else:
+            self.miss = tk.Label(app.context_menu, text = 'Attack Missed!', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
+            self.miss.pack(side = 'left')
+            root.after(1200, lambda win = self.miss : self.cancel_attack(event = None, win = win))
+        self.attack_used = True
+        
+    def do_attack(self, id, dmg):
+        self.success.destroy()
+        self.dmg.destroy()
+        app.ent_dict[id].set_attr('spirit', -dmg)
+        if app.ent_dict[id].spirit <= 0:
+            app.kill(id)
+            print('target killed')
+        self.cancel_attack(event = None)
+        # re init normal anims 
+        self.init_normal_anims()
+    
+    def cancel_attack(self, event, win = None):
+        app.rebind_all()
+        if win:
+            win.destroy()
+        app.depopulate_context(event = None)
+        for b in self.placement_buttons:
+            b.destroy()
+        for s in app.sqr_dict.keys():
+            app.canvas.delete(s)
+        app.sqr_dict = {}
+        self.init_normal_anims()
+    
+    def legal_moves(self):
+        loc = self.loc
+        mvlist = []
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        def findall(loc, start, dist):
+            if start > dist:
+                return
+            # need different 'front' depending on player
+            if app.active_player == 'p1':
+                front = [c for c in coords if c[0] == loc[0] and c[1]-1 == loc[1] and app.grid[c[0]][c[1]] == '']
+            elif app.active_player == 'p2':
+                front = [c for c in coords if c[0] == loc[0] and c[1]+1 == loc[1] and app.grid[c[0]][c[1]] == '']
+            for s in front:
+                mvlist.append(s)
+                findall(s, start+1, dist)
+        findall(loc, 1, 3) 
+        setlist = []
+        for l in mvlist:
+            if l not in setlist:
+                setlist.append(l)
+        return setlist
+
+# raise stats of units (bardsong)?
+# force units to follow or attack?
+# healer / magick recovery?
+class Bard(Summon):
+    def __init__(self, name, img, loc, owner, number):
+        self.actions = {'attack':self.warrior_attack}
+        self.attack_used = False
+        self.str = 4
+        self.agl = 4
+        self.end = 4
+        self.dodge = 2
+        self.psyche = 2
+        self.spirit = 13
+        super().__init__(name, img, loc, owner, number)
+        
+        
+    def warrior_attack(self):
+        if self.attack_used == True:
+            return
+        sqrs = []
+        coord_pairs = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        if app.active_player == 'p1':
+            for coord in coord_pairs:
+                if abs(coord[0] - self.loc[0]) == 1 and coord[1] == self.loc[1]:
+                    sqrs.append(coord)
+                elif abs(coord[0] - self.loc[0]) == 1 and coord[1]-1 == self.loc[1]:
+                    sqrs.append(coord)
+                elif coord[0] == self.loc[0] and coord[1]-1 == self.loc[1]:
+                    sqrs.append(coord)
+        elif app.active_player == 'p2':
+            for coord in coord_pairs:
+                if abs(coord[0] - self.loc[0]) == 1 and coord[1] == self.loc[1]:
+                    sqrs.append(coord)
+                elif abs(coord[0] - self.loc[0]) == 1 and coord[1]+1 == self.loc[1]:
+                    sqrs.append(coord)
+                elif coord[0] == self.loc[0] and coord[1]+1 == self.loc[1]:
+                    sqrs.append(coord)
+        app.animate_squares(sqrs)
+        app.depopulate_context(event = None) 
+        cmd = lambda s = sqrs: self.check_hit(s)
+        b = tk.Button(app.context_menu, text = 'Confirm Attack', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = cmd)
+        b.pack(side = 'left')
+        app.context_buttons.append(b)
+        self.placement_buttons.append(b)
+        root.unbind('<q>')
+        root.bind('<q>', self.cancel_attack)
+        
+    def check_hit(self, sqrs):
+        if grid_pos not in sqrs:
+            return
+        if app.current_pos() == '':
+            return
+        tar = app.current_pos()
+        app.unbind_all()
+        if self.to_hit(self.agl, app.ent_dict[tar].dodge) == True:
+            print('hit')
+            # call self.init_attack_anims() here to replace self.anim_dict with other images
+            # on exit, re init normal anims
+            self.init_attack_anims()
+            dmg = self.damage(self.str, app.ent_dict[tar].end)
+            self.success = tk.Label(app.context_menu, text = 'Attack Hit!', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
+            self.success.pack(side = 'left')
+            self.dmg = tk.Label(app.context_menu, text = str(dmg) + ' Spirit', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
+            self.dmg.pack(side = 'left')
+            root.after(1200, lambda id = tar, dmg = dmg : self.do_attack(id, dmg))
+        else:
+            self.miss = tk.Label(app.context_menu, text = 'Attack Missed!', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
+            self.miss.pack(side = 'left')
+            root.after(1200, lambda win = self.miss : self.cancel_attack(event = None, win = win))
+        self.attack_used = True
+        
+    def do_attack(self, id, dmg):
+        self.success.destroy()
+        self.dmg.destroy()
+        app.ent_dict[id].set_attr('spirit', -dmg)
+        if app.ent_dict[id].spirit <= 0:
+            app.kill(id)
+            print('target killed')
+        self.cancel_attack(event = None)
+        # re init normal anims 
+        self.init_normal_anims()
+    
+    def cancel_attack(self, event, win = None):
+        app.rebind_all()
+        if win:
+            win.destroy()
+        app.depopulate_context(event = None)
+        for b in self.placement_buttons:
+            b.destroy()
+        for s in app.sqr_dict.keys():
+            app.canvas.delete(s)
+        app.sqr_dict = {}
+        self.init_normal_anims()
+    
+    def legal_moves(self):
+        loc = self.loc
+        mvlist = []
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        def findall(loc, start, dist):
+            if start > dist:
+                return
+            # need different 'front' depending on player
+            if app.active_player == 'p1':
+                front = [c for c in coords if c[0] == loc[0] and c[1]-1 == loc[1] and app.grid[c[0]][c[1]] == '']
+            elif app.active_player == 'p2':
+                front = [c for c in coords if c[0] == loc[0] and c[1]+1 == loc[1] and app.grid[c[0]][c[1]] == '']
+            for s in front:
+                mvlist.append(s)
+                findall(s, start+1, dist)
+        findall(loc, 1, 3) 
+        setlist = []
+        for l in mvlist:
+            if l not in setlist:
+                setlist.append(l)
+        return setlist
         
 class Warrior(Summon):
     def __init__(self, name, img, loc, owner, number):
@@ -656,12 +900,16 @@ class Witch(Entity):
         app.sqr_dict = {}
         root.unbind('<q>')
         root.bind('<q>', app.depopulate_context)
+        root.unbind('<a>')
+        root.bind('<a>', app.populate_context)
 
     
     def place_summon(self, type):
         root.unbind('<q>')
         root.bind('<q>', self.cancel_placement)
-        self.summon_popup.destroy()
+        # unbind / bind 'a' to 'confirm placement'
+        root.unbind('<a>')
+        self.summon_popup.destroy() 
         app.depopulate_context(event = None)
         coords = coord_pairs = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         sqrs = [c for c in coords if abs(c[0]-self.loc[0]) + abs(c[1]-self.loc[1]) == 1 and app.grid[c[0]][c[1]] == '']
@@ -672,18 +920,28 @@ class Witch(Entity):
             cls = Trickster
         elif type == 'Shadow':
             cls = Shadow
-        cmd = lambda x = cls, y = sqrs : self.place(x, y)
+        elif type == 'Bard':
+            cls = Bard
+        elif type == 'Plaguebearer':
+            cls = Plaguebearer
+        cmd = lambda e = None, x = cls, y = sqrs : self.place(e, summon = x, sqrs = y)
+        # vars stored here are garbage collected not stored in button?
+        root.bind('<a>', lambda e, x = cls, y = sqrs: self.place(e, x, y))
         b = tk.Button(app.context_menu, text = 'Place '+type, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = cmd)
         b.pack(side = 'left')
         app.context_buttons.append(b)
         self.placement_buttons.append(b)
         
         
-    def place(self, summon, sqrs):
+    def place(self, event, summon, sqrs):
+        print(summon)
+        print(sqrs)
         if grid_pos not in sqrs:
             return
         root.unbind('<q>')
         root.bind('<q>', app.depopulate_context)
+        root.unbind('<a>')
+        root.bind('<a>', app.populate_context)
         if app.active_player == 'p1':
             number = 'a' + str(len(self.summon_dict.keys()))
         elif app.active_player == 'p2':
@@ -697,6 +955,12 @@ class Witch(Entity):
         elif summon == Shadow:
             name = 'shadow'
             img = ImageTk.PhotoImage(Image.open('shadow.png'))
+        elif summon == Bard:
+            name = 'bard'
+            img = ImageTk.PhotoImage(Image.open('bard.png'))
+        elif summon == Plaguebearer:
+            name = 'plaguebearer'
+            img = ImageTk.PhotoImage(Image.open('plaguebearer.png'))
         s = summon(name = name, img = img, loc = grid_pos[:], owner = app.active_player, number = number)
         app.ent_dict[number] = s
         self.summon_dict[number] = s
@@ -809,70 +1073,70 @@ class App(tk.Frame):
         self.ent_dict = {}
         self.sqr_dict = {}
         self.active_player = 'p1'
-        self.opponent = 'computer'
+        self.num_players = 1
         self.moved_right = 0
         self.moved_down = 0
         self.context_buttons = []
         # list to hold entity that is being animated as 'attacking'
         self.attacking = []
+        self.p1_witch = ''
+        self.p2_witch = ''
+        self.choose_num_players()
         
         
-        self.choose_map()
-        
-    def choose_map(self):
-        self.marquee = tk.Label(root, text = 'This Game Brought to you by', fg = 'tan3', bg = 'black', font=("chalkduster", 36))
+    def choose_num_players(self):
+        self.marquee = tk.Label(root, text = 'This Game Brought to you by', fg = 'tan3', bg = 'black', font=('chalkduster', 36))
         self.marquee.pack(side = 'top')
         self.production =tk.Label(root, text = '-HATRED-', fg = 'indianred', bg = 'black', font = ('herculanum', 46))
         self.production.pack(side = 'top')
+        self.one_player = tk.Button(root, text = '1 Player', fg = 'tan3', highlightbackground = 'tan3', font = ('chalkduster', 24), command = lambda num = 1 : self.num_chose(num))
+        self.one_player.pack()
+        self.two_player = tk.Button(root, text = '2 Player', fg = 'tan3', highlightbackground = 'tan3', font = ('chalkduster', 24), command = lambda num = 2 : self.num_chose(num))
+        self.two_player.pack()
+        
+    def num_chose(self, num):
+        self.num_players = num
+        self.marquee.destroy()
+        self.production.destroy()
+        self.one_player.destroy()
+        self.two_player.destroy()
+        if self.num_players == 2:
+            self.choose_map()
+        else:
+            map_number = 0
+            self.create_map_curs_context(map_number)
+        
+    def choose_map(self):
         self.choosemap = tk.Label(root, text = 'Choose Map', fg = 'tan3', bg = 'black', font = ('chalkduster', 38))
         self.choosemap.pack()
         # CHOOSE MAPS
-        maps = [m for r,d,m in os.walk('./maps')][0]
+        maps = [m for r,d,m in os.walk('./2_player_maps')][0]
         self.map_button_list = []
         self.tmp_mapimg_dict = {}
         for i,map in enumerate(maps):
             b = tk.Button(root)
-            cmd = lambda indx = i : self.load_map(indx)
-            photo = ImageTk.PhotoImage(Image.open('./maps/' + map).resize((300,300)))
+            cmd = lambda indx = i : self.map_choice_cleanup(indx)
+            photo = ImageTk.PhotoImage(Image.open('./2_player_maps/' + map).resize((300,300)))
             self.tmp_mapimg_dict['map'+str(i)] = photo
             b.config(image = self.tmp_mapimg_dict['map'+str(i)], bg = 'black', highlightbackground = 'tan3', command = cmd)
             # DEBUG packing will have to be fixed here for different screen sizes
             b.pack(side = 'left', padx = 55)
             self.map_button_list.append(b)
-            
-    def load_map(self, map_number):
-        self.marquee.destroy()
-        self.production.destroy()
+        
+    def map_choice_cleanup(self, map_number):
         self.choosemap.destroy()
         del self.tmp_mapimg_dict
         for b in self.map_button_list:
             b.destroy()
         del self.map_button_list
         self.create_map_curs_context(map_number)
-            
-    def help(self):
-        self.help_popup = tk.Toplevel()
-        self.help_popup.grab_set()
-        self.help_popup.attributes('-topmost', 'true')
-        help_text = '''
-        You control witch in top left corner\n
-        Spacebar selects an object for movement\n
-        Press 'z' to cancel movement context\n
-        Arrow keys move cursor around map\n
-        Cursor over an object you control and press 'a' to see action options\n
-        Press 'q' to cancel the context menu for a selected object\n
-        Cursor over enemy controlled object and press 'a' for available info\n
-        Your witch can cast one spell AND use one summon per turn AND move once\n
-        Your summons can move AND use one action per turn\n
-        '''
-        self.text = tk.Label(self.help_popup, text = help_text, font = ('chalkduster', 24), fg='indianred', bg = 'black')
-        self.text.pack()
-        self.close = tk.Button(self.help_popup, text = 'Close', font = ('chalkduster', 24), fg='tan3', command = lambda win = self.help_popup : self.destroy_release(win))
-        self.close.pack()
-            
+        
     def create_map_curs_context(self, map_number):
         # GET MAP DIMENSIONS
-        filename = 'map_info/map' + str(map_number) + '.txt'
+        if self.num_players == 1:
+            filename = '1_player_map_info/map' + str(map_number) + '.txt'
+        else:
+            filename = '2_player_map_info/map' + str(map_number) + '.txt'
         with open(filename) as f:
             map_size = f.read().splitlines()
         self.map = 'map' + str(map_number)
@@ -907,26 +1171,36 @@ class App(tk.Frame):
         self.canvas = tk.Canvas(root, width = width, bg = 'black', height = height, bd=0, highlightthickness=0, relief='ridge')
         self.canvas.pack()
         # MAP
-        self.map_img = ImageTk.PhotoImage(Image.open('./maps/map'+str(map_number)+'.jpg').resize((self.map_width, self.map_height)))
+        if self.num_players == 1:
+            fname = '1_player_maps/'
+        else:
+            fname = '2_player_maps/'
+        self.map_img = ImageTk.PhotoImage(Image.open(fname + 'map'+str(map_number)+'.jpg').resize((self.map_width, self.map_height)))
         self.canvas.create_image(0, 0, anchor='nw', image=self.map_img, tags='map')
-
-        
         # CURSOR
         self.cursor_img = ImageTk.PhotoImage(Image.open("cursor.png").resize((100,100)))
         self.canvas.create_image(0,0, anchor='nw', image=self.cursor_img, tags='curs')
+        # CHOOSE WITCH
         self.choose_witch()
         
-        
-    def choose_witch(self):
+    def choose_witch(self, player_num = 1):
+        # separate logic for 1 or 2 players
         self.avatar_popup = tk.Toplevel()
         self.avatar_popup.attributes('-topmost', 'true')
         self.avatar_popup.attributes("-fullscreen", True)
         self.avatar_popup.config(bg = 'black')
         self.avatar_popup.grab_set()
-        label = tk.Label(self.avatar_popup, text = 'Choose Your Witch', font = ('chalkduster', 36), fg = 'indianred', bg = 'black')
+        label = tk.Label(self.avatar_popup, text = 'Choose Player ' + str(player_num) + ' Witch', font = ('chalkduster', 36), fg = 'indianred', bg = 'black')
         label.pack(side = 'top')
-        witches = [w for r,d,w in os.walk('./portraits/')][0]
-        witches = [w for w in witches[:] if w[0] != '.']
+        if player_num == 1:
+            witches = [w for r,d,w in os.walk('./portraits/')][0]
+            witches = [w for w in witches[:] if w[0] != '.']
+        elif player_num == 2:
+            witches = [w for r,d,w in os.walk('./portraits')][0]
+            witches = [w for w in witches[:] if w[0] != '.']
+#             witches = [w[:-4] for w in witches[:]]
+            p1_w_fname = self.p1_witch + '.png'
+            witches.remove(p1_w_fname)
         self.avatar_popup.witch_widgets = []
         self.avatar_popup.img_dict = {}
         self.wrapped_funcs = []
@@ -935,7 +1209,7 @@ class App(tk.Frame):
             f.pack(side = 'left')
             self.avatar_popup.witch_widgets.append(f)
             b = tk.Button(f)
-            p = partial(self.load_witch, witch[:-4])
+            p = partial(self.load_witch, witch[:-4], player_num)
             cmd = lambda win = self.avatar_popup, p = p : self.release_wrapper(win, p)
             self.wrapped_funcs.append(p)
             photo = ImageTk.PhotoImage(Image.open('./portraits/' + witch))
@@ -949,60 +1223,40 @@ class App(tk.Frame):
             b2.pack(side = 'bottom')
             self.avatar_popup.witch_widgets.append(b2)
             self.avatar_popup.witch_widgets.append(b)
-
-    def show_avatar_info(self, witch):
-        self.info_popup = tk.Toplevel()
-        self.info_popup.grab_set()
-        self.info_popup.attributes('-topmost', 'true')
-        self.info_popup.title(witch)
-        text = open('avatar_info/' + witch + '.txt', 'r').read()
-        f = tk.Frame(self.info_popup)
-        f.pack()
-        l = tk.Label(f, text = text, font = ('chalkduster', 24))
-        l.pack()
-        close = tk.Button(self.info_popup, text = 'close', font = ('chalkduster', 24), highlightbackground = 'tan3', command = lambda win = self.info_popup : self.destroy_release(win))
-        close.pack()
-    
-    def load_witch(self, witch):
-        self.protag_witch = witch
-        protag_witch_img = ImageTk.PhotoImage(Image.open('avatars/' + witch +'.png'))
-        self.ent_dict[witch] = Witch(name = witch, img = protag_witch_img, loc = [1, 1], owner = 'p1')
+        
+    def load_witch(self, witch, player_num):
+        if player_num == 1:
+            self.p1_witch = witch
+            loc = [1,1]
+        elif player_num == 2:
+            self.p2_witch = witch
+            loc = [self.map_width//100-2, self.map_height//100-2]
+        witch_img = ImageTk.PhotoImage(Image.open('avatars/' + witch +'.png'))
+        self.ent_dict[witch] = Witch(name = witch, img = witch_img, loc = loc, owner = 'p' + str(player_num))
         self.canvas.create_image(self.ent_dict[witch].loc[0]*100+50-self.moved_right, self.ent_dict[witch].loc[1]*100+50-self.moved_down, image = self.ent_dict[witch].img, tags = witch)
         self.grid[self.ent_dict[witch].loc[0]][self.ent_dict[witch].loc[1]] = witch
-        self.place_antag()
-    
-    def place_antag(self):
-        remain_witches = [w for r,d,w in os.walk('./avatars')][0]
-        remain_witches = [w for w in remain_witches[:] if w[0] != '.']
-        remain_witches = [w[:-4] for w in remain_witches[:]] 
-        remain_witches.remove(self.protag_witch)
-        self.antag_witch = choice(remain_witches)
-        antag_witch_img = ImageTk.PhotoImage(Image.open('avatars/' + self.antag_witch +'.png'))
-        self.ent_dict[self.antag_witch] = Witch(name = self.antag_witch, img = antag_witch_img, loc = [self.map_width//100-2, self.map_height//100-2], owner = 'p2')
-        self.canvas.create_image(self.ent_dict[self.antag_witch].loc[0]*100+50-self.moved_right, self.ent_dict[self.antag_witch].loc[1]*100+50-self.moved_down, image = self.ent_dict[self.antag_witch].img, tags = self.antag_witch)
-        self.grid[self.ent_dict[self.antag_witch].loc[0]][self.ent_dict[self.antag_witch].loc[1]] = self.antag_witch
-        # ANIMATE / START_ACTION
-        self.animate()
-        self.start_turn()
+        if self.num_players == 1:
+            # DEBUG LOAD BOT ENEMIES FOR PLAYER 1 HERE
+            self.start_turn()
+            self.animate()
+        elif self.num_players == 2 and self.p2_witch == '':
+            self.choose_witch(player_num = 2)
+        # EXIT CHOOSING IF BOTH FINISHED AND START TURN
+        elif self.num_players == 2 and self.p2_witch != '':
+            self.start_turn()
+            self.animate()
+        
+            
+            
+            
+            
         
     def start_turn(self):
         p = self.active_player
         print('start action')
-        w = self.protag_witch if p == 'p1' else self.antag_witch
+        w = self.p1_witch if p == 'p1' else self.p2_witch
         self.get_focus(w)
         
-    def confirm_end(self):
-        self.confirm_end_popup = tk.Toplevel()
-        self.confirm_end_popup.grab_set()
-        self.confirm_end_popup.attributes('-topmost', 'true')
-        self.confirm_end_popup.config(bg = 'black')
-        self.confirm_end_popup.protocol("WM_DELETE_WINDOW", lambda win = self.confirm_end_popup : self.destroy_release(win))
-        label = tk.Label(self.confirm_end_popup, text = 'End Your Turn?', fg = 'tan3', bg = 'black', font = ('chalkduster', 24))
-        label.pack(side = 'top')
-        b1 = tk.Button(self.confirm_end_popup, text = 'Yes', fg = 'tan3', font = ('chalkduster', 24), highlightbackground = 'tan3', command = lambda win = self.confirm_end_popup, func = self.end_turn : self.release_wrapper(win, func))
-        b1.pack(side = 'left')
-        b2 = tk.Button(self.confirm_end_popup, text = 'No', fg = 'tan3',font = ('chalkduster', 24), highlightbackground = 'tan3', command = lambda win = self.confirm_end_popup : self.destroy_release(win))
-        b2.pack(side = 'left')
         
     def end_turn(self):
         print('end turn')
@@ -1036,9 +1290,6 @@ class App(tk.Frame):
             self.move_curs(dir = 'Up')
         
     def animate(self):
-        # Prepare for attack animations, do them while showing hit/damage labels in do_attack
-        # when do_attack, add ent to 'atk list', here in animate if ent is in atk list, use alternate animation logic, 
-        # ent will need a func like rotate_image that cycles it through attack images, so for 2 seconds in tohit/damage 'afters' (currently 1.8 secs), object will be animated through atk animations instead
         for ent in self.ent_dict.keys():
             if ent != selected:
                 self.ent_dict[ent].rotate_image()
@@ -1048,10 +1299,6 @@ class App(tk.Frame):
             self.sqr_dict[sqr].rotate_image()
             self.canvas.delete(sqr)
             self.canvas.create_image(self.sqr_dict[sqr].loc[0]*100+50-self.moved_right, self.sqr_dict[sqr].loc[1]*100+50-self.moved_down, image = self.sqr_dict[sqr].img, tags = sqr)
-#             elif ent in self.attacking:
-#                 self.ent_dict[ent].rotate_attack_image()
-#                 self.canvas.delete(ent)
-#                 self.canvas.create_image(self.ent_dict[ent].loc[0]*100+50-self.moved_right, self.ent_dict[ent].loc[1]*100+50-self.moved_down, image = self.ent_dict[ent].img, tags = ent)
         root.after(300, self.animate)
     
     def populate_context(self, event):
@@ -1234,6 +1481,52 @@ class App(tk.Frame):
                 self.canvas.move(sqr, 0, 100)
 
     # Helper functions
+    def help(self):
+        self.help_popup = tk.Toplevel()
+        self.help_popup.grab_set()
+        self.help_popup.attributes('-topmost', 'true')
+        help_text = '''
+        You control witch in top left corner\n
+        Spacebar selects an object for movement\n
+        Press 'z' to cancel movement context\n
+        Arrow keys move cursor around map\n
+        Cursor over an object you control and press 'a' to see action options\n
+        Press 'q' to cancel the context menu for a selected object\n
+        Cursor over enemy controlled object and press 'a' for available info\n
+        Your witch can cast one spell AND use one summon per turn AND move once\n
+        Your summons can move AND use one action per turn\n
+        '''
+        self.text = tk.Label(self.help_popup, text = help_text, font = ('chalkduster', 24), fg='indianred', bg = 'black')
+        self.text.pack()
+        self.close = tk.Button(self.help_popup, text = 'Close', font = ('chalkduster', 24), fg='tan3', command = lambda win = self.help_popup : self.destroy_release(win))
+        self.close.pack()
+        
+    def confirm_end(self):
+        self.confirm_end_popup = tk.Toplevel()
+        self.confirm_end_popup.grab_set()
+        self.confirm_end_popup.attributes('-topmost', 'true')
+        self.confirm_end_popup.config(bg = 'black')
+        self.confirm_end_popup.protocol("WM_DELETE_WINDOW", lambda win = self.confirm_end_popup : self.destroy_release(win))
+        label = tk.Label(self.confirm_end_popup, text = 'End Your Turn?', fg = 'tan3', bg = 'black', font = ('chalkduster', 24))
+        label.pack(side = 'top')
+        b1 = tk.Button(self.confirm_end_popup, text = 'Yes', fg = 'tan3', font = ('chalkduster', 24), highlightbackground = 'tan3', command = lambda win = self.confirm_end_popup, func = self.end_turn : self.release_wrapper(win, func))
+        b1.pack(side = 'left')
+        b2 = tk.Button(self.confirm_end_popup, text = 'No', fg = 'tan3',font = ('chalkduster', 24), highlightbackground = 'tan3', command = lambda win = self.confirm_end_popup : self.destroy_release(win))
+        b2.pack(side = 'left')
+        
+    def show_avatar_info(self, witch):
+        self.info_popup = tk.Toplevel()
+        self.info_popup.grab_set()
+        self.info_popup.attributes('-topmost', 'true')
+        self.info_popup.title(witch)
+        text = open('avatar_info/' + witch + '.txt', 'r').read()
+        f = tk.Frame(self.info_popup)
+        f.pack()
+        l = tk.Label(f, text = text, font = ('chalkduster', 24))
+        l.pack()
+        close = tk.Button(self.info_popup, text = 'close', font = ('chalkduster', 24), highlightbackground = 'tan3', command = lambda win = self.info_popup : self.destroy_release(win))
+        close.pack()
+    
     def animate_squares(self, sqrs):
         for i, sqr in enumerate(sqrs):
             img = ImageTk.PhotoImage(Image.open('animations/move/0.png'))
