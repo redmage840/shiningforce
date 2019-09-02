@@ -1,4 +1,14 @@
+# Seems to be some kind of bug in shadow attack during confirm attack mouse clicks, have to click multiple times? maybe just not clicking properly with touchpad? yeah definitely had to click 2 or 3 times but only one print debug shows up 'succesful shadow attack' on hit
+
+# During 'place summon' unbind/rebind 'a' to confirm placement
+
 # to 'force focus / grab / prevent events' in canvases, have to do it manually with unbind/bind
+
+# warriors seem maybe underpowered / too easy to avoid, maybe allow them to move back or sideways just one square
+
+# balance right now might be more a problem of shadows being too consistent compared to other summons, am I making sure to exploit their 'stay on one color square' drawback?
+
+# Need faster key for getting 'info', bind a key that immediately shows popup or populates context with info, maybe 'a' should immediately show info along with relevant context in context menu
 
 # can use         self.confirm_end_popup.protocol("WM_DELETE_WINDOW", lambda win = self.confirm_end_popup : self.destroy_release(win))  .... edit for appropriate context, handle exit through window manager 'X' for Toplevel popups
 
@@ -119,7 +129,6 @@ class Entity():
         anims = [a for r,d,a in os.walk('./animations/' + self.name + '/')][0]
         anims = [a for a in anims[:] if a[-3:] == 'png']
         for i, anim in enumerate(anims):
-            print(anim)
             a = ImageTk.PhotoImage(Image.open('animations/' + self.name + '/' + anim))
             self.anim_dict[i] = a
             
@@ -554,17 +563,6 @@ class Warrior(Summon):
             if l not in setlist:
                 setlist.append(l)
         return setlist
-#         move_list = []
-#         coord_pairs = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-#         for coord in coord_pairs:
-#             if app.grid[coord[0]][coord[1]] == '':
-#                 if app.active_player == 'p1':
-#                     if self.loc[0] == coord[0] and self.loc[1] < coord[1] < self.loc[1]+5:
-#                         move_list.append(coord)
-#                 elif app.active_player == 'p2':
-#                     if self.loc[0] == coord[0] and self.loc[1]-5 < coord[1] < self.loc[1]:
-#                         move_list.append(coord)
-#         return move_list
                     
 class Witch(Entity):
     def __init__(self, name, img, loc, owner):
@@ -573,8 +571,13 @@ class Witch(Entity):
         self.summon_used = False
         self.spell_dict = {}
         self.summon_dict = {}
+        
         if name == 'Agnes_Sampson':
-            self.spell_dict['horrid wilting'] = self.horrid_wilting
+            self.spell_dict['Plague'] = self.plague
+            self.spell_dict['Psionic Push'] = self.psionic_push
+            self.spell_dict['Curse of Oriax'] = self.curse_of_oriax
+            self.spell_dict['Gravity'] = self.gravity
+            self.spell_dict["Beleth's Command"] = self.beleths_command
             self.str = 4
             self.agl = 2
             self.end = 3
@@ -583,7 +586,11 @@ class Witch(Entity):
             self.spirit = 75
             self.magick = 75
         elif name == 'Fakir_Ali':
-            self.spell_dict['plague'] = self.plague
+            self.spell_dict['Horrid Wilting'] = self.horrid_wilting
+            self.spell_dict['Boiling Blood'] = self.boiling_blood
+            self.spell_dict['Dark Sun'] = self.dark_sun
+            self.spell_dict['Command of Osiris'] = self.command_of_osiris
+            self.spell_dict['Disintegrate'] = self.disintegrate
             self.str = 3
             self.agl = 2
             self.end = 5
@@ -592,7 +599,11 @@ class Witch(Entity):
             self.spirit = 85
             self.magick = 70
         elif name == 'Morgan_LeFay':
-            self.spell_dict['enchant'] = self.enchant
+            self.spell_dict['Enchant'] = self.enchant
+            self.spell_dict['Counterspell'] = self.counterspell
+            self.spell_dict["Nature's Wrath"] = self.natures_wrath
+            self.spell_dict["Noden's Command"] = self.nodens_command
+            self.spell_dict['Wild Hunt'] = self.wild_hunt
             self.str = 2
             self.agl = 4
             self.end = 3
@@ -604,10 +615,8 @@ class Witch(Entity):
         super().__init__(name, img, loc, owner)
         
     def spell(self):
-        # if spell_used == False, create spell popup, upon cast set self.spell_used = True
         if self.spell_used == True:
             return
-        print('spell cast')
         # SPELL
         self.spell_popup = tk.Toplevel()
         self.spell_popup.grab_set()
@@ -702,21 +711,75 @@ class Witch(Entity):
         app.context_buttons = []
         self.summon_used = True
         
-        
-    def enchant(self):
-        print('enchant')
-        self.spell_used = True
-        self.spell_popup.destroy()
-        
+        # Need to incorporate 'magick cost' and rules for regenerating/regaining magick, probably certain squares that replenish a set amount every turn, or squares that appear for a limited amount of time/turns that replenish
+# AGNES SPELLS
+        # Agnes' spells center around Death/Decay/Disease/Telekinetics
     def plague(self):
+            # Make attk (psyche versus end) on any summon within range 4 and all adjacent summons have attrs reduced to 1 (str, agl, end, dodge, psyche) lasting until 3 opp turns have passed
         print('plague')
         self.spell_used = True
-        self.spell_popup.destroy()
-        
-    def horrid_wilting(self):
-        print('wilt')
+    def psionic_push(self):
+            # Make attk (psyche versus agl) against any target within range 4, move the target from square of origin in any lateral direction up to 4 squares but not through any obstacles (ents or impassable squares, not edge of map), if target 'collides' (movement stopped before 4 squares because of obstacle) target takes spirit damage (str versus end) and target takes damage (str versus end) if capable of taking spirit damage
+        print('psionic push')
         self.spell_used = True
-        self.spell_popup.destroy()
+    def curse_of_oriax(self):
+            # Any target is inflicted with 'curse', while cursed takes 2 spirit damage at end of every owner's turn and then afflicted ent may 'to hit self' (own strength versus own inverted end, 1 becomes 5, 5 becomes 1...) to end the curse, while afflicted with curse of oriax target may not be afflicted with any other curse conditions
+        print('curse_of_oriax')
+        self.spell_used = True
+    def gravity(self):
+            # Target ent within range 4 and all ents within range 2 of target may not move until two of their owner's turns have ended, targets are only affected by normal movement, can still be moved through spell/attack effects, if moved out of affected squares then no longer restricted movement, any ent moving into affected squares is immediately halted and is affected in the same way until spell ends
+        print('gravity')
+        self.spell_used = True
+    def beleths_command(self):
+            # Caster is affect by 'command', while affected cannot be affected by other 'command' effects until spell ends (one 'command' effect at a time), any ent using an attack against caster first must 'to hit' caster's psyche versus attacker's psyche, a success results in normal attack, failure causes spirit damage to attacker (caster's psyche versus attacker's end) and no effects from the attack, lasts until caster has 3 turns end
+        print('beleths_command')
+        self.spell_used = True
+        
+# FAKIR ALI SPELLS
+        # Ali's spells center around Heat/Fire/Resistance/Mummification
+    def horrid_wilting(self):
+            # make attack (psyche versus str) spirit damage, on any target within range 4 and all adjacent enemy units
+        print('horrid_wilting')
+        self.spell_used = True
+    def boiling_blood(self):
+            # Caster takes spirit damage (own inverted psyche versus own end) and affects one 'warrior' summon within range 3, any attacks made by the affected target do +5 spirit damage if they would otherwise do any spirit damage, target's agl is increased to 5 if it is less than 5, end is reduced to 1, either value may be later modified but this modification takes precedence over previous effects, affected ent takes 1 spirit damage at the end of every owner's turn
+        print('boiling_blood')
+        self.spell_used = True
+    def dark_sun(self):
+            # Any caster owned 'shadow' summons within range 2 get an extra attack if they have already attacked once this turn
+        print('dark_sun')
+        self.spell_used = True
+    def command_of_osiris(self):
+            # Caster is affected by 'command' effect, normal 'command' rules apply as above, Caster cannot move, can still be moved by spell/attack effects, at end of caster's turn any adjacent ents take spirit damage (caster's psyche versus ent's end), all spirit damage done to caster is reduced to 1, lasts until caster has 3 turns end
+        print('command_of_osiris')
+        self.spell_used = True
+    def disintegrate(self):
+            # Caster must make 'to hit' psyche versus psyche on target summon within range 4, affected summon has attrs (str, agl, end, dodge, psyche) reduced to 1 and cannot move until 2 of its owners turns have ended, attrs or movement cannot be affected by other spells/attack effects
+        print('disintegrate')
+        self.spell_used = True
+        
+# MORGAN SPELLS
+        # Morgan's spells center around Nature/Earth/Weather/Illusion
+    def enchant(self):
+            # any summon within range 4 has attrs (str, agl, end, dodge, psyche) set to 5 until 3 opp turns have passed, prevents further modification while active
+        print('enchant')
+        self.spell_used = True
+    def wild_hunt(self):
+            # Creates 3 summons within range 2 of caster or up to 3 if not enough squares available, first is Boar (stats 3,3,3,2,2,4,0) movement range 2 attack any adjacent, second is wolf (2,3,2,4,2,3,0) movement range 3 attack any adjacent, third is hawk (2,4,2,4,3,2,0) movement range 4 not impeded by other units/obstacles attack any adjacent
+        print('wild_hunt')
+        self.spell_used = True
+    def nodens_command(self):
+            # Command rules apply, caster cannot move, all squares within range 2 of caster become 'water' (impassable terrain) any ents currently occupying these squares are moved to a random square 'at edge' (closest available square to edge of water squares or first unoccupied square if all 'edge' squares are occupied), at end of turn caster heals 4 spirit, lasts until caster has 3 turns end (healing happens first)
+        print('nodens_command')
+        self.spell_used = True
+    def natures_wrath(self):
+            # Choose a square within range 5, all ents within range 2 of square must 'to hit' their inverted agl versus dodge at the end of every caster's turn, those that 'hit' suffer 3 spirit damage, lasts 3 caster's turns (effect happens 'before' end turn, effects happen 3 times)
+        print('natures_wrath')
+        self.spell_used = True
+    def counterspell(self):
+            # Choose a spell effect 'in play', make 'to hit' psyche versus effect's owner's psyche, on success cancel all effects from the spell (call its cleanup function) and effect's owner takes magick damage psyche versus psyche
+        print('counterspell')
+        self.spell_used = True
     
     # Maybe change name, used not only for finding legal moves, but sqrs within 3 spaces of entity that are unoccupied
     def legal_moves(self):
