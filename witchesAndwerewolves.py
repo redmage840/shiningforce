@@ -1,3 +1,29 @@
+# prevent 'end turn' while not your turn in 1 player
+
+# make exit and following confirm exit buttons where 'confirm' button is in different location than 'quit' button just was, just for ergonomics, to prevent double tapping quit button accidentally, force user to hit 'quit' then move mouse 'up' to 'confirm' rather than clicking the same spot twice to exit/quit
+
+# still unnecessarily deleting unused 'placement_buttons'
+
+# remove cancel_attack from classes and make it a general helper function
+
+# show victory conditions on map start
+
+# for 1 player, instead of using werewolf classes make unique classes for enemy units with easier to program AI attacks/actions/movement
+
+# make custom titlescreen images instead of using fonts
+
+# Urgent during computer turn unbind_all() AND prevent 'end turn' in help_buttons, probably fine to be able to quit mid-computer-turn, probably fine to pull up help-text but test
+
+# Urgent fix help text popup from disabling all input if 'clicked out of' or closed manually with window manager, either put help text on main canvas or context menu or make a full screen 'popup' like choose map dialogue
+
+# Instead of 'confirm_quit' labels, paste text across whole screen 
+
+# title screen label styling
+
+# button styling, padding?, relief?, highlightbackground = 'black'?
+
+# working on AI for 1 player, spell programming, 
+
 # all labels get relief = 'ridge'
 
 # when making buttons for spell/summon choice, button also holds number which is hotkey
@@ -12,8 +38,6 @@
 
 # can use         self.confirm_end_popup.protocol("WM_DELETE_WINDOW", lambda win = self.confirm_end_popup : self.destroy_release(win))  .... edit for appropriate context, handle exit through window manager 'X' for Toplevel popups
 
-
-# context menu: increase size, app holds lists of different 'areas', leftmost area holds portrait of active_player with 'turn' label on top of portrait which is always in view, next leftmost are context buttons which hold selected entity info/actions which are visible when able to be selected and not deferring to placement buttons, placement buttons are next leftmost and destroy other context buttons when selectable which are for confirming actions and selecting placement/choice of summons/attacks/spell effects, visualizations of attack/spell effects appear temporarily next to placement buttons, when effects of placement buttons happen or are canceled they are destroyed allowing for replacement of next selected context buttons, rightmost buttons are held in list called menu buttons which always stay in place during placement of context and placement buttons they are help/end turn/quit, when menu buttons are pressed quit/endturn destroy menu buttons and populate menu with 'confirm yes no' which when pressed destroy themselves and repopulate menu buttons, placement buttons take precedence and focus from all other buttons since no action should be taken until their effects/choices either happen or are canceled, context buttons disallow for further population of context until they are canceled with 'q' or turn ends or choice among them is made which populates placement buttons
 
 # what happens to context_menu when attempting to populate with more buttons than it can hold
 
@@ -236,9 +260,13 @@ class Trickster(Summon):
         
         
     def trickster_attack(self):
-        print('trickster attack called')
         if self.attack_used == True:
             return
+        root.unbind('<space>')
+        root.unbind('<z>')
+        root.unbind('<q>')
+        root.bind('<q>', self.cancel_attack)
+        root.unbind('<a>')
         sqrs = []
         coord_pairs = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         for coord in coord_pairs:
@@ -248,22 +276,23 @@ class Trickster(Summon):
                 sqrs.append(coord)
         app.animate_squares(sqrs)
         app.depopulate_context(event = None)
-        cmd = lambda s = sqrs: self.check_hit(s)
-        b = tk.Button(app.context_menu, text = 'Confirm Confuse', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = cmd)
+        root.bind('<a>', lambda e, s = sqrs : self.check_hit(e, sqrs = s))
+#         cmd = lambda s = sqrs: self.check_hit(s)
+        b = tk.Button(app.context_menu, text = 'Confirm Confuse', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, s = sqrs : self.check_hit(event = e, sqrs = s))
         b.pack(side = 'top')
         app.context_buttons.append(b)
-        self.placement_buttons.append(b)
-        root.unbind('<q>')
-        root.bind('<q>', self.cancel_attack)
+#         self.placement_buttons.append(b)
+
         
         
-    def check_hit(self, sqrs):
+    def check_hit(self, event = None, sqrs = None):
         if grid_pos not in sqrs:
             return
         if app.current_pos() == '':
             return
-        tar = app.current_pos()
+        app.depopulate_context(event = None)
         app.unbind_all()
+        tar = app.current_pos()
         if self.to_hit(self.psyche, app.ent_dict[tar].psyche) == True:
             self.success = tk.Label(app.context_menu, text = 'Confuse Hit', font = ('chalkduster', 24), fg = 'indianred', wraplength = 190, bg = 'tan2')
             self.success.pack(side = 'top')
@@ -278,8 +307,10 @@ class Trickster(Summon):
         self.success.destroy()
         # DEBUG need to rebind at least arrow keys to choose square, still need to be unbinding other keys 'a' 'q'
         app.rebind_all()
-        root.unbind('q')
-        root.unbind('a')
+        root.unbind('<q>')
+        root.unbind('<a>')
+        root.unbind('<space>')
+        root.unbind('<z>')
         dist = self.damage(self.agl, app.ent_dict[tar].dodge)
         app.depopulate_context(event = None)
         for b in self.placement_buttons:
@@ -293,12 +324,14 @@ class Trickster(Summon):
             self.cancel_attack(event = None)
             return
         app.animate_squares(sqrs)
-        b = tk.Button(app.context_menu, text = 'Choose Square', font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda id = tar, s = sqrs : self.confuse(id, s))
-        b.pack(side = 'left')
-        self.placement_buttons.append(b)
+        root.bind('<a>', lambda e, t = tar, s = sqrs : self.confuse(e, id = t, sqrs =s))
+        b = tk.Button(app.context_menu, text = 'Choose Square', font = ('chalkduster', 24), fg = 'tan3', wraplength = 190, highlightbackground = 'tan3', command = lambda e = None, id = tar, s = sqrs : self.confuse(e, id, s))
+        b.pack(side = 'top')
+        app.context_buttons.append(b)
+#         self.placement_buttons.append(b)
 
     
-    def confuse(self, id, sqrs):
+    def confuse(self, event = None, id = None, sqrs = None):
         if grid_pos not in sqrs:
             return
         app.grid[app.ent_dict[id].loc[0]][app.ent_dict[id].loc[1]] = ''
@@ -320,12 +353,12 @@ class Trickster(Summon):
         return sqr_list
     
     # maybe rename to cleanup_attack and ensure every logical exit point goes here
-    def cancel_attack(self, event, win = None):
+    def cancel_attack(self, event = None, win = None):
         if win:
             win.destroy()
         app.depopulate_context(event = None)
-        for b in self.placement_buttons:
-            b.destroy()
+#         for b in self.placement_buttons:
+#             b.destroy()
         for s in app.sqr_dict.keys():
             app.canvas.delete(s)
         app.sqr_dict = {}
@@ -359,6 +392,12 @@ class Shadow(Summon):
     def shadow_attack(self):
         if self.attack_used == True:
             return
+        # unbind space
+        root.unbind('<space>')
+        root.unbind('<q>')
+        root.bind('<q>', self.cancel_attack)
+        # rebind 'a' to confirm check_hit
+        root.unbind('<a>')
         sqrs = []
         coord_pairs = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         # same for both players, attack on diag
@@ -366,33 +405,34 @@ class Shadow(Summon):
             if abs(coord[0] - self.loc[0]) == 1 and abs(coord[1] - self.loc[1]) == 1:
                 sqrs.append(coord)
         app.animate_squares(sqrs)
-        # create 'confirm attack' button
+        root.bind('<a>', lambda e, sqrs = sqrs : self.check_hit(e, sqrs))
         app.depopulate_context(event = None)
-        cmd = lambda s = sqrs: self.check_hit(s)
-        b = tk.Button(app.context_menu, text = 'Confirm Attack', font = ('chalkduster', 24), fg='tan3', wraplength = 190, highlightbackground = 'tan3', command = cmd)
+#         cmd = lambda e, s = sqrs: self.check_hit(event = e, sqrs = s)
+        # DEBUG .after()s in called func allow for multiple mouse smash, have called func immediately destroy button, maybe just depop context
+        b = tk.Button(app.context_menu, text = 'Confirm Attack', font = ('chalkduster', 24), fg='tan3', wraplength = 190, highlightbackground = 'tan3', command = lambda e = None, s = sqrs: self.check_hit(event = e, sqrs = s))
         b.pack(side = 'top')
         app.context_buttons.append(b)
 #         self.placement_buttons.append(b)
-        root.unbind('<q>')
-        root.bind('<q>', self.cancel_attack)
+
         
-    def check_hit(self, sqrs):
+    def check_hit(self, event = None, sqrs = None):
         if grid_pos not in sqrs:
             return
         if app.current_pos() == '':
             return
+        app.depopulate_context(event = None)
         tar = app.current_pos()
+        # unbind_all so as not interrupt visualizations, also decoupling hotkeys rebound to shortcuts/confirms, rebind on exit 'cancel_attack'
         app.unbind_all()
         if self.to_hit(self.str, app.ent_dict[tar].end) == True:
-            print('successful shadow attack')
             # VISUAL TO HIT, go ahead and show dmg here also
             dmg = self.damage(self.psyche, app.ent_dict[tar].psyche)
             dmg //= 2
             if dmg == 0: dmg = 1
             self.success = tk.Label(app.context_menu, text = 'Attack Success!', font = ('chalkduster', 24), wraplength = 190, fg = 'indianred', bg = 'tan2')
             self.success.pack(side = 'top')
-            self.damage = tk.Label(app.context_menu, text = str(dmg) + ' Spirit', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
-            self.damage.pack(side = 'top')
+            self.dam = tk.Label(app.context_menu, text = str(dmg) + ' Spirit', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
+            self.dam.pack(side = 'top')
             if isinstance(app.ent_dict[tar], Witch):
                 self.magdmg = tk.Label(app.context_menu, text = str(dmg) + ' Magick', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
                 self.magdmg.pack(side = 'top')
@@ -401,12 +441,12 @@ class Shadow(Summon):
         else:
             self.miss = tk.Label(app.context_menu, text = 'Attack Missed!', font = ('chalkduster', 24), wraplength = 190, fg = 'indianred', bg = 'tan2')
             self.miss.pack(side = 'top')
-            root.after(900, lambda win = self.miss : self.cancel_attack(event = None, win = win))
+            root.after(900, lambda vis = self.miss : self.cancel_attack(event = None, vis = vis))
         self.attack_used = True
     
     def do_attack(self, id, dmg):
         self.success.destroy()
-        self.damage.destroy()
+        self.dam.destroy()
         try:
             self.magdmg.destroy()
         except:
@@ -418,12 +458,12 @@ class Shadow(Summon):
             app.kill(id)
         self.cancel_attack( event = None)
     
-    def cancel_attack(self, event, win = None):
-        if win:
-            win.destroy()
+    def cancel_attack(self, event, vis = None):
+        if vis:
+            vis.destroy()
         app.depopulate_context(event = None)
-        for b in self.placement_buttons:
-            b.destroy()
+#         for b in self.placement_buttons:
+#             b.destroy()
         for s in app.sqr_dict.keys():
             app.canvas.delete(s)
         app.sqr_dict = {}
@@ -671,7 +711,8 @@ class Bard(Summon):
                 setlist.append(l)
         return setlist
         
-class Warrior(Summon):
+        
+class Undead(Summon):
     def __init__(self, name, img, loc, owner, number):
         self.actions = {'attack':self.warrior_attack}
         self.attack_used = False
@@ -757,6 +798,124 @@ class Warrior(Summon):
         app.depopulate_context(event = None)
         for b in self.placement_buttons:
             b.destroy()
+        for s in app.sqr_dict.keys():
+            app.canvas.delete(s)
+        app.sqr_dict = {}
+        self.init_normal_anims()
+    
+    def legal_moves(self):
+        loc = self.loc
+        mvlist = []
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        def findall(loc, start, dist):
+            if start > dist:
+                return
+            # need different 'front' depending on player
+            if app.active_player == 'p1':
+                front = [c for c in coords if c[0] == loc[0] and c[1]-1 == loc[1] and app.grid[c[0]][c[1]] == '']
+            elif app.active_player == 'p2':
+                front = [c for c in coords if c[0] == loc[0] and c[1]+1 == loc[1] and app.grid[c[0]][c[1]] == '']
+            for s in front:
+                mvlist.append(s)
+                findall(s, start+1, dist)
+        findall(loc, 1, 3) 
+        setlist = []
+        for l in mvlist:
+            if l not in setlist:
+                setlist.append(l)
+        return setlist
+        
+        
+class Warrior(Summon):
+    def __init__(self, name, img, loc, owner, number):
+        self.actions = {'attack':self.warrior_attack}
+        self.attack_used = False
+        self.str = 4
+        self.agl = 4
+        self.end = 4
+        self.dodge = 2
+        self.psyche = 2
+        self.spirit = 13
+        super().__init__(name, img, loc, owner, number)
+        
+        
+    def warrior_attack(self):
+        if self.attack_used == True:
+            return
+        root.unbind('<a>')
+        root.unbind('<space>')
+        root.unbind('<z>')
+        root.unbind('<q>')
+        root.bind('<q>', self.cancel_attack)
+        sqrs = []
+        coord_pairs = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        if app.active_player == 'p1':
+            for coord in coord_pairs:
+                if abs(coord[0] - self.loc[0]) == 1 and coord[1] == self.loc[1]:
+                    sqrs.append(coord)
+                elif abs(coord[0] - self.loc[0]) == 1 and coord[1]-1 == self.loc[1]:
+                    sqrs.append(coord)
+                elif coord[0] == self.loc[0] and coord[1]-1 == self.loc[1]:
+                    sqrs.append(coord)
+        elif app.active_player == 'p2':
+            for coord in coord_pairs:
+                if abs(coord[0] - self.loc[0]) == 1 and coord[1] == self.loc[1]:
+                    sqrs.append(coord)
+                elif abs(coord[0] - self.loc[0]) == 1 and coord[1]+1 == self.loc[1]:
+                    sqrs.append(coord)
+                elif coord[0] == self.loc[0] and coord[1]+1 == self.loc[1]:
+                    sqrs.append(coord)
+        app.animate_squares(sqrs)
+        app.depopulate_context(event = None)
+        root.bind('<a>', lambda e, s = sqrs : self.check_hit(event = e, sqrs = s)) 
+#         cmd = lambda s = sqrs: self.check_hit(s)
+        b = tk.Button(app.context_menu, text = 'Confirm Attack', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, s = sqrs : self.check_hit(event = e, sqrs = s))
+        b.pack(side = 'top')
+        app.context_buttons.append(b)
+#         self.placement_buttons.append(b)
+        
+    def check_hit(self, event = None, sqrs = None):
+        if grid_pos not in sqrs:
+            return
+        if app.current_pos() == '':
+            return
+        self.attack_used = True
+        app.depopulate_context(event = None)
+        app.unbind_all()
+        tar = app.current_pos()
+        if self.to_hit(self.agl, app.ent_dict[tar].dodge) == True:
+            # call self.init_attack_anims() here to replace self.anim_dict with other images
+            # on exit, re init normal anims
+            self.init_attack_anims()
+            dmg = self.damage(self.str, app.ent_dict[tar].end)
+            self.success = tk.Label(app.context_menu, text = 'Attack Hit!', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
+            self.success.pack(side = 'top')
+            self.dam = tk.Label(app.context_menu, text = str(dmg) + ' Spirit', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
+            self.dam.pack(side = 'top')
+            root.after(1200, lambda id = tar, d = dmg : self.do_attack(id, d))
+        else:
+            self.miss = tk.Label(app.context_menu, text = 'Attack Missed!', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
+            self.miss.pack(side = 'top')
+            root.after(1200, lambda e = None : self.cancel_attack(event = e))
+        
+    def do_attack(self, id, dmg):
+        self.success.destroy()
+        self.dam.destroy()
+        app.ent_dict[id].set_attr('spirit', -dmg)
+        if app.ent_dict[id].spirit <= 0:
+            app.kill(id)
+            print('target killed')
+        self.init_normal_anims()
+        self.cancel_attack(event = None)
+        # re init normal anims 
+    
+    def cancel_attack(self, event):
+        app.rebind_all()
+        try: self.miss.destroy()
+        except: pass
+        app.depopulate_context(event = None)
+#         for b in self.placement_buttons:
+#             b.destroy()
         for s in app.sqr_dict.keys():
             app.canvas.delete(s)
         app.sqr_dict = {}
@@ -1072,12 +1231,13 @@ class App(tk.Frame):
         # Herculanum 240
         # Papyrus 240
     def choose_num_players(self):
-        self.game_title = tk.Label(root, text = 'WITCH', fg = 'indianred', bg = 'black', font = ('Papyrus', 180))
+        # DEBUG just fix lineheight in photoshop and display as image
+        self.game_title = tk.Label(root, text = 'WITCH', fg = 'indianred', bg = 'black', font = ('Papyrus', 180), pady = -40, borderwidth = 0, highlightthickness = 0, anchor = 's')
         self.game_title.pack(side = 'top')
+        self.subtitle = tk.Label(root, text = '-The Hatred-', fg = 'gray50', bg = 'black', font = ('Luminari', 32), pady = -40, anchor = 'n')
+        self.subtitle.pack(side = 'top')
         self.marquee = tk.Label(root, text = 'A Strategy Game', fg = 'tan3', bg = 'black', font=('chalkduster', 36))
         self.marquee.pack(side = 'top')
-        self.production =tk.Label(root, text = '-PAIN & HATRED Studio-', fg = 'indianred', bg = 'black', font = ('herculanum', 34))
-        self.production.pack(side = 'top')
         self.one_player = tk.Button(root, text = '1 Player', fg = 'tan3', highlightbackground = 'tan3', font = ('chalkduster', 24), command = lambda num = 1 : self.num_chose(num))
         self.one_player.pack()
         self.two_player = tk.Button(root, text = '2 Player', fg = 'tan3', highlightbackground = 'tan3', font = ('chalkduster', 24), command = lambda num = 2 : self.num_chose(num))
@@ -1086,8 +1246,8 @@ class App(tk.Frame):
     def num_chose(self, num):
         self.num_players = num
         self.game_title.destroy()
+        self.subtitle.destroy()
         self.marquee.destroy()
-        self.production.destroy()
         self.one_player.destroy()
         self.two_player.destroy()
         if self.num_players == 2:
@@ -1304,8 +1464,8 @@ class App(tk.Frame):
         self.rebind_all()
         for b in self.help_buttons:
             b.destroy()
+        # disable 'end_turn' during 1player computer turn, actually disable all input from player1
         self.repop_help_buttons()
-        print('end turn')
         self.depopulate_context(event = None)
         # clean all entity 'has_x' for active_player
         for ent in self.ent_dict.keys():
@@ -1565,7 +1725,7 @@ class App(tk.Frame):
         for b in self.help_buttons:
             b.destroy()
         self.depopulate_context(event = None)
-        l = tk.Label(self.context_menu, text = 'End Your Turn?', fg = 'indianred', bg = 'tan', wraplength = 190, relief = 'ridge', font = ('chalkduster', 24))
+        l = tk.Label(self.context_menu, text = 'End Your Turn?', fg = 'indianred', bg = 'black', wraplength = 190, relief = 'ridge', font = ('chalkduster', 24))
         self.help_buttons.append(l)
         b1 = tk.Button(self.context_menu, text = 'END', fg = 'indianred', highlightbackground = 'tan3', font = ('chalkduster', 24), command = self.end_turn)
         b1.pack(side = 'bottom')
@@ -1623,9 +1783,10 @@ class App(tk.Frame):
         del self.ent_dict[id]
         # if id begins with 'a' belongs to protag_witch, else belongs to antag_witch
         if id[0] == 'a':
-            del self.ent_dict[self.protag_witch].summon_dict[id]
+            del self.ent_dict[self.p1_witch].summon_dict[id]
         elif id[0] == 'b':
-            del self.ent_dict[self.antag_witch].summon_dict[id]
+            if self.num_players == 2:
+                del self.ent_dict[self.p2_witch].summon_dict[id]
             
     def unbind_all(self):
         root.unbind('<Right>')
@@ -1650,15 +1811,13 @@ class App(tk.Frame):
         root.bind('<Escape>', app.exit_fullscreen)
 
     def confirm_quit(self):
-    # destroy all help and context buttons unbind all
-    # on cancel func, repop help buttons, rebind all
         for b in self.help_buttons:
             b.destroy()
         self.depopulate_context(event = None)
         self.unbind_all()
     # Instead of label just paste a bunch of intrusive text across the main canvas
     # centered around the grid_pos
-        l = tk.Label(self.context_menu, text = 'Confirm Quit', relief = 'ridge', fg = 'indianred', bg = 'tan', font = ('chalkduster', 24))
+        l = tk.Label(self.context_menu, text = 'Confirm Quit', relief = 'ridge', fg = 'indianred', bg = 'black', font = ('chalkduster', 24))
         self.help_buttons.append(l)
         b1 = tk.Button(self.context_menu, text = 'QUIT', fg = 'indianred', highlightbackground = 'tan3', font = ('chalkduster', 24), command = root.destroy)
         b1.pack(side = 'bottom')
