@@ -1,4 +1,4 @@
-# instead of info button, show label with basic info 
+# all labels get relief = 'ridge'
 
 # when making buttons for spell/summon choice, button also holds number which is hotkey
 
@@ -9,8 +9,6 @@
 # warriors seem maybe underpowered / too easy to avoid, maybe allow them to move back or sideways just one square
 
 # balance right now might be more a problem of shadows being too consistent compared to other summons, am I making sure to exploit their 'stay on one color square' drawback?
-
-# Need faster key for getting 'info', bind a key that immediately shows popup or populates context with info, maybe 'a' should immediately show info along with relevant context in context menu
 
 # can use         self.confirm_end_popup.protocol("WM_DELETE_WINDOW", lambda win = self.confirm_end_popup : self.destroy_release(win))  .... edit for appropriate context, handle exit through window manager 'X' for Toplevel popups
 
@@ -51,19 +49,7 @@
 
 # differentiate images for opposing players, color changes or overlays
 
-# when 'q' is rebinded to cancel stuff (attack, placement), also rebind 'a' to confirm instead of needed mouseclick
-# after populating context for selected unit you own, bind a key for each action?
-
-# To prevent windowbar in popups, Instead of toplevels make windows in canvas, increase size of context menu to fit
-
-# also/instead of 'antag_witch', make 'levels' or just a bunch of units that will be easier to program AI for
-# currently would be extremely difficult to make challenging AI with equal sides
-
 # start thinking about what map and map animation to use
-
-# maybe take photo for portrait background instead of scroll texture
-
-# splash screen?
 
 import tkinter as tk
 from tkinter import ttk
@@ -204,30 +190,30 @@ class Entity():
         if base + dif < 1: return 1 
         else: return base + dif
             
-    def info(self):
-        self.info_popup = tk.Toplevel()
-        self.info_popup.grab_set()
-        self.info_popup.attributes('-topmost', 'true')
-        self.info_popup.config(bg = 'black')
-        info_label = tk.Label(self.info_popup, text = self.name +'\n'+ self.__class__.__name__, font = ('chalkduster', 20), fg = 'tan3', bg = 'black')
-        info_label.pack()
-        strength = tk.Label(self.info_popup, text = 'Strength : ' + str(self.str), font = ('chalkduster', 20), fg = 'tan3', bg = 'black')
-        strength.pack()
-        agl = tk.Label(self.info_popup, text = 'Agility : ' + str(self.agl), font = ('chalkduster', 20), fg = 'tan3', bg = 'black')
-        agl.pack()
-        end = tk.Label(self.info_popup, text = 'Endurance : ' + str(self.end), font = ('chalkduster', 20), fg = 'tan3', bg = 'black')
-        end.pack()
-        dodge = tk.Label(self.info_popup, text = 'Dodge : ' + str(self.dodge), font = ('chalkduster', 20), fg = 'tan3', bg = 'black')
-        dodge.pack()
-        psyche = tk.Label(self.info_popup, text = 'Psyche : ' + str(self.psyche), font = ('chalkduster', 20), fg = 'tan3', bg = 'black')
-        psyche.pack()
-        spirit = tk.Label(self.info_popup, text = 'Spirit : ' + str(self.spirit), font = ('chalkduster', 20), fg = 'tan3', bg = 'black')
-        spirit.pack()
-        if isinstance(self, Witch):
-            magick = tk.Label(self.info_popup, text = 'Magick : ' + str(self.magick), font = ('chalkduster', 20), fg = 'tan3', bg = 'black')
-            magick.pack()
-        close = tk.Button(self.info_popup, text = 'close', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda win = self.info_popup : app.destroy_release(win))
-        close.pack()
+#     def info(self):
+#         self.info_popup = tk.Toplevel()
+#         self.info_popup.grab_set()
+#         self.info_popup.attributes('-topmost', 'true')
+#         self.info_popup.config(bg = 'black')
+#         info_label = tk.Label(self.info_popup, text = self.name +'\n'+ self.__class__.__name__, font = ('chalkduster', 20), fg = 'tan3', bg = 'black')
+#         info_label.pack()
+#         strength = tk.Label(self.info_popup, text = 'Strength : ' + str(self.str), font = ('chalkduster', 20), fg = 'tan3', bg = 'black')
+#         strength.pack()
+#         agl = tk.Label(self.info_popup, text = 'Agility : ' + str(self.agl), font = ('chalkduster', 20), fg = 'tan3', bg = 'black')
+#         agl.pack()
+#         end = tk.Label(self.info_popup, text = 'Endurance : ' + str(self.end), font = ('chalkduster', 20), fg = 'tan3', bg = 'black')
+#         end.pack()
+#         dodge = tk.Label(self.info_popup, text = 'Dodge : ' + str(self.dodge), font = ('chalkduster', 20), fg = 'tan3', bg = 'black')
+#         dodge.pack()
+#         psyche = tk.Label(self.info_popup, text = 'Psyche : ' + str(self.psyche), font = ('chalkduster', 20), fg = 'tan3', bg = 'black')
+#         psyche.pack()
+#         spirit = tk.Label(self.info_popup, text = 'Spirit : ' + str(self.spirit), font = ('chalkduster', 20), fg = 'tan3', bg = 'black')
+#         spirit.pack()
+#         if isinstance(self, Witch):
+#             magick = tk.Label(self.info_popup, text = 'Magick : ' + str(self.magick), font = ('chalkduster', 20), fg = 'tan3', bg = 'black')
+#             magick.pack()
+#         close = tk.Button(self.info_popup, text = 'close', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda win = self.info_popup : app.destroy_release(win))
+#         close.pack()
     
 
 class Summon(Entity):
@@ -1074,6 +1060,7 @@ class App(tk.Frame):
         self.moved_right = 0
         self.moved_down = 0
         self.context_buttons = []
+        self.help_buttons = []
         # list to hold entity that is being animated as 'attacking'
         self.attacking = []
         self.p1_witch = ''
@@ -1158,14 +1145,17 @@ class App(tk.Frame):
         self.context_menu.pack(side = 'left', fill = 'both', expand = 'false')
         self.context_menu.create_image(0, 0, anchor = 'nw', image = self.con_bg)
         # QUIT should have 'are you sure' popup
-        self.quit = tk.Button(self.context_menu, text="QUIT", font = ('chalkduster', 24), fg='indianred', highlightbackground = 'tan3', command=self.confirm_quit)
-        self.quit.pack(side = 'bottom')
+        quit_button = tk.Button(self.context_menu, text="QUIT", font = ('chalkduster', 24), fg='indianred', highlightbackground = 'tan3', command=self.confirm_quit)
+        quit_button.pack(side = 'bottom')
+        self.help_buttons.append(quit_button)
         # END TURN
-        self.end = tk.Button(self.context_menu, text = 'End Turn', font = ('chalkduster', 24), highlightbackground = 'tan3', command = self.confirm_end)
-        self.end.pack(side = 'bottom')
+        end_turn_button = tk.Button(self.context_menu, text = 'End Turn', font = ('chalkduster', 24), highlightbackground = 'tan3', command = self.confirm_end)
+        end_turn_button.pack(side = 'bottom')
+        self.help_buttons.append(end_turn_button)
         # HELP
-        self.help_b = tk.Button(self.context_menu, text = 'Help', font = ('chalkduster', 24), fg='indianred', highlightbackground = 'tan3', command = self.help)
-        self.help_b.pack(side = 'bottom')
+        help_button = tk.Button(self.context_menu, text = 'Help', font = ('chalkduster', 24), fg='indianred', highlightbackground = 'tan3', command = self.help)
+        help_button.pack(side = 'bottom')
+        self.help_buttons.append(help_button)
         # CANVAS
         width = root.winfo_screenwidth()
         height = root.winfo_screenheight()
@@ -1310,6 +1300,11 @@ class App(tk.Frame):
         
         
     def end_turn(self):
+        # cleanup from confirm_end
+        self.rebind_all()
+        for b in self.help_buttons:
+            b.destroy()
+        self.repop_help_buttons()
         print('end turn')
         self.depopulate_context(event = None)
         # clean all entity 'has_x' for active_player
@@ -1371,10 +1366,6 @@ class App(tk.Frame):
         bg.pack(side = 'top')
         bg.create_image(0,0, image = self.cntxt_info_bg, anchor = 'nw')
         bg.create_text(15, 15, text=expanded_name + '\n' + self.get_info_text(e), anchor = 'nw', font = ('chalkduster', 18), fill = 'indianred')
-#         l = tk.Label(self.context_menu, text = expanded_name + '\n' + self.get_info_text(e), font = ('chalkduster', 20), fg = 'indianred', wraplength = 190)
-#         l.pack(side = 'top')
-#         b = tk.Button(self.context_menu, text = expanded_name, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = self.ent_dict[e].info)
-#         b.pack(side = 'top')
         self.context_buttons.append(bg)
         if self.ent_dict[e].owner == self.active_player:
             act_dict = self.ent_dict[e].actions
@@ -1570,17 +1561,25 @@ class App(tk.Frame):
         return txt
                  
     def confirm_end(self):
-        self.confirm_end_popup = tk.Toplevel()
-        self.confirm_end_popup.grab_set()
-        self.confirm_end_popup.attributes('-topmost', 'true')
-        self.confirm_end_popup.config(bg = 'black')
-        self.confirm_end_popup.protocol("WM_DELETE_WINDOW", lambda win = self.confirm_end_popup : self.destroy_release(win))
-        label = tk.Label(self.confirm_end_popup, text = 'End Your Turn?', fg = 'tan3', bg = 'black', font = ('chalkduster', 24))
-        label.pack(side = 'top')
-        b1 = tk.Button(self.confirm_end_popup, text = 'Yes', fg = 'tan3', font = ('chalkduster', 24), highlightbackground = 'tan3', command = lambda win = self.confirm_end_popup, func = self.end_turn : self.release_wrapper(win, func))
-        b1.pack(side = 'left')
-        b2 = tk.Button(self.confirm_end_popup, text = 'No', fg = 'tan3',font = ('chalkduster', 24), highlightbackground = 'tan3', command = lambda win = self.confirm_end_popup : self.destroy_release(win))
-        b2.pack(side = 'left')
+        self.unbind_all()
+        for b in self.help_buttons:
+            b.destroy()
+        self.depopulate_context(event = None)
+        l = tk.Label(self.context_menu, text = 'End Your Turn?', fg = 'indianred', bg = 'tan', wraplength = 190, relief = 'ridge', font = ('chalkduster', 24))
+        self.help_buttons.append(l)
+        b1 = tk.Button(self.context_menu, text = 'END', fg = 'indianred', highlightbackground = 'tan3', font = ('chalkduster', 24), command = self.end_turn)
+        b1.pack(side = 'bottom')
+        self.help_buttons.append(b1)
+        b2 = tk.Button(self.context_menu, text = 'Cancel', fg = 'indianred', highlightbackground = 'tan3', font = ('chalkduster', 24), command = self.cancel_end_turn)
+        b2.pack(side = 'bottom')
+        self.help_buttons.append(b2)
+        l.pack(side = 'bottom')
+        
+    def cancel_end_turn(self):
+        self.rebind_all()
+        for b in self.help_buttons:
+            b.destroy()
+        self.repop_help_buttons()
         
     def show_avatar_info(self, witch):
         self.info_popup = tk.Toplevel()
@@ -1651,7 +1650,42 @@ class App(tk.Frame):
         root.bind('<Escape>', app.exit_fullscreen)
 
     def confirm_quit(self):
-        pass
+    # destroy all help and context buttons unbind all
+    # on cancel func, repop help buttons, rebind all
+        for b in self.help_buttons:
+            b.destroy()
+        self.depopulate_context(event = None)
+        self.unbind_all()
+    # Instead of label just paste a bunch of intrusive text across the main canvas
+    # centered around the grid_pos
+        l = tk.Label(self.context_menu, text = 'Confirm Quit', relief = 'ridge', fg = 'indianred', bg = 'tan', font = ('chalkduster', 24))
+        self.help_buttons.append(l)
+        b1 = tk.Button(self.context_menu, text = 'QUIT', fg = 'indianred', highlightbackground = 'tan3', font = ('chalkduster', 24), command = root.destroy)
+        b1.pack(side = 'bottom')
+        self.help_buttons.append(b1)
+        b2 = tk.Button(self.context_menu, text = 'Cancel', fg = 'indianred', highlightbackground = 'tan3', font = ('chalkduster', 24), command = self.cancel_quit)
+        b2.pack(side = 'bottom')
+        self.help_buttons.append(b2)
+        l.pack(side = 'bottom')
+
+    def cancel_quit(self):
+        # destroy help buttons, repop help buttons, rebind all
+        for b in self.help_buttons:
+            b.destroy()
+        self.repop_help_buttons()
+        self.rebind_all()
+        
+    def repop_help_buttons(self):
+        quit_button = tk.Button(self.context_menu, text="QUIT", font = ('chalkduster', 24), fg='indianred', highlightbackground = 'tan3', command=self.confirm_quit)
+        quit_button.pack(side = 'bottom')
+        self.help_buttons.append(quit_button)
+        end_turn_button = tk.Button(self.context_menu, text = 'End Turn', font = ('chalkduster', 24), highlightbackground = 'tan3', command = self.confirm_end)
+        end_turn_button.pack(side = 'bottom')
+        self.help_buttons.append(end_turn_button)
+        help_button = tk.Button(self.context_menu, text = 'Help', font = ('chalkduster', 24), fg='indianred', highlightbackground = 'tan3', command = self.help)
+        help_button.pack(side = 'bottom')
+        self.help_buttons.append(help_button)
+        
 
 root = tk.Tk()
 app = App(master=root)
