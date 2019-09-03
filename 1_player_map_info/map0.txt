@@ -1,2 +1,8 @@
 1200
 600
+ImageTk.PhotoImage(Image.open('summon_imgs/warrior.png'))
+Warrior(name = 'warrior', img = img, loc =[11,5], owner = 'p2', number = 'b0')
+ImageTk.PhotoImage(Image.open('summon_imgs/warrior.png'))
+Warrior(name = 'warrior', img = img, loc =[9,5], owner = 'p2', number = 'b1')
+ImageTk.PhotoImage(Image.open('summon_imgs/shadow.png'))
+Shadow(name = 'shadow', img = img, loc =[8,5], owner = 'p2', number = 'b2')
