@@ -1465,7 +1465,6 @@ class App(tk.Frame):
         for b in self.help_buttons:
             b.destroy()
         # disable 'end_turn' during 1player computer turn, actually disable all input from player1
-        self.repop_help_buttons()
         self.depopulate_context(event = None)
         # clean all entity 'has_x' for active_player
         for ent in self.ent_dict.keys():
@@ -1477,8 +1476,10 @@ class App(tk.Frame):
                 elif isinstance(self.ent_dict[ent], Summon):
                     self.ent_dict[ent].attack_used = False
         if self.active_player == 'p1':
+            self.unbind_all()
             self.active_player = 'p2'
         elif self.active_player == 'p2':
+            self.repop_help_buttons()
             self.active_player = 'p1'
         self.start_turn()
         
