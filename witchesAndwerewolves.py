@@ -302,6 +302,7 @@ class Trickster(Summon):
         root.unbind('<space>')
         root.unbind('<z>')
         dist = self.damage(self.agl, app.ent_dict[tar].dodge)
+        dist = dist//2 + 1
         app.depopulate_context(event = None)
         for b in self.placement_buttons:
             b.destroy()
