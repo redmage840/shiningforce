@@ -1586,13 +1586,13 @@ class App(tk.Frame):
             self.get_focus(w)
     
     def pickup_putdown(self, event):
-        # unbind 'a' until returns or is 'putdown'
+        # disallow while context_menu is populated
+        if self.context_buttons != []:
+            return
         global is_object_selected, selected, curs_pos
         # PICK UP
-        print('grid ',app.grid)
-        print('summon dict ', self.ent_dict[self.p1_witch].summon_dict.items())
-        print('ent dict ', self.ent_dict.items())
         if is_object_selected == False and self.current_pos() != '':
+            # unbind 'a' until returns or is 'putdown'
             root.unbind('<a>')
             unit = self.current_pos()
             if self.ent_dict[unit].owner == self.active_player and self.ent_dict[unit].move_used == False:
