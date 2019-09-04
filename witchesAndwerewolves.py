@@ -1,9 +1,9 @@
-# urgent, at least trickster has problems with not disabling 'z' during 'a', actually all units
-
+# how to 'stagger' animations...? so they arent all moving in sync
+# randomize starting animation 
 
 # make vis longer in undead_attack, show 'who' is attacking
 
-# undead need shadow for visibility
+# probably make undead move like witches with dist 2 or 1
 
 # still unnecessarily deleting unused 'placement_buttons'
 
@@ -793,12 +793,10 @@ class Undead(Summon):
                 else:
                     root.after(666, lambda e = ents_list : app.do_ai_loop(e))
     
-    # apply damage to target
     def undead_attack(self, ents_list, id):
-        # check if successful to_hit
         if self.to_hit(self.agl, app.ent_dict[id].dodge) == True:
             # HIT, SHOW VIS, DO DAMAGE, EXIT
-            self.hit = tk.Label(app.context_menu, text = 'Attack Hit!', wraplength = 190, font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
+            self.hit = tk.Label(app.context_menu, text = 'Undead Attack Hit!', wraplength = 190, font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
             self.hit.pack(side = 'top')
             d = self.damage(self.str, app.ent_dict[id].end)
             self.dam = tk.Label(app.context_menu, text = str(d) + ' Spirit Damage!', wraplength = 190, font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
@@ -806,12 +804,12 @@ class Undead(Summon):
             app.ent_dict[id].set_attr('spirit', -d)
             if app.ent_dict[id].spirit <= 0:
                 app.kill(id)
-            root.after(666, lambda e = ents_list : self.cleanup_attack(e)) # EXIT THROUGH CLEANUP_ATTACK()
+            root.after(1666, lambda e = ents_list : self.cleanup_attack(e)) # EXIT THROUGH CLEANUP_ATTACK()
         else:
             # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
-            self.miss = tk.Label(app.context_menu, text = 'Missed!', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
+            self.miss = tk.Label(app.context_menu, text = 'Undead Attack Missed!', wraplength = 190, font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
             self.miss.pack(side = 'top')
-            root.after(666, lambda e = ents_list : self.cleanup_attack(e))
+            root.after(1666, lambda e = ents_list : self.cleanup_attack(e))
         
     def cleanup_attack(self, ents_list):
         try: self.hit.destroy()
@@ -827,8 +825,6 @@ class Undead(Summon):
             root.after(666, lambda e = ents_list : app.do_ai_loop(e))
         
         
-    # yeah problem is this janky xor, not well thought out...
-    # so why are undead not moving further...
     def legal_attacks(self):
         sqrs = []
         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
