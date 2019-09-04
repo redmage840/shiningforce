@@ -62,12 +62,12 @@
 # start thinking about what map and map animation to use
 
 import tkinter as tk
-from tkinter import ttk
-import os
+# from tkinter import ttk
+from os import walk
 from PIL import ImageTk,Image
 from random import choice, randrange
 from functools import partial
-import time
+# import time
 
 # convenience func
 def dist(loc1, loc2):
@@ -101,7 +101,7 @@ class Sqr():
         self.loc = loc
         self.anim_dict = {}
         self.anim_counter = 0
-        anims = [a for r,d,a in os.walk('animations/move/')][0]
+        anims = [a for r,d,a in walk('animations/move/')][0]
         anims = [a for a in anims[:] if a[0] != '.']
         for i, anim in enumerate(anims):
             a = ImageTk.PhotoImage(Image.open('animations/move/' + anim))
@@ -127,12 +127,13 @@ class Entity():
         # buttons placed in context menu other than through 'populate_context', so they can be removed separately
         self.placement_buttons = []
         self.anim_dict = {}
-        self.anim_counter = 0
-        anims = [a for r,d,a in os.walk('./animations/' + self.name + '/')][0]
+        anims = [a for r,d,a in walk('./animations/' + self.name + '/')][0]
         anims = [a for a in anims[:] if a[-3:] == 'png']
         for i, anim in enumerate(anims):
             a = ImageTk.PhotoImage(Image.open('animations/' + self.name + '/' + anim))
             self.anim_dict[i] = a
+        # randomize animation 'seed' to stagger different ent animations
+        self.anim_counter = randrange(0, len(anims))
             
     def rotate_image(self):
         total_imgs = len(self.anim_dict.keys())-1
@@ -145,7 +146,7 @@ class Entity():
     def init_attack_anims(self):
         self.anim_dict = {}
         self.anim_counter = 0
-        anims = [a for r,d,a in os.walk('./attack_animations/' + self.name + '/')][0]
+        anims = [a for r,d,a in walk('./attack_animations/' + self.name + '/')][0]
         anims = [a for a in anims[:] if a[-3:] == 'png']
         for i, anim in enumerate(anims):
             a = ImageTk.PhotoImage(Image.open('attack_animations/' + self.name + '/' + anim))
@@ -154,7 +155,7 @@ class Entity():
     def init_normal_anims(self):
         self.anim_dict = {}
         self.anim_counter = 0
-        anims = [a for r,d,a in os.walk('./animations/' + self.name + '/')][0]
+        anims = [a for r,d,a in walk('./animations/' + self.name + '/')][0]
         anims = [a for a in anims[:] if a[-3:] == 'png']
         for i, anim in enumerate(anims):
             a = ImageTk.PhotoImage(Image.open('animations/' + self.name + '/' + anim))
@@ -1278,7 +1279,7 @@ class App(tk.Frame):
         self.choosemap = tk.Label(root, text = 'Choose Map', fg = 'tan3', bg = 'black', font = ('chalkduster', 38))
         self.choosemap.pack()
         # CHOOSE MAPS
-        maps = [m for r,d,m in os.walk('./2_player_maps')][0]
+        maps = [m for r,d,m in walk('./2_player_maps')][0]
         self.map_button_list = []
         self.tmp_mapimg_dict = {}
         for i,map in enumerate(maps):
@@ -1366,10 +1367,10 @@ class App(tk.Frame):
         label = tk.Label(self.avatar_popup, text = 'Choose Player ' + str(player_num) + ' Witch', font = ('chalkduster', 36), fg = 'indianred', bg = 'black')
         label.pack(side = 'top')
         if player_num == 1:
-            witches = [w for r,d,w in os.walk('./portraits/')][0]
+            witches = [w for r,d,w in walk('./portraits/')][0]
             witches = [w for w in witches[:] if w[0] != '.']
         elif player_num == 2:
-            witches = [w for r,d,w in os.walk('./portraits')][0]
+            witches = [w for r,d,w in walk('./portraits')][0]
             witches = [w for w in witches[:] if w[0] != '.']
 #             witches = [w[:-4] for w in witches[:]]
             p1_w_fname = self.p1_witch + '.png'
