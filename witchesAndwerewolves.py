@@ -1,3 +1,10 @@
+# urgent, at least trickster has problems with not disabling 'z' during 'a', actually all units
+
+
+# make vis longer in undead_attack, show 'who' is attacking
+
+# undead need shadow for visibility
+
 # still unnecessarily deleting unused 'placement_buttons'
 
 # show victory conditions on map start
@@ -61,6 +68,10 @@ from PIL import ImageTk,Image
 from random import choice, randrange
 from functools import partial
 import time
+
+# convenience func
+def dist(loc1, loc2):
+    return abs(loc1[0] - loc2[0]) + abs(loc1[1] - loc2[1])
 
 curs_pos = [0, 0]
 is_object_selected = False
@@ -708,55 +719,74 @@ class Undead(Summon):
     # need more visualizations before actions happen, better timing of vis
     def do_undead_ai(self, ents_list):
         # GET LIST OF ENEMY ENTS, PICK ONE OF THE CLOSEST
-        loc = self.loc
+        print('start do_undead_ai()')
+        print('id ', self.number)
         enemy_ents = [x for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p1']
-        def dist(l):
-            return abs(l[0] - loc[0]) + abs(l[1] - loc[1])
-        min = dist(app.ent_dict[enemy_ents[0]].loc)
+        # below line was correct use of dist, dist from arg to self
+        min = dist(app.ent_dict[enemy_ents[0]].loc, self.loc)
         closest = [enemy_ents[0]]
         for ent in enemy_ents:
-            if dist(app.ent_dict[ent].loc) < min:
-                min = dist(app.ent_dict[ent].loc)
+            if dist(app.ent_dict[ent].loc, self.loc) < min:
+                min = dist(app.ent_dict[ent].loc, self.loc)
                 closest = [ent]
-            elif dist(app.ent_dict[ent].loc) == min:
+            elif dist(app.ent_dict[ent].loc, self.loc) == min:
                 closest.append(ent)
         target = closest[0]
+        print('closest ', closest)
+        print('target ', target)
         t_loc = app.ent_dict[target].loc
         atk_sqrs = self.legal_attacks()
         print('loc and atk_sqrs ' + str(self.loc) + str(atk_sqrs))
         # IF TARGET IS WITHIN ATTACK, ATTACK IT, EXIT THROUGH UNDEAD_ATTACK()
         if t_loc in atk_sqrs:
+            print('target location within atk_sqrs, doing undead_attack')
             self.undead_attack(ents_list, target)
         # IF TARGET IS NOT WITHIN ATTACK, MOVE TOWARDS IT
         else:
+            print('target not within attack, attempting move towards')
             mov_sqrs = self.legal_moves()
+            print('move sqrs is ', mov_sqrs)
             # NO LEGAL MOVES AND TARGET NOT WITHIN CURRENT RANGE, EXIT FUNC
             if mov_sqrs == []:
+                print('no legal moves, mod ents_list and ...')
                 ents_list = ents_list[1:]
                 if ents_list == []:
+                    print('end turn')
                     app.end_turn()
                 else:
+                    print('after666 call do_ai_loop')
                     root.after(666, lambda e = ents_list : app.do_ai_loop(e))
             else:
             # AMONG LEGAL MOVES, PICK ONE THAT MINIMIZES DISTANCE BETWEEN SELF AND TARGET, MOVE SELF TO SQUARE
+                print('picking best move')
                 best = mov_sqrs[0]
-                min = dist(mov_sqrs[0])
+                # this is getting the dist from mov_sqr to self.loc NOT Target
+                min = dist(mov_sqrs[0], app.ent_dict[target].loc)
                 for s in mov_sqrs:
-                    if dist(s) < min:
+                    if dist(s, app.ent_dict[target].loc) < min:
                         best = s
-                        min = dist(s)
+                        min = dist(s, app.ent_dict[target].loc)
+                print('best move sqr is ', str(best))
+                print('moving...')
                 app.canvas.delete(self.number)
-                app.grid[loc[0]][loc[1]] = ''
+                app.grid[self.loc[0]][self.loc[1]] = ''
                 self.loc = best[:]
                 self.origin = best[:]
                 app.grid[best[0]][best[1]] = self.number
                 app.canvas.create_image(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+50-app.moved_down, image = self.img, tags = self.number)
             # IF TARGET NOW WITHIN RANGE, MAKE ATTACK ON IT
+            print('reattempt to attack target...')
             atk_sqrs = self.legal_attacks()
+            print('atk_sqrs is now ', atk_sqrs)
             if t_loc in atk_sqrs:
+                print('target location within atk_sqrs')
+                print('target is ', target)
+                print('location is ', t_loc)
+                print('doing undead_attack')
                 self.undead_attack(ents_list, target) # EXIT THROUGH UNDEAD_ATTACK()
             else:
             # CANNOT ATTACK, EXIT FUNC
+                print('target not in atk_sqrs, mod ents_list and call do_ai_loop')
                 ents_list = ents_list[1:]
                 if ents_list == []:
                     app.end_turn()
@@ -797,24 +827,23 @@ class Undead(Summon):
             root.after(666, lambda e = ents_list : app.do_ai_loop(e))
         
         
-    
+    # yeah problem is this janky xor, not well thought out...
+    # so why are undead not moving further...
     def legal_attacks(self):
-        loc = self.loc
         sqrs = []
         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         for coord in coords:
-            if bool(abs(coord[0] - self.loc[0]) == 1) ^ bool(abs(coord[1] - self.loc[1]) == 1):
+            if (bool(abs(coord[0] - self.loc[0]) == 1) ^ bool(abs(coord[1] - self.loc[1]) == 1)) and dist(coord, self.loc) == 1:
                 if app.grid[coord[0]][coord[1]] != '':
                     sqrs.append(coord)
         return sqrs
         
     def legal_moves(self):
-        loc = self.loc
         sqrs = []
         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         for coord in coords:
             if app.grid[coord[0]][coord[1]] == '':
-                if bool(abs(coord[0] - self.loc[0]) == 1) ^ bool(abs(coord[1] - self.loc[1]) == 1):
+                if (bool(abs(coord[0] - self.loc[0]) == 1) ^ bool(abs(coord[1] - self.loc[1]) == 1)) and dist(coord, self.loc) == 1:
                     sqrs.append(coord)
         return sqrs
         
