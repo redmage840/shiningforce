@@ -247,11 +247,9 @@ class Trickster(Summon):
         app.animate_squares(sqrs)
         app.depopulate_context(event = None)
         root.bind('<a>', lambda e, s = sqrs : self.check_hit(e, sqrs = s))
-#         cmd = lambda s = sqrs: self.check_hit(s)
         b = tk.Button(app.context_menu, text = 'Confirm Confuse', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, s = sqrs : self.check_hit(event = e, sqrs = s))
         b.pack(side = 'top')
         app.context_buttons.append(b)
-#         self.placement_buttons.append(b)
 
         
         
@@ -262,30 +260,24 @@ class Trickster(Summon):
             return
         app.depopulate_context(event = None)
         app.unbind_all()
-        tar = app.current_pos()
-        if self.to_hit(self.psyche, app.ent_dict[tar].psyche) == True:
-            self.success = tk.Label(app.context_menu, text = 'Confuse Hit', font = ('chalkduster', 24), fg = 'indianred', wraplength = 190, bg = 'tan2')
-            self.success.pack(side = 'top')
-            app.after(900, lambda s = sqrs, t = tar:self.do_attack(sqrs, tar))
+        id = app.current_pos()
+        if self.to_hit(self.psyche, app.ent_dict[id].psyche) == True:
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Confuse Hit!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+            app.after(1666, lambda id = id : self.do_attack(id))
         else:
-            self.miss = tk.Label(app.context_menu, text = 'Confuse Missed', font = ('chalkduster', 24), fg = 'indianred', wraplength = 190, bg = 'tan2')
-            self.miss.pack(side = 'top')
-            app.after(900, lambda win = self.miss : self.cancel_attack( event = None, win = win))
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Confuse Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+            app.after(1666, lambda e = None : self.cancel_attack(event = None))
         self.attack_used = True
         
-    def do_attack(self, sqrs, tar):
-        self.success.destroy()
-        # DEBUG need to rebind at least arrow keys to choose square, still need to be unbinding other keys 'a' 'q'
+    def do_attack(self, id):
         app.rebind_all()
         root.unbind('<q>')
         root.unbind('<a>')
         root.unbind('<space>')
         root.unbind('<z>')
-        dist = self.damage(self.agl, app.ent_dict[tar].dodge)
+        dist = self.damage(self.agl, app.ent_dict[id].dodge)
         dist = dist//2 + 1
         app.depopulate_context(event = None)
-        for b in self.placement_buttons:
-            b.destroy()
         for s in app.sqr_dict.keys():
             app.canvas.delete(s)
         app.sqr_dict = {}
@@ -295,11 +287,10 @@ class Trickster(Summon):
             self.cancel_attack(event = None)
             return
         app.animate_squares(sqrs)
-        root.bind('<a>', lambda e, t = tar, s = sqrs : self.confuse(e, id = t, sqrs =s))
-        b = tk.Button(app.context_menu, text = 'Choose Square', font = ('chalkduster', 24), fg = 'tan3', wraplength = 190, highlightbackground = 'tan3', command = lambda e = None, id = tar, s = sqrs : self.confuse(e, id, s))
+        root.bind('<a>', lambda e, t = id, s = sqrs : self.confuse(e, id = t, sqrs = s))
+        b = tk.Button(app.context_menu, text = 'Choose Square', font = ('chalkduster', 24), fg = 'tan3', wraplength = 190, highlightbackground = 'tan3', command = lambda e = None, id = id, s = sqrs : self.confuse(e, id, s))
         b.pack(side = 'top')
         app.context_buttons.append(b)
-#         self.placement_buttons.append(b)
 
     
     def confuse(self, event = None, id = None, sqrs = None):
@@ -323,13 +314,9 @@ class Trickster(Summon):
                     sqr_list.append(coord)
         return sqr_list
     
-    # maybe rename to cleanup_attack and ensure every logical exit point goes here
-    def cancel_attack(self, event = None, win = None):
-        if win:
-            win.destroy()
+    def cancel_attack(self, event = None):
+        app.canvas.delete('text')
         app.depopulate_context(event = None)
-#         for b in self.placement_buttons:
-#             b.destroy()
         for s in app.sqr_dict.keys():
             app.canvas.delete(s)
         app.sqr_dict = {}
@@ -363,27 +350,21 @@ class Shadow(Summon):
     def shadow_attack(self):
         if self.attack_used == True:
             return
-        # unbind space
         root.unbind('<space>')
         root.unbind('<q>')
         root.bind('<q>', self.cancel_attack)
-        # rebind 'a' to confirm check_hit
         root.unbind('<a>')
         sqrs = []
         coord_pairs = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        # same for both players, attack on diag
         for coord in coord_pairs:
             if abs(coord[0] - self.loc[0]) == 1 and abs(coord[1] - self.loc[1]) == 1:
                 sqrs.append(coord)
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, sqrs = sqrs : self.check_hit(e, sqrs))
         app.depopulate_context(event = None)
-#         cmd = lambda e, s = sqrs: self.check_hit(event = e, sqrs = s)
-        # DEBUG .after()s in called func allow for multiple mouse smash, have called func immediately destroy button, maybe just depop context
         b = tk.Button(app.context_menu, text = 'Confirm Attack', font = ('chalkduster', 24), fg='tan3', wraplength = 190, highlightbackground = 'tan3', command = lambda e = None, s = sqrs: self.check_hit(event = e, sqrs = s))
         b.pack(side = 'top')
         app.context_buttons.append(b)
-#         self.placement_buttons.append(b)
 
         
     def check_hit(self, event = None, sqrs = None):
@@ -392,49 +373,35 @@ class Shadow(Summon):
         if app.current_pos() == '':
             return
         app.depopulate_context(event = None)
-        tar = app.current_pos()
-        # unbind_all so as not interrupt visualizations, also decoupling hotkeys rebound to shortcuts/confirms, rebind on exit 'cancel_attack'
+        id = app.current_pos()
         app.unbind_all()
-        if self.to_hit(self.str, app.ent_dict[tar].end) == True:
+        if self.to_hit(self.str, app.ent_dict[id].end) == True:
             # VISUAL TO HIT, go ahead and show dmg here also
-            dmg = self.damage(self.psyche, app.ent_dict[tar].psyche)
-            dmg //= 2
-            if dmg == 0: dmg = 1
-            self.success = tk.Label(app.context_menu, text = 'Attack Success!', font = ('chalkduster', 24), wraplength = 190, fg = 'indianred', bg = 'tan2')
-            self.success.pack(side = 'top')
-            self.dam = tk.Label(app.context_menu, text = str(dmg) + ' Spirit', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
-            self.dam.pack(side = 'top')
-            if isinstance(app.ent_dict[tar], Witch):
-                self.magdmg = tk.Label(app.context_menu, text = str(dmg) + ' Magick', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
-                self.magdmg.pack(side = 'top')
-            root.after(900, lambda id = tar, dmg = dmg : self.do_attack(id, dmg))
-        # DEBUG problem here, calling to_hit twice
+            d = self.damage(self.psyche, app.ent_dict[id].psyche)
+            d //= 2
+            if d == 0: d = 1
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Shadow Attack Hit!\n' + str(d) + ' Spirit Damage\n', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+            if isinstance(app.ent_dict[id], Witch):
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = str(d) + ' Magick Damage', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                app.ent_dict[id].set_attr('magick', -d)
+            app.ent_dict[id].set_attr('spirit', -d)
+            if app.ent_dict[id].spirit <= 0:
+                if isinstance(app.ent_dict[id], Witch):
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+100, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                else:
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+            root.after(1666, lambda e = None, id = id : self.cancel_attack(event = e, id = id))
         else:
-            self.miss = tk.Label(app.context_menu, text = 'Attack Missed!', font = ('chalkduster', 24), wraplength = 190, fg = 'indianred', bg = 'tan2')
-            self.miss.pack(side = 'top')
-            root.after(900, lambda vis = self.miss : self.cancel_attack(event = None, vis = vis))
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Shadow Attack Missed!\n', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+            root.after(1666, lambda e = None, id = id : self.cancel_attack(event = e, id = id))
         self.attack_used = True
     
-    def do_attack(self, id, dmg):
-        self.success.destroy()
-        self.dam.destroy()
-        try:
-            self.magdmg.destroy()
-        except:
-            pass
-        if isinstance(app.ent_dict[id], Witch):
-            app.ent_dict[id].set_attr('magick', -dmg)
-        app.ent_dict[id].set_attr('spirit', -dmg)
+    
+    def cancel_attack(self, event = None, id = None):
+        app.canvas.delete('text')
         if app.ent_dict[id].spirit <= 0:
             app.kill(id)
-        self.cancel_attack( event = None)
-    
-    def cancel_attack(self, event, vis = None):
-        if vis:
-            vis.destroy()
         app.depopulate_context(event = None)
-#         for b in self.placement_buttons:
-#             b.destroy()
         for s in app.sqr_dict.keys():
             app.canvas.delete(s)
         app.sqr_dict = {}
@@ -1078,20 +1045,20 @@ class Witch(Entity):
             number = 'b' + str(self.summon_ids)
             self.summon_ids += 1
         if summon == Warrior:
-            name = 'warrior'
-            img = ImageTk.PhotoImage(Image.open('summon_imgs/warrior.png'))
+            name = 'Warrior'
+            img = ImageTk.PhotoImage(Image.open('summon_imgs/Warrior.png'))
         elif summon == Trickster:
-            name = 'trickster'
-            img = ImageTk.PhotoImage(Image.open('summon_imgs/trickster.png'))
+            name = 'Trickster'
+            img = ImageTk.PhotoImage(Image.open('summon_imgs/Trickster.png'))
         elif summon == Shadow:
-            name = 'shadow'
-            img = ImageTk.PhotoImage(Image.open('summon_imgs/shadow.png'))
+            name = 'Shadow'
+            img = ImageTk.PhotoImage(Image.open('summon_imgs/Shadow.png'))
         elif summon == Bard:
-            name = 'bard'
-            img = ImageTk.PhotoImage(Image.open('summon_imgs/bard.png'))
+            name = 'Bard'
+            img = ImageTk.PhotoImage(Image.open('summon_imgs/Bard.png'))
         elif summon == Plaguebearer:
-            name = 'plaguebearer'
-            img = ImageTk.PhotoImage(Image.open('summon_imgs/plaguebearer.png'))
+            name = 'Plaguebearer'
+            img = ImageTk.PhotoImage(Image.open('summon_imgs/Plaguebearer.png'))
         s = summon(name = name, img = img, loc = grid_pos[:], owner = app.active_player, number = number)
         app.ent_dict[number] = s
         self.summon_dict[number] = s
@@ -1430,11 +1397,11 @@ class App(tk.Frame):
         ent = ents[0]
         self.get_focus(ent)
         # need to get_focus then pause or last ent to act is not visualized
-        if self.ent_dict[ent].name == 'warrior':
+        if self.ent_dict[ent].name == 'Warrior':
             self.do_warrior_ai(ent)
-        elif self.ent_dict[ent].name == 'shadow':
+        elif self.ent_dict[ent].name == 'Shadow':
             self.do_shadow_ai(ent)
-        elif self.ent_dict[ent].name == 'undead':
+        elif self.ent_dict[ent].name == 'Undead':
             self.ent_dict[ent].do_undead_ai(ents)
 #         ents = ents[1:]
 #         if ents == []:

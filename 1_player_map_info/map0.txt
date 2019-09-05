@@ -1,8 +1,8 @@
 1200
 600
 ImageTk.PhotoImage(Image.open('summon_imgs/undead.png'))
-Undead(name = 'undead', img = img, loc =[11,5], owner = 'p2', number = 'b0')
+Undead(name = 'Undead', img = img, loc =[11,5], owner = 'p2', number = 'b0')
 ImageTk.PhotoImage(Image.open('summon_imgs/undead.png'))
-Undead(name = 'undead', img = img, loc =[9,5], owner = 'p2', number = 'b1')
+Undead(name = 'Undead', img = img, loc =[9,5], owner = 'p2', number = 'b1')
 ImageTk.PhotoImage(Image.open('summon_imgs/undead.png'))
-Undead(name = 'undead', img = img, loc =[8,5], owner = 'p2', number = 'b2')
+Undead(name = 'Undead', img = img, loc =[8,5], owner = 'p2', number = 'b2')
