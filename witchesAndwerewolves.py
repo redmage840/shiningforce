@@ -1,4 +1,6 @@
-# undead attack animations
+# start making magick costs for summons and a regen rate or squares on maps that regen
+
+# undead attack animations -- make one or two more, try and load a sound when loading atk_anims, at same point show WHAT is being attacked in some way, either vis or in labels or both
 
 # show victory conditions on map start
 
