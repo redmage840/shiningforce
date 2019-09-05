@@ -1,63 +1,32 @@
-# how to 'stagger' animations...? so they arent all moving in sync
-# randomize starting animation 
-
-# make vis longer in undead_attack, show 'who' is attacking
-
-# probably make undead move like witches with dist 2 or 1
-
-# still unnecessarily deleting unused 'placement_buttons'
+# undead attack animations
 
 # show victory conditions on map start
 
 # place bg image on main canvas so edges of map show that, ie border
 
-# for 1 player, instead of using werewolf classes make unique classes for enemy units with easier to program AI attacks/actions/movement
-
-# make custom titlescreen images instead of using fonts
-
 # Urgent fix help text popup from disabling all input if 'clicked out of' or closed manually with window manager, either put help text on main canvas or context menu or make a full screen 'popup' like choose map dialogue
 
 # Instead of 'confirm_quit' labels, paste text across whole screen 
 
-# working on AI for 1 player, spell programming, 
-
-# all labels get relief = 'ridge'
-
 # when making buttons for spell/summon choice, button also holds number which is hotkey
 
-# make mouse clicks unneeded, everything should have hotkey
-
 # Differentiate visuals of summons in 'owner', dif owners have dif color overlays
-
-# warriors seem maybe underpowered / too easy to avoid, maybe allow them to move back or sideways just one square
-
-# balance right now might be more a problem of shadows being too consistent compared to other summons, am I making sure to exploit their 'stay on one color square' drawback?
 
 # can use         self.confirm_end_popup.protocol("WM_DELETE_WINDOW", lambda win = self.confirm_end_popup : self.destroy_release(win))  .... edit for appropriate context, handle exit through window manager 'X' for Toplevel popups
 
 # what happens to context_menu when attempting to populate with more buttons than it can hold
 
-# make Witch movement an attr so it can be modified (spells,effects) to increase/decrease movement range
-# make Warriors limited movement in same way as Witch, (cannot 'walk around' obstacles)
-# tricksters and shadows should not be limited in the same way
-
 # how would 'prevent targeting with spells or attacks' without modifying every attack/spell
-
-# make trickster confuse shorter range, tried debuff agl, consider halving confuse dist
 
 # how to represent 'barriers' / impassable terrain on map? how to show in grid, maybe a type of entity? can they be damaged?
 # are some immovable terrain features and some created from spells? how does this affect placement / movement? would having a string in grid that isn't in ent_dict mess up any loops through its keys?
 
 # change 'z' for cancel movement to 'q'
 
-# fix dmg distribution
-
 # show current player in context menu, consider making context menu larger, consider putting summon/spell choices in context menu
 # maybe show portraits of selected units in context menu
 
 # consider buffing stats on witches
-
-# remember: whenever a unit is 'moved', its loc updated, also need to update its origin
 
 # start thinking about what map and map animation to use
 
@@ -796,6 +765,7 @@ class Undead(Summon):
                     root.after(666, lambda e = ents_list : app.do_ai_loop(e))
     
     def undead_attack(self, ents_list, id):
+        self.init_attack_anims()
         if self.to_hit(self.agl, app.ent_dict[id].dodge) == True:
             # HIT, SHOW VIS, DO DAMAGE, EXIT
             self.hit = tk.Label(app.context_menu, text = 'Undead Attack Hit!', wraplength = 190, font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
@@ -806,14 +776,15 @@ class Undead(Summon):
             app.ent_dict[id].set_attr('spirit', -d)
             if app.ent_dict[id].spirit <= 0:
                 app.kill(id)
-            root.after(1666, lambda e = ents_list : self.cleanup_attack(e)) # EXIT THROUGH CLEANUP_ATTACK()
+            root.after(2000, lambda e = ents_list : self.cleanup_attack(e)) # EXIT THROUGH CLEANUP_ATTACK()
         else:
             # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
             self.miss = tk.Label(app.context_menu, text = 'Undead Attack Missed!', wraplength = 190, font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
             self.miss.pack(side = 'top')
-            root.after(1666, lambda e = ents_list : self.cleanup_attack(e))
+            root.after(2000, lambda e = ents_list : self.cleanup_attack(e))
         
     def cleanup_attack(self, ents_list):
+        self.init_normal_anims()
         try: self.hit.destroy()
         except: pass
         try: self.dam.destroy()
