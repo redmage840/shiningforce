@@ -1,14 +1,9 @@
-# URGENT bug, placed a bunch of warriors in a row, after the 4th or so the earlier images got erased, some stayed in grid preventing movement, some pickups of 'invisible' ents would move the last placed visible one
-# SOLUTION, when ents are killed, the method for which generic summons are uniquely named (length of summon dict) causes the newly summoned ent to have the same unique id (self.number) as one of the old
+# don't actually 'pickup' with movement, just show squares and cursor over a legal square, also animate movement
 
 # start making magick costs for summons and a regen rate or squares on maps that regen
 
 # undead attack animations -- make one or two more, try and load a sound when loading atk_anims, at same point show WHAT is being 
 # attacked in some way, either vis or in labels or both
-
-# make vis labels 'relief = raised or grooved'
-
-# things die before vis happens, make vis happen in 'to_hit' func, then apply effects in damage func
 
 # show victory conditions on map start
 
@@ -74,6 +69,29 @@ class Dummy():
     def __init__(self):
         pass
 
+
+class Vis():
+    def __init__(self, name, loc):
+        self.name = name
+        self.img = ImageTk.PhotoImage(Image.open('animations/' + name + '/0.png'))
+        self.loc = loc
+        self.anim_dict = {}
+        self.anim_counter = 0
+        anims = [a for r,d,a in walk('animations/' + self.name + '/')][0]
+        anims = [a for a in anims[:] if a[0] != '.']
+        for i, anim in enumerate(anims):
+            a = ImageTk.PhotoImage(Image.open('animations/' + name + '/' + anim))
+            self.anim_dict[i] = a
+            
+    def rotate_image(self):
+        total_imgs = len(self.anim_dict.keys())-1
+        if self.anim_counter == total_imgs:
+            self.anim_counter = 0
+        else:
+            self.anim_counter += 1
+        self.img = self.anim_dict[self.anim_counter]
+
+
 class Sqr():
     def __init__(self, img, loc):
         self.img = img
@@ -103,8 +121,6 @@ class Entity():
         self.move_used = False
         # when ent moved by effect other than regular movement, must update origin also (square of origin at begin of turn)
         self.origin = []
-        # buttons placed in context menu other than through 'populate_context', so they can be removed separately
-        self.placement_buttons = []
         self.anim_dict = {}
         anims = [a for r,d,a in walk('./animations/' + self.name + '/')][0]
         anims = [a for a in anims[:] if a[-3:] == 'png']
@@ -140,14 +156,6 @@ class Entity():
             a = ImageTk.PhotoImage(Image.open('animations/' + self.name + '/' + anim))
             self.anim_dict[i] = a
             
-#     def rotate_attack_images(self):
-#         # clear out anim dict and replace with attack anims
-#         total_imgs = len(self.anim_dict.keys())-1
-#         if self.anim_counter == total_imgs:
-#             self.anim_counter = 0
-#         else:
-#             self.anim_counter += 1
-#         self.img = self.anim_dict[self.anim_counter]
         
     def set_attr(self, attr, amount):
         if attr == 'str':
@@ -184,30 +192,6 @@ class Entity():
         if base + dif < 1: return 1 
         else: return base + dif
             
-#     def info(self):
-#         self.info_popup = tk.Toplevel()
-#         self.info_popup.grab_set()
-#         self.info_popup.attributes('-topmost', 'true')
-#         self.info_popup.config(bg = 'black')
-#         info_label = tk.Label(self.info_popup, text = self.name +'\n'+ self.__class__.__name__, font = ('chalkduster', 20), fg = 'tan3', bg = 'black')
-#         info_label.pack()
-#         strength = tk.Label(self.info_popup, text = 'Strength : ' + str(self.str), font = ('chalkduster', 20), fg = 'tan3', bg = 'black')
-#         strength.pack()
-#         agl = tk.Label(self.info_popup, text = 'Agility : ' + str(self.agl), font = ('chalkduster', 20), fg = 'tan3', bg = 'black')
-#         agl.pack()
-#         end = tk.Label(self.info_popup, text = 'Endurance : ' + str(self.end), font = ('chalkduster', 20), fg = 'tan3', bg = 'black')
-#         end.pack()
-#         dodge = tk.Label(self.info_popup, text = 'Dodge : ' + str(self.dodge), font = ('chalkduster', 20), fg = 'tan3', bg = 'black')
-#         dodge.pack()
-#         psyche = tk.Label(self.info_popup, text = 'Psyche : ' + str(self.psyche), font = ('chalkduster', 20), fg = 'tan3', bg = 'black')
-#         psyche.pack()
-#         spirit = tk.Label(self.info_popup, text = 'Spirit : ' + str(self.spirit), font = ('chalkduster', 20), fg = 'tan3', bg = 'black')
-#         spirit.pack()
-#         if isinstance(self, Witch):
-#             magick = tk.Label(self.info_popup, text = 'Magick : ' + str(self.magick), font = ('chalkduster', 20), fg = 'tan3', bg = 'black')
-#             magick.pack()
-#         close = tk.Button(self.info_popup, text = 'close', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda win = self.info_popup : app.destroy_release(win))
-#         close.pack()
     
 
 class Summon(Entity):
@@ -226,7 +210,6 @@ class Trickster(Summon):
         self.psyche = 5
         self.spirit = 10
         super().__init__(name, img, loc, owner, number)
-        
         
         
     def trickster_attack(self):
@@ -278,9 +261,7 @@ class Trickster(Summon):
         dist = self.damage(self.agl, app.ent_dict[id].dodge)
         dist = dist//2 + 1
         app.depopulate_context(event = None)
-        for s in app.sqr_dict.keys():
-            app.canvas.delete(s)
-        app.sqr_dict = {}
+        app.cleanup_squares()
         sqrs = self.confuse_sqrs(dist)
         if sqrs == []:
             self.attack_used = True
@@ -317,9 +298,7 @@ class Trickster(Summon):
     def cancel_attack(self, event = None):
         app.canvas.delete('text')
         app.depopulate_context(event = None)
-        for s in app.sqr_dict.keys():
-            app.canvas.delete(s)
-        app.sqr_dict = {}
+        app.cleanup_squares()
         app.rebind_all()
     
     def legal_moves(self):
@@ -402,9 +381,7 @@ class Shadow(Summon):
         if app.ent_dict[id].spirit <= 0:
             app.kill(id)
         app.depopulate_context(event = None)
-        for s in app.sqr_dict.keys():
-            app.canvas.delete(s)
-        app.sqr_dict = {}
+        app.cleanup_squares()
         app.rebind_all()
     
     def legal_moves(self):
@@ -506,9 +483,7 @@ class Plaguebearer(Summon):
         app.depopulate_context(event = None)
         for b in self.placement_buttons:
             b.destroy()
-        for s in app.sqr_dict.keys():
-            app.canvas.delete(s)
-        app.sqr_dict = {}
+        app.cleanup_squares()
         self.init_normal_anims()
     
     def legal_moves(self):
@@ -620,11 +595,7 @@ class Bard(Summon):
         if win:
             win.destroy()
         app.depopulate_context(event = None)
-        for b in self.placement_buttons:
-            b.destroy()
-        for s in app.sqr_dict.keys():
-            app.canvas.delete(s)
-        app.sqr_dict = {}
+        app.cleanup_squares()
         self.init_normal_anims()
     
     def legal_moves(self):
@@ -866,9 +837,7 @@ class Warrior(Summon):
         app.rebind_all()
         app.canvas.delete('text')
         app.depopulate_context(event = None)
-        for s in app.sqr_dict.keys():
-            app.canvas.delete(s)
-        app.sqr_dict = {}
+        app.cleanup_squares()
         self.init_normal_anims()
     
     def legal_moves(self):
@@ -944,26 +913,6 @@ class Witch(Entity):
             
         super().__init__(name, img, loc, owner)
         
-    def spell(self):
-        if self.spell_used == True:
-            return
-        app.depopulate_context(event = None)
-        # SPELL
-        for name, spell in self.spell_dict.items():
-            b1 = tk.Button(app.context_menu, wraplength = 190, text = name, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda func = self.spell_dict[name]: self.cast(func))
-            b1.pack(side = 'top')
-            app.context_buttons.append(b1)
-        b2 = tk.Button(app.context_menu, text = 'Cancel', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = self.cancel_spell)
-        b2.pack(side = 'top')
-        app.context_buttons.append(b2)
-    
-    def cast(self, spell_func):
-        spell_func()
-        app.depopulate_context(event = None)
-        self.spell_used = True
-    
-    def cancel_spell(self):
-        app.depopulate_context(event = None)
     
     def summon(self):
                 # show vis in context_menu, summon used? eventually DEBUG fine for now
@@ -989,9 +938,7 @@ class Witch(Entity):
     
     def cancel_placement(self, event = None):
         app.depopulate_context(event = None)
-        for s in app.sqr_dict.keys():
-            app.canvas.delete(s)
-        app.sqr_dict = {}
+        app.cleanup_squares()
         root.unbind('<q>')
         root.bind('<q>', app.depopulate_context)
         root.unbind('<a>')
@@ -1007,9 +954,8 @@ class Witch(Entity):
         root.unbind('<space>')
         root.unbind('<z>')
         root.bind('<q>', self.cancel_placement)
-        # unbind / bind 'a' to 'confirm placement'
         app.depopulate_context(event = None)
-        coords = coord_pairs = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         sqrs = [c for c in coords if abs(c[0]-self.loc[0]) + abs(c[1]-self.loc[1]) == 1 and app.grid[c[0]][c[1]] == '']
         app.animate_squares(sqrs)
         if type == 'Warrior':
@@ -1023,7 +969,6 @@ class Witch(Entity):
         elif type == 'Plaguebearer':
             cls = Plaguebearer
         cmd = lambda e = None, x = cls, y = sqrs : self.place(e, summon = x, sqrs = y)
-        # vars stored here are garbage collected not stored in button?
         root.bind('<a>', lambda e, x = cls, y = sqrs: self.place(e, x, y))
         b = tk.Button(app.context_menu, text = 'Place '+type, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', wraplength = 190, command = cmd)
         b.pack(side = 'top')
@@ -1037,7 +982,6 @@ class Witch(Entity):
         root.bind('<q>', app.depopulate_context)
         root.unbind('<a>')
         root.bind('<a>', app.populate_context)
-        # DEBUG this unique id changes when ents killed
         if app.active_player == 'p1':
             number = 'a' + str(self.summon_ids)
             self.summon_ids += 1
@@ -1064,21 +1008,84 @@ class Witch(Entity):
         self.summon_dict[number] = s
         app.canvas.create_image(grid_pos[0]*100+50-app.moved_right, grid_pos[1]*100+50-app.moved_down, image = img, tags = number)
         app.grid[grid_pos[0]][grid_pos[1]] = number
-        # DELETE SQUARES
-        for s in app.sqr_dict.keys():
-            app.canvas.delete(s)
-        app.sqr_dict = {}
+        app.cleanup_squares()
         app.unbind_all()
         app.rebind_all()
         app.depopulate_context(event = None)
         self.summon_used = True
+        
+        
+    def spell(self):
+        if self.spell_used == True:
+            return
+        app.depopulate_context(event = None)
+        # DEBUG need to unbind most keys here, rebind on cleanup_spell which should be always exited through whether successful cast or cancel
+        root.unbind('<a>')
+        root.unbind('<space>')
+        root.unbind('<q>')
+        root.unbind('<z>')
+        # SPELL
+        for name, spell in self.spell_dict.items():
+            b1 = tk.Button(app.context_menu, wraplength = 190, text = name, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = self.spell_dict[name])
+            b1.pack(side = 'top', pady = 2)
+            app.context_buttons.append(b1)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = self.cleanup_spell)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
+    
+#     def cast(self, spell_func):
+#         spell_func()
+#         app.depopulate_context(event = None)
+#         self.spell_used = True
+    
+    def cleanup_spell(self, event = None, name = None):
+        root.unbind('<q>')
+        app.rebind_all()
+        app.cleanup_squares()
+        app.depopulate_context(event = None)
+        try: 
+            app.canvas.delete(name)
+            del app.vis_dict[name]
+        except: pass
+        try: app.canvas.delete('text')
+        except: pass
+        
         
         # Need to incorporate 'magick cost' and rules for regenerating/regaining magick, probably certain squares that replenish a set amount every turn, or squares that appear for a limited amount of time/turns that replenish
 # AGNES SPELLS
         # Agnes' spells center around Death/Decay/Disease/Telekinetics
     def plague(self):
             # Make attk (psyche versus end) on any summon within range 4 and all adjacent summons have attrs reduced to 1 (str, agl, end, dodge, psyche) lasting until 3 opp turns have passed
-        print('plague')
+        # be able to cancel at this point? probably yes
+        app.depopulate_context(event = None)
+        # bind 'q' to cleanup/cancel
+        root.bind('<q>', self.cleanup_spell)
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [s for s in coords if dist(self.loc, s) <= 4]
+        app.animate_squares(sqrs)
+        # cursor over and hit confirm (or 'a', eventually)
+        b = tk.Button(app.context_menu, text = 'Choose Target For Plague', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda s = grid_pos : self.do_plague(s))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+        
+    def do_plague(self, sqr):
+        if app.current_pos() == '':
+            return
+        # target must be Summon, Witch, (future type...)
+        id = app.current_pos()
+        if not isinstance(app.ent_dict[id], Witch) and not isinstance(app.ent_dict[id], Summon):
+             print('plague target not Summon or Witch')
+             return
+        app.depopulate_context(event = None)
+        app.cleanup_squares()
+        self.spell_used = True
+        app.vis_dict['Plague'] = Vis(name = 'Plague', loc = sqr)
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Plague'].img, tags = 'Plague')
+        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Plague', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+        # DO PLAGUE EFFECTS
+        root.after(2666, lambda  name = 'Plague' : self.cleanup_spell(name = name))
+            
+    
         
     def psionic_push(self):
             # Make attk (psyche versus agl) against any target within range 4, move the target from square of origin in any lateral direction up to 4 squares but not through any obstacles (ents or impassable squares, not edge of map), if target 'collides' (movement stopped before 4 squares because of obstacle) target takes spirit damage (str versus end) and target takes damage (str versus end) if capable of taking spirit damage
@@ -1170,6 +1177,7 @@ class App(tk.Frame):
         self.img_dict = {}
         self.ent_dict = {}
         self.sqr_dict = {}
+        self.vis_dict = {}
         self.active_player = 'p1'
         self.num_players = 1
         self.moved_right = 0
@@ -1467,6 +1475,11 @@ class App(tk.Frame):
             self.sqr_dict[sqr].rotate_image()
             self.canvas.delete(sqr)
             self.canvas.create_image(self.sqr_dict[sqr].loc[0]*100+50-self.moved_right, self.sqr_dict[sqr].loc[1]*100+50-self.moved_down, image = self.sqr_dict[sqr].img, tags = sqr)
+        for vis in self.vis_dict.keys():
+            self.vis_dict[vis].rotate_image()
+            self.canvas.delete(vis)
+            self.canvas.create_image(self.vis_dict[vis].loc[0]*100+50-self.moved_right, self.vis_dict[vis].loc[1]*100+50-self.moved_down, image = self.vis_dict[vis].img, tags = vis)
+            app.canvas.tag_raise(vis)
         try: app.canvas.tag_raise('text')
         except: pass
         root.after(300, self.animate)
@@ -1727,6 +1740,11 @@ class App(tk.Frame):
             img = ImageTk.PhotoImage(Image.open('animations/move/0.png'))
             self.sqr_dict['sqr'+str(i)] = Sqr(img, sqr)
             self.canvas.create_image(sqr[0]*100+50-self.moved_right, sqr[1]*100+50-self.moved_down, image = self.sqr_dict['sqr'+str(i)].img, tags = 'sqr'+str(i))
+            
+    def cleanup_squares(self):
+        for s in app.sqr_dict.keys():
+            app.canvas.delete(s)
+        app.sqr_dict = {}
     
     def current_pos(self):
         return self.grid[grid_pos[0]][grid_pos[1]]
