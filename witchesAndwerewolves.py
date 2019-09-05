@@ -1,6 +1,14 @@
+# URGENT bug, placed a bunch of warriors in a row, after the 4th or so the earlier images got erased, some stayed in grid preventing movement, some pickups of 'invisible' ents would move the last placed visible one
+# SOLUTION, when ents are killed, the method for which generic summons are uniquely named (length of summon dict) causes the newly summoned ent to have the same unique id (self.number) as one of the old
+
 # start making magick costs for summons and a regen rate or squares on maps that regen
 
-# undead attack animations -- make one or two more, try and load a sound when loading atk_anims, at same point show WHAT is being attacked in some way, either vis or in labels or both
+# undead attack animations -- make one or two more, try and load a sound when loading atk_anims, at same point show WHAT is being 
+# attacked in some way, either vis or in labels or both
+
+# make vis labels 'relief = raised or grooved'
+
+# things die before vis happens, make vis happen in 'to_hit' func, then apply effects in damage func
 
 # show victory conditions on map start
 
@@ -502,13 +510,13 @@ class Plaguebearer(Summon):
             # on exit, re init normal anims
             self.init_attack_anims()
             dmg = self.damage(self.str, app.ent_dict[tar].end)
-            self.success = tk.Label(app.context_menu, text = 'Attack Hit!', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
+            self.success = tk.Label(app.context_menu, text = 'Attack Hit!', relief = 'raised', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
             self.success.pack(side = 'top')
-            self.dmg = tk.Label(app.context_menu, text = str(dmg) + ' Spirit', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
+            self.dmg = tk.Label(app.context_menu, text = str(dmg) + ' Spirit', relief = 'raised', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
             self.dmg.pack(side = 'top')
             root.after(1200, lambda id = tar, dmg = dmg : self.do_attack(id, dmg))
         else:
-            self.miss = tk.Label(app.context_menu, text = 'Attack Missed!', font = ('chalkduster', 24), wraplength = 190, fg = 'indianred', bg = 'tan2')
+            self.miss = tk.Label(app.context_menu, text = 'Attack Missed!', relief = 'raised', font = ('chalkduster', 24), wraplength = 190, fg = 'indianred', bg = 'tan2')
             self.miss.pack(side = 'top')
             root.after(1200, lambda win = self.miss : self.cancel_attack(event = None, win = win))
         self.attack_used = True
@@ -618,13 +626,13 @@ class Bard(Summon):
             # on exit, re init normal anims
             self.init_attack_anims()
             dmg = self.damage(self.str, app.ent_dict[tar].end)
-            self.success = tk.Label(app.context_menu, text = 'Attack Hit!', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
+            self.success = tk.Label(app.context_menu, text = 'Attack Hit!', relief = 'raised', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
             self.success.pack(side = 'left')
-            self.dmg = tk.Label(app.context_menu, text = str(dmg) + ' Spirit', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
+            self.dmg = tk.Label(app.context_menu, text = str(dmg) + ' Spirit', relief = 'raised', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
             self.dmg.pack(side = 'left')
             root.after(1200, lambda id = tar, dmg = dmg : self.do_attack(id, dmg))
         else:
-            self.miss = tk.Label(app.context_menu, text = 'Attack Missed!', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
+            self.miss = tk.Label(app.context_menu, text = 'Attack Missed!', relief = 'raised', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
             self.miss.pack(side = 'left')
             root.after(1200, lambda win = self.miss : self.cancel_attack(event = None, win = win))
         self.attack_used = True
@@ -770,28 +778,22 @@ class Undead(Summon):
         self.init_attack_anims()
         if self.to_hit(self.agl, app.ent_dict[id].dodge) == True:
             # HIT, SHOW VIS, DO DAMAGE, EXIT
-            self.hit = tk.Label(app.context_menu, text = 'Undead Attack Hit!', wraplength = 190, font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
-            self.hit.pack(side = 'top')
             d = self.damage(self.str, app.ent_dict[id].end)
-            self.dam = tk.Label(app.context_menu, text = str(d) + ' Spirit Damage!', wraplength = 190, font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
-            self.dam.pack(side = 'top')
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Undead Attack Hit!\n' + str(d) + ' Spirit Damage', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
             app.ent_dict[id].set_attr('spirit', -d)
             if app.ent_dict[id].spirit <= 0:
-                app.kill(id)
-            root.after(2000, lambda e = ents_list : self.cleanup_attack(e)) # EXIT THROUGH CLEANUP_ATTACK()
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+            root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id)) # EXIT THROUGH CLEANUP_ATTACK()
         else:
             # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
-            self.miss = tk.Label(app.context_menu, text = 'Undead Attack Missed!', wraplength = 190, font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
-            self.miss.pack(side = 'top')
-            root.after(2000, lambda e = ents_list : self.cleanup_attack(e))
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Undead Attack Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+            root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id))
         
-    def cleanup_attack(self, ents_list):
+    def cleanup_attack(self, ents_list, id):
+        if app.ent_dict[id].spirit <= 0:
+            app.kill(id)
         self.init_normal_anims()
-        try: self.hit.destroy()
-        except: pass
-        try: self.dam.destroy()
-        except: pass
-        try: self.miss.destroy()
+        try: app.canvas.delete('text')
         except: pass
         ents_list = ents_list[1:]
         if ents_list == []:
@@ -861,11 +863,9 @@ class Warrior(Summon):
         app.animate_squares(sqrs)
         app.depopulate_context(event = None)
         root.bind('<a>', lambda e, s = sqrs : self.check_hit(event = e, sqrs = s)) 
-#         cmd = lambda s = sqrs: self.check_hit(s)
         b = tk.Button(app.context_menu, text = 'Confirm Attack', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, s = sqrs : self.check_hit(event = e, sqrs = s))
         b.pack(side = 'top')
         app.context_buttons.append(b)
-#         self.placement_buttons.append(b)
         
     def check_hit(self, event = None, sqrs = None):
         if grid_pos not in sqrs:
@@ -875,40 +875,30 @@ class Warrior(Summon):
         self.attack_used = True
         app.depopulate_context(event = None)
         app.unbind_all()
-        tar = app.current_pos()
-        if self.to_hit(self.agl, app.ent_dict[tar].dodge) == True:
-            # call self.init_attack_anims() here to replace self.anim_dict with other images
-            # on exit, re init normal anims
+        id = app.current_pos()
+        if self.to_hit(self.agl, app.ent_dict[id].dodge) == True:
             self.init_attack_anims()
-            dmg = self.damage(self.str, app.ent_dict[tar].end)
-            self.success = tk.Label(app.context_menu, text = 'Attack Hit!', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
-            self.success.pack(side = 'top')
-            self.dam = tk.Label(app.context_menu, text = str(dmg) + ' Spirit', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
-            self.dam.pack(side = 'top')
-            root.after(1200, lambda id = tar, d = dmg : self.do_attack(id, d))
+            d = self.damage(self.str, app.ent_dict[id].end)
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Warrior Attack Hit!\n' + str(d) + ' Spirit Damage', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+            root.after(1666, lambda id = id, d = d : self.do_attack(id, d))
         else:
-            self.miss = tk.Label(app.context_menu, text = 'Attack Missed!', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
-            self.miss.pack(side = 'top')
-            root.after(1200, lambda e = None : self.cancel_attack(event = e))
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Warrior Attack Misses!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+            root.after(1666, lambda e = None : self.cancel_attack(event = e))
         
     def do_attack(self, id, dmg):
-        self.success.destroy()
-        self.dam.destroy()
         app.ent_dict[id].set_attr('spirit', -dmg)
         if app.ent_dict[id].spirit <= 0:
-            app.kill(id)
-            print('target killed')
-        self.init_normal_anims()
-        self.cancel_attack(event = None)
-        # re init normal anims 
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+            root.after(1666, lambda id = id : app.kill(id))
+            root.after(1666, lambda e = None : self.cancel_attack(e))
+        else:
+            self.cancel_attack(event = None)
     
     def cancel_attack(self, event):
+        self.init_normal_anims()
         app.rebind_all()
-        try: self.miss.destroy()
-        except: pass
+        app.canvas.delete('text')
         app.depopulate_context(event = None)
-#         for b in self.placement_buttons:
-#             b.destroy()
         for s in app.sqr_dict.keys():
             app.canvas.delete(s)
         app.sqr_dict = {}
@@ -943,6 +933,7 @@ class Witch(Entity):
         self.summon_used = False
         self.spell_dict = {}
         self.summon_dict = {}
+        self.summon_ids = 0
         
         if name == 'Agnes_Sampson':
             self.spell_dict['Plague'] = self.plague
@@ -1008,19 +999,18 @@ class Witch(Entity):
         app.depopulate_context(event = None)
     
     def summon(self):
+                # show vis in context_menu, summon used? eventually DEBUG fine for now
         if self.summon_used == True:
-            print('summon already used')
-            # show vis in context_menu, summon used? eventually DEBUG fine for now
             return
         app.depopulate_context(event = None)
-        b1 = tk.Button(app.context_menu, text = 'Warrior', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda cls = 'Warrior' : self.place_summon(cls))
-        b1.pack(side = 'top')
+        b1 = tk.Button(app.context_menu, text = 'Warrior ƒ10', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda cls = 'Warrior', cost = 10 : self.place_summon(cls, cost))
+        b1.pack(side = 'top', pady = 2)
         app.context_buttons.append(b1)
-        b2 = tk.Button(app.context_menu, text = 'Trickster', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda cls = 'Trickster' : self.place_summon(cls))
-        b2.pack(side = 'top')
+        b2 = tk.Button(app.context_menu, text = 'Trickster ƒ8', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda cls = 'Trickster', cost = 8 : self.place_summon(cls, cost))
+        b2.pack(side = 'top', pady = 2)
         app.context_buttons.append(b2)
-        b3 = tk.Button(app.context_menu, text = 'Shadow', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda cls = 'Shadow' : self.place_summon(cls))
-        b3.pack(side = 'top')
+        b3 = tk.Button(app.context_menu, text = 'Shadow ƒ7', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda cls = 'Shadow', cost = 7 : self.place_summon(cls, cost))
+        b3.pack(side = 'top', pady = 2)
         app.context_buttons.append(b3)
 #         b4 = tk.Button(self.summon_popup, text = 'Bard', command = self.place_bard)
 #         b4.pack()
@@ -1041,7 +1031,10 @@ class Witch(Entity):
         root.bind('<a>', app.populate_context)
 
     
-    def place_summon(self, type):
+    def place_summon(self, type, cost):
+        if self.magick < cost:
+            return
+        self.set_attr('magick', -cost)
         root.unbind('<q>')
         root.unbind('<a>')
         root.unbind('<space>')
@@ -1077,10 +1070,13 @@ class Witch(Entity):
         root.bind('<q>', app.depopulate_context)
         root.unbind('<a>')
         root.bind('<a>', app.populate_context)
+        # DEBUG this unique id changes when ents killed
         if app.active_player == 'p1':
-            number = 'a' + str(len(self.summon_dict.keys()))
+            number = 'a' + str(self.summon_ids)
+            self.summon_ids += 1
         elif app.active_player == 'p2':
-            number = 'b' + str(len(self.summon_dict.keys()))
+            number = 'b' + str(self.summon_ids)
+            self.summon_ids += 1
         if summon == Warrior:
             name = 'warrior'
             img = ImageTk.PhotoImage(Image.open('summon_imgs/warrior.png'))
@@ -1292,7 +1288,7 @@ class App(tk.Frame):
         # This should be large enough to hold small portrait and info for anything either (get_focus() at begin turn or for enemy ents) OR (populate_context() for human player to call manually when cursoring over ents)
         # should context menu be vertical
         self.con_bg = ImageTk.PhotoImage(Image.open('texture2.png').resize(( 200, root.winfo_screenheight())))
-        self.context_menu = tk.Canvas(root, bg = 'black', bd=0, highlightthickness=0, relief='ridge', height = root.winfo_screenheight(), width = 200)
+        self.context_menu = tk.Canvas(root, bg = 'black', bd=0, highlightthickness=0, relief='raised', height = root.winfo_screenheight(), width = 200)
         self.context_menu.pack_propagate(0)
         self.context_menu.pack(side = 'left', fill = 'both', expand = 'false')
         self.context_menu.create_image(0, 0, anchor = 'nw', image = self.con_bg)
@@ -1315,7 +1311,7 @@ class App(tk.Frame):
             width = self.map_width
         if self.map_height < height:
             height = self.map_height
-        self.canvas = tk.Canvas(root, width = width, bg = 'black', height = height, bd=0, highlightthickness=0, relief='ridge')
+        self.canvas = tk.Canvas(root, width = width, bg = 'black', height = height, bd=0, highlightthickness=0, relief='raised')
         self.canvas.pack()
         # MAP
         if self.num_players == 1:
@@ -1504,6 +1500,8 @@ class App(tk.Frame):
             self.sqr_dict[sqr].rotate_image()
             self.canvas.delete(sqr)
             self.canvas.create_image(self.sqr_dict[sqr].loc[0]*100+50-self.moved_right, self.sqr_dict[sqr].loc[1]*100+50-self.moved_down, image = self.sqr_dict[sqr].img, tags = sqr)
+        try: app.canvas.tag_raise('text')
+        except: pass
         root.after(300, self.animate)
     
     def populate_context(self, event):
@@ -1522,7 +1520,7 @@ class App(tk.Frame):
             pass
         # DEBUG make info button into label that holds the info
         self.cntxt_info_bg = ImageTk.PhotoImage(Image.open('page.png'))
-        bg = tk.Canvas(self.context_menu, width = 190, height = 250, bg = 'burlywood4', bd=0, relief='ridge', highlightthickness=0)
+        bg = tk.Canvas(self.context_menu, width = 190, height = 250, bg = 'burlywood4', bd=0, relief='raised', highlightthickness=0)
         bg.pack(side = 'top')
         bg.create_image(0,0, image = self.cntxt_info_bg, anchor = 'nw')
         bg.create_text(15, 15, text=expanded_name + '\n' + self.get_info_text(e), anchor = 'nw', font = ('chalkduster', 18), fill = 'indianred')
@@ -1728,7 +1726,7 @@ class App(tk.Frame):
         for b in self.help_buttons:
             b.destroy()
         self.depopulate_context(event = None)
-        l = tk.Label(self.context_menu, text = 'End Your Turn?', fg = 'indianred', bg = 'black', wraplength = 190, relief = 'ridge', font = ('chalkduster', 24))
+        l = tk.Label(self.context_menu, text = 'End Your Turn?', fg = 'indianred', bg = 'black', wraplength = 190, relief = 'raised', font = ('chalkduster', 24))
         self.help_buttons.append(l)
         b1 = tk.Button(self.context_menu, text = 'END', fg = 'indianred', highlightbackground = 'tan3', font = ('chalkduster', 24), command = self.end_turn)
         b1.pack(side = 'bottom')
@@ -1820,7 +1818,7 @@ class App(tk.Frame):
         self.unbind_all()
     # Instead of label just paste a bunch of intrusive text across the main canvas
     # centered around the grid_pos
-        l = tk.Label(self.context_menu, text = 'Confirm Quit', relief = 'ridge', fg = 'indianred', bg = 'black', font = ('chalkduster', 24))
+        l = tk.Label(self.context_menu, text = 'Confirm Quit', relief = 'raised', fg = 'indianred', bg = 'black', font = ('chalkduster', 24))
         self.help_buttons.append(l)
         b1 = tk.Button(self.context_menu, text = 'QUIT', fg = 'indianred', highlightbackground = 'tan3', font = ('chalkduster', 24), command = root.destroy)
         self.help_buttons.append(b1)
