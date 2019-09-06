@@ -1,4 +1,6 @@
-# eot func check for kill()
+# currently spell effects on attrs stack if they can stack (multiple -1's) but the ent itself has its effect_dict entries overwritten with newer effects... when multiple 'curse -1' attr effects are stacked but effect dict only has one entry and expires (undo called) are the multiple attr effects removed? no, they seem to persist
+
+# should stats go below zero?
 
 # eot func check for alternate 'end of effect' besides duration 'saving throws' or inverted to_hit versus self to end effect
 
@@ -1190,6 +1192,8 @@ class Witch(Entity):
         def nothing():
             pass
         eot = nothing
+        n = 'Plague' + str(len(app.ent_dict[id].effects_dict.keys()))
+        # for every entry that already has name (or prefix) 'Plague' append a suffix to disambiguate, need descriptive names at all?
         app.ent_dict[id].effects_dict['Plague'] = Effect(info = 'Plague\n Stats reduced to 1 for 3 turns', eot_func = eot, undo = p, duration = 3)
         root.after(2666, lambda  name = 'Plague' : self.cleanup_spell(name = name))
             
@@ -1208,15 +1212,13 @@ class Witch(Entity):
         sqrs = [s for s in coords if dist(self.loc, s) <= 3]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos : self.do_curse_of_oriax(event = e, sqr = s))
-        b = tk.Button(app.context_menu, text = 'Choose Target For Curse_of_Oriax', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos : self.do_curse_of_oriax(e, s))
+        b = tk.Button(app.context_menu, text = 'Choose Target For Curse of Oriax', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos : self.do_curse_of_oriax(e, s))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
-        print('curse_of_oriax')
         
     def do_curse_of_oriax(self, event, sqr):
         if app.current_pos() == '':
             return
-        # target must be Summon, Witch, (future type...)
         id = app.current_pos()
         if not isinstance(app.ent_dict[id], Witch) and not isinstance(app.ent_dict[id], Summon):
              return
@@ -1238,7 +1240,6 @@ class Witch(Entity):
         app.ent_dict[id].agl_effects.append(f)
         app.ent_dict[id].dodge_effects.append(f)
         app.ent_dict[id].psyche_effects.append(f)
-        # At controller's end of turn, 2 damage, check for kill()
         def un(i):
             app.ent_dict[i].str_effects.remove(curse_of_oriax_effect)
             app.ent_dict[i].end_effects.remove(curse_of_oriax_effect)
@@ -1246,13 +1247,18 @@ class Witch(Entity):
             app.ent_dict[i].dodge_effects.remove(curse_of_oriax_effect)
             app.ent_dict[i].psyche_effects.remove(curse_of_oriax_effect)
         p = partial(un, id)
+        # Vis need to account for multiple Vis textObjects
         def take_2(tar):
             app.ent_dict[tar].set_attr('spirit', -2)
             app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+75-app.moved_down, text = '2 Spirit Damage', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+            if app.ent_dict[tar].spirit <= 0:
+                app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+95-app.moved_down, text = app.ent_dict[tar].name + ' Killed...', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+                root.after(1666, lambda id = tar : app.kill(id))
             root.after(1666, lambda t = 'text' : app.canvas.delete(t))
             
         eot = partial(take_2, id)
-        app.ent_dict[id].effects_dict['Curse_of_Oriax'] = Effect(info = 'Curse_of_Oriax\n Stats reduced by 1 for 3 turns\n2 Spirit damage per turn', eot_func = eot, undo = p, duration = 3)
+        n = 'Curse_of_Oriax' + str(len(app.ent_dict[id].effects_dict.keys()))
+        app.ent_dict[id].effects_dict[n] = Effect(info = 'Curse_of_Oriax\n Stats reduced by 1 for 3 turns\n2 Spirit damage per turn', eot_func = eot, undo = p, duration = 3)
         root.after(2666, lambda  name = 'Curse_of_Oriax' : self.cleanup_spell(name = name))
         
     def gravity(self, event = None):
