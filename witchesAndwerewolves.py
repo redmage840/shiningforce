@@ -1,3 +1,16 @@
+# for plague undo function consider... consider 'stack' of effect on attributes... 
+# sicken-3(plague_set_to_1(base_stat_5)) evals to -2
+# under current resolution, plague's undo SETS base_stat back to 5, which would have ignored the 'sicken' effect still durating
+# whereas above resolution would attempt to REMOVE the 'set_to_1' portion without directly altering base stat, which would eval to 2
+# so... effects should 'add to stack' of attribute resolution where the undo func removes them from this stack
+# so... each stat should have a queue(list) of funcs to apply to it
+# this is where a true getter method would be useful
+# on get, take base stat and apply list of funcs in FIFO order
+# on undo func, remove effect from queue
+# will need to remember what position when added to queue 
+
+# delete expired entries in effects_dict
+
 # Structure app.kill()s same as shadow_attack, where kill is delayed until after vis
 
 # what about multiple casts of same spell on same target? overriding previous effects_dict keys for ent or global
@@ -128,6 +141,14 @@ class Entity():
             self.base_end = self.end
             self.base_dodge = self.dodge
             self.base_psyche = self.psyche
+            
+            self.str_effects = []
+            self.agl_effects = []
+            self.end_effects = []
+            self.dodge_effects = []
+            self.psyche_effects = []
+            
+            
         # when ent moved by effect other than regular movement, must update origin also (square of origin at begin of turn)
         self.origin = []
         self.effects_dict = {}
@@ -167,6 +188,25 @@ class Entity():
             self.anim_dict[i] = a
             
         
+    def get_attr(self, attr):
+        if attr == 'str':
+            q = self.str_effects
+            base = self.str
+        elif attr == 'agl':
+            q = self.agl_effects
+            base = self.agl
+        elif attr == 'end':
+            q = self.end_effects
+            base = self.end
+        elif attr == 'dodge':
+            q = self.dodge_effects
+            base = self.dodge
+        elif attr == 'psyche':
+            q = self.psyche_effects
+            base = self.psyche
+        for func in q:
+            base = func(base)
+        return base
         
     def set_attr(self, attr, amount):
         if attr == 'str':
@@ -294,7 +334,9 @@ class Trickster(Summon):
         app.depop_context(event = None)
         app.unbind_all()
         id = app.current_pos()
-        if self.to_hit(self.psyche, app.ent_dict[id].psyche) == True:
+        my_psyche = self.get_attr('psyche')
+        target_psyche = app.ent_dict[id].get_attr('psyche')
+        if self.to_hit(my_psyche, target_psyche) == True:
             app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Confuse Hit!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
             app.after(1666, lambda id = id : self.do_attack(id))
         else:
@@ -308,7 +350,9 @@ class Trickster(Summon):
         root.unbind('<a>')
         root.unbind('<space>')
         root.unbind('<z>')
-        dist = self.damage(self.agl, app.ent_dict[id].dodge)
+        my_agl = self.get_attr('agl')
+        target_dodge = app.ent_dict[id].get_attr('dodge')
+        dist = self.damage(my_agl, target_dodge)
         dist = dist//2 + 1
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -379,7 +423,6 @@ class Shadow(Summon):
     def shadow_attack(self, event = None):
         if self.attack_used == True:
             return
-        root.unbind('<space>')
         root.unbind('<q>')
         root.bind('<q>', self.cancel_attack)
         root.unbind('<a>')
@@ -404,9 +447,13 @@ class Shadow(Summon):
         app.depop_context(event = None)
         id = app.current_pos()
         app.unbind_all()
-        if self.to_hit(self.str, app.ent_dict[id].end) == True:
+        my_str = self.get_attr('str')
+        target_end = app.ent_dict[id].get_attr('end')
+        if self.to_hit(my_str, target_end) == True:
             # VISUAL TO HIT, go ahead and show dmg here also
-            d = self.damage(self.psyche, app.ent_dict[id].psyche)
+            my_psyche = self.get_attr('psyche')
+            target_psyche = app.ent_dict[id].get_attr('psyche')
+            d = self.damage(my_psyche, target_psyche)
             d //= 2
             if d == 0: d = 1
             app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Shadow Attack Hit!\n' + str(d) + ' Spirit Damage\n', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
@@ -461,103 +508,104 @@ class Plaguebearer(Summon):
         super().__init__(name, img, loc, owner, number)
         
         
-    def warrior_attack(self, event = None):
-        if self.attack_used == True:
-            return
-        sqrs = []
-        coord_pairs = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        if app.active_player == 'p1':
-            for coord in coord_pairs:
-                if abs(coord[0] - self.loc[0]) == 1 and coord[1] == self.loc[1]:
-                    sqrs.append(coord)
-                elif abs(coord[0] - self.loc[0]) == 1 and coord[1]-1 == self.loc[1]:
-                    sqrs.append(coord)
-                elif coord[0] == self.loc[0] and coord[1]-1 == self.loc[1]:
-                    sqrs.append(coord)
-        elif app.active_player == 'p2':
-            for coord in coord_pairs:
-                if abs(coord[0] - self.loc[0]) == 1 and coord[1] == self.loc[1]:
-                    sqrs.append(coord)
-                elif abs(coord[0] - self.loc[0]) == 1 and coord[1]+1 == self.loc[1]:
-                    sqrs.append(coord)
-                elif coord[0] == self.loc[0] and coord[1]+1 == self.loc[1]:
-                    sqrs.append(coord)
-        app.animate_squares(sqrs)
-        app.depop_context(event = None) 
-        root.bind('<a>', lambda e, s = sqrs : self.check_hit(e, s))
-        b = tk.Button(app.context_menu, text = 'Confirm Attack', font = ('chalkduster', 24), fg='tan3', wraplength = 190, highlightbackground = 'tan3', command = lambda e = None, s = sqrs: self.check_hit(e, s))
-        b.pack(side = 'top')
-        app.context_buttons.append(b)
-#         self.placement_buttons.append(b)
-        root.unbind('<q>')
-        root.bind('<q>', self.cancel_attack)
-        
-    def check_hit(self, event, sqrs):
-        if grid_pos not in sqrs:
-            return
-        if app.current_pos() == '':
-            return
-        tar = app.current_pos()
-        app.unbind_all()
-        if self.to_hit(self.agl, app.ent_dict[tar].dodge) == True:
-            print('hit')
-            # call self.init_attack_anims() here to replace self.anim_dict with other images
-            # on exit, re init normal anims
-            self.init_attack_anims()
-            dmg = self.damage(self.str, app.ent_dict[tar].end)
-            self.success = tk.Label(app.context_menu, text = 'Attack Hit!', relief = 'raised', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
-            self.success.pack(side = 'top')
-            self.dmg = tk.Label(app.context_menu, text = str(dmg) + ' Spirit', relief = 'raised', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
-            self.dmg.pack(side = 'top')
-            root.after(1200, lambda id = tar, dmg = dmg : self.do_attack(id, dmg))
-        else:
-            self.miss = tk.Label(app.context_menu, text = 'Attack Missed!', relief = 'raised', font = ('chalkduster', 24), wraplength = 190, fg = 'indianred', bg = 'tan2')
-            self.miss.pack(side = 'top')
-            root.after(1200, lambda win = self.miss : self.cancel_attack(event = None, win = win))
-        self.attack_used = True
-        
-    def do_attack(self, id, dmg):
-        self.success.destroy()
-        self.dmg.destroy()
-        app.ent_dict[id].set_attr('spirit', -dmg)
-        if app.ent_dict[id].spirit <= 0:
-            app.kill(id)
-            print('target killed')
-        self.cancel_attack(event = None)
-        # re init normal anims 
-        self.init_normal_anims()
-    
-    def cancel_attack(self, event, win = None):
-        app.rebind_all()
-        if win:
-            win.destroy()
-        app.depop_context(event = None)
-        for b in self.placement_buttons:
-            b.destroy()
-        app.cleanup_squares()
-        self.init_normal_anims()
-    
-    def legal_moves(self):
-        loc = self.loc
-        mvlist = []
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        def findall(loc, start, dist):
-            if start > dist:
-                return
-            # need different 'front' depending on player
-            if app.active_player == 'p1':
-                front = [c for c in coords if c[0] == loc[0] and c[1]-1 == loc[1] and app.grid[c[0]][c[1]] == '']
-            elif app.active_player == 'p2':
-                front = [c for c in coords if c[0] == loc[0] and c[1]+1 == loc[1] and app.grid[c[0]][c[1]] == '']
-            for s in front:
-                mvlist.append(s)
-                findall(s, start+1, dist)
-        findall(loc, 1, 3) 
-        setlist = []
-        for l in mvlist:
-            if l not in setlist:
-                setlist.append(l)
-        return setlist
+#     def warrior_attack(self, event = None):
+#         if self.attack_used == True:
+#             return
+#         sqrs = []
+#         coord_pairs = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+#         if app.active_player == 'p1':
+#             for coord in coord_pairs:
+#                 if abs(coord[0] - self.loc[0]) == 1 and coord[1] == self.loc[1]:
+#                     sqrs.append(coord)
+#                 elif abs(coord[0] - self.loc[0]) == 1 and coord[1]-1 == self.loc[1]:
+#                     sqrs.append(coord)
+#                 elif coord[0] == self.loc[0] and coord[1]-1 == self.loc[1]:
+#                     sqrs.append(coord)
+#         elif app.active_player == 'p2':
+#             for coord in coord_pairs:
+#                 if abs(coord[0] - self.loc[0]) == 1 and coord[1] == self.loc[1]:
+#                     sqrs.append(coord)
+#                 elif abs(coord[0] - self.loc[0]) == 1 and coord[1]+1 == self.loc[1]:
+#                     sqrs.append(coord)
+#                 elif coord[0] == self.loc[0] and coord[1]+1 == self.loc[1]:
+#                     sqrs.append(coord)
+#         app.animate_squares(sqrs)
+#         app.depop_context(event = None) 
+#         root.bind('<a>', lambda e, s = sqrs : self.check_hit(e, s))
+#         b = tk.Button(app.context_menu, text = 'Confirm Attack', font = ('chalkduster', 24), fg='tan3', wraplength = 190, highlightbackground = 'tan3', command = lambda e = None, s = sqrs: self.check_hit(e, s))
+#         b.pack(side = 'top')
+#         app.context_buttons.append(b)
+# #         self.placement_buttons.append(b)
+#         root.unbind('<q>')
+#         root.bind('<q>', self.cancel_attack)
+#         
+#     def check_hit(self, event, sqrs):
+#         if grid_pos not in sqrs:
+#             return
+#         if app.current_pos() == '':
+#             return
+#         tar = app.current_pos()
+#         app.unbind_all()
+#         if self.to_hit(self.agl, app.ent_dict[tar].dodge) == True:
+#             print('hit')
+#             # call self.init_attack_anims() here to replace self.anim_dict with other images
+#             # on exit, re init normal anims
+#             self.init_attack_anims()
+#             dmg = self.damage(self.str, app.ent_dict[tar].end)
+#             self.success = tk.Label(app.context_menu, text = 'Attack Hit!', relief = 'raised', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
+#             self.success.pack(side = 'top')
+#             self.dmg = tk.Label(app.context_menu, text = str(dmg) + ' Spirit', relief = 'raised', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
+#             self.dmg.pack(side = 'top')
+#             root.after(1200, lambda id = tar, dmg = dmg : self.do_attack(id, dmg))
+#         else:
+#             self.miss = tk.Label(app.context_menu, text = 'Attack Missed!', relief = 'raised', font = ('chalkduster', 24), wraplength = 190, fg = 'indianred', bg = 'tan2')
+#             self.miss.pack(side = 'top')
+#             root.after(1200, lambda win = self.miss : self.cancel_attack(event = None, win = win))
+#         self.attack_used = True
+#         
+#     def do_attack(self, id, dmg):
+#         self.success.destroy()
+#         self.dmg.destroy()
+#         app.ent_dict[id].set_attr('spirit', -dmg)
+#         if app.ent_dict[id].spirit <= 0:
+#             app.kill(id)
+#             print('target killed')
+#         self.cancel_attack(event = None)
+#         # re init normal anims 
+#         self.init_normal_anims()
+#     
+#     def cancel_attack(self, event, win = None):
+#         app.rebind_all()
+#         if win:
+#             win.destroy()
+#         app.depop_context(event = None)
+#         for b in self.placement_buttons:
+#             b.destroy()
+#         app.cleanup_squares()
+#         self.init_normal_anims()
+#     
+#     def legal_moves(self):
+#         loc = self.loc
+#         mvlist = []
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+#         def findall(loc, start, dist):
+#             if start > dist:
+#                 return
+#             # need different 'front' depending on player
+#             if app.active_player == 'p1':
+#                 front = [c for c in coords if c[0] == loc[0] and c[1]-1 == loc[1] and app.grid[c[0]][c[1]] == '']
+#             elif app.active_player == 'p2':
+#                 front = [c for c in coords if c[0] == loc[0] and c[1]+1 == loc[1] and app.grid[c[0]][c[1]] == '']
+#             for s in front:
+#                 mvlist.append(s)
+#                 findall(s, start+1, dist)
+#         findall(loc, 1, 3) 
+#         setlist = []
+#         for l in mvlist:
+#             if l not in setlist:
+#                 setlist.append(l)
+#         return setlist
+
 
 # raise stats of units (bardsong)?
 # force units to follow or attack?
@@ -689,10 +737,7 @@ class Undead(Summon):
     # need more visualizations before actions happen, better timing of vis
     def do_undead_ai(self, ents_list):
         # GET LIST OF ENEMY ENTS, PICK ONE OF THE CLOSEST
-        print('start do_undead_ai()')
-        print('id ', self.number)
         enemy_ents = [x for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p1']
-        # below line was correct use of dist, dist from arg to self
         min = dist(app.ent_dict[enemy_ents[0]].loc, self.loc)
         closest = [enemy_ents[0]]
         for ent in enemy_ents:
@@ -702,42 +747,29 @@ class Undead(Summon):
             elif dist(app.ent_dict[ent].loc, self.loc) == min:
                 closest.append(ent)
         target = closest[0]
-        print('closest ', closest)
-        print('target ', target)
         t_loc = app.ent_dict[target].loc
         atk_sqrs = self.legal_attacks()
-        print('loc and atk_sqrs ' + str(self.loc) + str(atk_sqrs))
         # IF TARGET IS WITHIN ATTACK, ATTACK IT, EXIT THROUGH UNDEAD_ATTACK()
         if t_loc in atk_sqrs:
-            print('target location within atk_sqrs, doing undead_attack')
             self.undead_attack(ents_list, target)
         # IF TARGET IS NOT WITHIN ATTACK, MOVE TOWARDS IT
         else:
-            print('target not within attack, attempting move towards')
             mov_sqrs = self.legal_moves()
-            print('move sqrs is ', mov_sqrs)
             # NO LEGAL MOVES AND TARGET NOT WITHIN CURRENT RANGE, EXIT FUNC
             if mov_sqrs == []:
-                print('no legal moves, mod ents_list and ...')
                 ents_list = ents_list[1:]
                 if ents_list == []:
-                    print('end turn')
                     app.end_turn()
                 else:
-                    print('after666 call do_ai_loop')
-                    root.after(666, lambda e = ents_list : app.do_ai_loop(e))
+                    root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
             else:
             # AMONG LEGAL MOVES, PICK ONE THAT MINIMIZES DISTANCE BETWEEN SELF AND TARGET, MOVE SELF TO SQUARE
-                print('picking best move')
                 best = mov_sqrs[0]
-                # this is getting the dist from mov_sqr to self.loc NOT Target
                 min = dist(mov_sqrs[0], app.ent_dict[target].loc)
                 for s in mov_sqrs:
                     if dist(s, app.ent_dict[target].loc) < min:
                         best = s
                         min = dist(s, app.ent_dict[target].loc)
-                print('best move sqr is ', str(best))
-                print('moving...')
                 app.canvas.delete(self.number)
                 app.grid[self.loc[0]][self.loc[1]] = ''
                 self.loc = best[:]
@@ -745,18 +777,11 @@ class Undead(Summon):
                 app.grid[best[0]][best[1]] = self.number
                 app.canvas.create_image(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+50-app.moved_down, image = self.img, tags = self.number)
             # IF TARGET NOW WITHIN RANGE, MAKE ATTACK ON IT
-            print('reattempt to attack target...')
             atk_sqrs = self.legal_attacks()
-            print('atk_sqrs is now ', atk_sqrs)
             if t_loc in atk_sqrs:
-                print('target location within atk_sqrs')
-                print('target is ', target)
-                print('location is ', t_loc)
-                print('doing undead_attack')
                 self.undead_attack(ents_list, target) # EXIT THROUGH UNDEAD_ATTACK()
             else:
             # CANNOT ATTACK, EXIT FUNC
-                print('target not in atk_sqrs, mod ents_list and call do_ai_loop')
                 ents_list = ents_list[1:]
                 if ents_list == []:
                     app.end_turn()
@@ -765,9 +790,13 @@ class Undead(Summon):
     
     def undead_attack(self, ents_list, id):
         self.init_attack_anims()
-        if self.to_hit(self.agl, app.ent_dict[id].dodge) == True:
+        my_agl = self.get_attr('agl')
+        target_dodge = app.ent_dict[id].get_attr('dodge')
+        if self.to_hit(my_agl, target_dodge) == True:
             # HIT, SHOW VIS, DO DAMAGE, EXIT
-            d = self.damage(self.str, app.ent_dict[id].end)
+            my_str = self.get_attr('str')
+            target_end = app.ent_dict[id].get_attr('end')
+            d = self.damage(my_str, target_end)
             app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Undead Attack Hit!\n' + str(d) + ' Spirit Damage', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
             app.ent_dict[id].set_attr('spirit', -d)
             if app.ent_dict[id].spirit <= 0:
@@ -788,7 +817,7 @@ class Undead(Summon):
         if ents_list == []:
             app.end_turn()
         else:
-            root.after(666, lambda e = ents_list : app.do_ai_loop(e))
+            root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
         
         
     def legal_attacks(self):
@@ -827,8 +856,6 @@ class Warrior(Summon):
         if self.attack_used == True:
             return
         root.unbind('<a>')
-        root.unbind('<space>')
-        root.unbind('<z>')
         root.unbind('<q>')
         root.bind('<q>', self.cancel_attack)
         sqrs = []
@@ -862,12 +889,16 @@ class Warrior(Summon):
         if app.current_pos() == '':
             return
         self.attack_used = True
+        self.init_attack_anims()
         app.depop_context(event = None)
         app.unbind_all()
         id = app.current_pos()
-        if self.to_hit(self.agl, app.ent_dict[id].dodge) == True:
-            self.init_attack_anims()
-            d = self.damage(self.str, app.ent_dict[id].end)
+        my_agl = self.get_attr('agl')
+        target_dodge = app.ent_dict[id].get_attr('dodge')
+        if self.to_hit(my_agl, target_dodge) == True:
+            my_str = self.get_attr('str')
+            target_end = app.ent_dict[id].get_attr('end')
+            d = self.damage(my_str, target_end)
             app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Warrior Attack Hit!\n' + str(d) + ' Spirit Damage', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
             root.after(1666, lambda id = id, d = d : self.do_attack(id, d))
         else:
@@ -889,7 +920,6 @@ class Warrior(Summon):
         app.canvas.delete('text')
         app.depop_context(event = None)
         app.cleanup_squares()
-        self.init_normal_anims()
     
     def legal_moves(self):
         loc = self.loc
@@ -964,41 +994,6 @@ class Witch(Entity):
             
         super().__init__(name, img, loc, owner)
         
-#     def move(self):
-#         if self.move_used == True:
-#             return
-#         # depop context, unbind, bind 'a' do move, bind 'q' cancel move, get/animate sqrs, make confirm / cancel button
-#         app.depop_context(event = None)
-#         root.unbind('<a>')
-#         root.unbind('<z>')
-#         root.unbind('<q>')
-#         root.unbind('<space>')
-#         root.bind('<q>', self.cleanup_move)
-#         sqrs = self.legal_moves()
-#         app.animate_squares(sqrs)
-#         root.bind('<a>', lambda e, s = sqrs : self.do_move(e, s))
-#         
-#         
-#     def do_move(self, e, sqrs):
-#         if grid_pos not in sqrs:
-#             return
-#         # change loc, origin, update grid, create_image, del old canvas image
-#         oldloc = self.loc[:]
-#         newloc = grid_pos[:]
-#         self.loc = newloc[:]
-#         self.origin = newloc[:]
-#         app.grid[oldloc[0]][oldloc[1]] = ''
-#         app.grid[newloc[0]][newloc[1]] = self.name
-#         app.canvas.delete(self.name)
-#         app.canvas.create_image(newloc[0]*100+50-app.moved_right, newloc[1]*100+50-app.moved_down, image = self.img, tags = self.name)
-#         self.move_used = True
-#         self.cleanup_move()
-#         
-#     def cleanup_move(self, event = None):
-#         app.depop_context(event = None)
-#         app.unbind_all()
-#         app.rebind_all()
-#         app.cleanup_squares()
     
     def summon(self, event = None):
                 # show vis in context_menu, summon used? eventually DEBUG fine for now
@@ -1116,13 +1111,9 @@ class Witch(Entity):
         root.bind('<q>', self.cleanup_spell)
         # SPELL
         for i, name_spellcosttuple in enumerate(self.spell_dict.items()):
-            print(name_spellcosttuple)
             name = name_spellcosttuple[0]
-            print(name)
             spell = name_spellcosttuple[1][0]
-            print(spell)
             cost = name_spellcosttuple[1][1]
-            print(cost)
             i += 1
             b1 = tk.Button(app.context_menu, wraplength = 190, text = str(i) +' : '+ name + ' •'+str(cost), font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = spell)
             b1.pack(side = 'top', pady = 2)
@@ -1135,10 +1126,6 @@ class Witch(Entity):
         b2.pack(side = 'top')
         app.context_buttons.append(b2)
     
-#     def cast(self, spell_func):
-#         spell_func()
-#         app.depop_context(event = None)
-#         self.spell_used = True
     
     def cleanup_spell(self, event = None, name = None):
         root.unbind('<q>')
@@ -1160,15 +1147,13 @@ class Witch(Entity):
 # AGNES SPELLS
         # Agnes' spells center around Death/Decay/Disease/Telekinetics
     def plague(self, event = None):
+            # currently effects dif from description, one target, no to_hit check
             # Make attk (psyche versus end) on any summon within range 4 and all adjacent summons have attrs reduced to 1 (str, agl, end, dodge, psyche) lasting until 3 opp turns have passed
-        # be able to cancel at this point? probably yes
         app.depop_context(event = None)
-        # bind 'q' to cleanup/cancel
         root.bind('<q>', self.cleanup_spell)
         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         sqrs = [s for s in coords if dist(self.loc, s) <= 4]
         app.animate_squares(sqrs)
-        # bind 'a' to do_plague
         root.bind('<a>', lambda e, s = grid_pos : self.do_plague(event = e, sqr = s))
         b = tk.Button(app.context_menu, text = 'Choose Target For Plague', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos : self.do_plague(e, s))
         b.pack(side = 'top', pady = 2)
@@ -1180,9 +1165,7 @@ class Witch(Entity):
         # target must be Summon, Witch, (future type...)
         id = app.current_pos()
         if not isinstance(app.ent_dict[id], Witch) and not isinstance(app.ent_dict[id], Summon):
-             print('plague target not Summon or Witch')
              return
-        # subtract cost
         self.magick -= self.spell_dict['Plague'][1]
         root.unbind('<q>')
         root.unbind('<a>')
@@ -1193,17 +1176,28 @@ class Witch(Entity):
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Plague'].img, tags = 'Plague')
         app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Plague', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
         # DO PLAGUE EFFECTS, currently UNDO will override post effects / reductions, ie stats may be prematurely returned to base stat while another effect has reduced or increased, maybe have each effect store changes so they can be checked by future effects
-        app.ent_dict[id].str = 1
-        app.ent_dict[id].end = 1
-        app.ent_dict[id].agl = 1
-        app.ent_dict[id].dodge = 1
-        app.ent_dict[id].psyche = 1
+#         app.ent_dict[id].str = 1
+#         app.ent_dict[id].end = 1
+#         app.ent_dict[id].agl = 1
+#         app.ent_dict[id].dodge = 1
+#         app.ent_dict[id].psyche = 1
+        # instead of above, add func that reduces to 1 for each 
+        def plague_effect(stat):
+            return 1
+        f = plague_effect
+        app.ent_dict[id].str_effects.append(f)
+        app.ent_dict[id].end_effects.append(f)
+        app.ent_dict[id].agl_effects.append(f)
+        app.ent_dict[id].dodge_effects.append(f)
+        app.ent_dict[id].psyche_effects.append(f)
+        
+        
         def un(i):
-            app.ent_dict[i].str = app.ent_dict[i].base_str
-            app.ent_dict[i].end = app.ent_dict[i].base_end
-            app.ent_dict[i].agl = app.ent_dict[i].base_agl
-            app.ent_dict[i].dodge = app.ent_dict[i].base_dodge
-            app.ent_dict[i].psyche = app.ent_dict[i].base_psyche
+            app.ent_dict[i].str_effects.remove(plague_effect)
+            app.ent_dict[i].end_effects.remove(plague_effect)
+            app.ent_dict[i].agl_effects.remove(plague_effect)
+            app.ent_dict[i].dodge_effects.remove(plague_effect)
+            app.ent_dict[i].psyche_effects.remove(plague_effect)
         p = partial(un, id)
         app.ent_dict[id].effects_dict['Plague'] = Effect(info = 'Plague\n Stats reduced to 1 for 3 turns', undo = p, duration = 3)
         root.after(2666, lambda  name = 'Plague' : self.cleanup_spell(name = name))
@@ -1834,11 +1828,11 @@ class App(tk.Frame):
         
     def get_info_text(self, ent):
         txt = ''
-        txt += 'Str:' + str(self.ent_dict[ent].str) + '\n'
-        txt += 'End:' + str(self.ent_dict[ent].end) + '\n'
-        txt += 'Agl:' + str(self.ent_dict[ent].agl) + '\n'
-        txt += 'Dodge:' + str(self.ent_dict[ent].dodge) + '\n'
-        txt += 'Psyche:' + str(self.ent_dict[ent].psyche) + '\n'
+        txt += 'Str:' + str(self.ent_dict[ent].get_attr('str')) + '\n'
+        txt += 'End:' + str(self.ent_dict[ent].get_attr('end')) + '\n'
+        txt += 'Agl:' + str(self.ent_dict[ent].get_attr('agl')) + '\n'
+        txt += 'Dodge:' + str(self.ent_dict[ent].get_attr('dodge')) + '\n'
+        txt += 'Psyche:' + str(self.ent_dict[ent].get_attr('psyche')) + '\n'
         txt += 'Spirit:' + str(self.ent_dict[ent].spirit) + '\n'
         if isinstance(self.ent_dict[ent], Witch):
             txt += 'Magick:' + str(self.ent_dict[ent].magick) + '\n'
@@ -1847,8 +1841,6 @@ class App(tk.Frame):
     def confirm_end(self):
         self.unbind_all()
         self.depop_context(event = None)
-#         for b in self.help_buttons:
-#             b.destroy()
         self.depop_context(event = None)
         l = tk.Label(self.context_menu, text = 'End Your Turn?', fg = 'indianred', bg = 'black', wraplength = 190, relief = 'raised', font = ('chalkduster', 24))
         self.context_buttons.append(l)
