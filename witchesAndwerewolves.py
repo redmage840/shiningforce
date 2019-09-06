@@ -1140,6 +1140,7 @@ class Witch(Entity):
     
     def cleanup_spell(self, event = None, name = None):
         root.unbind('<q>')
+        root.unbind('<a>')
         for x in range(1, len(self.spell_dict.keys())+1):
             root.unbind(str(x))
         app.rebind_all()
@@ -1165,12 +1166,13 @@ class Witch(Entity):
         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         sqrs = [s for s in coords if dist(self.loc, s) <= 4]
         app.animate_squares(sqrs)
-        # cursor over and hit confirm (or 'a', eventually)
-        b = tk.Button(app.context_menu, text = 'Choose Target For Plague', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda s = grid_pos : self.do_plague(s))
+        # bind 'a' to do_plague
+        root.bind('<a>', lambda e, s = grid_pos : self.do_plague(event = e, sqr = s))
+        b = tk.Button(app.context_menu, text = 'Choose Target For Plague', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos : self.do_plague(e, s))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
         
-    def do_plague(self, sqr):
+    def do_plague(self, event, sqr):
         if app.current_pos() == '':
             return
         # target must be Summon, Witch, (future type...)
@@ -1179,6 +1181,7 @@ class Witch(Entity):
              print('plague target not Summon or Witch')
              return
         root.unbind('<q>')
+        root.unbind('<a>')
         app.depop_context(event = None)
         app.cleanup_squares()
         self.spell_used = True
