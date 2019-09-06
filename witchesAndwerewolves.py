@@ -1,4 +1,6 @@
-# don't actually 'pickup' with movement, just show squares and cursor over a legal square, also animate movement
+# Structure app.kill()s same as shadow_attack, where kill is delayed until after vis
+
+# what about multiple casts of same spell on same target? overriding previous effects_dict keys for ent or global
 
 # start making magick costs for summons and a regen rate or squares on maps that regen
 
@@ -6,6 +8,8 @@
 # attacked in some way, either vis or in labels or both
 
 # show victory conditions on map start
+
+# animate titlescreen
 
 # place bg image on main canvas so edges of map show that, ie border
 
@@ -25,8 +29,6 @@
 
 # how to represent 'barriers' / impassable terrain on map? how to show in grid, maybe a type of entity? can they be damaged?
 # are some immovable terrain features and some created from spells? how does this affect placement / movement? would having a string in grid that isn't in ent_dict mess up any loops through its keys?
-
-# change 'z' for cancel movement to 'q'
 
 # show current player in context menu, consider making context menu larger, consider putting summon/spell choices in context menu
 # maybe show portraits of selected units in context menu
@@ -68,6 +70,12 @@ grid_pos = [0,0]
 class Dummy():
     def __init__(self):
         pass
+
+class Effect():
+    def __init__(self, info, undo, duration):
+        self.info = info
+        self.undo = undo
+        self.duration = duration
 
 
 class Vis():
@@ -119,8 +127,15 @@ class Entity():
         self.loc = loc
         self.owner = owner
         self.move_used = False
+        if isinstance(self, Witch) or isinstance(self, Summon):
+            self.base_str = self.str
+            self.base_agl = self.agl
+            self.base_end = self.end
+            self.base_dodge = self.dodge
+            self.base_psyche = self.psyche
         # when ent moved by effect other than regular movement, must update origin also (square of origin at begin of turn)
         self.origin = []
+        self.effects_dict = {}
         self.anim_dict = {}
         anims = [a for r,d,a in walk('./animations/' + self.name + '/')][0]
         anims = [a for a in anims[:] if a[-3:] == 'png']
@@ -157,6 +172,7 @@ class Entity():
             self.anim_dict[i] = a
             
         
+        
     def set_attr(self, attr, amount):
         if attr == 'str':
             self.str += amount
@@ -192,6 +208,47 @@ class Entity():
         if base + dif < 1: return 1 
         else: return base + dif
             
+            
+    def move(self, event = None):
+        if self.move_used == True:
+            return
+        # depop context, unbind, bind 'a' do move, bind 'q' cancel move, get/animate sqrs, make confirm / cancel button
+        app.depop_context(event = None)
+        root.unbind('<a>')
+        root.unbind('<z>')
+        root.unbind('<q>')
+        root.unbind('<space>')
+        root.bind('<q>', self.cleanup_move)
+        sqrs = self.legal_moves()
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e, s = sqrs : self.do_move(e, s))
+        
+        
+    def do_move(self, e, sqrs):
+        if grid_pos not in sqrs:
+            return
+        # change loc, origin, update grid, create_image, del old canvas image
+        oldloc = self.loc[:]
+        newloc = grid_pos[:]
+        self.loc = newloc[:]
+        self.origin = newloc[:]
+        app.grid[oldloc[0]][oldloc[1]] = ''
+        if isinstance(self, Witch):
+            app.grid[newloc[0]][newloc[1]] = self.name
+            tg = self.name
+        elif isinstance(self, Summon):
+            app.grid[newloc[0]][newloc[1]] = self.number
+            tg = self.number
+        app.canvas.delete(self.name)
+        app.canvas.create_image(newloc[0]*100+50-app.moved_right, newloc[1]*100+50-app.moved_down, image = self.img, tags = tg)
+        self.move_used = True
+        self.cleanup_move()
+        
+    def cleanup_move(self, event = None):
+        app.depop_context(event = None)
+        app.unbind_all()
+        app.rebind_all()
+        app.cleanup_squares()
     
 
 class Summon(Entity):
@@ -201,7 +258,7 @@ class Summon(Entity):
         
 class Trickster(Summon):
     def __init__(self, name, img, loc, owner, number):
-        self.actions = {'confuse':self.trickster_attack}
+        self.actions = {'confuse':self.trickster_attack, 'move':self.move}
         self.attack_used = False
         self.str = 2
         self.agl = 3
@@ -228,7 +285,7 @@ class Trickster(Summon):
             elif coord[0] == self.loc[0] and abs(coord[1] - self.loc[1]) == 1:
                 sqrs.append(coord)
         app.animate_squares(sqrs)
-        app.depopulate_context(event = None)
+        app.depop_context(event = None)
         root.bind('<a>', lambda e, s = sqrs : self.check_hit(e, sqrs = s))
         b = tk.Button(app.context_menu, text = 'Confirm Confuse', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, s = sqrs : self.check_hit(event = e, sqrs = s))
         b.pack(side = 'top')
@@ -241,7 +298,7 @@ class Trickster(Summon):
             return
         if app.current_pos() == '':
             return
-        app.depopulate_context(event = None)
+        app.depop_context(event = None)
         app.unbind_all()
         id = app.current_pos()
         if self.to_hit(self.psyche, app.ent_dict[id].psyche) == True:
@@ -260,7 +317,7 @@ class Trickster(Summon):
         root.unbind('<z>')
         dist = self.damage(self.agl, app.ent_dict[id].dodge)
         dist = dist//2 + 1
-        app.depopulate_context(event = None)
+        app.depop_context(event = None)
         app.cleanup_squares()
         sqrs = self.confuse_sqrs(dist)
         if sqrs == []:
@@ -297,7 +354,7 @@ class Trickster(Summon):
     
     def cancel_attack(self, event = None):
         app.canvas.delete('text')
-        app.depopulate_context(event = None)
+        app.depop_context(event = None)
         app.cleanup_squares()
         app.rebind_all()
     
@@ -315,7 +372,7 @@ class Trickster(Summon):
 
 class Shadow(Summon):
     def __init__(self, name, img, loc, owner, number):
-        self.actions = {'attack':self.shadow_attack}
+        self.actions = {'attack':self.shadow_attack, 'move':self.move}
         self.attack_used = False
         self.str = 3
         self.agl = 3
@@ -326,7 +383,7 @@ class Shadow(Summon):
         super().__init__(name, img, loc, owner, number)
         
         
-    def shadow_attack(self):
+    def shadow_attack(self, event = None):
         if self.attack_used == True:
             return
         root.unbind('<space>')
@@ -340,7 +397,7 @@ class Shadow(Summon):
                 sqrs.append(coord)
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, sqrs = sqrs : self.check_hit(e, sqrs))
-        app.depopulate_context(event = None)
+        app.depop_context(event = None)
         b = tk.Button(app.context_menu, text = 'Confirm Attack', font = ('chalkduster', 24), fg='tan3', wraplength = 190, highlightbackground = 'tan3', command = lambda e = None, s = sqrs: self.check_hit(event = e, sqrs = s))
         b.pack(side = 'top')
         app.context_buttons.append(b)
@@ -351,7 +408,7 @@ class Shadow(Summon):
             return
         if app.current_pos() == '':
             return
-        app.depopulate_context(event = None)
+        app.depop_context(event = None)
         id = app.current_pos()
         app.unbind_all()
         if self.to_hit(self.str, app.ent_dict[id].end) == True:
@@ -378,9 +435,10 @@ class Shadow(Summon):
     
     def cancel_attack(self, event = None, id = None):
         app.canvas.delete('text')
-        if app.ent_dict[id].spirit <= 0:
-            app.kill(id)
-        app.depopulate_context(event = None)
+        if id:
+            if app.ent_dict[id].spirit <= 0:
+                app.kill(id)
+        app.depop_context(event = None)
         app.cleanup_squares()
         app.rebind_all()
     
@@ -410,7 +468,7 @@ class Plaguebearer(Summon):
         super().__init__(name, img, loc, owner, number)
         
         
-    def warrior_attack(self):
+    def warrior_attack(self, event = None):
         if self.attack_used == True:
             return
         sqrs = []
@@ -432,16 +490,16 @@ class Plaguebearer(Summon):
                 elif coord[0] == self.loc[0] and coord[1]+1 == self.loc[1]:
                     sqrs.append(coord)
         app.animate_squares(sqrs)
-        app.depopulate_context(event = None) 
-        cmd = lambda s = sqrs: self.check_hit(s)
-        b = tk.Button(app.context_menu, text = 'Confirm Attack', font = ('chalkduster', 24), fg='tan3', wraplength = 190, highlightbackground = 'tan3', command = cmd)
+        app.depop_context(event = None) 
+        root.bind('<a>', lambda e, s = sqrs : self.check_hit(e, s))
+        b = tk.Button(app.context_menu, text = 'Confirm Attack', font = ('chalkduster', 24), fg='tan3', wraplength = 190, highlightbackground = 'tan3', command = lambda e = None, s = sqrs: self.check_hit(e, s))
         b.pack(side = 'top')
         app.context_buttons.append(b)
-        self.placement_buttons.append(b)
+#         self.placement_buttons.append(b)
         root.unbind('<q>')
         root.bind('<q>', self.cancel_attack)
         
-    def check_hit(self, sqrs):
+    def check_hit(self, event, sqrs):
         if grid_pos not in sqrs:
             return
         if app.current_pos() == '':
@@ -480,7 +538,7 @@ class Plaguebearer(Summon):
         app.rebind_all()
         if win:
             win.destroy()
-        app.depopulate_context(event = None)
+        app.depop_context(event = None)
         for b in self.placement_buttons:
             b.destroy()
         app.cleanup_squares()
@@ -524,101 +582,101 @@ class Bard(Summon):
         super().__init__(name, img, loc, owner, number)
         
         
-    def warrior_attack(self):
-        if self.attack_used == True:
-            return
-        sqrs = []
-        coord_pairs = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        if app.active_player == 'p1':
-            for coord in coord_pairs:
-                if abs(coord[0] - self.loc[0]) == 1 and coord[1] == self.loc[1]:
-                    sqrs.append(coord)
-                elif abs(coord[0] - self.loc[0]) == 1 and coord[1]-1 == self.loc[1]:
-                    sqrs.append(coord)
-                elif coord[0] == self.loc[0] and coord[1]-1 == self.loc[1]:
-                    sqrs.append(coord)
-        elif app.active_player == 'p2':
-            for coord in coord_pairs:
-                if abs(coord[0] - self.loc[0]) == 1 and coord[1] == self.loc[1]:
-                    sqrs.append(coord)
-                elif abs(coord[0] - self.loc[0]) == 1 and coord[1]+1 == self.loc[1]:
-                    sqrs.append(coord)
-                elif coord[0] == self.loc[0] and coord[1]+1 == self.loc[1]:
-                    sqrs.append(coord)
-        app.animate_squares(sqrs)
-        app.depopulate_context(event = None) 
-        cmd = lambda s = sqrs: self.check_hit(s)
-        b = tk.Button(app.context_menu, text = 'Confirm Attack', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = cmd)
-        b.pack(side = 'left')
-        app.context_buttons.append(b)
-        self.placement_buttons.append(b)
-        root.unbind('<q>')
-        root.bind('<q>', self.cancel_attack)
-        
-    def check_hit(self, sqrs):
-        if grid_pos not in sqrs:
-            return
-        if app.current_pos() == '':
-            return
-        tar = app.current_pos()
-        app.unbind_all()
-        if self.to_hit(self.agl, app.ent_dict[tar].dodge) == True:
-            print('hit')
-            # call self.init_attack_anims() here to replace self.anim_dict with other images
-            # on exit, re init normal anims
-            self.init_attack_anims()
-            dmg = self.damage(self.str, app.ent_dict[tar].end)
-            self.success = tk.Label(app.context_menu, text = 'Attack Hit!', relief = 'raised', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
-            self.success.pack(side = 'left')
-            self.dmg = tk.Label(app.context_menu, text = str(dmg) + ' Spirit', relief = 'raised', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
-            self.dmg.pack(side = 'left')
-            root.after(1200, lambda id = tar, dmg = dmg : self.do_attack(id, dmg))
-        else:
-            self.miss = tk.Label(app.context_menu, text = 'Attack Missed!', relief = 'raised', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
-            self.miss.pack(side = 'left')
-            root.after(1200, lambda win = self.miss : self.cancel_attack(event = None, win = win))
-        self.attack_used = True
-        
-    def do_attack(self, id, dmg):
-        self.success.destroy()
-        self.dmg.destroy()
-        app.ent_dict[id].set_attr('spirit', -dmg)
-        if app.ent_dict[id].spirit <= 0:
-            app.kill(id)
-            print('target killed')
-        self.cancel_attack(event = None)
-        # re init normal anims 
-        self.init_normal_anims()
-    
-    def cancel_attack(self, event, win = None):
-        app.rebind_all()
-        if win:
-            win.destroy()
-        app.depopulate_context(event = None)
-        app.cleanup_squares()
-        self.init_normal_anims()
-    
-    def legal_moves(self):
-        loc = self.loc
-        mvlist = []
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        def findall(loc, start, dist):
-            if start > dist:
-                return
-            # need different 'front' depending on player
-            if app.active_player == 'p1':
-                front = [c for c in coords if c[0] == loc[0] and c[1]-1 == loc[1] and app.grid[c[0]][c[1]] == '']
-            elif app.active_player == 'p2':
-                front = [c for c in coords if c[0] == loc[0] and c[1]+1 == loc[1] and app.grid[c[0]][c[1]] == '']
-            for s in front:
-                mvlist.append(s)
-                findall(s, start+1, dist)
-        findall(loc, 1, 3) 
-        setlist = []
-        for l in mvlist:
-            if l not in setlist:
-                setlist.append(l)
-        return setlist
+#     def warrior_attack(self):
+#         if self.attack_used == True:
+#             return
+#         sqrs = []
+#         coord_pairs = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+#         if app.active_player == 'p1':
+#             for coord in coord_pairs:
+#                 if abs(coord[0] - self.loc[0]) == 1 and coord[1] == self.loc[1]:
+#                     sqrs.append(coord)
+#                 elif abs(coord[0] - self.loc[0]) == 1 and coord[1]-1 == self.loc[1]:
+#                     sqrs.append(coord)
+#                 elif coord[0] == self.loc[0] and coord[1]-1 == self.loc[1]:
+#                     sqrs.append(coord)
+#         elif app.active_player == 'p2':
+#             for coord in coord_pairs:
+#                 if abs(coord[0] - self.loc[0]) == 1 and coord[1] == self.loc[1]:
+#                     sqrs.append(coord)
+#                 elif abs(coord[0] - self.loc[0]) == 1 and coord[1]+1 == self.loc[1]:
+#                     sqrs.append(coord)
+#                 elif coord[0] == self.loc[0] and coord[1]+1 == self.loc[1]:
+#                     sqrs.append(coord)
+#         app.animate_squares(sqrs)
+#         app.depop_context(event = None) 
+#         cmd = lambda s = sqrs: self.check_hit(s)
+#         b = tk.Button(app.context_menu, text = 'Confirm Attack', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = cmd)
+#         b.pack(side = 'left')
+#         app.context_buttons.append(b)
+#         self.placement_buttons.append(b)
+#         root.unbind('<q>')
+#         root.bind('<q>', self.cancel_attack)
+#         
+#     def check_hit(self, sqrs):
+#         if grid_pos not in sqrs:
+#             return
+#         if app.current_pos() == '':
+#             return
+#         tar = app.current_pos()
+#         app.unbind_all()
+#         if self.to_hit(self.agl, app.ent_dict[tar].dodge) == True:
+#             print('hit')
+#             # call self.init_attack_anims() here to replace self.anim_dict with other images
+#             # on exit, re init normal anims
+#             self.init_attack_anims()
+#             dmg = self.damage(self.str, app.ent_dict[tar].end)
+#             self.success = tk.Label(app.context_menu, text = 'Attack Hit!', relief = 'raised', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
+#             self.success.pack(side = 'left')
+#             self.dmg = tk.Label(app.context_menu, text = str(dmg) + ' Spirit', relief = 'raised', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
+#             self.dmg.pack(side = 'left')
+#             root.after(1200, lambda id = tar, dmg = dmg : self.do_attack(id, dmg))
+#         else:
+#             self.miss = tk.Label(app.context_menu, text = 'Attack Missed!', relief = 'raised', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
+#             self.miss.pack(side = 'left')
+#             root.after(1200, lambda win = self.miss : self.cancel_attack(event = None, win = win))
+#         self.attack_used = True
+#         
+#     def do_attack(self, id, dmg):
+#         self.success.destroy()
+#         self.dmg.destroy()
+#         app.ent_dict[id].set_attr('spirit', -dmg)
+#         if app.ent_dict[id].spirit <= 0:
+#             app.kill(id)
+#             print('target killed')
+#         self.cancel_attack(event = None)
+#         # re init normal anims 
+#         self.init_normal_anims()
+#     
+#     def cancel_attack(self, event, win = None):
+#         app.rebind_all()
+#         if win:
+#             win.destroy()
+#         app.depop_context(event = None)
+#         app.cleanup_squares()
+#         self.init_normal_anims()
+#     
+#     def legal_moves(self):
+#         loc = self.loc
+#         mvlist = []
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+#         def findall(loc, start, dist):
+#             if start > dist:
+#                 return
+#             # need different 'front' depending on player
+#             if app.active_player == 'p1':
+#                 front = [c for c in coords if c[0] == loc[0] and c[1]-1 == loc[1] and app.grid[c[0]][c[1]] == '']
+#             elif app.active_player == 'p2':
+#                 front = [c for c in coords if c[0] == loc[0] and c[1]+1 == loc[1] and app.grid[c[0]][c[1]] == '']
+#             for s in front:
+#                 mvlist.append(s)
+#                 findall(s, start+1, dist)
+#         findall(loc, 1, 3) 
+#         setlist = []
+#         for l in mvlist:
+#             if l not in setlist:
+#                 setlist.append(l)
+#         return setlist
         
         
 class Undead(Summon):
@@ -761,7 +819,7 @@ class Undead(Summon):
         
 class Warrior(Summon):
     def __init__(self, name, img, loc, owner, number):
-        self.actions = {'attack':self.warrior_attack}
+        self.actions = {'attack':self.warrior_attack, 'move':self.move}
         self.attack_used = False
         self.str = 4
         self.agl = 4
@@ -772,7 +830,7 @@ class Warrior(Summon):
         super().__init__(name, img, loc, owner, number)
         
         
-    def warrior_attack(self):
+    def warrior_attack(self, event = None):
         if self.attack_used == True:
             return
         root.unbind('<a>')
@@ -799,7 +857,7 @@ class Warrior(Summon):
                 elif coord[0] == self.loc[0] and coord[1]+1 == self.loc[1]:
                     sqrs.append(coord)
         app.animate_squares(sqrs)
-        app.depopulate_context(event = None)
+        app.depop_context(event = None)
         root.bind('<a>', lambda e, s = sqrs : self.check_hit(event = e, sqrs = s)) 
         b = tk.Button(app.context_menu, text = 'Confirm Attack', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, s = sqrs : self.check_hit(event = e, sqrs = s))
         b.pack(side = 'top')
@@ -811,7 +869,7 @@ class Warrior(Summon):
         if app.current_pos() == '':
             return
         self.attack_used = True
-        app.depopulate_context(event = None)
+        app.depop_context(event = None)
         app.unbind_all()
         id = app.current_pos()
         if self.to_hit(self.agl, app.ent_dict[id].dodge) == True:
@@ -836,7 +894,7 @@ class Warrior(Summon):
         self.init_normal_anims()
         app.rebind_all()
         app.canvas.delete('text')
-        app.depopulate_context(event = None)
+        app.depop_context(event = None)
         app.cleanup_squares()
         self.init_normal_anims()
     
@@ -864,7 +922,7 @@ class Warrior(Summon):
                     
 class Witch(Entity):
     def __init__(self, name, img, loc, owner):
-        self.actions = {'spell':self.spell, 'summon':self.summon}
+        self.actions = {'spell':self.spell, 'summon':self.summon, 'move':self.move}
         self.spell_used = False
         self.summon_used = False
         self.spell_dict = {}
@@ -913,19 +971,57 @@ class Witch(Entity):
             
         super().__init__(name, img, loc, owner)
         
+#     def move(self):
+#         if self.move_used == True:
+#             return
+#         # depop context, unbind, bind 'a' do move, bind 'q' cancel move, get/animate sqrs, make confirm / cancel button
+#         app.depop_context(event = None)
+#         root.unbind('<a>')
+#         root.unbind('<z>')
+#         root.unbind('<q>')
+#         root.unbind('<space>')
+#         root.bind('<q>', self.cleanup_move)
+#         sqrs = self.legal_moves()
+#         app.animate_squares(sqrs)
+#         root.bind('<a>', lambda e, s = sqrs : self.do_move(e, s))
+#         
+#         
+#     def do_move(self, e, sqrs):
+#         if grid_pos not in sqrs:
+#             return
+#         # change loc, origin, update grid, create_image, del old canvas image
+#         oldloc = self.loc[:]
+#         newloc = grid_pos[:]
+#         self.loc = newloc[:]
+#         self.origin = newloc[:]
+#         app.grid[oldloc[0]][oldloc[1]] = ''
+#         app.grid[newloc[0]][newloc[1]] = self.name
+#         app.canvas.delete(self.name)
+#         app.canvas.create_image(newloc[0]*100+50-app.moved_right, newloc[1]*100+50-app.moved_down, image = self.img, tags = self.name)
+#         self.move_used = True
+#         self.cleanup_move()
+#         
+#     def cleanup_move(self, event = None):
+#         app.depop_context(event = None)
+#         app.unbind_all()
+#         app.rebind_all()
+#         app.cleanup_squares()
     
-    def summon(self):
+    def summon(self, event = None):
                 # show vis in context_menu, summon used? eventually DEBUG fine for now
         if self.summon_used == True:
             return
-        app.depopulate_context(event = None)
-        b1 = tk.Button(app.context_menu, text = 'Warrior ƒ10', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda cls = 'Warrior', cost = 10 : self.place_summon(cls, cost))
+        app.depop_context(event = None)
+        root.bind('1', lambda e, cls = 'Warrior', cost = 10 : self.place_summon(e, cls, cost))
+        root.bind('2', lambda e, cls = 'Trickster', cost = 8 : self.place_summon(e, cls, cost))
+        root.bind('3', lambda e, cls = 'Shadow', cost = 7 : self.place_summon(e, cls, cost))
+        b1 = tk.Button(app.context_menu, text = '1:Warrior •10', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, cls = 'Warrior', cost = 10 : self.place_summon(e, cls, cost))
         b1.pack(side = 'top', pady = 2)
         app.context_buttons.append(b1)
-        b2 = tk.Button(app.context_menu, text = 'Trickster ƒ8', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda cls = 'Trickster', cost = 8 : self.place_summon(cls, cost))
+        b2 = tk.Button(app.context_menu, text = '2:Trickster •8', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, cls = 'Trickster', cost = 8 : self.place_summon(e, cls, cost))
         b2.pack(side = 'top', pady = 2)
         app.context_buttons.append(b2)
-        b3 = tk.Button(app.context_menu, text = 'Shadow ƒ7', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda cls = 'Shadow', cost = 7 : self.place_summon(cls, cost))
+        b3 = tk.Button(app.context_menu, text = '3:Shadow •7', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, cls = 'Shadow', cost = 7 : self.place_summon(e, cls, cost))
         b3.pack(side = 'top', pady = 2)
         app.context_buttons.append(b3)
 #         b4 = tk.Button(self.summon_popup, text = 'Bard', command = self.place_bard)
@@ -937,24 +1033,26 @@ class Witch(Entity):
         app.context_buttons.append(b6)
     
     def cancel_placement(self, event = None):
-        app.depopulate_context(event = None)
+        app.depop_context(event = None)
         app.cleanup_squares()
+        for x in range(1,4):
+            root.unbind(str(x))
         root.unbind('<q>')
-        root.bind('<q>', app.depopulate_context)
+        root.bind('<q>', app.depop_context)
         root.unbind('<a>')
         root.bind('<a>', app.populate_context)
 
     
-    def place_summon(self, type, cost):
+    def place_summon(self, event, type, cost):
         if self.magick < cost:
             return
         self.set_attr('magick', -cost)
         root.unbind('<q>')
         root.unbind('<a>')
-        root.unbind('<space>')
-        root.unbind('<z>')
+        for x in range(1,4):
+            root.unbind(str(x))
         root.bind('<q>', self.cancel_placement)
-        app.depopulate_context(event = None)
+        app.depop_context(event = None)
         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         sqrs = [c for c in coords if abs(c[0]-self.loc[0]) + abs(c[1]-self.loc[1]) == 1 and app.grid[c[0]][c[1]] == '']
         app.animate_squares(sqrs)
@@ -979,7 +1077,7 @@ class Witch(Entity):
         if grid_pos not in sqrs:
             return
         root.unbind('<q>')
-        root.bind('<q>', app.depopulate_context)
+        root.bind('<q>', app.depop_context)
         root.unbind('<a>')
         root.bind('<a>', app.populate_context)
         if app.active_player == 'p1':
@@ -1011,22 +1109,24 @@ class Witch(Entity):
         app.cleanup_squares()
         app.unbind_all()
         app.rebind_all()
-        app.depopulate_context(event = None)
+        app.depop_context(event = None)
         self.summon_used = True
         
         
-    def spell(self):
+    def spell(self, event = None):
         if self.spell_used == True:
             return
-        app.depopulate_context(event = None)
+        app.depop_context(event = None)
         # DEBUG need to unbind most keys here, rebind on cleanup_spell which should be always exited through whether successful cast or cancel
         root.unbind('<a>')
-        root.unbind('<space>')
         root.unbind('<q>')
-        root.unbind('<z>')
+        root.bind('<q>', self.cleanup_spell)
         # SPELL
-        for name, spell in self.spell_dict.items():
-            b1 = tk.Button(app.context_menu, wraplength = 190, text = name, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = self.spell_dict[name])
+        for i, name_spell in enumerate(self.spell_dict.items()):
+            name = name_spell[0]
+            i += 1
+            root.bind(str(i), self.spell_dict[name])
+            b1 = tk.Button(app.context_menu, wraplength = 190, text = str(i) +' : '+ name, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = self.spell_dict[name])
             b1.pack(side = 'top', pady = 2)
             app.context_buttons.append(b1)
         b2 = tk.Button(app.context_menu, text = 'Cancel', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = self.cleanup_spell)
@@ -1035,14 +1135,16 @@ class Witch(Entity):
     
 #     def cast(self, spell_func):
 #         spell_func()
-#         app.depopulate_context(event = None)
+#         app.depop_context(event = None)
 #         self.spell_used = True
     
     def cleanup_spell(self, event = None, name = None):
         root.unbind('<q>')
+        for x in range(1, len(self.spell_dict.keys())+1):
+            root.unbind(str(x))
         app.rebind_all()
         app.cleanup_squares()
-        app.depopulate_context(event = None)
+        app.depop_context(event = None)
         try: 
             app.canvas.delete(name)
             del app.vis_dict[name]
@@ -1054,10 +1156,10 @@ class Witch(Entity):
         # Need to incorporate 'magick cost' and rules for regenerating/regaining magick, probably certain squares that replenish a set amount every turn, or squares that appear for a limited amount of time/turns that replenish
 # AGNES SPELLS
         # Agnes' spells center around Death/Decay/Disease/Telekinetics
-    def plague(self):
+    def plague(self, event = None):
             # Make attk (psyche versus end) on any summon within range 4 and all adjacent summons have attrs reduced to 1 (str, agl, end, dodge, psyche) lasting until 3 opp turns have passed
         # be able to cancel at this point? probably yes
-        app.depopulate_context(event = None)
+        app.depop_context(event = None)
         # bind 'q' to cleanup/cancel
         root.bind('<q>', self.cleanup_spell)
         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
@@ -1076,76 +1178,90 @@ class Witch(Entity):
         if not isinstance(app.ent_dict[id], Witch) and not isinstance(app.ent_dict[id], Summon):
              print('plague target not Summon or Witch')
              return
-        app.depopulate_context(event = None)
+        root.unbind('<q>')
+        app.depop_context(event = None)
         app.cleanup_squares()
         self.spell_used = True
         app.vis_dict['Plague'] = Vis(name = 'Plague', loc = sqr)
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Plague'].img, tags = 'Plague')
         app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Plague', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
-        # DO PLAGUE EFFECTS
+        # DO PLAGUE EFFECTS, currently UNDO will override post effects / reductions, ie stats may be prematurely returned to base stat while another effect has reduced or increased, maybe have each effect store changes so they can be checked by future effects
+        app.ent_dict[id].str = 1
+        app.ent_dict[id].end = 1
+        app.ent_dict[id].agl = 1
+        app.ent_dict[id].dodge = 1
+        app.ent_dict[id].psyche = 1
+        def un(i):
+            app.ent_dict[i].str = app.ent_dict[i].base_str
+            app.ent_dict[i].end = app.ent_dict[i].base_end
+            app.ent_dict[i].agl = app.ent_dict[i].base_agl
+            app.ent_dict[i].dodge = app.ent_dict[i].base_dodge
+            app.ent_dict[i].psyche = app.ent_dict[i].base_psyche
+        p = partial(un, id)
+        app.ent_dict[id].effects_dict['Plague'] = Effect(info = 'Plague\n Stats reduced to 1 for 3 turns', undo = p, duration = 3)
         root.after(2666, lambda  name = 'Plague' : self.cleanup_spell(name = name))
             
     
         
-    def psionic_push(self):
+    def psionic_push(self, event = None):
             # Make attk (psyche versus agl) against any target within range 4, move the target from square of origin in any lateral direction up to 4 squares but not through any obstacles (ents or impassable squares, not edge of map), if target 'collides' (movement stopped before 4 squares because of obstacle) target takes spirit damage (str versus end) and target takes damage (str versus end) if capable of taking spirit damage
         print('psionic push')
         
-    def curse_of_oriax(self):
+    def curse_of_oriax(self, event = None):
             # Any target is inflicted with 'curse', while cursed takes 2 spirit damage at end of every owner's turn and then afflicted ent may 'to hit self' (own strength versus own inverted end, 1 becomes 5, 5 becomes 1...) to end the curse, while afflicted with curse of oriax target may not be afflicted with any other curse conditions
         print('curse_of_oriax')
         
-    def gravity(self):
+    def gravity(self, event = None):
             # Target ent within range 4 and all ents within range 2 of target may not move until two of their owner's turns have ended, targets are only affected by normal movement, can still be moved through spell/attack effects, if moved out of affected squares then no longer restricted movement, any ent moving into affected squares is immediately halted and is affected in the same way until spell ends
         print('gravity')
         
-    def beleths_command(self):
+    def beleths_command(self, event = None):
             # Caster is affect by 'command', while affected cannot be affected by other 'command' effects until spell ends (one 'command' effect at a time), any ent using an attack against caster first must 'to hit' caster's psyche versus attacker's psyche, a success results in normal attack, failure causes spirit damage to attacker (caster's psyche versus attacker's end) and no effects from the attack, lasts until caster has 3 turns end
         print('beleths_command')
         
         
 # FAKIR ALI SPELLS
         # Ali's spells center around Heat/Fire/Resistance/Mummification
-    def horrid_wilting(self):
+    def horrid_wilting(self, event = None):
             # make attack (psyche versus str) spirit damage, on any target within range 4 and all adjacent enemy units
         print('horrid_wilting')
         
-    def boiling_blood(self):
+    def boiling_blood(self, event = None):
             # Caster takes spirit damage (own inverted psyche versus own end) and affects one 'warrior' summon within range 3, any attacks made by the affected target do +5 spirit damage if they would otherwise do any spirit damage, target's agl is increased to 5 if it is less than 5, end is reduced to 1, either value may be later modified but this modification takes precedence over previous effects, affected ent takes 1 spirit damage at the end of every owner's turn
         print('boiling_blood')
         
-    def dark_sun(self):
+    def dark_sun(self, event = None):
             # Any caster owned 'shadow' summons within range 2 get an extra attack if they have already attacked once this turn
         print('dark_sun')
         
-    def command_of_osiris(self):
+    def command_of_osiris(self, event = None):
             # Caster is affected by 'command' effect, normal 'command' rules apply as above, Caster cannot move, can still be moved by spell/attack effects, at end of caster's turn any adjacent ents take spirit damage (caster's psyche versus ent's end), all spirit damage done to caster is reduced to 1, lasts until caster has 3 turns end
         print('command_of_osiris')
         
-    def disintegrate(self):
+    def disintegrate(self, event = None):
             # Caster must make 'to hit' psyche versus psyche on target summon within range 4, affected summon has attrs (str, agl, end, dodge, psyche) reduced to 1 and cannot move until 2 of its owners turns have ended, attrs or movement cannot be affected by other spells/attack effects
         print('disintegrate')
         
         
 # MORGAN SPELLS
         # Morgan's spells center around Nature/Earth/Weather/Illusion
-    def enchant(self):
+    def enchant(self, event = None):
             # any summon within range 4 has attrs (str, agl, end, dodge, psyche) set to 5 until 3 opp turns have passed, prevents further modification while active
         print('enchant')
         
-    def wild_hunt(self):
+    def wild_hunt(self, event = None):
             # Creates 3 summons within range 2 of caster or up to 3 if not enough squares available, first is Boar (stats 3,3,3,2,2,4,0) movement range 2 attack any adjacent, second is wolf (2,3,2,4,2,3,0) movement range 3 attack any adjacent, third is hawk (2,4,2,4,3,2,0) movement range 4 not impeded by other units/obstacles attack any adjacent
         print('wild_hunt')
         
-    def nodens_command(self):
+    def nodens_command(self, event = None):
             # Command rules apply, caster cannot move, all squares within range 2 of caster become 'water' (impassable terrain) any ents currently occupying these squares are moved to a random square 'at edge' (closest available square to edge of water squares or first unoccupied square if all 'edge' squares are occupied), at end of turn caster heals 4 spirit, lasts until caster has 3 turns end (healing happens first)
         print('nodens_command')
         
-    def natures_wrath(self):
+    def natures_wrath(self, event = None):
             # Choose a square within range 5, all ents within range 2 of square must 'to hit' their inverted agl versus dodge at the end of every caster's turn, those that 'hit' suffer 3 spirit damage, lasts 3 caster's turns (effect happens 'before' end turn, effects happen 3 times)
         print('natures_wrath')
         
-    def counterspell(self):
+    def counterspell(self, event = None):
             # Choose a spell effect 'in play', make 'to hit' psyche versus effect's owner's psyche, on success cancel all effects from the spell (call its cleanup function) and effect's owner takes magick damage psyche versus psyche
         print('counterspell')
         
@@ -1190,13 +1306,11 @@ class App(tk.Frame):
         self.p2_witch = ''
         self.choose_num_players()
         
-        # Blackoak Std 140
         # Luminari 280
         # Herculanum 240
         # Papyrus 240
     def choose_num_players(self):
-        # DEBUG just fix lineheight in photoshop and display as image
-        self.title_screen = ImageTk.PhotoImage(Image.open('titleScreen.png'))
+        self.title_screen = ImageTk.PhotoImage(Image.open('titleScreen2.png'))
         self.subtitle = ImageTk.PhotoImage(Image.open('subtitle.png'))
         self.game_title = tk.Label(root, image = self.title_screen, pady = 140, bg = 'black')
         self.game_title.pack(side = 'top')
@@ -1268,17 +1382,20 @@ class App(tk.Frame):
         self.context_menu.pack(side = 'left', fill = 'both', expand = 'false')
         self.context_menu.create_image(0, 0, anchor = 'nw', image = self.con_bg)
         # QUIT should have 'are you sure' popup
-        quit_button = tk.Button(self.context_menu, text="QUIT", font = ('chalkduster', 24), fg='indianred', highlightbackground = 'tan3', command=self.confirm_quit)
-        quit_button.pack(side = 'bottom')
-        self.help_buttons.append(quit_button)
+#         quit_button = tk.Button(self.context_menu, text="QUIT", font = ('chalkduster', 24), fg='indianred', highlightbackground = 'tan3', command=self.confirm_quit)
+#         quit_button.pack(side = 'bottom')
+#         self.help_buttons.append(quit_button)
+#         self.context_buttons.append(quit_button)
         # END TURN
-        end_turn_button = tk.Button(self.context_menu, text = 'End Turn', font = ('chalkduster', 24), highlightbackground = 'tan3', command = self.confirm_end)
-        end_turn_button.pack(side = 'bottom')
-        self.help_buttons.append(end_turn_button)
+#         end_turn_button = tk.Button(self.context_menu, text = 'End Turn', font = ('chalkduster', 24), highlightbackground = 'tan3', # command = self.confirm_end)
+#         end_turn_button.pack(side = 'bottom')
+#         self.help_buttons.append(end_turn_button)
+#         self.context_buttons.append(end_turn_button)
         # HELP
-        help_button = tk.Button(self.context_menu, text = 'Help', font = ('chalkduster', 24), fg='indianred', highlightbackground = 'tan3', command = self.help)
-        help_button.pack(side = 'bottom')
-        self.help_buttons.append(help_button)
+#         help_button = tk.Button(self.context_menu, text = 'Help', font = ('chalkduster', 24), fg='indianred', highlightbackground = # 'tan3', command = self.help)
+#         help_button.pack(side = 'bottom')
+#         self.help_buttons.append(help_button)
+#         self.context_buttons.append(help_button)
         # CANVAS
         width = root.winfo_screenwidth()
         height = root.winfo_screenheight()
@@ -1434,11 +1551,20 @@ class App(tk.Frame):
     def end_turn(self):
         # cleanup from confirm_end
         self.rebind_all()
-        for b in self.help_buttons:
-            b.destroy()
-        self.depopulate_context(event = None)
+#         for b in self.help_buttons:
+#             b.destroy()
+        self.depop_context(event = None)
         for ent in self.ent_dict.keys():
             if self.ent_dict[ent].owner == self.active_player:
+                # DO SPELL EFFECTS / UNDOS
+                for ef in self.ent_dict[ent].effects_dict.keys():
+                    self.ent_dict[ent].effects_dict[ef].duration -= 1
+                    if self.ent_dict[ent].effects_dict[ef].duration <= 0:
+                        # CALL UNDO / DELETE EFFECT
+                        self.ent_dict[ent].effects_dict[ef].undo()
+                        print(self.ent_dict[ent].effects_dict[ef])
+#                         del self.ent_dict[ent].effects_dict[ef]
+                # RESET SPELLS / MOVEMENT / ATTACKS
                 self.ent_dict[ent].move_used = False
                 if isinstance(self.ent_dict[ent], Witch):
                     self.ent_dict[ent].spell_used = False
@@ -1449,7 +1575,7 @@ class App(tk.Frame):
             self.unbind_all()
             self.active_player = 'p2'
         elif self.active_player == 'p2':
-            self.repop_help_buttons()
+#             self.repop_help_buttons()
             self.active_player = 'p1'
         self.start_turn()
         
@@ -1491,6 +1617,7 @@ class App(tk.Frame):
         if self.context_buttons != []:
             print('error here app.context_buttons not empty')
             return
+        self.repop_help_buttons()
         expanded_name = e.replace('_',' ')
         # if generic summon (name ends with number), show class name instead of proper Noun
         try:
@@ -1507,82 +1634,91 @@ class App(tk.Frame):
         self.context_buttons.append(bg)
         if self.ent_dict[e].owner == self.active_player:
             act_dict = self.ent_dict[e].actions
-            for act, call in act_dict.items():
-                b = tk.Button(self.context_menu, text = act, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = call)
+            for i, act_call in enumerate(act_dict.items()):
+                act = act_call[0]
+                call = act_call[1]
+                i += 1
+                root.bind(str(i), call)
+                b = tk.Button(self.context_menu, text = str(i) + ' : ' + act, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None : call(e))
                 b.pack(side = 'top')
                 self.context_buttons.append(b)
         
-    def depopulate_context(self, event):
+    def depop_context(self, event):
+        # unbind any potential numeric keys bound to relative actions
+        try:
+            for x in range(1, 13):
+                root.unbind(str(x))
+        except: pass
         for b in self.context_buttons:
             b.destroy()
         self.context_buttons = []
     
-    def cancel_pickup(self, event):
-        root.bind('<a>', self.populate_context)
-        global is_object_selected, selected
-        if is_object_selected == True:
-            for sqr in self.sqr_dict.keys():
-                self.canvas.delete(sqr)
-            self.sqr_dict = {}
-            self.grid[self.ent_dict[selected].origin[0]][self.ent_dict[selected].origin[1]] = selected
-            # return selected entity to sqr of origin
-            self.canvas.delete(selected)
-            self.canvas.create_image(self.ent_dict[selected].origin[0]*100+50-self.moved_right, self.ent_dict[selected].origin[1]*100+50-self.moved_down, image = self.ent_dict[selected].img, tags = selected)
-            self.ent_dict[selected].loc = self.ent_dict[selected].origin[:]
-            w = selected
-            is_object_selected = False
-            selected = ''
-            self.get_focus(w)
+#     def cancel_pickup(self, event):
+#         root.bind('<a>', self.populate_context)
+#         global is_object_selected, selected
+#         if is_object_selected == True:
+#             for sqr in self.sqr_dict.keys():
+#                 self.canvas.delete(sqr)
+#             self.sqr_dict = {}
+#             self.grid[self.ent_dict[selected].origin[0]][self.ent_dict[selected].origin[1]] = selected
+#             # return selected entity to sqr of origin
+#             self.canvas.delete(selected)
+#             self.canvas.create_image(self.ent_dict[selected].origin[0]*100+50-self.moved_right, self.ent_dict[selected].origin[1]*100+50-self.moved_down, image = self.ent_dict[selected].img, tags = selected)
+#             self.ent_dict[selected].loc = self.ent_dict[selected].origin[:]
+#             w = selected
+#             is_object_selected = False
+#             selected = ''
+#             self.get_focus(w)
     
-    def pickup_putdown(self, event):
-        # disallow while context_menu is populated
-        if self.context_buttons != []:
-            return
-        global is_object_selected, selected, curs_pos
-        # PICK UP
-        if is_object_selected == False and self.current_pos() != '':
-            # unbind 'a' until returns or is 'putdown'
-            root.unbind('<a>')
-            unit = self.current_pos()
-            if self.ent_dict[unit].owner == self.active_player and self.ent_dict[unit].move_used == False:
-                is_object_selected = True
-                # SQUARES / MOVEMENT
-                if self.ent_dict[unit].move_used == False:
-                    sqrs = self.ent_dict[unit].legal_moves()
-                else:
-                    sqrs = []
-                self.animate_squares(sqrs)
-                self.ent_dict[unit].origin = self.ent_dict[unit].loc[:]
-                self.ent_dict[unit].loc = [None, None]
-                selected = unit
-                # REMOVE UNIT FROM GRID
-                self.grid[grid_pos[0]][grid_pos[1]] = ''
-            # ELSE SHOW INFO DEBUG finish this
-            elif self.ent_dict[unit].owner != self.active_player:
-                # rebind 'a', exits naturally
-                root.bind('<a>', self.populate_context)
-                print('not yours')
-            # Unit selected is yours but cannot further move, rebind 'a' exit naturally
-            else:
-                root.bind('<a>', self.populate_context)
-        # PUT DOWN
-        elif is_object_selected == True and self.current_pos() == '':
-            # Restrict movement, if grid_pos is within highlighted sqrs
-            sqrs = [self.sqr_dict[s].loc for s in self.sqr_dict.keys()]
-            if grid_pos not in sqrs:
-                return
-            self.ent_dict[selected].move_used = True
-            # erase old sqrs
-            for sqr in self.sqr_dict.keys():
-                self.canvas.delete(sqr)
-            self.sqr_dict = {}
-            is_object_selected = False
-            unit = selected
-            selected = ''
-            self.ent_dict[unit].loc = grid_pos[:]
-            self.ent_dict[unit].origin = grid_pos[:]
-            self.grid[grid_pos[0]][grid_pos[1]] = unit
-            root.bind('<a>', self.populate_context)
+#     def pickup_putdown(self, event):
+#         # disallow while context_menu is populated
+#         if self.context_buttons != []:
+#             return
+#         global is_object_selected, selected, curs_pos
+#         # PICK UP
+#         if is_object_selected == False and self.current_pos() != '':
+#             # unbind 'a' until returns or is 'putdown'
+#             root.unbind('<a>')
+#             unit = self.current_pos()
+#             if self.ent_dict[unit].owner == self.active_player and self.ent_dict[unit].move_used == False:
+#                 is_object_selected = True
+#                 # SQUARES / MOVEMENT
+#                 if self.ent_dict[unit].move_used == False:
+#                     sqrs = self.ent_dict[unit].legal_moves()
+#                 else:
+#                     sqrs = []
+#                 self.animate_squares(sqrs)
+#                 self.ent_dict[unit].origin = self.ent_dict[unit].loc[:]
+#                 self.ent_dict[unit].loc = [None, None]
+#                 selected = unit
+#                 # REMOVE UNIT FROM GRID
+#                 self.grid[grid_pos[0]][grid_pos[1]] = ''
+#             # ELSE SHOW INFO DEBUG finish this
+#             elif self.ent_dict[unit].owner != self.active_player:
+#                 # rebind 'a', exits naturally
+#                 root.bind('<a>', self.populate_context)
+#                 print('not yours')
+#             # Unit selected is yours but cannot further move, rebind 'a' exit naturally
+#             else:
+#                 root.bind('<a>', self.populate_context)
+#         # PUT DOWN
+#         elif is_object_selected == True and self.current_pos() == '':
+#             # Restrict movement, if grid_pos is within highlighted sqrs
+#             sqrs = [self.sqr_dict[s].loc for s in self.sqr_dict.keys()]
+#             if grid_pos not in sqrs:
+#                 return
+#             self.ent_dict[selected].move_used = True
+#             # erase old sqrs
+#             for sqr in self.sqr_dict.keys():
+#                 self.canvas.delete(sqr)
+#             self.sqr_dict = {}
+#             is_object_selected = False
+#             unit = selected
+#             selected = ''
+#             self.ent_dict[unit].loc = grid_pos[:]
+#             self.ent_dict[unit].origin = grid_pos[:]
+#             self.grid[grid_pos[0]][grid_pos[1]] = unit
+#             root.bind('<a>', self.populate_context)
     
     def move_curs(self, event = None, dir = None):
         if event == None:
@@ -1703,23 +1839,25 @@ class App(tk.Frame):
                  
     def confirm_end(self):
         self.unbind_all()
-        for b in self.help_buttons:
-            b.destroy()
-        self.depopulate_context(event = None)
+        self.depop_context(event = None)
+#         for b in self.help_buttons:
+#             b.destroy()
+        self.depop_context(event = None)
         l = tk.Label(self.context_menu, text = 'End Your Turn?', fg = 'indianred', bg = 'black', wraplength = 190, relief = 'raised', font = ('chalkduster', 24))
-        self.help_buttons.append(l)
+        self.context_buttons.append(l)
         b1 = tk.Button(self.context_menu, text = 'END', fg = 'indianred', highlightbackground = 'tan3', font = ('chalkduster', 24), command = self.end_turn)
         b1.pack(side = 'bottom')
-        self.help_buttons.append(b1)
+        self.context_buttons.append(b1)
         b2 = tk.Button(self.context_menu, text = 'Cancel', fg = 'indianred', highlightbackground = 'tan3', font = ('chalkduster', 24), command = self.cancel_end_turn)
         b2.pack(side = 'bottom')
-        self.help_buttons.append(b2)
+        self.context_buttons.append(b2)
         l.pack(side = 'bottom')
         
     def cancel_end_turn(self):
         self.rebind_all()
-        for b in self.help_buttons:
-            b.destroy()
+        self.depop_context(event = None)
+#         for b in self.help_buttons:
+#             b.destroy()
         self.repop_help_buttons()
         
     def show_avatar_info(self, witch):
@@ -1790,32 +1928,32 @@ class App(tk.Frame):
         root.bind('<Left>', app.move_curs)
         root.bind('<Up>', app.move_curs)
         root.bind('<Down>', app.move_curs)
-        root.bind('<space>', app.pickup_putdown)
-        root.bind('<z>', app.cancel_pickup)
+#         root.bind('<space>', app.pickup_putdown)
+#         root.bind('<z>', app.cancel_pickup)
         root.bind('<a>', app.populate_context)
-        root.bind('<q>', app.depopulate_context)
-        root.bind('<Escape>', app.exit_fullscreen)
+        root.bind('<q>', app.depop_context)
+#         root.bind('<Escape>', app.exit_fullscreen)
 
     def confirm_quit(self):
-        for b in self.help_buttons:
-            b.destroy()
-        self.depopulate_context(event = None)
+#         for b in self.context_buttons:
+#             b.destroy()
+        self.depop_context(event = None)
         self.unbind_all()
     # Instead of label just paste a bunch of intrusive text across the main canvas
     # centered around the grid_pos
         l = tk.Label(self.context_menu, text = 'Confirm Quit', relief = 'raised', fg = 'indianred', bg = 'black', font = ('chalkduster', 24))
-        self.help_buttons.append(l)
+        self.context_buttons.append(l)
         b1 = tk.Button(self.context_menu, text = 'QUIT', fg = 'indianred', highlightbackground = 'tan3', font = ('chalkduster', 24), command = root.destroy)
-        self.help_buttons.append(b1)
+        self.context_buttons.append(b1)
         b2 = tk.Button(self.context_menu, text = 'Cancel', fg = 'indianred', highlightbackground = 'tan3', font = ('chalkduster', 24), command = self.cancel_quit)
         b2.pack(side = 'bottom')
         b1.pack(side = 'bottom')
-        self.help_buttons.append(b2)
+        self.context_buttons.append(b2)
         l.pack(side = 'bottom')
 
     def cancel_quit(self):
         # destroy help buttons, repop help buttons, rebind all
-        for b in self.help_buttons:
+        for b in self.context_buttons:
             b.destroy()
         self.repop_help_buttons()
         self.rebind_all()
@@ -1823,13 +1961,13 @@ class App(tk.Frame):
     def repop_help_buttons(self):
         quit_button = tk.Button(self.context_menu, text="QUIT", font = ('chalkduster', 24), fg='indianred', highlightbackground = 'tan3', command=self.confirm_quit)
         quit_button.pack(side = 'bottom')
-        self.help_buttons.append(quit_button)
+        self.context_buttons.append(quit_button)
         end_turn_button = tk.Button(self.context_menu, text = 'End Turn', font = ('chalkduster', 24), highlightbackground = 'tan3', command = self.confirm_end)
         end_turn_button.pack(side = 'bottom')
-        self.help_buttons.append(end_turn_button)
+        self.context_buttons.append(end_turn_button)
         help_button = tk.Button(self.context_menu, text = 'Help', font = ('chalkduster', 24), fg='indianred', highlightbackground = 'tan3', command = self.help)
         help_button.pack(side = 'bottom')
-        self.help_buttons.append(help_button)
+        self.context_buttons.append(help_button)
         
 
 root = tk.Tk()
@@ -1839,11 +1977,11 @@ root.bind('<Right>', app.move_curs)
 root.bind('<Left>', app.move_curs)
 root.bind('<Up>', app.move_curs)
 root.bind('<Down>', app.move_curs)
-root.bind('<space>', app.pickup_putdown)
-root.bind('<z>', app.cancel_pickup)
+# root.bind('<space>', app.pickup_putdown)
+# root.bind('<z>', app.cancel_pickup)
 root.bind('<a>', app.populate_context)
-root.bind('<q>', app.depopulate_context)
-root.bind('<Escape>', app.exit_fullscreen)
+root.bind('<q>', app.depop_context)
+# root.bind('<Escape>', app.exit_fullscreen)
 
 root.configure(background = 'black')
 
