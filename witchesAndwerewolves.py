@@ -234,7 +234,7 @@ class Entity():
         elif isinstance(self, Summon):
             app.grid[newloc[0]][newloc[1]] = self.number
             tg = self.number
-        app.canvas.delete(self.name)
+        app.canvas.delete(tg)
         app.canvas.create_image(newloc[0]*100+50-app.moved_right, newloc[1]*100+50-app.moved_down, image = self.img, tags = tg)
         self.move_used = True
         self.cleanup_move()
@@ -1124,9 +1124,12 @@ class Witch(Entity):
             cost = name_spellcosttuple[1][1]
             print(cost)
             i += 1
-            root.bind(str(i), spell)
             b1 = tk.Button(app.context_menu, wraplength = 190, text = str(i) +' : '+ name + ' •'+str(cost), font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = spell)
             b1.pack(side = 'top', pady = 2)
+            if cost > self.magick:
+                b1.config(state = 'disabled')
+            else:
+                root.bind(str(i), spell)
             app.context_buttons.append(b1)
         b2 = tk.Button(app.context_menu, text = 'Cancel', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = self.cleanup_spell)
         b2.pack(side = 'top')
@@ -1179,6 +1182,8 @@ class Witch(Entity):
         if not isinstance(app.ent_dict[id], Witch) and not isinstance(app.ent_dict[id], Summon):
              print('plague target not Summon or Witch')
              return
+        # subtract cost
+        self.magick -= self.spell_dict['Plague'][1]
         root.unbind('<q>')
         root.unbind('<a>')
         app.depop_context(event = None)
