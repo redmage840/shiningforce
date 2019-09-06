@@ -1,15 +1,10 @@
-# for plague undo function consider... consider 'stack' of effect on attributes... 
-# sicken-3(plague_set_to_1(base_stat_5)) evals to -2
-# under current resolution, plague's undo SETS base_stat back to 5, which would have ignored the 'sicken' effect still durating
-# whereas above resolution would attempt to REMOVE the 'set_to_1' portion without directly altering base stat, which would eval to 2
-# so... effects should 'add to stack' of attribute resolution where the undo func removes them from this stack
-# so... each stat should have a queue(list) of funcs to apply to it
-# this is where a true getter method would be useful
-# on get, take base stat and apply list of funcs in FIFO order
-# on undo func, remove effect from queue
-# will need to remember what position when added to queue 
+# eot func check for kill()
 
-# delete expired entries in effects_dict
+# eot func check for alternate 'end of effect' besides duration 'saving throws' or inverted to_hit versus self to end effect
+
+# replace spell names with underscores to whitespace in button presentation
+
+# cancel 'end turn' populates context with only 'help buttons' (subset of context buttons), forces user to depop context with 'q' before can be populated again...
 
 # Structure app.kill()s same as shadow_attack, where kill is delayed until after vis
 
@@ -80,7 +75,8 @@ class Dummy():
         pass
 
 class Effect():
-    def __init__(self, info, undo, duration):
+    def __init__(self, info, eot_func, undo, duration):
+        self.eot_func = eot_func
         self.info = info
         self.undo = undo
         self.duration = duration
@@ -955,7 +951,7 @@ class Witch(Entity):
         if name == 'Agnes_Sampson':
             self.spell_dict['Plague'] = (self.plague, 5)
             self.spell_dict['Psionic Push'] = (self.psionic_push, 4)
-            self.spell_dict['Curse of Oriax'] = (self.curse_of_oriax, 5)
+            self.spell_dict['Curse_of_Oriax'] = (self.curse_of_oriax, 5)
             self.spell_dict['Gravity'] = (self.gravity, 7)
             self.spell_dict["Beleth's Command"] = (self.beleths_command, 8)
             self.str = 4
@@ -1175,13 +1171,7 @@ class Witch(Entity):
         app.vis_dict['Plague'] = Vis(name = 'Plague', loc = sqr)
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Plague'].img, tags = 'Plague')
         app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Plague', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
-        # DO PLAGUE EFFECTS, currently UNDO will override post effects / reductions, ie stats may be prematurely returned to base stat while another effect has reduced or increased, maybe have each effect store changes so they can be checked by future effects
-#         app.ent_dict[id].str = 1
-#         app.ent_dict[id].end = 1
-#         app.ent_dict[id].agl = 1
-#         app.ent_dict[id].dodge = 1
-#         app.ent_dict[id].psyche = 1
-        # instead of above, add func that reduces to 1 for each 
+        # DO PLAGUE EFFECTS
         def plague_effect(stat):
             return 1
         f = plague_effect
@@ -1190,8 +1180,6 @@ class Witch(Entity):
         app.ent_dict[id].agl_effects.append(f)
         app.ent_dict[id].dodge_effects.append(f)
         app.ent_dict[id].psyche_effects.append(f)
-        
-        
         def un(i):
             app.ent_dict[i].str_effects.remove(plague_effect)
             app.ent_dict[i].end_effects.remove(plague_effect)
@@ -1199,18 +1187,73 @@ class Witch(Entity):
             app.ent_dict[i].dodge_effects.remove(plague_effect)
             app.ent_dict[i].psyche_effects.remove(plague_effect)
         p = partial(un, id)
-        app.ent_dict[id].effects_dict['Plague'] = Effect(info = 'Plague\n Stats reduced to 1 for 3 turns', undo = p, duration = 3)
+        def nothing():
+            pass
+        eot = nothing
+        app.ent_dict[id].effects_dict['Plague'] = Effect(info = 'Plague\n Stats reduced to 1 for 3 turns', eot_func = eot, undo = p, duration = 3)
         root.after(2666, lambda  name = 'Plague' : self.cleanup_spell(name = name))
             
     
-        
+    # MAKE SPELL WITH ANOTHER 'EFFECTS FUNC' TO STACK WITH PLAGUE TO MAKE SURE RESOLUTION HAPPENS PROPERLY
+    
     def psionic_push(self, event = None):
             # Make attk (psyche versus agl) against any target within range 4, move the target from square of origin in any lateral direction up to 4 squares but not through any obstacles (ents or impassable squares, not edge of map), if target 'collides' (movement stopped before 4 squares because of obstacle) target takes spirit damage (str versus end) and target takes damage (str versus end) if capable of taking spirit damage
         print('psionic push')
         
     def curse_of_oriax(self, event = None):
-            # Any target is inflicted with 'curse', while cursed takes 2 spirit damage at end of every owner's turn and then afflicted ent may 'to hit self' (own strength versus own inverted end, 1 becomes 5, 5 becomes 1...) to end the curse, while afflicted with curse of oriax target may not be afflicted with any other curse conditions
+            # Any target is inflicted with 'curse', while cursed takes 2 spirit damage at end of every owner's turn and minus 1 to every stat (not spirit, magick, movement) then afflicted ent may 'to hit self' (own strength versus own inverted end, 1 becomes 5, 5 becomes 1...) to end the curse, while afflicted with curse of oriax target may not be afflicted with any other curse conditions
+        app.depop_context(event = None)
+        root.bind('<q>', self.cleanup_spell)
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [s for s in coords if dist(self.loc, s) <= 3]
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e, s = grid_pos : self.do_curse_of_oriax(event = e, sqr = s))
+        b = tk.Button(app.context_menu, text = 'Choose Target For Curse_of_Oriax', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos : self.do_curse_of_oriax(e, s))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
         print('curse_of_oriax')
+        
+    def do_curse_of_oriax(self, event, sqr):
+        if app.current_pos() == '':
+            return
+        # target must be Summon, Witch, (future type...)
+        id = app.current_pos()
+        if not isinstance(app.ent_dict[id], Witch) and not isinstance(app.ent_dict[id], Summon):
+             return
+        self.magick -= self.spell_dict['Curse_of_Oriax'][1]
+        root.unbind('<q>')
+        root.unbind('<a>')
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        self.spell_used = True
+        app.vis_dict['Curse_of_Oriax'] = Vis(name = 'Curse_of_Oriax', loc = sqr)
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Curse_of_Oriax'].img, tags = 'Curse_of_Oriax')
+        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Curse of Oriax', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+        # DO Curse_of_Oriax EFFECTS
+        def curse_of_oriax_effect(stat):
+            return stat - 1
+        f = curse_of_oriax_effect
+        app.ent_dict[id].str_effects.append(f)
+        app.ent_dict[id].end_effects.append(f)
+        app.ent_dict[id].agl_effects.append(f)
+        app.ent_dict[id].dodge_effects.append(f)
+        app.ent_dict[id].psyche_effects.append(f)
+        # At controller's end of turn, 2 damage, check for kill()
+        def un(i):
+            app.ent_dict[i].str_effects.remove(curse_of_oriax_effect)
+            app.ent_dict[i].end_effects.remove(curse_of_oriax_effect)
+            app.ent_dict[i].agl_effects.remove(curse_of_oriax_effect)
+            app.ent_dict[i].dodge_effects.remove(curse_of_oriax_effect)
+            app.ent_dict[i].psyche_effects.remove(curse_of_oriax_effect)
+        p = partial(un, id)
+        def take_2(tar):
+            app.ent_dict[tar].set_attr('spirit', -2)
+            app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+75-app.moved_down, text = '2 Spirit Damage', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+            root.after(1666, lambda t = 'text' : app.canvas.delete(t))
+            
+        eot = partial(take_2, id)
+        app.ent_dict[id].effects_dict['Curse_of_Oriax'] = Effect(info = 'Curse_of_Oriax\n Stats reduced by 1 for 3 turns\n2 Spirit damage per turn', eot_func = eot, undo = p, duration = 3)
+        root.after(2666, lambda  name = 'Curse_of_Oriax' : self.cleanup_spell(name = name))
         
     def gravity(self, event = None):
             # Target ent within range 4 and all ents within range 2 of target may not move until two of their owner's turns have ended, targets are only affected by normal movement, can still be moved through spell/attack effects, if moved out of affected squares then no longer restricted movement, any ent moving into affected squares is immediately halted and is affected in the same way until spell ends
@@ -1291,7 +1334,7 @@ class App(tk.Frame):
         super().__init__(master)
         self.master = master
         self.pack()
-        self.img_dict = {}
+        self.img_dict = {} # is this still used?
         self.ent_dict = {}
         self.sqr_dict = {}
         self.vis_dict = {}
@@ -1375,28 +1418,11 @@ class App(tk.Frame):
         row = self.map_height//100
         self.grid = [[''] * row for i in range(col)]
         # CONTEXT MENU
-        # This should be large enough to hold small portrait and info for anything either (get_focus() at begin turn or for enemy ents) OR (populate_context() for human player to call manually when cursoring over ents)
-        # should context menu be vertical
         self.con_bg = ImageTk.PhotoImage(Image.open('texture2.png').resize(( 200, root.winfo_screenheight())))
         self.context_menu = tk.Canvas(root, bg = 'black', bd=0, highlightthickness=0, relief='raised', height = root.winfo_screenheight(), width = 200)
         self.context_menu.pack_propagate(0)
         self.context_menu.pack(side = 'left', fill = 'both', expand = 'false')
         self.context_menu.create_image(0, 0, anchor = 'nw', image = self.con_bg)
-        # QUIT should have 'are you sure' popup
-#         quit_button = tk.Button(self.context_menu, text="QUIT", font = ('chalkduster', 24), fg='indianred', highlightbackground = 'tan3', command=self.confirm_quit)
-#         quit_button.pack(side = 'bottom')
-#         self.help_buttons.append(quit_button)
-#         self.context_buttons.append(quit_button)
-        # END TURN
-#         end_turn_button = tk.Button(self.context_menu, text = 'End Turn', font = ('chalkduster', 24), highlightbackground = 'tan3', # command = self.confirm_end)
-#         end_turn_button.pack(side = 'bottom')
-#         self.help_buttons.append(end_turn_button)
-#         self.context_buttons.append(end_turn_button)
-        # HELP
-#         help_button = tk.Button(self.context_menu, text = 'Help', font = ('chalkduster', 24), fg='indianred', highlightbackground = # 'tan3', command = self.help)
-#         help_button.pack(side = 'bottom')
-#         self.help_buttons.append(help_button)
-#         self.context_buttons.append(help_button)
         # CANVAS
         width = root.winfo_screenwidth()
         height = root.winfo_screenheight()
@@ -1420,7 +1446,6 @@ class App(tk.Frame):
         self.choose_witch()
         
     def choose_witch(self, player_num = 1):
-        # separate logic for 1 or 2 players
         self.avatar_popup = tk.Toplevel()
         self.avatar_popup.attributes('-topmost', 'true')
         self.avatar_popup.attributes("-fullscreen", True)
@@ -1434,7 +1459,6 @@ class App(tk.Frame):
         elif player_num == 2:
             witches = [w for r,d,w in walk('./portraits')][0]
             witches = [w for w in witches[:] if w[0] != '.']
-#             witches = [w[:-4] for w in witches[:]]
             p1_w_fname = self.p1_witch + '.png'
             witches.remove(p1_w_fname)
         self.avatar_popup.witch_widgets = []
@@ -1508,13 +1532,11 @@ class App(tk.Frame):
         p = self.active_player
         if self.num_players == 1 and p == 'p1':
             self.get_focus(self.p1_witch)
-        # if 2 players get focus on p2 witch 
         elif self.num_players == 2:
             w = self.p1_witch if p == 'p1' else self.p2_witch
             self.get_focus(w)
         elif self.num_players == 1 and p == 'p2':
             # DEBUG BOT STUFF HERE
-            # func needs to exit on 'after'
             to_act = [x for x in self.ent_dict.keys() if self.ent_dict[x].owner == 'p2']
             self.get_focus(to_act[0])
             root.after(1666, lambda ents = to_act : self.do_ai_loop(ents))
@@ -1523,48 +1545,31 @@ class App(tk.Frame):
         ent = ents[0]
         self.get_focus(ent)
         # need to get_focus then pause or last ent to act is not visualized
-        if self.ent_dict[ent].name == 'Warrior':
-            self.do_warrior_ai(ent)
-        elif self.ent_dict[ent].name == 'Shadow':
-            self.do_shadow_ai(ent)
-        elif self.ent_dict[ent].name == 'Undead':
+        if self.ent_dict[ent].name == 'Undead':
             self.ent_dict[ent].do_undead_ai(ents)
-#         ents = ents[1:]
-#         if ents == []:
-#             self.end_turn()
-#         else:
-#             self.get_focus(ents[0])
-            # Should give time here for .afters() in AI routines (show hit, damage)
-            # can accomplish this by making below 'time' greater than potential AI visualization 'times'
-            # it would be better to not waste the below 'time' if not necessary
-            # COULD have the 'do_x_ai()' funcs all exit on another call to 'do_ai_loop()' instead of calling here...
-            # each func called above would need to be passed the 'ents list'
-            # and before exit, pop front of list, check if empty, and call either end_turn() or do_ai_loop()
-#             root.after(1666, lambda e = ents : self.do_ai_loop(e))
         
-    def do_warrior_ai(self, ent):
-        print('do warrior ai')
-        
-    def do_shadow_ai(self, ent):
-        print('do shadow ai')
         
         
     def end_turn(self):
-        # cleanup from confirm_end
         self.rebind_all()
-#         for b in self.help_buttons:
-#             b.destroy()
         self.depop_context(event = None)
         for ent in self.ent_dict.keys():
             if self.ent_dict[ent].owner == self.active_player:
                 # DO SPELL EFFECTS / UNDOS
-                for ef in self.ent_dict[ent].effects_dict.keys():
+                for ef in list(self.ent_dict[ent].effects_dict.keys()):
+                    print(ent)
+                    print(ef)
+                    # currently looks like a 'newer' plague will overwrite the old effect, does it reset duration?
+                    # this is probably how effects should be resolved, since the 'same kind' of effect will always(?) expire before a newer instance of the same effect
+                    print(self.ent_dict[ent].effects_dict[ef].duration)
+                    print(self.ent_dict[ent].effects_dict)
+                    self.ent_dict[ent].effects_dict[ef].eot_func()
                     self.ent_dict[ent].effects_dict[ef].duration -= 1
                     if self.ent_dict[ent].effects_dict[ef].duration <= 0:
                         # CALL UNDO / DELETE EFFECT
                         self.ent_dict[ent].effects_dict[ef].undo()
-                        print(self.ent_dict[ent].effects_dict[ef])
-#                         del self.ent_dict[ent].effects_dict[ef]
+                        # DEBUG need to delete this entry when expires
+                        del self.ent_dict[ent].effects_dict[ef]
                 # RESET SPELLS / MOVEMENT / ATTACKS
                 self.ent_dict[ent].move_used = False
                 if isinstance(self.ent_dict[ent], Witch):
@@ -1576,9 +1581,8 @@ class App(tk.Frame):
             self.unbind_all()
             self.active_player = 'p2'
         elif self.active_player == 'p2':
-#             self.repop_help_buttons()
             self.active_player = 'p1'
-        self.start_turn()
+        root.after(1666, self.start_turn)
         
         
         
@@ -1654,72 +1658,6 @@ class App(tk.Frame):
             b.destroy()
         self.context_buttons = []
     
-#     def cancel_pickup(self, event):
-#         root.bind('<a>', self.populate_context)
-#         global is_object_selected, selected
-#         if is_object_selected == True:
-#             for sqr in self.sqr_dict.keys():
-#                 self.canvas.delete(sqr)
-#             self.sqr_dict = {}
-#             self.grid[self.ent_dict[selected].origin[0]][self.ent_dict[selected].origin[1]] = selected
-#             # return selected entity to sqr of origin
-#             self.canvas.delete(selected)
-#             self.canvas.create_image(self.ent_dict[selected].origin[0]*100+50-self.moved_right, self.ent_dict[selected].origin[1]*100+50-self.moved_down, image = self.ent_dict[selected].img, tags = selected)
-#             self.ent_dict[selected].loc = self.ent_dict[selected].origin[:]
-#             w = selected
-#             is_object_selected = False
-#             selected = ''
-#             self.get_focus(w)
-    
-#     def pickup_putdown(self, event):
-#         # disallow while context_menu is populated
-#         if self.context_buttons != []:
-#             return
-#         global is_object_selected, selected, curs_pos
-#         # PICK UP
-#         if is_object_selected == False and self.current_pos() != '':
-#             # unbind 'a' until returns or is 'putdown'
-#             root.unbind('<a>')
-#             unit = self.current_pos()
-#             if self.ent_dict[unit].owner == self.active_player and self.ent_dict[unit].move_used == False:
-#                 is_object_selected = True
-#                 # SQUARES / MOVEMENT
-#                 if self.ent_dict[unit].move_used == False:
-#                     sqrs = self.ent_dict[unit].legal_moves()
-#                 else:
-#                     sqrs = []
-#                 self.animate_squares(sqrs)
-#                 self.ent_dict[unit].origin = self.ent_dict[unit].loc[:]
-#                 self.ent_dict[unit].loc = [None, None]
-#                 selected = unit
-#                 # REMOVE UNIT FROM GRID
-#                 self.grid[grid_pos[0]][grid_pos[1]] = ''
-#             # ELSE SHOW INFO DEBUG finish this
-#             elif self.ent_dict[unit].owner != self.active_player:
-#                 # rebind 'a', exits naturally
-#                 root.bind('<a>', self.populate_context)
-#                 print('not yours')
-#             # Unit selected is yours but cannot further move, rebind 'a' exit naturally
-#             else:
-#                 root.bind('<a>', self.populate_context)
-#         # PUT DOWN
-#         elif is_object_selected == True and self.current_pos() == '':
-#             # Restrict movement, if grid_pos is within highlighted sqrs
-#             sqrs = [self.sqr_dict[s].loc for s in self.sqr_dict.keys()]
-#             if grid_pos not in sqrs:
-#                 return
-#             self.ent_dict[selected].move_used = True
-#             # erase old sqrs
-#             for sqr in self.sqr_dict.keys():
-#                 self.canvas.delete(sqr)
-#             self.sqr_dict = {}
-#             is_object_selected = False
-#             unit = selected
-#             selected = ''
-#             self.ent_dict[unit].loc = grid_pos[:]
-#             self.ent_dict[unit].origin = grid_pos[:]
-#             self.grid[grid_pos[0]][grid_pos[1]] = unit
-#             root.bind('<a>', self.populate_context)
     
     def move_curs(self, event = None, dir = None):
         if event == None:
@@ -1812,8 +1750,6 @@ class App(tk.Frame):
         self.help_popup.attributes('-topmost', 'true')
         help_text = '''
         You control witch in top left corner\n
-        Spacebar selects an object for movement\n
-        Press 'z' to cancel movement context\n
         Arrow keys move cursor around map\n
         Cursor over an object you control and press 'a' to see action options\n
         Press 'q' to cancel the context menu for a selected object\n
@@ -1841,7 +1777,6 @@ class App(tk.Frame):
     def confirm_end(self):
         self.unbind_all()
         self.depop_context(event = None)
-        self.depop_context(event = None)
         l = tk.Label(self.context_menu, text = 'End Your Turn?', fg = 'indianred', bg = 'black', wraplength = 190, relief = 'raised', font = ('chalkduster', 24))
         self.context_buttons.append(l)
         b1 = tk.Button(self.context_menu, text = 'END', fg = 'indianred', highlightbackground = 'tan3', font = ('chalkduster', 24), command = self.end_turn)
@@ -1855,8 +1790,6 @@ class App(tk.Frame):
     def cancel_end_turn(self):
         self.rebind_all()
         self.depop_context(event = None)
-#         for b in self.help_buttons:
-#             b.destroy()
         self.repop_help_buttons()
         
     def show_avatar_info(self, witch):
@@ -1916,26 +1849,20 @@ class App(tk.Frame):
         root.unbind('<Left>')
         root.unbind('<Up>')
         root.unbind('<Down>')
-        root.unbind('<space>')
-        root.unbind('<z>')
         root.unbind('<a>')
         root.unbind('<q>')
-        root.unbind('<Escape>')
+#         root.unbind('<Escape>')
 
     def rebind_all(self):
         root.bind('<Right>', app.move_curs)
         root.bind('<Left>', app.move_curs)
         root.bind('<Up>', app.move_curs)
         root.bind('<Down>', app.move_curs)
-#         root.bind('<space>', app.pickup_putdown)
-#         root.bind('<z>', app.cancel_pickup)
         root.bind('<a>', app.populate_context)
         root.bind('<q>', app.depop_context)
 #         root.bind('<Escape>', app.exit_fullscreen)
 
     def confirm_quit(self):
-#         for b in self.context_buttons:
-#             b.destroy()
         self.depop_context(event = None)
         self.unbind_all()
     # Instead of label just paste a bunch of intrusive text across the main canvas
@@ -1976,8 +1903,6 @@ root.bind('<Right>', app.move_curs)
 root.bind('<Left>', app.move_curs)
 root.bind('<Up>', app.move_curs)
 root.bind('<Down>', app.move_curs)
-# root.bind('<space>', app.pickup_putdown)
-# root.bind('<z>', app.cancel_pickup)
 root.bind('<a>', app.populate_context)
 root.bind('<q>', app.depop_context)
 # root.bind('<Escape>', app.exit_fullscreen)
