@@ -17,8 +17,6 @@
 
 # Instead of 'confirm_quit' labels, paste text across whole screen 
 
-# when making buttons for spell/summon choice, button also holds number which is hotkey
-
 # Differentiate visuals of summons in 'owner', dif owners have dif color overlays
 
 # can use         self.confirm_end_popup.protocol("WM_DELETE_WINDOW", lambda win = self.confirm_end_popup : self.destroy_release(win))  .... edit for appropriate context, handle exit through window manager 'X' for Toplevel popups
@@ -29,9 +27,6 @@
 
 # how to represent 'barriers' / impassable terrain on map? how to show in grid, maybe a type of entity? can they be damaged?
 # are some immovable terrain features and some created from spells? how does this affect placement / movement? would having a string in grid that isn't in ent_dict mess up any loops through its keys?
-
-# show current player in context menu, consider making context menu larger, consider putting summon/spell choices in context menu
-# maybe show portraits of selected units in context menu
 
 # consider buffing stats on witches
 
@@ -269,11 +264,9 @@ class Trickster(Summon):
         super().__init__(name, img, loc, owner, number)
         
         
-    def trickster_attack(self):
+    def trickster_attack(self, event = None):
         if self.attack_used == True:
             return
-        root.unbind('<space>')
-        root.unbind('<z>')
         root.unbind('<q>')
         root.bind('<q>', self.cancel_attack)
         root.unbind('<a>')
@@ -930,11 +923,11 @@ class Witch(Entity):
         self.summon_ids = 0
         
         if name == 'Agnes_Sampson':
-            self.spell_dict['Plague'] = self.plague
-            self.spell_dict['Psionic Push'] = self.psionic_push
-            self.spell_dict['Curse of Oriax'] = self.curse_of_oriax
-            self.spell_dict['Gravity'] = self.gravity
-            self.spell_dict["Beleth's Command"] = self.beleths_command
+            self.spell_dict['Plague'] = (self.plague, 5)
+            self.spell_dict['Psionic Push'] = (self.psionic_push, 4)
+            self.spell_dict['Curse of Oriax'] = (self.curse_of_oriax, 5)
+            self.spell_dict['Gravity'] = (self.gravity, 7)
+            self.spell_dict["Beleth's Command"] = (self.beleths_command, 8)
             self.str = 4
             self.agl = 2
             self.end = 3
@@ -943,11 +936,11 @@ class Witch(Entity):
             self.spirit = 75
             self.magick = 75
         elif name == 'Fakir_Ali':
-            self.spell_dict['Horrid Wilting'] = self.horrid_wilting
-            self.spell_dict['Boiling Blood'] = self.boiling_blood
-            self.spell_dict['Dark Sun'] = self.dark_sun
-            self.spell_dict['Command of Osiris'] = self.command_of_osiris
-            self.spell_dict['Disintegrate'] = self.disintegrate
+            self.spell_dict['Horrid Wilting'] = (self.horrid_wilting,4)
+            self.spell_dict['Boiling Blood'] = (self.boiling_blood, 3)
+            self.spell_dict['Dark Sun'] = (self.dark_sun, 4)
+            self.spell_dict['Command of Osiris'] = (self.command_of_osiris, 5)
+            self.spell_dict['Disintegrate'] = (self.disintegrate, 4)
             self.str = 3
             self.agl = 2
             self.end = 5
@@ -956,11 +949,11 @@ class Witch(Entity):
             self.spirit = 85
             self.magick = 70
         elif name == 'Morgan_LeFay':
-            self.spell_dict['Enchant'] = self.enchant
-            self.spell_dict['Counterspell'] = self.counterspell
-            self.spell_dict["Nature's Wrath"] = self.natures_wrath
-            self.spell_dict["Noden's Command"] = self.nodens_command
-            self.spell_dict['Wild Hunt'] = self.wild_hunt
+            self.spell_dict['Enchant'] = (self.enchant, 4)
+            self.spell_dict['Counterspell'] = (self.counterspell, 3)
+            self.spell_dict["Nature's Wrath"] = (self.natures_wrath, 5)
+            self.spell_dict["Noden's Command"] = (self.nodens_command, 6)
+            self.spell_dict['Wild Hunt'] = (self.wild_hunt, 7)
             self.str = 2
             self.agl = 4
             self.end = 3
@@ -1122,11 +1115,17 @@ class Witch(Entity):
         root.unbind('<q>')
         root.bind('<q>', self.cleanup_spell)
         # SPELL
-        for i, name_spell in enumerate(self.spell_dict.items()):
-            name = name_spell[0]
+        for i, name_spellcosttuple in enumerate(self.spell_dict.items()):
+            print(name_spellcosttuple)
+            name = name_spellcosttuple[0]
+            print(name)
+            spell = name_spellcosttuple[1][0]
+            print(spell)
+            cost = name_spellcosttuple[1][1]
+            print(cost)
             i += 1
-            root.bind(str(i), self.spell_dict[name])
-            b1 = tk.Button(app.context_menu, wraplength = 190, text = str(i) +' : '+ name, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = self.spell_dict[name])
+            root.bind(str(i), spell)
+            b1 = tk.Button(app.context_menu, wraplength = 190, text = str(i) +' : '+ name + ' •'+str(cost), font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = spell)
             b1.pack(side = 'top', pady = 2)
             app.context_buttons.append(b1)
         b2 = tk.Button(app.context_menu, text = 'Cancel', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = self.cleanup_spell)
