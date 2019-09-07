@@ -1,18 +1,6 @@
-# Urgent all mouseclicks lead to movement for witches
-
 # make map 'barriers / obstacles / objects other than summons/witches', terrain, impassable area, doorways to other maps...
 
-# should stats go below zero?
-
-# eot func check for alternate 'end of effect' besides duration 'saving throws' or inverted to_hit versus self to end effect
-
-# replace spell names with underscores to whitespace in button presentation
-
 # cancel 'end turn' populates context with only 'help buttons' (subset of context buttons), forces user to depop context with 'q' before can be populated again...
-
-# Structure app.kill()s same as shadow_attack, where kill is delayed until after vis
-
-# what about multiple casts of same spell on same target? overriding previous effects_dict keys for ent or global
 
 # start making magick costs for summons and a regen rate or squares on maps that regen
 
@@ -29,18 +17,7 @@
 
 # Instead of 'confirm_quit' labels, paste text across whole screen 
 
-# Differentiate visuals of summons in 'owner', dif owners have dif color overlays
-
-# can use         self.confirm_end_popup.protocol("WM_DELETE_WINDOW", lambda win = self.confirm_end_popup : self.destroy_release(win))  .... edit for appropriate context, handle exit through window manager 'X' for Toplevel popups
-
-# what happens to context_menu when attempting to populate with more buttons than it can hold
-
-# how would 'prevent targeting with spells or attacks' without modifying every attack/spell
-
-# how to represent 'barriers' / impassable terrain on map? how to show in grid, maybe a type of entity? can they be damaged?
-# are some immovable terrain features and some created from spells? how does this affect placement / movement? would having a string in grid that isn't in ent_dict mess up any loops through its keys?
-
-# consider buffing stats on witches
+# what happens to context_menu when attempting to populate with more buttons than it can hold, would only be an issue if ever adding a bunch more spells or summons, ideally would become a scrollbox (whatever it's called), would have populate_context count the number of buttons it is creating and when the height exceeds the screenheight...
 
 # start thinking about what map and map animation to use
 
@@ -955,10 +932,10 @@ class Witch(Entity):
         
         if name == 'Agnes_Sampson':
             self.spell_dict['Plague'] = (self.plague, 5)
-            self.spell_dict['Psionic Push'] = (self.psionic_push, 4)
+            self.spell_dict['Psionic_Push'] = (self.psionic_push, 4)
             self.spell_dict['Curse_of_Oriax'] = (self.curse_of_oriax, 5)
             self.spell_dict['Gravity'] = (self.gravity, 7)
-            self.spell_dict["Beleth's Command"] = (self.beleths_command, 8)
+            self.spell_dict["Beleth's_Command"] = (self.beleths_command, 8)
             self.str = 4
             self.agl = 2
             self.end = 3
@@ -967,10 +944,10 @@ class Witch(Entity):
             self.spirit = 75
             self.magick = 75
         elif name == 'Fakir_Ali':
-            self.spell_dict['Horrid Wilting'] = (self.horrid_wilting,4)
-            self.spell_dict['Boiling Blood'] = (self.boiling_blood, 3)
-            self.spell_dict['Dark Sun'] = (self.dark_sun, 4)
-            self.spell_dict['Command of Osiris'] = (self.command_of_osiris, 5)
+            self.spell_dict['Horrid_Wilting'] = (self.horrid_wilting,4)
+            self.spell_dict['Boiling_Blood'] = (self.boiling_blood, 3)
+            self.spell_dict['Dark_Sun'] = (self.dark_sun, 4)
+            self.spell_dict['Command_of_Osiris'] = (self.command_of_osiris, 5)
             self.spell_dict['Disintegrate'] = (self.disintegrate, 4)
             self.str = 3
             self.agl = 2
@@ -982,9 +959,9 @@ class Witch(Entity):
         elif name == 'Morgan_LeFay':
             self.spell_dict['Enchant'] = (self.enchant, 4)
             self.spell_dict['Counterspell'] = (self.counterspell, 3)
-            self.spell_dict["Nature's Wrath"] = (self.natures_wrath, 5)
-            self.spell_dict["Noden's Command"] = (self.nodens_command, 6)
-            self.spell_dict['Wild Hunt'] = (self.wild_hunt, 7)
+            self.spell_dict["Nature's_Wrath"] = (self.natures_wrath, 5)
+            self.spell_dict["Noden's_Command"] = (self.nodens_command, 6)
+            self.spell_dict['Wild_Hunt'] = (self.wild_hunt, 7)
             self.str = 2
             self.agl = 4
             self.end = 3
@@ -1113,6 +1090,7 @@ class Witch(Entity):
         # SPELL
         for i, name_spellcosttuple in enumerate(self.spell_dict.items()):
             name = name_spellcosttuple[0]
+            name = name.replace('_', ' ')
             spell = name_spellcosttuple[1][0]
             cost = name_spellcosttuple[1][1]
             i += 1
@@ -1155,13 +1133,15 @@ class Witch(Entity):
         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         sqrs = [s for s in coords if dist(self.loc, s) <= 4]
         app.animate_squares(sqrs)
-        root.bind('<a>', lambda e, s = grid_pos : self.do_plague(event = e, sqr = s))
-        b = tk.Button(app.context_menu, text = 'Choose Target For Plague', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos : self.do_plague(e, s))
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_plague(event = e, sqr = s, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Choose Target For Plague', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_plague(e, s, sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
         
-    def do_plague(self, event, sqr):
+    def do_plague(self, event, sqr, sqrs):
         if app.current_pos() == '':
+            return
+        if sqr not in sqrs:
             return
         # target must be Summon, Witch, (future type...)
         id = app.current_pos()
@@ -1205,8 +1185,69 @@ class Witch(Entity):
     
     def psionic_push(self, event = None):
             # Make attk (psyche versus agl) against any target within range 4, move the target from square of origin in any lateral direction up to 4 squares but not through any obstacles (ents or impassable squares, not edge of map), if target 'collides' (movement stopped before 4 squares because of obstacle) target takes spirit damage (str versus end) and target takes damage (str versus end) if capable of taking spirit damage
+        app.depop_context(event = None)
+        root.bind('<q>', self.cleanup_spell)
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [s for s in coords if dist(self.loc, s) <= 4]
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_psionic_push(event = e, sqr = s, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Choose Target For Psionic Push', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_psionic_push(e, s, sqrs))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+        
+        # need intermediate function to choose target square to push into
+        
+        
+    def do_psionic_push(self, event, sqr, sqrs):
+        if app.current_pos() == '':
+            return
+        if sqr not in sqrs:
+            return
+        # target must be Summon, Witch, (future type...)
+        id = app.current_pos()
+        if not isinstance(app.ent_dict[id], Witch) and not isinstance(app.ent_dict[id], Summon):
+             return
+        self.magick -= self.spell_dict['Psionic_Push'][1]
+        root.unbind('<q>')
+        root.unbind('<a>')
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        self.spell_used = True
+        loc = app.ent_dict[id].loc[:]
+        ps = []
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        # sqrs 2 from id in lateral directions with no intervening obstacles
+        for c in coords:
+            if c[0] == (loc[0] + 1) and c[1] == loc[1] and app.grid[c[0]][c[1]] == '':
+                ps.append(c)
+                n = [loc[0]+2, loc[1]]
+                if n[0] == (loc[0] + 2) and n[1] == loc[1] and app.grid[n[0]][n[1]] == '':
+                    ps.append(n)
+            elif c[0] == (loc[0] - 1) and c[1] == loc[1] and app.grid[c[0]][c[1]] == '':
+                ps.append(c)
+                if c[0] == (loc[0] - 2) and c[1] == loc[1] and app.grid[c[0]][c[1]] == '':
+                    ps.append(c)
+            elif c[0] == loc[0] and c[1] == (loc[1] + 1) and app.grid[c[0]][c[1]] == '':
+                ps.append(c)
+                if c[0] == loc[0] and c[1] == (loc[1] + 2) and app.grid[c[0]][c[1]] == '':
+                    ps.append(c)
+            if c[0] == loc[0] and c[1] == (loc[1] - 1) and app.grid[c[0]][c[1]] == '':
+                ps.append(c)
+                if c[0] == loc[0] and c[1] == (loc[1] - 2) and app.grid[c[0]][c[1]] == '':
+                    ps.append(c)
+        app.animate_squares(ps)
+        b = tk.Button(app.context_menu, text = 'Choose Square to Push', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda s = grid_pos, sqrs = ps : self.choose_psi_square(s, sqrs))
+            
+    def choose_psi_square(self, sqr, sqrs):
+        if sqr not in sqrs:
+            return
+        app.vis_dict['Psionic_Push'] = Vis(name = 'Psionic_Push', loc = sqr)
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Psionic_Push'].img, tags = 'Psionic_Push')
+        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Psionic_Push', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+        root.after(2666, lambda  name = 'Psionic_Push' : self.cleanup_spell(name = name))
         print('psionic push')
         
+    # CURSE OF ORIAX
     def curse_of_oriax(self, event = None):
             # Any target is inflicted with 'curse', while cursed takes 2 spirit damage at end of every owner's turn and minus 1 to every stat (not spirit, magick, movement) then afflicted ent may 'to hit self' (own strength versus own inverted end, 1 becomes 5, 5 becomes 1...) to end the curse, while afflicted with curse of oriax target may not be afflicted with any other curse conditions
         app.depop_context(event = None)
@@ -1214,13 +1255,15 @@ class Witch(Entity):
         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         sqrs = [s for s in coords if dist(self.loc, s) <= 3]
         app.animate_squares(sqrs)
-        root.bind('<a>', lambda e, s = grid_pos : self.do_curse_of_oriax(event = e, sqr = s))
-        b = tk.Button(app.context_menu, text = 'Choose Target For Curse of Oriax', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos : self.do_curse_of_oriax(e, s))
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_curse_of_oriax(event = e, sqr = s, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Choose Target For Curse of Oriax', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_curse_of_oriax(e, s, sqrs = sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
         
-    def do_curse_of_oriax(self, event, sqr):
+    def do_curse_of_oriax(self, event, sqr, sqrs):
         if app.current_pos() == '':
+            return
+        if sqr not in sqrs:
             return
         id = app.current_pos()
         if not isinstance(app.ent_dict[id], Witch) and not isinstance(app.ent_dict[id], Summon):
