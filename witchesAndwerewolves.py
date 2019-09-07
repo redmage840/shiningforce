@@ -1,3 +1,7 @@
+# Urgent move not getting a button....
+
+# psionic push, if end sqr is same as origin sqr then no vis happens (movement animation shouldnt happen anyway), should do alternate 'regular' animation
+
 # make map 'barriers / obstacles / objects other than summons/witches', terrain, impassable area, doorways to other maps...
 
 # cancel 'end turn' populates context with only 'help buttons' (subset of context buttons), forces user to depop context with 'q' before can be populated again...
@@ -36,6 +40,7 @@ def dist(loc1, loc2):
 curs_pos = [0, 0]
 is_object_selected = False
 selected = ''
+selected_vis = ''
 
 map_pos = [0, 0]
 
@@ -228,18 +233,20 @@ class Entity():
         # depop context, unbind, bind 'a' do move, bind 'q' cancel move, get/animate sqrs, make confirm / cancel button
         app.depop_context(event = None)
         root.unbind('<a>')
-        root.unbind('<z>')
         root.unbind('<q>')
-        root.unbind('<space>')
         root.bind('<q>', self.cleanup_move)
         sqrs = self.legal_moves()
         app.animate_squares(sqrs)
+        b = tk.Button(app.context_menu, text = 'Confirm Move Square', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = sqrs : self.do_move(e, s))
+        b.pack(side = 'top', pady = 3)
+        app.context_buttons.append(b)
         root.bind('<a>', lambda e, s = sqrs : self.do_move(e, s))
         
         
     def do_move(self, e, sqrs):
         if grid_pos not in sqrs:
             return
+        app.depop_context(event = None)
         # change loc, origin, update grid, create_image, del old canvas image
         oldloc = self.loc[:]
         newloc = grid_pos[:]
@@ -1129,7 +1136,7 @@ class Witch(Entity):
             # currently effects dif from description, one target, no to_hit check
             # Make attk (psyche versus end) on any summon within range 4 and all adjacent summons have attrs reduced to 1 (str, agl, end, dodge, psyche) lasting until 3 opp turns have passed
         app.depop_context(event = None)
-        root.bind('<q>', self.cleanup_spell)
+        root.bind('<q>', lambda name = 'Plague' : self.cleanup_spell(name = name))
         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         sqrs = [s for s in coords if dist(self.loc, s) <= 4]
         app.animate_squares(sqrs)
@@ -1176,17 +1183,14 @@ class Witch(Entity):
             pass
         eot = nothing
         n = 'Plague' + str(len(app.ent_dict[id].effects_dict.keys()))
-        # for every entry that already has name (or prefix) 'Plague' append a suffix to disambiguate, need descriptive names at all?
         app.ent_dict[id].effects_dict['Plague'] = Effect(info = 'Plague\n Stats reduced to 1 for 3 turns', eot_func = eot, undo = p, duration = 3)
         root.after(2666, lambda  name = 'Plague' : self.cleanup_spell(name = name))
             
-    
-    # MAKE SPELL WITH ANOTHER 'EFFECTS FUNC' TO STACK WITH PLAGUE TO MAKE SURE RESOLUTION HAPPENS PROPERLY
-    
+    # PSIONIC PUSH
     def psionic_push(self, event = None):
             # Make attk (psyche versus agl) against any target within range 4, move the target from square of origin in any lateral direction up to 4 squares but not through any obstacles (ents or impassable squares, not edge of map), if target 'collides' (movement stopped before 4 squares because of obstacle) target takes spirit damage (str versus end) and target takes damage (str versus end) if capable of taking spirit damage
         app.depop_context(event = None)
-        root.bind('<q>', self.cleanup_spell)
+        root.bind('<q>', lambda name = 'Psionic_Push' : self.cleanup_spell(name = name))
         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         sqrs = [s for s in coords if dist(self.loc, s) <= 4]
         app.animate_squares(sqrs)
@@ -1194,8 +1198,6 @@ class Witch(Entity):
         b = tk.Button(app.context_menu, text = 'Choose Target For Psionic Push', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_psionic_push(e, s, sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
-        
-        # need intermediate function to choose target square to push into
         
         
     def do_psionic_push(self, event, sqr, sqrs):
@@ -1217,35 +1219,117 @@ class Witch(Entity):
         ps = []
         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         # sqrs 2 from id in lateral directions with no intervening obstacles
+        ps.append(loc)
         for c in coords:
             if c[0] == (loc[0] + 1) and c[1] == loc[1] and app.grid[c[0]][c[1]] == '':
                 ps.append(c)
                 n = [loc[0]+2, loc[1]]
-                if n[0] == (loc[0] + 2) and n[1] == loc[1] and app.grid[n[0]][n[1]] == '':
-                    ps.append(n)
+                if n in coords:
+                    if n[0] == (loc[0] + 2) and n[1] == loc[1] and app.grid[n[0]][n[1]] == '':
+                        ps.append(n)
             elif c[0] == (loc[0] - 1) and c[1] == loc[1] and app.grid[c[0]][c[1]] == '':
+                n = [loc[0]-2, loc[1]]
                 ps.append(c)
-                if c[0] == (loc[0] - 2) and c[1] == loc[1] and app.grid[c[0]][c[1]] == '':
-                    ps.append(c)
+                if n in coords:
+                    if n[0] == (loc[0] - 2) and n[1] == loc[1] and app.grid[n[0]][n[1]] == '':
+                        ps.append(n)
             elif c[0] == loc[0] and c[1] == (loc[1] + 1) and app.grid[c[0]][c[1]] == '':
+                n = [loc[0], loc[1]+2]
                 ps.append(c)
-                if c[0] == loc[0] and c[1] == (loc[1] + 2) and app.grid[c[0]][c[1]] == '':
-                    ps.append(c)
-            if c[0] == loc[0] and c[1] == (loc[1] - 1) and app.grid[c[0]][c[1]] == '':
+                if n in coords:
+                    if n[0] == loc[0] and n[1] == (loc[1] + 2) and app.grid[n[0]][n[1]] == '':
+                        ps.append(n)
+            elif c[0] == loc[0] and c[1] == (loc[1] - 1) and app.grid[c[0]][c[1]] == '':
+                n = [loc[0], loc[1]-2]
                 ps.append(c)
-                if c[0] == loc[0] and c[1] == (loc[1] - 2) and app.grid[c[0]][c[1]] == '':
-                    ps.append(c)
+                if n in coords:
+                    if n[0] == loc[0] and n[1] == (loc[1] - 2) and app.grid[n[0]][n[1]] == '':
+                        ps.append(n)
         app.animate_squares(ps)
-        b = tk.Button(app.context_menu, text = 'Choose Square to Push', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda s = grid_pos, sqrs = ps : self.choose_psi_square(s, sqrs))
+        b = tk.Button(app.context_menu, text = 'Choose Square to Push', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda id = id, s = grid_pos, sqrs = ps : self.choose_psi_square(id, s, sqrs))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
             
-    def choose_psi_square(self, sqr, sqrs):
+            # THIS LOOP WILL BE THE SAME FOR 'WALKING' ANIMATION GENERALLY
+    # ideally, should make vis and text object at start square, remove ent from grid, and 'move' all 3 objects from origin to sqr
+    # this could be a chance to implement 'gradual / fluid movement'
+    # will have to make 'moving loop' that plays well with 'animate()' (which looks through ent_dict and redraws objects based on loc)
+    # should make object 'selected' so it is not redrawn in 'animate()'
+    # 'move()' moves things by pixel location, so get pixel location based on ent.loc
+    # get stop location based on sqr
+    # convert these to pixel values, ie loc of [3,4] is (3*100+50-app.moved_right,4*100+50-app.moved_down) say (350,450)
+    # get pixel location of sqr (of which one axis will be same) so say (550,450)
+    # probably can move more than one pixel at a time, so start with step of 5
+    # in the loop three images will have to be deleted and redrawn (text, Vis, Ent)
+    # also should call rotate_image() on the Vis and Ent so they go through their normal animations
+    # will be def and called within choose_psi_square()
+    # when loop is finished, calls another func to complete/cleanup psionic_push
+    # first will need to 'selected' Ent, so it isn't redrawn by animate(), create initial textObject and Vis but remove Vis from animate() somehow
+    # will need to tag_raise Vis
+    # on second thought dont move the textObject, just create at origin square and cleanup as normal
+    # may need to create another textObject to show damage/results at sqr (not origin)
+    def choose_psi_square(self, id, sqr, sqrs):
+        global selected, selected_vis
         if sqr not in sqrs:
             return
-        app.vis_dict['Psionic_Push'] = Vis(name = 'Psionic_Push', loc = sqr)
-        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Psionic_Push'].img, tags = 'Psionic_Push')
-        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Psionic_Push', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
-        root.after(2666, lambda  name = 'Psionic_Push' : self.cleanup_spell(name = name))
-        print('psionic push')
+        app.unbind_all()
+        app.cleanup_squares()
+        app.depop_context(event = None)
+        # if 'pushed into' obstacle, each takes 'hit'
+        start_loc = app.ent_dict[id].loc[:]
+        app.vis_dict['Psionic_Push'] = Vis(name = 'Psionic_Push', loc = start_loc)
+        app.canvas.create_image(start_loc[0]*100+50-app.moved_right, start_loc[1]*100+50-app.moved_down, image = app.vis_dict['Psionic_Push'].img, tags = 'Psionic_Push')
+        print(app.vis_dict['Psionic_Push'].img)
+        app.canvas.create_text(start_loc[0]*100+50-app.moved_right, start_loc[1]*100+75-app.moved_down, text = 'Psionic Push', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+        x = start_loc[0]*100+50-app.moved_right
+        y = start_loc[1]*100+50-app.moved_down
+        endx = sqr[0]*100+50-app.moved_right
+        endy = sqr[1]*100+50-app.moved_down
+        selected = id
+        selected_vis = 'Psionic_Push'
+        def psi_move_loop(vis, ent, x, y, endx, endy, sqr, start_sqr):
+            if x % 25 == 0 and y % 25 == 0:
+                app.vis_dict[vis].rotate_image()
+                app.ent_dict[ent].rotate_image()
+            app.canvas.delete(vis)
+            app.canvas.delete(ent)
+            app.canvas.create_image(x, y, image = app.vis_dict[vis].img, tags = 'Psionic_Push')
+            app.canvas.create_image(x, y, image = app.ent_dict[ent].img, tags = ent)
+            app.canvas.tag_raise(vis)
+            if x > endx:
+                x -= 5
+                app.canvas.move(vis, -5, 0)
+                app.canvas.move(ent, -5, 0)
+            elif x < endx: 
+                x += 5
+                app.canvas.move(vis, 5, 0)
+                app.canvas.move(ent, 5, 0)
+            if y > endy: 
+                y -= 5
+                app.canvas.move(vis, 0, -5)
+                app.canvas.move(ent, 0, -5)
+            elif y < endy: 
+                y += 5
+                app.canvas.move(vis, 0, 5)
+                app.canvas.move(ent, 0, 5)
+            if x == endx and y == endy:
+                self.finish_psionic_push(ent, sqr, start_sqr)
+#                 self.cleanup_spell(name = 'Psionic_Push')
+#                 root.after(60, lambda s = 'Psionic_Push' : self.cleanup_spell(name = s))
+            else:
+                root.after(50, lambda p = 'Psionic_Push', id = id, x = x, y = y, endx = endx, endy = endy, s = sqr, s2 = start_sqr : psi_move_loop(p, id, x, y, endx, endy, s, s2))
+        psi_move_loop('Psionic_Push', id, x, y, endx, endy, sqr, start_loc)
+        
+    def finish_psionic_push(self, tar, end_loc, start_loc):
+        global selected, selected_vis
+        app.ent_dict[tar].loc = end_loc[:]
+        app.ent_dict[tar].origin = end_loc[:]
+        app.grid[start_loc[0]][start_loc[1]] = ''
+        app.grid[end_loc[0]][end_loc[1]] = tar
+        selected = ''
+        selected_vis = ''
+        self.cleanup_spell(name = 'Psionic_Push')
+        
         
     # CURSE OF ORIAX
     def curse_of_oriax(self, event = None):
@@ -1671,10 +1755,11 @@ class App(tk.Frame):
             self.canvas.delete(sqr)
             self.canvas.create_image(self.sqr_dict[sqr].loc[0]*100+50-self.moved_right, self.sqr_dict[sqr].loc[1]*100+50-self.moved_down, image = self.sqr_dict[sqr].img, tags = sqr)
         for vis in self.vis_dict.keys():
-            self.vis_dict[vis].rotate_image()
-            self.canvas.delete(vis)
-            self.canvas.create_image(self.vis_dict[vis].loc[0]*100+50-self.moved_right, self.vis_dict[vis].loc[1]*100+50-self.moved_down, image = self.vis_dict[vis].img, tags = vis)
-            app.canvas.tag_raise(vis)
+            if vis != selected_vis:
+                self.vis_dict[vis].rotate_image()
+                self.canvas.delete(vis)
+                self.canvas.create_image(self.vis_dict[vis].loc[0]*100+50-self.moved_right, self.vis_dict[vis].loc[1]*100+50-self.moved_down, image = self.vis_dict[vis].img, tags = vis)
+                app.canvas.tag_raise(vis)
         try: app.canvas.tag_raise('text')
         except: pass
         root.after(300, self.animate)
