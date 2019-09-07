@@ -1,4 +1,6 @@
-# currently spell effects on attrs stack if they can stack (multiple -1's) but the ent itself has its effect_dict entries overwritten with newer effects... when multiple 'curse -1' attr effects are stacked but effect dict only has one entry and expires (undo called) are the multiple attr effects removed? no, they seem to persist
+# Urgent all mouseclicks lead to movement for witches
+
+# make map 'barriers / obstacles / objects other than summons/witches', terrain, impassable area, doorways to other maps...
 
 # should stats go below zero?
 
@@ -128,6 +130,7 @@ class Sqr():
 
 class Entity():
     def __init__(self, name, img, loc, owner):
+        self.timer = 1 # COUNTER FOR TIMING EOT EFFECT TEXT OBJECTS
         self.name = name
         self.img = img
         self.loc = loc
@@ -1247,14 +1250,23 @@ class Witch(Entity):
             app.ent_dict[i].dodge_effects.remove(curse_of_oriax_effect)
             app.ent_dict[i].psyche_effects.remove(curse_of_oriax_effect)
         p = partial(un, id)
-        # Vis need to account for multiple Vis textObjects
+        # EOT FUNC
         def take_2(tar):
             app.ent_dict[tar].set_attr('spirit', -2)
-            app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+75-app.moved_down, text = '2 Spirit Damage', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+            time = self.timer*666
+            killtime = time
+            # for proper placement (involving moved_right/down) need to ensure that screen/map does not move during execution of EOT 
+            root.after(time, lambda pos1 =app.ent_dict[tar].loc[0]*100+50-app.moved_right , pos2 =app.ent_dict[tar].loc[1]*100+75-app.moved_down, text = '2 Spirit Damage', font = ('Andale Mono', 14), fill = 'white', tags = 'text' : app.canvas.create_text(pos1, pos2, text=text, font=font, fill=fill, tags=tags))
+            self.timer += 1
+            time = self.timer*666
+            root.after(time, lambda t = 'text' : app.canvas.delete(t))
+            self.timer += 1
+            # WHAT HAPPENS IF ENT IS KILLED DURING CYCLE THROUGH EFFECTS DICT / EOT EFFECTS?
+            # still need to time below 'kill()' to current cycle at least
             if app.ent_dict[tar].spirit <= 0:
-                app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+95-app.moved_down, text = app.ent_dict[tar].name + ' Killed...', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
-                root.after(1666, lambda id = tar : app.kill(id))
-            root.after(1666, lambda t = 'text' : app.canvas.delete(t))
+                root.after(killtime, lambda pos1 =app.ent_dict[tar].loc[0]*100+50-app.moved_right , pos2 =app.ent_dict[tar].loc[1]*100+95-app.moved_down, text = app.ent_dict[tar].name + ' Killed...', font = ('Andale Mono', 14), fill = 'white', tags = 'text' : app.canvas.create_text(pos1, pos2, text=text, font=font, fill=fill, tags=tags))
+                root.after(time, lambda id = tar : app.kill(id))
+                root.after(time, lambda t = 'text' : app.canvas.delete(t))
             
         eot = partial(take_2, id)
         n = 'Curse_of_Oriax' + str(len(app.ent_dict[id].effects_dict.keys()))
@@ -1537,8 +1549,10 @@ class App(tk.Frame):
     def start_turn(self):
         p = self.active_player
         if self.num_players == 1 and p == 'p1':
+            self.rebind_all()
             self.get_focus(self.p1_witch)
         elif self.num_players == 2:
+            self.rebind_all()
             w = self.p1_witch if p == 'p1' else self.p2_witch
             self.get_focus(w)
         elif self.num_players == 1 and p == 'p2':
@@ -1550,31 +1564,27 @@ class App(tk.Frame):
     def do_ai_loop(self, ents):
         ent = ents[0]
         self.get_focus(ent)
-        # need to get_focus then pause or last ent to act is not visualized
         if self.ent_dict[ent].name == 'Undead':
             self.ent_dict[ent].do_undead_ai(ents)
         
         
         
     def end_turn(self):
-        self.rebind_all()
+        self.unbind_all()
         self.depop_context(event = None)
         for ent in self.ent_dict.keys():
             if self.ent_dict[ent].owner == self.active_player:
                 # DO SPELL EFFECTS / UNDOS
                 for ef in list(self.ent_dict[ent].effects_dict.keys()):
-                    print(ent)
-                    print(ef)
-                    # currently looks like a 'newer' plague will overwrite the old effect, does it reset duration?
-                    # this is probably how effects should be resolved, since the 'same kind' of effect will always(?) expire before a newer instance of the same effect
-                    print(self.ent_dict[ent].effects_dict[ef].duration)
-                    print(self.ent_dict[ent].effects_dict)
                     self.ent_dict[ent].effects_dict[ef].eot_func()
+                    # ent is killed by an EOT func effect, break so as not to attempt to execute any more of this ent's EOT effects
+                    # ent is programmatically killed by app.kill() called from EOT func on timer
+                    if self.ent_dict[ent].spirit <= 0:
+                        break
                     self.ent_dict[ent].effects_dict[ef].duration -= 1
                     if self.ent_dict[ent].effects_dict[ef].duration <= 0:
                         # CALL UNDO / DELETE EFFECT
                         self.ent_dict[ent].effects_dict[ef].undo()
-                        # DEBUG need to delete this entry when expires
                         del self.ent_dict[ent].effects_dict[ef]
                 # RESET SPELLS / MOVEMENT / ATTACKS
                 self.ent_dict[ent].move_used = False
@@ -1583,12 +1593,17 @@ class App(tk.Frame):
                     self.ent_dict[ent].summon_used = False
                 elif isinstance(self.ent_dict[ent], Summon):
                     self.ent_dict[ent].attack_used = False
+        # END OF CYCLE FOR ALL ENTS
+        time = max([self.ent_dict[x].timer for x in self.ent_dict.keys()])
+        time *= 1332
+        for x in self.ent_dict.keys():
+            self.ent_dict[x].timer = 1
         if self.active_player == 'p1':
             self.unbind_all()
             self.active_player = 'p2'
         elif self.active_player == 'p2':
             self.active_player = 'p1'
-        root.after(1666, self.start_turn)
+        root.after(time, self.start_turn)
         
         
         
@@ -1626,11 +1641,11 @@ class App(tk.Frame):
         if e == '':
             return
         if self.context_buttons != []:
-            print('error here app.context_buttons not empty')
+            print('app.context_buttons not empty')
             return
         self.repop_help_buttons()
         expanded_name = e.replace('_',' ')
-        # if generic summon (name ends with number), show class name instead of proper Noun
+        # if generic summon (name ends with number), show class name instead ent.name
         try:
             num = int(e[-1])
             expanded_name = self.ent_dict[e].__class__.__name__
@@ -1650,7 +1665,8 @@ class App(tk.Frame):
                 call = act_call[1]
                 i += 1
                 root.bind(str(i), call)
-                b = tk.Button(self.context_menu, text = str(i) + ' : ' + act, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None : call(e))
+                p = partial(call, None)
+                b = tk.Button(self.context_menu, text = str(i) + ' : ' + act, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = p)
                 b.pack(side = 'top')
                 self.context_buttons.append(b)
         
