@@ -301,6 +301,7 @@ class Entity():
         global selected
         if grid_pos not in sqrs:
             return
+        app.unbind_all()
         app.depop_context(event = None)
         # start ANIM here
         if isinstance(self, Witch):
