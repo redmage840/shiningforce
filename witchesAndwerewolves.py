@@ -31,9 +31,27 @@ from random import choice, randrange
 from functools import partial
 # import time
 
-# convenience func
+# convenience funcs
 def dist(loc1, loc2):
     return abs(loc1[0] - loc2[0]) + abs(loc1[1] - loc2[1])
+
+def to_hit(self, a1, a2):
+    base = 5
+    dif = a1 - a2
+    base += dif
+    chance = base * 10
+    rand = randrange(1, 100)
+    if rand < chance:
+        return True
+    else:
+        return False
+        
+# add random element?
+def damage(self, a1, a2):
+    base = 5
+    dif = a1 - a2
+    if base + dif < 1: return 1 
+    else: return base + dif
 
 curs_pos = [0, 0]
 is_object_selected = False
@@ -227,25 +245,43 @@ class Entity():
         else:
             return False
             
-    def to_hit(self, a1, a2):
-        base = 5
-        dif = a1 - a2
-        base += dif
-        chance = base * 10
-        rand = randrange(1, 100)
-        if rand < chance:
-            return True
+#######################################################################################
+        def psi_move_loop(vis, ent, x, y, endx, endy, sqr, start_sqr):
+            if x % 25 == 0 and y % 25 == 0:
+                app.vis_dict[vis].rotate_image()
+                app.ent_dict[ent].rotate_image()
+            app.canvas.delete(vis)
+            app.canvas.delete(ent)
+            app.canvas.create_image(x, y, image = app.ent_dict[ent].img, tags = ent)
+            app.canvas.create_image(x, y, image = app.vis_dict[vis].img, tags = 'Psionic_Push')
+            app.canvas.tag_raise(vis)
+            if x > endx:
+                x -= 5
+                app.canvas.move(vis, -5, 0)
+                app.canvas.move(ent, -5, 0)
+            elif x < endx: 
+                x += 5
+                app.canvas.move(vis, 5, 0)
+                app.canvas.move(ent, 5, 0)
+            if y > endy: 
+                y -= 5
+                app.canvas.move(vis, 0, -5)
+                app.canvas.move(ent, 0, -5)
+            elif y < endy: 
+                y += 5
+                app.canvas.move(vis, 0, 5)
+                app.canvas.move(ent, 0, 5)
+            if x == endx and y == endy:
+                self.finish_psionic_push(ent, sqr, start_sqr)
+            else:
+                root.after(50, lambda p = 'Psionic_Push', id = id, x = x, y = y, endx = endx, endy = endy, s = sqr, s2 = start_sqr : psi_move_loop(p, id, x, y, endx, endy, s, s2))
+        if sqr == start_loc:
+            self.finish_psionic_push(id, sqr, start_loc)
         else:
-            return False
-            
-    # add random element?
-    def damage(self, a1, a2):
-        base = 5
-        dif = a1 - a2
-        if base + dif < 1: return 1 
-        else: return base + dif
-            
-            
+            psi_move_loop('Psionic_Push', id, x, y, endx, endy, sqr, start_loc)
+######################################################################################
+    # Move animation, if implementing as method for ALL ents, they may appear to move 'through' units although they technically cannot
+    # may also appear to move diagonally, does this matter? does not change legality /start/end of moves, only appearance of animation getting from one square to the other
     def move(self, event = None):
         if self.move_used == True:
             return
@@ -261,14 +297,53 @@ class Entity():
         app.context_buttons.append(b)
         root.bind('<a>', lambda e, s = sqrs : self.do_move(e, s))
         
-        
-    def do_move(self, e, sqrs):
+    def do_move(self, event, sqrs):
+        global selected
         if grid_pos not in sqrs:
             return
         app.depop_context(event = None)
-        # change loc, origin, update grid, create_image, del old canvas image
-        oldloc = self.loc[:]
-        newloc = grid_pos[:]
+        # start ANIM here
+        if isinstance(self, Witch):
+            id = self.name
+        else:
+            id = self.number
+        start_sqr = self.loc[:]
+        end_sqr = grid_pos[:]
+        selected = id
+        x = start_sqr[0]*100+50-app.moved_right
+        y = start_sqr[1]*100+50-app.moved_down
+        endx = end_sqr[0]*100+50-app.moved_right
+        endy = end_sqr[1]*100+50-app.moved_down
+        
+        # MOVE LOOP
+        def move_loop(id, x, y, endx, endy, start_sqr, end_sqr):
+            if x % 20 == 0 or y % 20 == 0:
+                self.rotate_image()
+            app.canvas.delete(id)
+            app.canvas.create_image(x, y, image = self.img, tags = id)
+            if x > endx:
+                x -= 5
+                app.canvas.move(id, -5, 0)
+            if x < endx: 
+                x += 5
+                app.canvas.move(id, 5, 0)
+            if y > endy: 
+                y -= 5
+                app.canvas.move(id, 0, -5)
+            if y < endy: 
+                y += 5
+                app.canvas.move(id, 0, 5)
+            if x == endx and y == endy:
+                self.finish_move(id, end_sqr, start_sqr) # EXIT
+            else: # CONTINUE LOOP
+                root.after(50, lambda id = id, x = x, y = y, e = endx, e2 = endy, s = start_sqr, s2 = end_sqr : move_loop(id, x, y, e, e2, s, s2))
+        move_loop(id, x, y, endx, endy, start_sqr, end_sqr)
+            
+    def finish_move(self, id, end, start):
+        global selected
+        selected = ''
+        oldloc = start
+        newloc = end
         self.loc = newloc[:]
         self.origin = newloc[:]
         app.grid[oldloc[0]][oldloc[1]] = ''
@@ -340,7 +415,7 @@ class Trickster(Summon):
         id = app.current_pos()
         my_psyche = self.get_attr('psyche')
         target_psyche = app.ent_dict[id].get_attr('psyche')
-        if self.to_hit(my_psyche, target_psyche) == True:
+        if to_hit(my_psyche, target_psyche) == True:
             app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Confuse Hit!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
             app.after(1666, lambda id = id : self.do_attack(id))
         else:
@@ -356,7 +431,7 @@ class Trickster(Summon):
         root.unbind('<z>')
         my_agl = self.get_attr('agl')
         target_dodge = app.ent_dict[id].get_attr('dodge')
-        dist = self.damage(my_agl, target_dodge)
+        dist = damage(my_agl, target_dodge)
         dist = dist//2 + 1
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -453,11 +528,11 @@ class Shadow(Summon):
         app.unbind_all()
         my_str = self.get_attr('str')
         target_end = app.ent_dict[id].get_attr('end')
-        if self.to_hit(my_str, target_end) == True:
+        if to_hit(my_str, target_end) == True:
             # VISUAL TO HIT, go ahead and show dmg here also
             my_psyche = self.get_attr('psyche')
             target_psyche = app.ent_dict[id].get_attr('psyche')
-            d = self.damage(my_psyche, target_psyche)
+            d = damage(my_psyche, target_psyche)
             d //= 2
             if d == 0: d = 1
             app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Shadow Attack Hit!\n' + str(d) + ' Spirit Damage\n', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
@@ -796,11 +871,11 @@ class Undead(Summon):
         self.init_attack_anims()
         my_agl = self.get_attr('agl')
         target_dodge = app.ent_dict[id].get_attr('dodge')
-        if self.to_hit(my_agl, target_dodge) == True:
+        if to_hit(my_agl, target_dodge) == True:
             # HIT, SHOW VIS, DO DAMAGE, EXIT
             my_str = self.get_attr('str')
             target_end = app.ent_dict[id].get_attr('end')
-            d = self.damage(my_str, target_end)
+            d = damage(my_str, target_end)
             app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Undead Attack Hit!\n' + str(d) + ' Spirit Damage', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
             app.ent_dict[id].set_attr('spirit', -d)
             if app.ent_dict[id].spirit <= 0:
@@ -899,10 +974,10 @@ class Warrior(Summon):
         id = app.current_pos()
         my_agl = self.get_attr('agl')
         target_dodge = app.ent_dict[id].get_attr('dodge')
-        if self.to_hit(my_agl, target_dodge) == True:
+        if to_hit(my_agl, target_dodge) == True:
             my_str = self.get_attr('str')
             target_end = app.ent_dict[id].get_attr('end')
-            d = self.damage(my_str, target_end)
+            d = damage(my_str, target_end)
             app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Warrior Attack Hit!\n' + str(d) + ' Spirit Damage', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
             root.after(1666, lambda id = id, d = d : self.do_attack(id, d))
         else:
@@ -1345,7 +1420,7 @@ class Witch(Entity):
             tar_str = app.ent_dict[tar].get_attr('str')
             for ent in adj_ents:
                 if app.ent_dict[ent].attr_check('agl') == False:
-                    d = app.ent_dict[ent].damage(tar_str, app.ent_dict[ent].get_attr('end'))
+                    d = damage(tar_str, app.ent_dict[ent].get_attr('end'))
                     app.ent_dict[ent].set_attr('spirit', -d)
                     app.canvas.create_text(app.ent_dict[ent].loc[0]*100+50-app.moved_right, app.ent_dict[ent].loc[1]*100+70-app.moved_down, text = str(d) + ' Spirit Damage', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
                     if app.ent_dict[ent].spirit <= 0:
