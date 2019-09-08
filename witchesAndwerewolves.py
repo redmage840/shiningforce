@@ -1,4 +1,4 @@
-# psionic push, if end sqr is same as origin sqr then no vis happens (movement animation shouldnt happen anyway), should do alternate 'regular' animation, hotkeys for psionic push
+# fix plague and undead_atk animations
 
 # make map 'barriers / obstacles / objects other than summons/witches', terrain, impassable area, doorways to other maps...
 
@@ -853,9 +853,6 @@ class Undead(Summon):
             if dist(s, app.ent_dict[target].loc) < min:
                 best = s
                 min = dist(s, app.ent_dict[target].loc)
-        # pass id, startx, starty, endx, endy, startsqr, best(endsqr) to loop
-        # exit through a move_cleanup()
-        # move_cleanup checks for attacks or exits
         id = self.number
         x = self.loc[0]*100+50-app.moved_right
         y = self.loc[1]*100+50-app.moved_down
@@ -864,6 +861,7 @@ class Undead(Summon):
         start_sqr = self.loc[:]
         end_sqr = best[:]
         selected = self.number
+        # MOVE LOOP
         def move_loop(id, x, y, endx, endy, start_sqr, end_sqr):
             if x % 20 == 0 or y % 20 == 0:
                 self.rotate_image()
@@ -952,13 +950,30 @@ class Undead(Summon):
         return sqrs
         
     def legal_moves(self):
-        sqrs = []
+        loc = self.loc
+        mvlist = []
         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        for coord in coords:
-            if app.grid[coord[0]][coord[1]] == '':
-                if (bool(abs(coord[0] - self.loc[0]) == 1) ^ bool(abs(coord[1] - self.loc[1]) == 1)) and dist(coord, self.loc) == 1:
-                    sqrs.append(coord)
-        return sqrs
+        def findall(loc, start, dist):
+            if start > dist:
+                return
+            adj = [c for c in coords if abs(c[0] - loc[0]) + abs(c[1] - loc[1]) == 1 and app.grid[c[0]][c[1]] == '']
+            for s in adj:
+                mvlist.append(s)
+                findall(s, start+1, dist)
+        findall(loc, 1, 2) 
+        setlist = []
+        for l in mvlist:
+            if l not in setlist:
+                setlist.append(l)
+        return setlist
+#     def legal_moves(self):
+#         sqrs = []
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+#         for coord in coords:
+#             if app.grid[coord[0]][coord[1]] == '':
+#                 if (bool(abs(coord[0] - self.loc[0]) == 1) ^ bool(abs(coord[1] - self.loc[1]) == 1)) and dist(coord, self.loc) == 1:
+#                     sqrs.append(coord)
+#         return sqrs
         
         
 class Warrior(Summon):
