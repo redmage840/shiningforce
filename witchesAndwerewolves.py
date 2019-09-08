@@ -1209,6 +1209,7 @@ class Witch(Entity):
         root.after(2666, lambda  name = 'Plague' : self.cleanup_spell(name = name))
             
     # PSIONIC PUSH
+    # make hotkeys, do something about lack of vis when 'not moving'
     def psionic_push(self, event = None):
         app.depop_context(event = None)
         root.bind('<q>', lambda name = 'Psionic_Push' : self.cleanup_spell(name = name))
@@ -1238,7 +1239,6 @@ class Witch(Entity):
         loc = app.ent_dict[id].loc[:]
         ps = []
         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        # sqrs 2 from id in lateral directions with no intervening obstacles
         # make recursive for variable distance
 #         def sqrs_until_obs(start, next, dist):
         ps.append(loc)
@@ -1268,12 +1268,13 @@ class Witch(Entity):
                     if n[0] == loc[0] and n[1] == (loc[1] - 2) and app.grid[n[0]][n[1]] == '':
                         ps.append(n)
         app.animate_squares(ps)
-        b = tk.Button(app.context_menu, text = 'Choose Square to Push', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda id = id, s = grid_pos, sqrs = ps : self.choose_psi_square(id, s, sqrs))
+        root.bind('<a>', lambda e, id = id, s = grid_pos, sqrs = ps : self.choose_psi_square(event = e, id = id, sqr = s, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Choose Square to Push', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, id = id, s = grid_pos, sqrs = ps : self.choose_psi_square(e, id, s, sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
             
             # THIS LOOP WILL BE THE SAME FOR 'WALKING' ANIMATION... GENERALLY
-    def choose_psi_square(self, id, sqr, sqrs):
+    def choose_psi_square(self, event, id, sqr, sqrs):
         global selected, selected_vis
         if sqr not in sqrs:
             return
@@ -1283,14 +1284,14 @@ class Witch(Entity):
         start_loc = app.ent_dict[id].loc[:]
         app.vis_dict['Psionic_Push'] = Vis(name = 'Psionic_Push', loc = start_loc)
         app.canvas.create_image(start_loc[0]*100+50-app.moved_right, start_loc[1]*100+50-app.moved_down, image = app.vis_dict['Psionic_Push'].img, tags = 'Psionic_Push')
-        print(app.vis_dict['Psionic_Push'].img)
-        app.canvas.create_text(start_loc[0]*100+50-app.moved_right, start_loc[1]*100+75-app.moved_down, text = 'Psionic Push', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+        app.canvas.create_text(start_loc[0]*100+50-app.moved_right, start_loc[1]*100+95-app.moved_down, text = 'Psionic Push', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
         x = start_loc[0]*100+50-app.moved_right
         y = start_loc[1]*100+50-app.moved_down
         endx = sqr[0]*100+50-app.moved_right
         endy = sqr[1]*100+50-app.moved_down
-        selected = id
-        selected_vis = 'Psionic_Push'
+        if start_loc != sqr:
+            selected = id
+            selected_vis = 'Psionic_Push'
         def psi_move_loop(vis, ent, x, y, endx, endy, sqr, start_sqr):
             if x % 25 == 0 and y % 25 == 0:
                 app.vis_dict[vis].rotate_image()
@@ -1320,7 +1321,10 @@ class Witch(Entity):
                 self.finish_psionic_push(ent, sqr, start_sqr)
             else:
                 root.after(50, lambda p = 'Psionic_Push', id = id, x = x, y = y, endx = endx, endy = endy, s = sqr, s2 = start_sqr : psi_move_loop(p, id, x, y, endx, endy, s, s2))
-        psi_move_loop('Psionic_Push', id, x, y, endx, endy, sqr, start_loc)
+        if sqr == start_loc:
+            self.finish_psionic_push(id, sqr, start_loc)
+        else:
+            psi_move_loop('Psionic_Push', id, x, y, endx, endy, sqr, start_loc)
         
     def finish_psionic_push(self, tar, end_loc, start_loc):
         global selected, selected_vis
@@ -1334,8 +1338,6 @@ class Witch(Entity):
         for s in adj_sqrs:
             if app.grid[s[0]][s[1]] != '':
                 adj_ents.append(app.grid[s[0]][s[1]])
-        print('adj_sqrs ', adj_sqrs)
-        print('adj_ents ', adj_ents)
         if adj_ents != []:
             # hit tar and adj_ents
             # add text objects for save / miss
@@ -1349,14 +1351,17 @@ class Witch(Entity):
                     if app.ent_dict[ent].spirit <= 0:
                         app.canvas.create_text(app.ent_dict[ent].loc[0]*100+50-app.moved_right, app.ent_dict[ent].loc[1]*100+90-app.moved_down, text = app.ent_dict[ent].name + ' Killed...', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
                         root.after(666, app.kill(ent))
-            root.after(1332, lambda s = 'Psionic_Push' : self.cleanup_spell(name = s))
+                # MISS
+                else:
+                    app.canvas.create_text(app.ent_dict[ent].loc[0]*100+50-app.moved_right, app.ent_dict[ent].loc[1]*100+70-app.moved_down, text = 'Agility Save', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+            root.after(2666, lambda s = 'Psionic_Push' : self.cleanup_spell(name = s))
         else:
             self.cleanup_spell(name = 'Psionic_Push')
         
         
     # CURSE OF ORIAX
     def curse_of_oriax(self, event = None):
-            # Any target is inflicted with 'curse', while cursed takes 2 spirit damage at end of every owner's turn and minus 1 to every stat (not spirit, magick, movement) then afflicted ent may 'to hit self' (own strength versus own inverted end, 1 becomes 5, 5 becomes 1...) to end the curse, while afflicted with curse of oriax target may not be afflicted with any other curse conditions
+            # Any target is inflicted with 'curse', while cursed takes 2 spirit damage at end of every owner's turn and minus 1 to every stat (not spirit, magick, movement)
         app.depop_context(event = None)
         root.bind('<q>', self.cleanup_spell)
         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
@@ -1411,8 +1416,6 @@ class Witch(Entity):
             time = self.timer*666
             root.after(time, lambda t = 'text' : app.canvas.delete(t))
             self.timer += 1
-            # WHAT HAPPENS IF ENT IS KILLED DURING CYCLE THROUGH EFFECTS DICT / EOT EFFECTS?
-            # still need to time below 'kill()' to current cycle at least
             if app.ent_dict[tar].spirit <= 0:
                 root.after(killtime, lambda pos1 =app.ent_dict[tar].loc[0]*100+50-app.moved_right , pos2 =app.ent_dict[tar].loc[1]*100+95-app.moved_down, text = app.ent_dict[tar].name + ' Killed...', font = ('Andale Mono', 14), fill = 'white', tags = 'text' : app.canvas.create_text(pos1, pos2, text=text, font=font, fill=fill, tags=tags))
                 root.after(time, lambda id = tar : app.kill(id))
