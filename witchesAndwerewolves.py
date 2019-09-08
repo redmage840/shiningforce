@@ -1,4 +1,17 @@
-# fix plague and undead_atk animations
+# fix gravity animation
+
+# mapui.net
+# opengameart.org
+
+# show current spell effects in 'info', currently easily overruns room with even 2 effects
+
+# random spell element, 'deck' of spells, tarot deck, random spells, or build a spell deck and draw some each turn
+
+# make AI ent that will bring out the flaw in warriors, warriors are too good against dumb AI, but maybe not worth it against ents that will try to 'move behind' them or teleport/confuse them to distant squares
+
+# make walking/movement animations
+
+# need better animations for plague, psionic push
 
 # make map 'barriers / obstacles / objects other than summons/witches', terrain, impassable area, doorways to other maps...
 
@@ -77,7 +90,8 @@ class Dummy():
         pass
 
 class Effect():
-    def __init__(self, info, eot_func, undo, duration):
+    def __init__(self, name, info, eot_func, undo, duration):
+        self.name = name
         self.eot_func = eot_func
         self.info = info
         self.undo = undo
@@ -146,11 +160,10 @@ class Entity():
             self.end_effects = []
             self.dodge_effects = []
             self.psyche_effects = []
-            
-            
         # when ent moved by effect other than regular movement, must update origin also (square of origin at begin of turn)
         self.origin = []
         self.effects_dict = {}
+        self.effects_counter = 0 # for uniquely naming effects
         self.anim_dict = {}
         anims = [a for r,d,a in walk('./animations/' + self.name + '/')][0]
         anims = [a for a in anims[:] if a[-3:] == 'png']
@@ -245,41 +258,6 @@ class Entity():
         else:
             return False
             
-#######################################################################################
-        def psi_move_loop(vis, ent, x, y, endx, endy, sqr, start_sqr):
-            if x % 25 == 0 and y % 25 == 0:
-                app.vis_dict[vis].rotate_image()
-                app.ent_dict[ent].rotate_image()
-            app.canvas.delete(vis)
-            app.canvas.delete(ent)
-            app.canvas.create_image(x, y, image = app.ent_dict[ent].img, tags = ent)
-            app.canvas.create_image(x, y, image = app.vis_dict[vis].img, tags = 'Psionic_Push')
-            app.canvas.tag_raise(vis)
-            if x > endx:
-                x -= 5
-                app.canvas.move(vis, -5, 0)
-                app.canvas.move(ent, -5, 0)
-            elif x < endx: 
-                x += 5
-                app.canvas.move(vis, 5, 0)
-                app.canvas.move(ent, 5, 0)
-            if y > endy: 
-                y -= 5
-                app.canvas.move(vis, 0, -5)
-                app.canvas.move(ent, 0, -5)
-            elif y < endy: 
-                y += 5
-                app.canvas.move(vis, 0, 5)
-                app.canvas.move(ent, 0, 5)
-            if x == endx and y == endy:
-                self.finish_psionic_push(ent, sqr, start_sqr)
-            else:
-                root.after(50, lambda p = 'Psionic_Push', id = id, x = x, y = y, endx = endx, endy = endy, s = sqr, s2 = start_sqr : psi_move_loop(p, id, x, y, endx, endy, s, s2))
-        if sqr == start_loc:
-            self.finish_psionic_push(id, sqr, start_loc)
-        else:
-            psi_move_loop('Psionic_Push', id, x, y, endx, endy, sqr, start_loc)
-######################################################################################
     # Move animation, if implementing as method for ALL ents, they may appear to move 'through' units although they technically cannot
     # may also appear to move diagonally, does this matter? does not change legality /start/end of moves, only appearance of animation getting from one square to the other
     def move(self, event = None):
@@ -840,8 +818,9 @@ class Undead(Summon):
                     app.end_turn()
                 else:
                     root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
+            else:
         # ATTEMPT MOVE TOWARDS TARGET AND ATTEMPT ATTACK ON TARGET
-            self.undead_move(ents_list, target)
+                self.undead_move(ents_list, target)
             
     def undead_move(self, ents_list, target):
         global selected
@@ -1289,7 +1268,7 @@ class Witch(Entity):
         # Agnes' spells center around Death/Decay/Disease/Telekinetics
     def plague(self, event = None):
             # currently effects dif from description, one target, no to_hit check
-            # Make attk (psyche versus end) on any summon within range 4 and all adjacent summons have attrs reduced to 1 (str, agl, end, dodge, psyche) lasting until 3 opp turns have passed
+            # attrs reduced to 1 (str, agl, end, dodge, psyche) lasting until 3 opp turns have passed
         app.depop_context(event = None)
         root.bind('<q>', lambda name = 'Plague' : self.cleanup_spell(name = name))
         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
@@ -1337,12 +1316,13 @@ class Witch(Entity):
         def nothing():
             pass
         eot = nothing
-        n = 'Plague' + str(len(app.ent_dict[id].effects_dict.keys()))
-        app.ent_dict[id].effects_dict['Plague'] = Effect(info = 'Plague\n Stats reduced to 1 for 3 turns', eot_func = eot, undo = p, duration = 3)
+        n = 'Plague' + str(self.effects_counter)
+        self.effects_counter += 1
+        app.ent_dict[id].effects_dict['Plague'] = Effect(name = 'Plague', info = 'Plague\n Stats reduced to 1 for 3 turns', eot_func = eot, undo = p, duration = 3)
         root.after(2666, lambda  name = 'Plague' : self.cleanup_spell(name = name))
             
     # PSIONIC PUSH
-    # make hotkeys, do something about lack of vis when 'not moving'
+    # DEBUG lack of vis when use on origin square
     def psionic_push(self, event = None):
         app.depop_context(event = None)
         root.bind('<q>', lambda name = 'Psionic_Push' : self.cleanup_spell(name = name))
@@ -1406,7 +1386,6 @@ class Witch(Entity):
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
             
-            # THIS LOOP WILL BE THE SAME FOR 'WALKING' ANIMATION... GENERALLY
     def choose_psi_square(self, event, id, sqr, sqrs):
         global selected, selected_vis
         if sqr not in sqrs:
@@ -1473,20 +1452,19 @@ class Witch(Entity):
                 adj_ents.append(app.grid[s[0]][s[1]])
         if adj_ents != []:
             # hit tar and adj_ents
-            # add text objects for save / miss
             adj_ents.append(tar)
             tar_str = app.ent_dict[tar].get_attr('str')
             for ent in adj_ents:
                 if app.ent_dict[ent].attr_check('agl') == False:
                     d = damage(tar_str, app.ent_dict[ent].get_attr('end'))
                     app.ent_dict[ent].set_attr('spirit', -d)
-                    app.canvas.create_text(app.ent_dict[ent].loc[0]*100+50-app.moved_right, app.ent_dict[ent].loc[1]*100+70-app.moved_down, text = str(d) + ' Spirit Damage', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+                    app.canvas.create_text(app.ent_dict[ent].loc[0]*100+50-app.moved_right, app.ent_dict[ent].loc[1]*100+70-app.moved_down, text = str(d) + ' Spirit\nDamage', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
                     if app.ent_dict[ent].spirit <= 0:
-                        app.canvas.create_text(app.ent_dict[ent].loc[0]*100+50-app.moved_right, app.ent_dict[ent].loc[1]*100+90-app.moved_down, text = app.ent_dict[ent].name + ' Killed...', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+                        app.canvas.create_text(app.ent_dict[ent].loc[0]*100+50-app.moved_right, app.ent_dict[ent].loc[1]*100+100-app.moved_down, text = app.ent_dict[ent].name + '\nKilled...', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
                         root.after(666, app.kill(ent))
                 # MISS
                 else:
-                    app.canvas.create_text(app.ent_dict[ent].loc[0]*100+50-app.moved_right, app.ent_dict[ent].loc[1]*100+70-app.moved_down, text = 'Agility Save', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+                    app.canvas.create_text(app.ent_dict[ent].loc[0]*100+50-app.moved_right, app.ent_dict[ent].loc[1]*100+70-app.moved_down, text = 'Agility\nSave',justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
             root.after(2666, lambda s = 'Psionic_Push' : self.cleanup_spell(name = s))
         else:
             self.cleanup_spell(name = 'Psionic_Push')
@@ -1521,7 +1499,7 @@ class Witch(Entity):
         self.spell_used = True
         app.vis_dict['Curse_of_Oriax'] = Vis(name = 'Curse_of_Oriax', loc = sqr)
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Curse_of_Oriax'].img, tags = 'Curse_of_Oriax')
-        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Curse of Oriax', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Curse\nof\nOriax', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
         # DO Curse_of_Oriax EFFECTS
         def curse_of_oriax_effect(stat):
             return stat - 1
@@ -1544,25 +1522,79 @@ class Witch(Entity):
             time = self.timer*666
             killtime = time
             # for proper placement (involving moved_right/down) need to ensure that screen/map does not move during execution of EOT 
-            root.after(time, lambda pos1 =app.ent_dict[tar].loc[0]*100+50-app.moved_right , pos2 =app.ent_dict[tar].loc[1]*100+75-app.moved_down, text = '2 Spirit Damage', font = ('Andale Mono', 14), fill = 'white', tags = 'text' : app.canvas.create_text(pos1, pos2, text=text, font=font, fill=fill, tags=tags))
+            root.after(time, lambda pos1 =app.ent_dict[tar].loc[0]*100+50-app.moved_right , pos2 =app.ent_dict[tar].loc[1]*100+60-app.moved_down, text = '2 Spirit\n Damage', justify ='center', font = ('Andale Mono', 14), fill = 'white', tags = 'text' : app.canvas.create_text(pos1, pos2, text=text, justify = justify, font=font, fill=fill, tags=tags))
             self.timer += 1
             time = self.timer*666
             root.after(time, lambda t = 'text' : app.canvas.delete(t))
             self.timer += 1
             if app.ent_dict[tar].spirit <= 0:
-                root.after(killtime, lambda pos1 =app.ent_dict[tar].loc[0]*100+50-app.moved_right , pos2 =app.ent_dict[tar].loc[1]*100+95-app.moved_down, text = app.ent_dict[tar].name + ' Killed...', font = ('Andale Mono', 14), fill = 'white', tags = 'text' : app.canvas.create_text(pos1, pos2, text=text, font=font, fill=fill, tags=tags))
+                root.after(killtime, lambda pos1 =app.ent_dict[tar].loc[0]*100+50-app.moved_right , pos2 =app.ent_dict[tar].loc[1]*100+95-app.moved_down, text = app.ent_dict[tar].name + '\nKilled...', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text' : app.canvas.create_text(pos1, pos2, text=text, font=font, justify = justify, fill=fill, tags=tags))
                 root.after(time, lambda id = tar : app.kill(id))
                 root.after(time, lambda t = 'text' : app.canvas.delete(t))
             
         eot = partial(take_2, id)
-        n = 'Curse_of_Oriax' + str(len(app.ent_dict[id].effects_dict.keys()))
-        app.ent_dict[id].effects_dict[n] = Effect(info = 'Curse_of_Oriax\n Stats reduced by 1 for 3 turns\n2 Spirit damage per turn', eot_func = eot, undo = p, duration = 3)
+        n = 'Curse_of_Oriax' + str(self.effects_counter)
+        self.effects_counter += 1
+        app.ent_dict[id].effects_dict[n] = Effect(name = 'Curse_of_Oriax', info = 'Curse_of_Oriax\n Stats reduced by 1 for 3 turns\n2 Spirit damage per turn', eot_func = eot, undo = p, duration = 3)
         root.after(2666, lambda  name = 'Curse_of_Oriax' : self.cleanup_spell(name = name))
         
     def gravity(self, event = None):
-            # Target ent within range 4 and all ents within range 2 of target may not move until two of their owner's turns have ended, targets are only affected by normal movement, can still be moved through spell/attack effects, if moved out of affected squares then no longer restricted movement, any ent moving into affected squares is immediately halted and is affected in the same way until spell ends
-        print('gravity')
+        # consider 'being moved' through means other than movement ends effect
+        # an effect that overwrites the ent.legal_moves() method to return []
+        # undo removes the overwrite
+        #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        app.depop_context(event = None)
+        root.bind('<q>', self.cleanup_spell)
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [s for s in coords if dist(self.loc, s) <= 4]
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_gravity(event = e, sqr = s, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Choose Target For Gravity', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_gravity(e, s, sqrs = sqrs))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
         
+    def do_gravity(self, event, sqr, sqrs):
+        if app.current_pos() == '':
+            return
+        if sqr not in sqrs:
+            return
+        id = app.current_pos()
+        if not isinstance(app.ent_dict[id], Witch) and not isinstance(app.ent_dict[id], Summon):
+             return
+        self.magick -= self.spell_dict['Gravity'][1]
+        root.unbind('<q>')
+        root.unbind('<a>')
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        self.spell_used = True
+        app.vis_dict['Gravity'] = Vis(name = 'Gravity', loc = sqr)
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Gravity'].img, tags = 'Gravity')
+        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Gravity', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+        # DO Curse_of_Oriax EFFECTS
+        def gravity_effect(stat):
+            return stat - 2
+        f = gravity_effect
+        app.ent_dict[id].agl_effects.append(f)
+        app.ent_dict[id].dodge_effects.append(f)
+        def gravity():# REPLACE CLASS MOVEMENT WITH NOTHING
+            return []
+        app.ent_dict[id].legal_moves = gravity
+        def un(i):
+            app.ent_dict[i].agl_effects.remove(gravity_effect)
+            app.ent_dict[i].dodge_effects.remove(gravity_effect)
+            p = partial(app.ent_dict[i].__class__.legal_moves, app.ent_dict[i]) #   PUT BACK CLASS METHOD MOVEMENT
+            app.ent_dict[i].legal_moves = p
+        p = partial(un, id)
+        # EOT FUNC
+        def nothing():
+            pass
+        eot = nothing
+        n = 'Gravity' + str(self.effects_counter)
+        self.effects_counter += 1
+        app.ent_dict[id].effects_dict[n] = Effect(name = 'Gravity', info = 'Gravity\nCannot move and agl and dodge reduced by 2 for 2 turns', eot_func = eot, undo = p, duration = 2)
+        root.after(2666, lambda  name = 'Gravity' : self.cleanup_spell(name = name))
+        print('gravity')
+        #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     def beleths_command(self, event = None):
             # Caster is affect by 'command', while affected cannot be affected by other 'command' effects until spell ends (one 'command' effect at a time), any ent using an attack against caster first must 'to hit' caster's psyche versus attacker's psyche, a success results in normal attack, failure causes spirit damage to attacker (caster's psyche versus attacker's end) and no effects from the attack, lasts until caster has 3 turns end
         print('beleths_command')
@@ -1658,21 +1690,28 @@ class App(tk.Frame):
         # Herculanum 240
         # Papyrus 240
     def choose_num_players(self):
-        self.title_screen = ImageTk.PhotoImage(Image.open('titleScreen2.png'))
-        self.subtitle = ImageTk.PhotoImage(Image.open('subtitle.png'))
-        self.game_title = tk.Label(root, image = self.title_screen, pady = 140, bg = 'black')
+        self.title_screen = ImageTk.PhotoImage(Image.open('titleScreen8.png').resize((root.winfo_screenwidth(),root.winfo_screenheight())))
+#         self.subtitle = ImageTk.PhotoImage(Image.open('subtitle.png'))
+        self.game_title = tk.Canvas(root, width = root.winfo_screenwidth(), bg = 'black', highlightthickness = 0, height = root.winfo_screenheight())
+        self.game_title.create_image(0,0, image =self.title_screen, anchor = 'nw')
+#         self.game_title = tk.Label(root, image = self.title_screen, pady = 66, bg = 'black')
         self.game_title.pack(side = 'top')
-        self.marquee = tk.Label(root, image = self.subtitle, bg = 'black', pady = 10)
-        self.marquee.pack(side = 'top')
+#         self.marquee = tk.Label(root, image = self.subtitle, bg = 'black', pady = 10)
+#         self.marquee.pack(side = 'top')
         self.one_player = tk.Button(root, text = '1 Player', fg = 'tan3', highlightbackground = 'tan3', font = ('chalkduster', 24), command = lambda num = 1 : self.num_chose(num))
-        self.one_player.pack(pady = 9)
+        self.b_win = self.game_title.create_window(root.winfo_screenwidth()/2, root.winfo_screenheight()-120, anchor='s', window = self.one_player)
+#         self.one_player.pack(pady = 9)
         self.two_player = tk.Button(root, text = '2 Player', fg = 'tan3', highlightbackground = 'tan3', font = ('chalkduster', 24), command = lambda num = 2 : self.num_chose(num))
-        self.two_player.pack(pady = 9)
+        self.b2_win = self.game_title.create_window(root.winfo_screenwidth()/2, root.winfo_screenheight()-70, anchor='s', window = self.two_player)
+#         self.two_player = tk.Button(root, text = '2 Player', fg = 'tan3', highlightbackground = 'tan3', font = ('chalkduster', 24), command = lambda num = 2 : self.num_chose(num))
+#         self.two_player.pack(pady = 9)
         
     def num_chose(self, num):
         self.num_players = num
         self.game_title.destroy()
-        self.marquee.destroy()
+#         self.marquee.destroy()
+#         self.b_win.destroy()
+#         self.b2_win.destroy()
         self.one_player.destroy()
         self.two_player.destroy()
         if self.num_players == 2:
@@ -1940,10 +1979,10 @@ class App(tk.Frame):
             pass
         # DEBUG make info button into label that holds the info
         self.cntxt_info_bg = ImageTk.PhotoImage(Image.open('page.png'))
-        bg = tk.Canvas(self.context_menu, width = 190, height = 250, bg = 'burlywood4', bd=0, relief='raised', highlightthickness=0)
+        bg = tk.Canvas(self.context_menu, width = 190, height = 295, bg = 'burlywood4', bd=0, relief='raised', highlightthickness=0)
         bg.pack(side = 'top')
         bg.create_image(0,0, image = self.cntxt_info_bg, anchor = 'nw')
-        bg.create_text(15, 15, text=expanded_name + '\n' + self.get_info_text(e), anchor = 'nw', font = ('chalkduster', 18), fill = 'indianred')
+        bg.create_text(15, 15, text=expanded_name + '\n' + self.get_info_text(e), width = 190, anchor = 'nw', font = ('chalkduster', 18), fill = 'indianred')
         self.context_buttons.append(bg)
         if self.ent_dict[e].owner == self.active_player:
             act_dict = self.ent_dict[e].actions
@@ -2081,6 +2120,8 @@ class App(tk.Frame):
         txt += 'Spirit:' + str(self.ent_dict[ent].spirit) + '\n'
         if isinstance(self.ent_dict[ent], Witch):
             txt += 'Magick:' + str(self.ent_dict[ent].magick) + '\n'
+        for ef in self.ent_dict[ent].effects_dict.keys():
+            txt += self.ent_dict[ent].effects_dict[ef].name.replace('_',' ') + '\n'
         return txt
                  
     def confirm_end(self):
