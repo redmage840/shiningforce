@@ -35,7 +35,7 @@ from functools import partial
 def dist(loc1, loc2):
     return abs(loc1[0] - loc2[0]) + abs(loc1[1] - loc2[1])
 
-def to_hit(self, a1, a2):
+def to_hit(a1, a2):
     base = 5
     dif = a1 - a2
     base += dif
@@ -47,7 +47,7 @@ def to_hit(self, a1, a2):
         return False
         
 # add random element?
-def damage(self, a1, a2):
+def damage(a1, a2):
     base = 5
     dif = a1 - a2
     if base + dif < 1: return 1 
@@ -813,8 +813,7 @@ class Undead(Summon):
         super().__init__(name, img, loc, owner, number)
         
     
-    # movement is working fine, but atk_sqrs is messed up might be from legal_attacks()
-    # need more visualizations before actions happen, better timing of vis
+    #  UNDEAD AI
     def do_undead_ai(self, ents_list):
         # GET LIST OF ENEMY ENTS, PICK ONE OF THE CLOSEST
         enemy_ents = [x for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p1']
@@ -832,41 +831,84 @@ class Undead(Summon):
         # IF TARGET IS WITHIN ATTACK, ATTACK IT, EXIT THROUGH UNDEAD_ATTACK()
         if t_loc in atk_sqrs:
             self.undead_attack(ents_list, target)
-        # IF TARGET IS NOT WITHIN ATTACK, MOVE TOWARDS IT
-        else:
+        else: # EXIT OR MOVE
             mov_sqrs = self.legal_moves()
-            # NO LEGAL MOVES AND TARGET NOT WITHIN CURRENT RANGE, EXIT FUNC
+        # CANNOT MOVE AND COULD NOT ATTACK TARGET NOT WITHIN CURRENT RANGE, GO TO NEXT AI UNIT OR END TURN IF NONE
             if mov_sqrs == []:
                 ents_list = ents_list[1:]
                 if ents_list == []:
                     app.end_turn()
                 else:
                     root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
+        # ATTEMPT MOVE TOWARDS TARGET AND ATTEMPT ATTACK ON TARGET
+            self.undead_move(ents_list, target)
+            
+    def undead_move(self, ents_list, target):
+        global selected
+        mov_sqrs = self.legal_moves()
+        # AMONG LEGAL MOVES, PICK ONE THAT MINIMIZES DISTANCE BETWEEN SELF AND TARGET
+        best = mov_sqrs[0]
+        min = dist(mov_sqrs[0], app.ent_dict[target].loc)
+        for s in mov_sqrs:
+            if dist(s, app.ent_dict[target].loc) < min:
+                best = s
+                min = dist(s, app.ent_dict[target].loc)
+        # pass id, startx, starty, endx, endy, startsqr, best(endsqr) to loop
+        # exit through a move_cleanup()
+        # move_cleanup checks for attacks or exits
+        id = self.number
+        x = self.loc[0]*100+50-app.moved_right
+        y = self.loc[1]*100+50-app.moved_down
+        endx = best[0]*100+50-app.moved_right
+        endy = best[1]*100+50-app.moved_down
+        start_sqr = self.loc[:]
+        end_sqr = best[:]
+        selected = self.number
+        def move_loop(id, x, y, endx, endy, start_sqr, end_sqr):
+            if x % 20 == 0 or y % 20 == 0:
+                self.rotate_image()
+            app.canvas.delete(id)
+            app.canvas.create_image(x, y, image = self.img, tags = id)
+            if x > endx:
+                x -= 5
+                app.canvas.move(id, -5, 0)
+            if x < endx: 
+                x += 5
+                app.canvas.move(id, 5, 0)
+            if y > endy: 
+                y -= 5
+                app.canvas.move(id, 0, -5)
+            if y < endy: 
+                y += 5
+                app.canvas.move(id, 0, 5)
+            if x == endx and y == endy:
+                self.finish_move(id, end_sqr, start_sqr, target, ents_list) # EXIT
+            else: # CONTINUE LOOP
+                root.after(50, lambda id = id, x = x, y = y, e = endx, e2 = endy, s = start_sqr, s2 = end_sqr : move_loop(id, x, y, e, e2, s, s2))
+        move_loop(id, x, y, endx, endy, start_sqr, end_sqr)
+            
+            
+            
+    def finish_move(self, id, end_sqr, start_sqr, target, ents_list):
+        global selected
+        selected = ''
+        self.loc = end_sqr[:]
+        self.origin = end_sqr[:]
+        app.grid[start_sqr[0]][start_sqr[1]] = ''
+        app.grid[end_sqr[0]][end_sqr[1]] = self.number
+#         app.canvas.create_image(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+50-app.moved_down, image = self.img, tags = self.number)
+        # IF TARGET NOW WITHIN RANGE, MAKE ATTACK ON IT
+        atk_sqrs = self.legal_attacks()
+        t_loc = app.ent_dict[target].loc[:]
+        if t_loc in atk_sqrs:
+            self.undead_attack(ents_list, target) # EXIT THROUGH UNDEAD_ATTACK()
+        else:
+        # CANNOT ATTACK, EXIT FUNC
+            ents_list = ents_list[1:]
+            if ents_list == []:
+                app.end_turn()
             else:
-            # AMONG LEGAL MOVES, PICK ONE THAT MINIMIZES DISTANCE BETWEEN SELF AND TARGET, MOVE SELF TO SQUARE
-                best = mov_sqrs[0]
-                min = dist(mov_sqrs[0], app.ent_dict[target].loc)
-                for s in mov_sqrs:
-                    if dist(s, app.ent_dict[target].loc) < min:
-                        best = s
-                        min = dist(s, app.ent_dict[target].loc)
-                app.canvas.delete(self.number)
-                app.grid[self.loc[0]][self.loc[1]] = ''
-                self.loc = best[:]
-                self.origin = best[:]
-                app.grid[best[0]][best[1]] = self.number
-                app.canvas.create_image(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+50-app.moved_down, image = self.img, tags = self.number)
-            # IF TARGET NOW WITHIN RANGE, MAKE ATTACK ON IT
-            atk_sqrs = self.legal_attacks()
-            if t_loc in atk_sqrs:
-                self.undead_attack(ents_list, target) # EXIT THROUGH UNDEAD_ATTACK()
-            else:
-            # CANNOT ATTACK, EXIT FUNC
-                ents_list = ents_list[1:]
-                if ents_list == []:
-                    app.end_turn()
-                else:
-                    root.after(666, lambda e = ents_list : app.do_ai_loop(e))
+                root.after(666, lambda e = ents_list : app.do_ai_loop(e))
     
     def undead_attack(self, ents_list, id):
         self.init_attack_anims()
