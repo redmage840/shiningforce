@@ -1,6 +1,4 @@
-# Urgent move not getting a button....
-
-# psionic push, if end sqr is same as origin sqr then no vis happens (movement animation shouldnt happen anyway), should do alternate 'regular' animation
+# psionic push, if end sqr is same as origin sqr then no vis happens (movement animation shouldnt happen anyway), should do alternate 'regular' animation, hotkeys for psionic push
 
 # make map 'barriers / obstacles / objects other than summons/witches', terrain, impassable area, doorways to other maps...
 
@@ -207,6 +205,27 @@ class Entity():
         elif isinstance(self, Witch):
             if attr == 'magick':
                 self. magick += amount
+            
+    def attr_check(self, attr):
+        if attr == 'str':
+            a = self.get_attr('str')
+        elif attr == 'agl':
+            a = self.get_attr('agl')
+        elif attr == 'end':
+            a = self.get_attr('end')
+        elif attr == 'dodge':
+            a = self.get_attr('dodge')
+        elif attr == 'psyche':
+            a = self.get_attr('psyche')
+        if a <= 0:
+            a = 0
+        else:
+            a = (a*2)*10
+        rand = randrange(-1, 102)
+        if a > rand:
+            return True
+        else:
+            return False
             
     def to_hit(self, a1, a2):
         base = 5
@@ -1114,6 +1133,7 @@ class Witch(Entity):
     
     
     def cleanup_spell(self, event = None, name = None):
+        global selected, selected_vis
         root.unbind('<q>')
         root.unbind('<a>')
         for x in range(1, len(self.spell_dict.keys())+1):
@@ -1127,6 +1147,8 @@ class Witch(Entity):
         except: pass
         try: app.canvas.delete('text')
         except: pass
+        selected = ''
+        selected_vis = ''
         
         
         # Need to incorporate 'magick cost' and rules for regenerating/regaining magick, probably certain squares that replenish a set amount every turn, or squares that appear for a limited amount of time/turns that replenish
@@ -1188,7 +1210,6 @@ class Witch(Entity):
             
     # PSIONIC PUSH
     def psionic_push(self, event = None):
-            # Make attk (psyche versus agl) against any target within range 4, move the target from square of origin in any lateral direction up to 4 squares but not through any obstacles (ents or impassable squares, not edge of map), if target 'collides' (movement stopped before 4 squares because of obstacle) target takes spirit damage (str versus end) and target takes damage (str versus end) if capable of taking spirit damage
         app.depop_context(event = None)
         root.bind('<q>', lambda name = 'Psionic_Push' : self.cleanup_spell(name = name))
         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
@@ -1198,7 +1219,6 @@ class Witch(Entity):
         b = tk.Button(app.context_menu, text = 'Choose Target For Psionic Push', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_psionic_push(e, s, sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
-        
         
     def do_psionic_push(self, event, sqr, sqrs):
         if app.current_pos() == '':
@@ -1219,6 +1239,8 @@ class Witch(Entity):
         ps = []
         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         # sqrs 2 from id in lateral directions with no intervening obstacles
+        # make recursive for variable distance
+#         def sqrs_until_obs(start, next, dist):
         ps.append(loc)
         for c in coords:
             if c[0] == (loc[0] + 1) and c[1] == loc[1] and app.grid[c[0]][c[1]] == '':
@@ -1250,24 +1272,7 @@ class Witch(Entity):
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
             
-            # THIS LOOP WILL BE THE SAME FOR 'WALKING' ANIMATION GENERALLY
-    # ideally, should make vis and text object at start square, remove ent from grid, and 'move' all 3 objects from origin to sqr
-    # this could be a chance to implement 'gradual / fluid movement'
-    # will have to make 'moving loop' that plays well with 'animate()' (which looks through ent_dict and redraws objects based on loc)
-    # should make object 'selected' so it is not redrawn in 'animate()'
-    # 'move()' moves things by pixel location, so get pixel location based on ent.loc
-    # get stop location based on sqr
-    # convert these to pixel values, ie loc of [3,4] is (3*100+50-app.moved_right,4*100+50-app.moved_down) say (350,450)
-    # get pixel location of sqr (of which one axis will be same) so say (550,450)
-    # probably can move more than one pixel at a time, so start with step of 5
-    # in the loop three images will have to be deleted and redrawn (text, Vis, Ent)
-    # also should call rotate_image() on the Vis and Ent so they go through their normal animations
-    # will be def and called within choose_psi_square()
-    # when loop is finished, calls another func to complete/cleanup psionic_push
-    # first will need to 'selected' Ent, so it isn't redrawn by animate(), create initial textObject and Vis but remove Vis from animate() somehow
-    # will need to tag_raise Vis
-    # on second thought dont move the textObject, just create at origin square and cleanup as normal
-    # may need to create another textObject to show damage/results at sqr (not origin)
+            # THIS LOOP WILL BE THE SAME FOR 'WALKING' ANIMATION... GENERALLY
     def choose_psi_square(self, id, sqr, sqrs):
         global selected, selected_vis
         if sqr not in sqrs:
@@ -1275,7 +1280,6 @@ class Witch(Entity):
         app.unbind_all()
         app.cleanup_squares()
         app.depop_context(event = None)
-        # if 'pushed into' obstacle, each takes 'hit'
         start_loc = app.ent_dict[id].loc[:]
         app.vis_dict['Psionic_Push'] = Vis(name = 'Psionic_Push', loc = start_loc)
         app.canvas.create_image(start_loc[0]*100+50-app.moved_right, start_loc[1]*100+50-app.moved_down, image = app.vis_dict['Psionic_Push'].img, tags = 'Psionic_Push')
@@ -1314,8 +1318,6 @@ class Witch(Entity):
                 app.canvas.move(ent, 0, 5)
             if x == endx and y == endy:
                 self.finish_psionic_push(ent, sqr, start_sqr)
-#                 self.cleanup_spell(name = 'Psionic_Push')
-#                 root.after(60, lambda s = 'Psionic_Push' : self.cleanup_spell(name = s))
             else:
                 root.after(50, lambda p = 'Psionic_Push', id = id, x = x, y = y, endx = endx, endy = endy, s = sqr, s2 = start_sqr : psi_move_loop(p, id, x, y, endx, endy, s, s2))
         psi_move_loop('Psionic_Push', id, x, y, endx, endy, sqr, start_loc)
@@ -1326,9 +1328,30 @@ class Witch(Entity):
         app.ent_dict[tar].origin = end_loc[:]
         app.grid[start_loc[0]][start_loc[1]] = ''
         app.grid[end_loc[0]][end_loc[1]] = tar
-        selected = ''
-        selected_vis = ''
-        self.cleanup_spell(name = 'Psionic_Push')
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        adj_sqrs = [c for c in coords if dist(c, end_loc) == 1]
+        adj_ents = []
+        for s in adj_sqrs:
+            if app.grid[s[0]][s[1]] != '':
+                adj_ents.append(app.grid[s[0]][s[1]])
+        print('adj_sqrs ', adj_sqrs)
+        print('adj_ents ', adj_ents)
+        if adj_ents != []:
+            # hit tar and adj_ents
+            # add text objects for save / miss
+            adj_ents.append(tar)
+            tar_str = app.ent_dict[tar].get_attr('str')
+            for ent in adj_ents:
+                if app.ent_dict[ent].attr_check('agl') == False:
+                    d = app.ent_dict[ent].damage(tar_str, app.ent_dict[ent].get_attr('end'))
+                    app.ent_dict[ent].set_attr('spirit', -d)
+                    app.canvas.create_text(app.ent_dict[ent].loc[0]*100+50-app.moved_right, app.ent_dict[ent].loc[1]*100+70-app.moved_down, text = str(d) + ' Spirit Damage', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+                    if app.ent_dict[ent].spirit <= 0:
+                        app.canvas.create_text(app.ent_dict[ent].loc[0]*100+50-app.moved_right, app.ent_dict[ent].loc[1]*100+90-app.moved_down, text = app.ent_dict[ent].name + ' Killed...', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+                        root.after(666, app.kill(ent))
+            root.after(1332, lambda s = 'Psionic_Push' : self.cleanup_spell(name = s))
+        else:
+            self.cleanup_spell(name = 'Psionic_Push')
         
         
     # CURSE OF ORIAX
