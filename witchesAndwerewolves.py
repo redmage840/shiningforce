@@ -1,3 +1,5 @@
+# make bard song only show actual gains, do entrance()
+
 # make animations smoother by adding more(redundant) animation frames and speeding up animate() framerate
 
 # every map should have accompanying image to overlay
@@ -352,6 +354,7 @@ class Entity():
         app.depop_context(event = None)
         app.unbind_all()
         app.rebind_all()
+        app.cleanup_squares()
     
 
 class Summon(Entity):
@@ -567,114 +570,77 @@ class Shadow(Summon):
 # abuse with trickster
 class Plaguebearer(Summon):
     def __init__(self, name, img, loc, owner, number):
-        self.actions = {'attack':self.warrior_attack}
+        self.actions = {'move':self.move}
         self.attack_used = False
-        self.str = 4
-        self.agl = 4
-        self.end = 4
+        self.str = 2
+        self.agl = 2
+        self.end = 3
         self.dodge = 2
-        self.psyche = 2
-        self.spirit = 13
+        self.psyche = 4
+        self.spirit = 9
         super().__init__(name, img, loc, owner, number)
         
         
-#     def warrior_attack(self, event = None):
-#         if self.attack_used == True:
-#             return
-#         sqrs = []
-#         coord_pairs = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-#         if app.active_player == 'p1':
-#             for coord in coord_pairs:
-#                 if abs(coord[0] - self.loc[0]) == 1 and coord[1] == self.loc[1]:
-#                     sqrs.append(coord)
-#                 elif abs(coord[0] - self.loc[0]) == 1 and coord[1]-1 == self.loc[1]:
-#                     sqrs.append(coord)
-#                 elif coord[0] == self.loc[0] and coord[1]-1 == self.loc[1]:
-#                     sqrs.append(coord)
-#         elif app.active_player == 'p2':
-#             for coord in coord_pairs:
-#                 if abs(coord[0] - self.loc[0]) == 1 and coord[1] == self.loc[1]:
-#                     sqrs.append(coord)
-#                 elif abs(coord[0] - self.loc[0]) == 1 and coord[1]+1 == self.loc[1]:
-#                     sqrs.append(coord)
-#                 elif coord[0] == self.loc[0] and coord[1]+1 == self.loc[1]:
-#                     sqrs.append(coord)
-#         app.animate_squares(sqrs)
-#         app.depop_context(event = None) 
-#         root.bind('<a>', lambda e, s = sqrs : self.check_hit(e, s))
-#         b = tk.Button(app.context_menu, text = 'Confirm Attack', font = ('chalkduster', 24), fg='tan3', wraplength = 190, highlightbackground = 'tan3', command = lambda e = None, s = sqrs: self.check_hit(e, s))
-#         b.pack(side = 'top')
-#         app.context_buttons.append(b)
-# #         self.placement_buttons.append(b)
-#         root.unbind('<q>')
-#         root.bind('<q>', self.cancel_attack)
-#         
-#     def check_hit(self, event, sqrs):
-#         if grid_pos not in sqrs:
-#             return
-#         if app.current_pos() == '':
-#             return
-#         tar = app.current_pos()
-#         app.unbind_all()
-#         if self.to_hit(self.agl, app.ent_dict[tar].dodge) == True:
-#             print('hit')
-#             # call self.init_attack_anims() here to replace self.anim_dict with other images
-#             # on exit, re init normal anims
-#             self.init_attack_anims()
-#             dmg = self.damage(self.str, app.ent_dict[tar].end)
-#             self.success = tk.Label(app.context_menu, text = 'Attack Hit!', relief = 'raised', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
-#             self.success.pack(side = 'top')
-#             self.dmg = tk.Label(app.context_menu, text = str(dmg) + ' Spirit', relief = 'raised', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
-#             self.dmg.pack(side = 'top')
-#             root.after(1200, lambda id = tar, dmg = dmg : self.do_attack(id, dmg))
-#         else:
-#             self.miss = tk.Label(app.context_menu, text = 'Attack Missed!', relief = 'raised', font = ('chalkduster', 24), wraplength = 190, fg = 'indianred', bg = 'tan2')
-#             self.miss.pack(side = 'top')
-#             root.after(1200, lambda win = self.miss : self.cancel_attack(event = None, win = win))
-#         self.attack_used = True
-#         
-#     def do_attack(self, id, dmg):
-#         self.success.destroy()
-#         self.dmg.destroy()
-#         app.ent_dict[id].set_attr('spirit', -dmg)
-#         if app.ent_dict[id].spirit <= 0:
-#             app.kill(id)
-#             print('target killed')
-#         self.cancel_attack(event = None)
-#         # re init normal anims 
+    # All friendly units within dist2 regain 2 Spirit and 2 Magick, ensure not greater than base
+    def bard_song(self, event = None):
+        if self.attack_used == True:
+            return
+        root.unbind('<a>')
+        root.unbind('<q>')
+        root.bind('<q>', self.finish_bard_song)
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [c for c in coords if dist(self.loc, c) <= 2]
+        app.animate_squares(sqrs)
+        app.depop_context(event = None)
+        root.bind('<a>', lambda e, s = sqrs : self.do_bard_song(event = e, sqrs = s)) 
+        b = tk.Button(app.context_menu, text = 'Confirm Bard Song', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, s = sqrs : self.do_bard_song(event = e, sqrs = s))
+        b.pack(side = 'top')
+        app.context_buttons.append(b)
+        
+    def do_bard_song(self, event = None, sqrs = None):
+        self.attack_used = True
+#         self.init_attack_anims()
+        app.depop_context(event = None)
+        app.unbind_all()
+        ents = []
+        for s in sqrs:
+            ent = app.grid[s[0]][s[1]]
+            if ent != '' and ent != 'block':
+                if app.ent_dict[ent].owner == app.active_player:
+                    app.ent_dict[ent].set_attr('spirit', 2)
+                    app.canvas.create_text(app.ent_dict[ent].loc[0]*100-app.moved_right+50, app.ent_dict[ent].loc[1]*100-app.moved_down+50, text = '+2 Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                    if isinstance(app.ent_dict[ent], Witch):
+                        app.ent_dict[ent].set_attr('magick', 2)
+                        app.canvas.create_text(app.ent_dict[ent].loc[0]*100-app.moved_right+50, app.ent_dict[ent].loc[1]*100-app.moved_down+70, text = '+2 Magick', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+        root.after(1666, self.finish_bard_song)
+        
+    def finish_bard_song(self):
 #         self.init_normal_anims()
-#     
-#     def cancel_attack(self, event, win = None):
-#         app.rebind_all()
-#         if win:
-#             win.destroy()
-#         app.depop_context(event = None)
-#         for b in self.placement_buttons:
-#             b.destroy()
-#         app.cleanup_squares()
-#         self.init_normal_anims()
-#     
-#     def legal_moves(self):
-#         loc = self.loc
-#         mvlist = []
-#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-#         def findall(loc, start, dist):
-#             if start > dist:
-#                 return
-#             # need different 'front' depending on player
-#             if app.active_player == 'p1':
-#                 front = [c for c in coords if c[0] == loc[0] and c[1]-1 == loc[1] and app.grid[c[0]][c[1]] == '']
-#             elif app.active_player == 'p2':
-#                 front = [c for c in coords if c[0] == loc[0] and c[1]+1 == loc[1] and app.grid[c[0]][c[1]] == '']
-#             for s in front:
-#                 mvlist.append(s)
-#                 findall(s, start+1, dist)
-#         findall(loc, 1, 3) 
-#         setlist = []
-#         for l in mvlist:
-#             if l not in setlist:
-#                 setlist.append(l)
-#         return setlist
+        app.rebind_all()
+        app.canvas.delete('text')
+        app.depop_context(event = None)
+        app.cleanup_squares()
+    
+    def entrance(self):
+        pass
+    
+    def legal_moves(self):
+        loc = self.loc
+        mvlist = []
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        def findall(loc, start, dist):
+            if start > dist:
+                return
+            adj = [c for c in coords if abs(c[0] - loc[0]) + abs(c[1] - loc[1]) == 1 and app.grid[c[0]][c[1]] == '']
+            for s in adj:
+                mvlist.append(s)
+                findall(s, start+1, dist)
+        findall(loc, 1, 4) 
+        setlist = []
+        for l in mvlist:
+            if l not in setlist:
+                setlist.append(l)
+        return setlist
 
 
 # raise stats of units (bardsong)?
@@ -1099,6 +1065,7 @@ class Witch(Entity):
         root.bind('2', lambda e, cls = 'Trickster', cost = 8 : self.place_summon(e, cls, cost))
         root.bind('3', lambda e, cls = 'Shadow', cost = 7 : self.place_summon(e, cls, cost))
         root.bind('4', lambda e, cls = 'Bard', cost = 9 : self.place_summon(e, cls, cost))
+        root.bind('5', lambda e, cls = 'Plaguebearer', cost = 7 : self.place_summon(e, cls, cost))
         b1 = tk.Button(app.context_menu, text = '1:Warrior •10', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, cls = 'Warrior', cost = 10 : self.place_summon(e, cls, cost))
         b1.pack(side = 'top', pady = 2)
         app.context_buttons.append(b1)
@@ -1111,8 +1078,9 @@ class Witch(Entity):
         b4 = tk.Button(app.context_menu, text = '4:Bard •9', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, cls = 'Bard', cost = 9 : self.place_summon(e, cls, cost))
         b4.pack(side = 'top', pady = 2)
         app.context_buttons.append(b4)
-#         b5 = tk.Button(self.summon_popup, text = 'Plaguebearer', command = self.place_plaguebearer)
-#         b5.pack()
+        b5 = tk.Button(app.context_menu, text = '5:Plaguebearer\n•7', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, cls = 'Plaguebearer', cost = 7 : self.place_summon(e, cls, cost))
+        b5.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b5)
         b6 = tk.Button(app.context_menu, text = 'Cancel', font = ('chalkduster', 24), highlightbackground = 'tan3', fg='tan3', command = self.cancel_placement)
         b6.pack(side = 'top')
         app.context_buttons.append(b6)
