@@ -1,9 +1,8 @@
-# fix gravity animation
+# make trickster confuse animations, trickster movement animation different, shadow movement animation
 
-# mapui.net
-# opengameart.org
+# normal movement animations should 'follow path' of legal squares
 
-# show current spell effects in 'info', currently easily overruns room with even 2 effects
+# show current spell effects in 'info', currently easily overruns room with even 2 effects, find way to display effects info somewhere with enough room rather not use popup
 
 # random spell element, 'deck' of spells, tarot deck, random spells, or build a spell deck and draw some each turn
 
@@ -11,20 +10,17 @@
 
 # make walking/movement animations
 
-# need better animations for plague, psionic push
+# need better animations for plague, psionic push, gravity
 
 # make map 'barriers / obstacles / objects other than summons/witches', terrain, impassable area, doorways to other maps...
 
-# cancel 'end turn' populates context with only 'help buttons' (subset of context buttons), forces user to depop context with 'q' before can be populated again...
-
-# start making magick costs for summons and a regen rate or squares on maps that regen
-
-# undead attack animations -- make one or two more, try and load a sound when loading atk_anims, at same point show WHAT is being 
-# attacked in some way, either vis or in labels or both
+# magick regen rate or squares on maps that regen
 
 # show victory conditions on map start
 
 # animate titlescreen
+
+# text objects run off edge of canvas, need to raise main canvas above context_menu?
 
 # place bg image on main canvas so edges of map show that, ie border
 
@@ -387,7 +383,7 @@ class Trickster(Summon):
     def check_hit(self, event = None, sqrs = None):
         if grid_pos not in sqrs:
             return
-        if app.current_pos() == '':
+        if app.current_pos() == '' or app.current_pos() == 'block':
             return
         app.depop_context(event = None)
         app.unbind_all()
@@ -500,7 +496,7 @@ class Shadow(Summon):
     def check_hit(self, event = None, sqrs = None):
         if grid_pos not in sqrs:
             return
-        if app.current_pos() == '':
+        if app.current_pos() == '' or app.current_pos() == 'block':
             return
         app.depop_context(event = None)
         id = app.current_pos()
@@ -888,6 +884,7 @@ class Undead(Summon):
                 root.after(666, lambda e = ents_list : app.do_ai_loop(e))
     
     def undead_attack(self, ents_list, id):
+        app.get_focus(self.number)
         self.init_attack_anims()
         my_agl = self.get_attr('agl')
         target_dodge = app.ent_dict[id].get_attr('dodge')
@@ -924,7 +921,7 @@ class Undead(Summon):
         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         for coord in coords:
             if (bool(abs(coord[0] - self.loc[0]) == 1) ^ bool(abs(coord[1] - self.loc[1]) == 1)) and dist(coord, self.loc) == 1:
-                if app.grid[coord[0]][coord[1]] != '':
+                if app.grid[coord[0]][coord[1]] != '' and app.grid[coord[0]][coord[1]] != 'block':
                     sqrs.append(coord)
         return sqrs
         
@@ -1002,7 +999,7 @@ class Warrior(Summon):
     def check_hit(self, event = None, sqrs = None):
         if grid_pos not in sqrs:
             return
-        if app.current_pos() == '':
+        if app.current_pos() == '' or app.current_pos() == 'block':
             return
         self.attack_used = True
         self.init_attack_anims()
@@ -1280,7 +1277,7 @@ class Witch(Entity):
         app.context_buttons.append(b)
         
     def do_plague(self, event, sqr, sqrs):
-        if app.current_pos() == '':
+        if app.current_pos() == '' or app.current_pos() == 'block':
             return
         if sqr not in sqrs:
             return
@@ -1335,7 +1332,7 @@ class Witch(Entity):
         app.context_buttons.append(b)
         
     def do_psionic_push(self, event, sqr, sqrs):
-        if app.current_pos() == '':
+        if app.current_pos() == '' or app.current_pos() == 'block':
             return
         if sqr not in sqrs:
             return
@@ -1448,7 +1445,7 @@ class Witch(Entity):
         adj_sqrs = [c for c in coords if dist(c, end_loc) == 1]
         adj_ents = []
         for s in adj_sqrs:
-            if app.grid[s[0]][s[1]] != '':
+            if app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block':
                 adj_ents.append(app.grid[s[0]][s[1]])
         if adj_ents != []:
             # hit tar and adj_ents
@@ -1484,7 +1481,7 @@ class Witch(Entity):
         app.context_buttons.append(b)
         
     def do_curse_of_oriax(self, event, sqr, sqrs):
-        if app.current_pos() == '':
+        if app.current_pos() == '' or app.current_pos() == 'block':
             return
         if sqr not in sqrs:
             return
@@ -1554,7 +1551,7 @@ class Witch(Entity):
         app.context_buttons.append(b)
         
     def do_gravity(self, event, sqr, sqrs):
-        if app.current_pos() == '':
+        if app.current_pos() == '' or app.current_pos() == 'block':
             return
         if sqr not in sqrs:
             return
@@ -1760,6 +1757,10 @@ class App(tk.Frame):
         col = self.map_width//100
         row = self.map_height//100
         self.grid = [[''] * row for i in range(col)]
+        # LOAD MAP / GRID INFO / IMPASSABLE TERRAIN
+        terrain = eval(self.map_info[2])
+        for coord in terrain:
+            self.grid[coord[0]][coord[1]] = 'block'
         # CONTEXT MENU
         self.con_bg = ImageTk.PhotoImage(Image.open('texture2.png').resize(( 200, root.winfo_screenheight())))
         self.context_menu = tk.Canvas(root, bg = 'black', bd=0, highlightthickness=0, relief='raised', height = root.winfo_screenheight(), width = 200)
@@ -1780,7 +1781,7 @@ class App(tk.Frame):
             fname = '1_player_maps/'
         else:
             fname = '2_player_maps/'
-        self.map_img = ImageTk.PhotoImage(Image.open(fname + 'map'+str(map_number)+'.jpg').resize((self.map_width, self.map_height)))
+        self.map_img = ImageTk.PhotoImage(Image.open(fname + 'map'+str(map_number)+'.png').resize((self.map_width, self.map_height)))
         self.canvas.create_image(0, 0, anchor='nw', image=self.map_img, tags='map')
         # CURSOR
         self.cursor_img = ImageTk.PhotoImage(Image.open("cursor.png").resize((100,100)))
@@ -1835,7 +1836,7 @@ class App(tk.Frame):
     def load_witch(self, witch, player_num):
         if player_num == 1:
             self.p1_witch = witch
-            loc = [1,1]
+            loc = [2,2]
         elif player_num == 2:
             self.p2_witch = witch
             loc = [self.map_width//100-2, self.map_height//100-2]
@@ -1847,7 +1848,7 @@ class App(tk.Frame):
         if self.num_players == 1:
             # DEBUG LOAD BOT ENEMIES FOR PLAYER 1 HERE
             # LOAD 1 PLAYER MAP BOT UNITS
-            lst = self.map_info[2:]
+            lst = self.map_info[3:]
             c1 = 0
             end = len(lst)
             itlst = iter(lst)
@@ -1964,7 +1965,7 @@ class App(tk.Frame):
     
     def populate_context(self, event):
         e = self.current_pos()
-        if e == '':
+        if e == '' or e == 'block':
             return
         if self.context_buttons != []:
             print('app.context_buttons not empty')
@@ -2140,7 +2141,7 @@ class App(tk.Frame):
     def cancel_end_turn(self):
         self.rebind_all()
         self.depop_context(event = None)
-        self.repop_help_buttons()
+#         self.repop_help_buttons()
         
     def show_avatar_info(self, witch):
         self.info_popup = tk.Toplevel()
