@@ -1,3 +1,5 @@
+# make animations smoother by adding more(redundant) animation frames and speeding up animate() framerate
+
 # every map should have accompanying image to overlay
 
 # to ensure text objects never go over edge of screen, always have maps have a border of impassable terrain
