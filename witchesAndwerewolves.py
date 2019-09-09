@@ -1,3 +1,11 @@
+# to ensure text objects never go over edge of screen, always have maps have a border of impassable terrain
+
+# how to make certain portions of map 'cover up' units, would need to load portions as separate images, create them on the canvas and tag_raise() them during animation
+
+# witches need something to do when run out of magick
+
+# confuse doesnt hit very often, make it more accurate and use some finite resource of trickster, 
+
 # make trickster confuse animations, trickster movement animation different, shadow movement animation
 
 # normal movement animations should 'follow path' of legal squares
@@ -12,15 +20,11 @@
 
 # need better animations for plague, psionic push, gravity
 
-# make map 'barriers / obstacles / objects other than summons/witches', terrain, impassable area, doorways to other maps...
-
 # magick regen rate or squares on maps that regen
 
 # show victory conditions on map start
 
 # animate titlescreen
-
-# text objects run off edge of canvas, need to raise main canvas above context_menu?
 
 # place bg image on main canvas so edges of map show that, ie border
 
@@ -1069,7 +1073,7 @@ class Witch(Entity):
             self.spell_dict['Plague'] = (self.plague, 5)
             self.spell_dict['Psionic_Push'] = (self.psionic_push, 4)
             self.spell_dict['Curse_of_Oriax'] = (self.curse_of_oriax, 5)
-            self.spell_dict['Gravity'] = (self.gravity, 7)
+            self.spell_dict['Gravity'] = (self.gravity, 5)
             self.spell_dict["Beleth's_Command"] = (self.beleths_command, 8)
             self.str = 4
             self.agl = 2
@@ -1147,7 +1151,6 @@ class Witch(Entity):
     def place_summon(self, event, type, cost):
         if self.magick < cost:
             return
-        self.set_attr('magick', -cost)
         root.unbind('<q>')
         root.unbind('<a>')
         for x in range(1,4):
@@ -1177,6 +1180,7 @@ class Witch(Entity):
     def place(self, event, summon, sqrs):
         if grid_pos not in sqrs:
             return
+        self.set_attr('magick', -cost)
         root.unbind('<q>')
         root.bind('<q>', app.depop_context)
         root.unbind('<a>')
@@ -1515,6 +1519,7 @@ class Witch(Entity):
         p = partial(un, id)
         # EOT FUNC
         def take_2(tar):
+            app.get_focus(tar)
             app.ent_dict[tar].set_attr('spirit', -2)
             time = self.timer*666
             killtime = time
