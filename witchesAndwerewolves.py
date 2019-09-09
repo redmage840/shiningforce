@@ -570,7 +570,7 @@ class Shadow(Summon):
 # abuse with trickster
 class Plaguebearer(Summon):
     def __init__(self, name, img, loc, owner, number):
-        self.actions = {'move':self.move}
+        self.actions = {'pox':self.pox, 'move':self.move}
         self.attack_used = False
         self.str = 2
         self.agl = 2
@@ -581,8 +581,8 @@ class Plaguebearer(Summon):
         super().__init__(name, img, loc, owner, number)
         
         
-    # All friendly units within dist2 regain 2 Spirit and 2 Magick, ensure not greater than base
-    def bard_song(self, event = None):
+    # 
+    def pox(self, event = None):
         if self.attack_used == True:
             return
         root.unbind('<a>')
@@ -1309,7 +1309,6 @@ class Witch(Entity):
         if not isinstance(app.ent_dict[id], Witch) and not isinstance(app.ent_dict[id], Summon):
              return
         self.magick -= self.spell_dict['Psionic_Push'][1]
-        app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
         self.spell_used = True
