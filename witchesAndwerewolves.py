@@ -1,6 +1,6 @@
-# to ensure text objects never go over edge of screen, always have maps have a border of impassable terrain
+# every map should have accompanying image to overlay
 
-# how to make certain portions of map 'cover up' units, would need to load portions as separate images, create them on the canvas and tag_raise() them during animation
+# to ensure text objects never go over edge of screen, always have maps have a border of impassable terrain
 
 # witches need something to do when run out of magick
 
@@ -154,6 +154,9 @@ class Entity():
             self.base_end = self.end
             self.base_dodge = self.dodge
             self.base_psyche = self.psyche
+            self.base_spirit = self.spirit
+            if isinstance(self, Witch):
+                self.base_magick = self.magick
             
             self.str_effects = []
             self.agl_effects = []
@@ -233,9 +236,13 @@ class Entity():
             self.psyche += amount
         elif attr == 'spirit':
             self.spirit += amount
+            if self.spirit > self.base_spirit:
+                self.spirit = self.base_spirit
         elif isinstance(self, Witch):
             if attr == 'magick':
                 self. magick += amount
+                if self.magick > self.base_magick:
+                    self.magick = self.base_magick
             
     def attr_check(self, attr):
         if attr == 'str':
@@ -280,6 +287,7 @@ class Entity():
         if grid_pos not in sqrs:
             return
         app.unbind_all()
+        app.cleanup_squares()
         app.depop_context(event = None)
         # start ANIM here
         if isinstance(self, Witch):
@@ -301,21 +309,22 @@ class Entity():
             app.canvas.delete(id)
             app.canvas.create_image(x, y, image = self.img, tags = id)
             if x > endx:
-                x -= 5
-                app.canvas.move(id, -5, 0)
+                x -= 10
+                app.canvas.move(id, -10, 0)
             if x < endx: 
-                x += 5
-                app.canvas.move(id, 5, 0)
+                x += 10
+                app.canvas.move(id, 10, 0)
             if y > endy: 
-                y -= 5
-                app.canvas.move(id, 0, -5)
+                y -= 10
+                app.canvas.move(id, 0, -10)
             if y < endy: 
-                y += 5
-                app.canvas.move(id, 0, 5)
+                y += 10
+                app.canvas.move(id, 0, 10)
+            app.canvas.tag_raise('maptop')
             if x == endx and y == endy:
                 self.finish_move(id, end_sqr, start_sqr) # EXIT
             else: # CONTINUE LOOP
-                root.after(50, lambda id = id, x = x, y = y, e = endx, e2 = endy, s = start_sqr, s2 = end_sqr : move_loop(id, x, y, e, e2, s, s2))
+                root.after(66, lambda id = id, x = x, y = y, e = endx, e2 = endy, s = start_sqr, s2 = end_sqr : move_loop(id, x, y, e, e2, s, s2))
         move_loop(id, x, y, endx, endy, start_sqr, end_sqr)
             
     def finish_move(self, id, end, start):
@@ -341,7 +350,6 @@ class Entity():
         app.depop_context(event = None)
         app.unbind_all()
         app.rebind_all()
-        app.cleanup_squares()
     
 
 class Summon(Entity):
@@ -393,7 +401,9 @@ class Trickster(Summon):
         app.unbind_all()
         id = app.current_pos()
         my_psyche = self.get_attr('psyche')
+        print('my_psyche ', my_psyche)
         target_psyche = app.ent_dict[id].get_attr('psyche')
+        print('target_psyche ', target_psyche)
         if to_hit(my_psyche, target_psyche) == True:
             app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Confuse Hit!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
             app.after(1666, lambda id = id : self.do_attack(id))
@@ -670,112 +680,77 @@ class Plaguebearer(Summon):
 # healer / magick recovery?
 class Bard(Summon):
     def __init__(self, name, img, loc, owner, number):
-        self.actions = {'attack':self.warrior_attack}
+        self.actions = {'Bard Song':self.bard_song, 'Entrance':self.entrance, 'move':self.move}
         self.attack_used = False
-        self.str = 4
+        self.str = 2
         self.agl = 4
-        self.end = 4
-        self.dodge = 2
-        self.psyche = 2
-        self.spirit = 13
+        self.end = 2
+        self.dodge = 4
+        self.psyche = 4
+        self.spirit = 11
         super().__init__(name, img, loc, owner, number)
         
         
-#     def warrior_attack(self):
-#         if self.attack_used == True:
-#             return
-#         sqrs = []
-#         coord_pairs = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-#         if app.active_player == 'p1':
-#             for coord in coord_pairs:
-#                 if abs(coord[0] - self.loc[0]) == 1 and coord[1] == self.loc[1]:
-#                     sqrs.append(coord)
-#                 elif abs(coord[0] - self.loc[0]) == 1 and coord[1]-1 == self.loc[1]:
-#                     sqrs.append(coord)
-#                 elif coord[0] == self.loc[0] and coord[1]-1 == self.loc[1]:
-#                     sqrs.append(coord)
-#         elif app.active_player == 'p2':
-#             for coord in coord_pairs:
-#                 if abs(coord[0] - self.loc[0]) == 1 and coord[1] == self.loc[1]:
-#                     sqrs.append(coord)
-#                 elif abs(coord[0] - self.loc[0]) == 1 and coord[1]+1 == self.loc[1]:
-#                     sqrs.append(coord)
-#                 elif coord[0] == self.loc[0] and coord[1]+1 == self.loc[1]:
-#                     sqrs.append(coord)
-#         app.animate_squares(sqrs)
-#         app.depop_context(event = None) 
-#         cmd = lambda s = sqrs: self.check_hit(s)
-#         b = tk.Button(app.context_menu, text = 'Confirm Attack', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = cmd)
-#         b.pack(side = 'left')
-#         app.context_buttons.append(b)
-#         self.placement_buttons.append(b)
-#         root.unbind('<q>')
-#         root.bind('<q>', self.cancel_attack)
-#         
-#     def check_hit(self, sqrs):
-#         if grid_pos not in sqrs:
-#             return
-#         if app.current_pos() == '':
-#             return
-#         tar = app.current_pos()
-#         app.unbind_all()
-#         if self.to_hit(self.agl, app.ent_dict[tar].dodge) == True:
-#             print('hit')
-#             # call self.init_attack_anims() here to replace self.anim_dict with other images
-#             # on exit, re init normal anims
-#             self.init_attack_anims()
-#             dmg = self.damage(self.str, app.ent_dict[tar].end)
-#             self.success = tk.Label(app.context_menu, text = 'Attack Hit!', relief = 'raised', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
-#             self.success.pack(side = 'left')
-#             self.dmg = tk.Label(app.context_menu, text = str(dmg) + ' Spirit', relief = 'raised', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
-#             self.dmg.pack(side = 'left')
-#             root.after(1200, lambda id = tar, dmg = dmg : self.do_attack(id, dmg))
-#         else:
-#             self.miss = tk.Label(app.context_menu, text = 'Attack Missed!', relief = 'raised', font = ('chalkduster', 24), fg = 'indianred', bg = 'tan2')
-#             self.miss.pack(side = 'left')
-#             root.after(1200, lambda win = self.miss : self.cancel_attack(event = None, win = win))
-#         self.attack_used = True
-#         
-#     def do_attack(self, id, dmg):
-#         self.success.destroy()
-#         self.dmg.destroy()
-#         app.ent_dict[id].set_attr('spirit', -dmg)
-#         if app.ent_dict[id].spirit <= 0:
-#             app.kill(id)
-#             print('target killed')
-#         self.cancel_attack(event = None)
-#         # re init normal anims 
+    # All friendly units within dist2 regain 2 Spirit and 2 Magick, ensure not greater than base
+    def bard_song(self, event = None):
+        if self.attack_used == True:
+            return
+        root.unbind('<a>')
+        root.unbind('<q>')
+        root.bind('<q>', self.finish_bard_song)
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [c for c in coords if dist(self.loc, c) <= 2]
+        app.animate_squares(sqrs)
+        app.depop_context(event = None)
+        root.bind('<a>', lambda e, s = sqrs : self.do_bard_song(event = e, sqrs = s)) 
+        b = tk.Button(app.context_menu, text = 'Confirm Bard Song', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, s = sqrs : self.do_bard_song(event = e, sqrs = s))
+        b.pack(side = 'top')
+        app.context_buttons.append(b)
+        
+    def do_bard_song(self, event = None, sqrs = None):
+        self.attack_used = True
+#         self.init_attack_anims()
+        app.depop_context(event = None)
+        app.unbind_all()
+        ents = []
+        for s in sqrs:
+            ent = app.grid[s[0]][s[1]]
+            if ent != '' and ent != 'block':
+                if app.ent_dict[ent].owner == app.active_player:
+                    app.ent_dict[ent].set_attr('spirit', 2)
+                    app.canvas.create_text(app.ent_dict[ent].loc[0]*100-app.moved_right+50, app.ent_dict[ent].loc[1]*100-app.moved_down+50, text = '+2 Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                    if isinstance(app.ent_dict[ent], Witch):
+                        app.ent_dict[ent].set_attr('magick', 2)
+                        app.canvas.create_text(app.ent_dict[ent].loc[0]*100-app.moved_right+50, app.ent_dict[ent].loc[1]*100-app.moved_down+70, text = '+2 Magick', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+        root.after(1666, self.finish_bard_song)
+        
+    def finish_bard_song(self):
 #         self.init_normal_anims()
-#     
-#     def cancel_attack(self, event, win = None):
-#         app.rebind_all()
-#         if win:
-#             win.destroy()
-#         app.depop_context(event = None)
-#         app.cleanup_squares()
-#         self.init_normal_anims()
-#     
-#     def legal_moves(self):
-#         loc = self.loc
-#         mvlist = []
-#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-#         def findall(loc, start, dist):
-#             if start > dist:
-#                 return
-#             # need different 'front' depending on player
-#             if app.active_player == 'p1':
-#                 front = [c for c in coords if c[0] == loc[0] and c[1]-1 == loc[1] and app.grid[c[0]][c[1]] == '']
-#             elif app.active_player == 'p2':
-#                 front = [c for c in coords if c[0] == loc[0] and c[1]+1 == loc[1] and app.grid[c[0]][c[1]] == '']
-#             for s in front:
-#                 mvlist.append(s)
-#                 findall(s, start+1, dist)
-#         findall(loc, 1, 3) 
-#         setlist = []
-#         for l in mvlist:
-#             if l not in setlist:
-#                 setlist.append(l)
-#         return setlist
+        app.rebind_all()
+        app.canvas.delete('text')
+        app.depop_context(event = None)
+        app.cleanup_squares()
+    
+    def entrance(self):
+        pass
+    
+    def legal_moves(self):
+        loc = self.loc
+        mvlist = []
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        def findall(loc, start, dist):
+            if start > dist:
+                return
+            adj = [c for c in coords if abs(c[0] - loc[0]) + abs(c[1] - loc[1]) == 1 and app.grid[c[0]][c[1]] == '']
+            for s in adj:
+                mvlist.append(s)
+                findall(s, start+1, dist)
+        findall(loc, 1, 4) 
+        setlist = []
+        for l in mvlist:
+            if l not in setlist:
+                setlist.append(l)
+        return setlist
         
         
 class Undead(Summon):
@@ -847,21 +822,22 @@ class Undead(Summon):
             app.canvas.delete(id)
             app.canvas.create_image(x, y, image = self.img, tags = id)
             if x > endx:
-                x -= 5
-                app.canvas.move(id, -5, 0)
+                x -= 10
+                app.canvas.move(id, -10, 0)
             if x < endx: 
-                x += 5
-                app.canvas.move(id, 5, 0)
+                x += 10
+                app.canvas.move(id, 10, 0)
             if y > endy: 
-                y -= 5
-                app.canvas.move(id, 0, -5)
+                y -= 10
+                app.canvas.move(id, 0, -10)
             if y < endy: 
-                y += 5
-                app.canvas.move(id, 0, 5)
+                y += 10
+                app.canvas.move(id, 0, 10)
+            app.canvas.tag_raise('maptop')
             if x == endx and y == endy:
                 self.finish_move(id, end_sqr, start_sqr, target, ents_list) # EXIT
             else: # CONTINUE LOOP
-                root.after(50, lambda id = id, x = x, y = y, e = endx, e2 = endy, s = start_sqr, s2 = end_sqr : move_loop(id, x, y, e, e2, s, s2))
+                root.after(66, lambda id = id, x = x, y = y, e = endx, e2 = endy, s = start_sqr, s2 = end_sqr : move_loop(id, x, y, e, e2, s, s2))
         move_loop(id, x, y, endx, endy, start_sqr, end_sqr)
             
             
@@ -1120,6 +1096,7 @@ class Witch(Entity):
         root.bind('1', lambda e, cls = 'Warrior', cost = 10 : self.place_summon(e, cls, cost))
         root.bind('2', lambda e, cls = 'Trickster', cost = 8 : self.place_summon(e, cls, cost))
         root.bind('3', lambda e, cls = 'Shadow', cost = 7 : self.place_summon(e, cls, cost))
+        root.bind('4', lambda e, cls = 'Bard', cost = 9 : self.place_summon(e, cls, cost))
         b1 = tk.Button(app.context_menu, text = '1:Warrior •10', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, cls = 'Warrior', cost = 10 : self.place_summon(e, cls, cost))
         b1.pack(side = 'top', pady = 2)
         app.context_buttons.append(b1)
@@ -1129,8 +1106,9 @@ class Witch(Entity):
         b3 = tk.Button(app.context_menu, text = '3:Shadow •7', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, cls = 'Shadow', cost = 7 : self.place_summon(e, cls, cost))
         b3.pack(side = 'top', pady = 2)
         app.context_buttons.append(b3)
-#         b4 = tk.Button(self.summon_popup, text = 'Bard', command = self.place_bard)
-#         b4.pack()
+        b4 = tk.Button(app.context_menu, text = '4:Bard •9', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, cls = 'Bard', cost = 9 : self.place_summon(e, cls, cost))
+        b4.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b4)
 #         b5 = tk.Button(self.summon_popup, text = 'Plaguebearer', command = self.place_plaguebearer)
 #         b5.pack()
         b6 = tk.Button(app.context_menu, text = 'Cancel', font = ('chalkduster', 24), highlightbackground = 'tan3', fg='tan3', command = self.cancel_placement)
@@ -1170,14 +1148,14 @@ class Witch(Entity):
             cls = Bard
         elif type == 'Plaguebearer':
             cls = Plaguebearer
-        cmd = lambda e = None, x = cls, y = sqrs : self.place(e, summon = x, sqrs = y)
-        root.bind('<a>', lambda e, x = cls, y = sqrs: self.place(e, x, y))
+        cmd = lambda e = None, x = cls, y = sqrs, c = cost : self.place(e, summon = x, sqrs = y, cost = c)
+        root.bind('<a>', lambda e, x = cls, y = sqrs, c = cost: self.place(e, x, y, c))
         b = tk.Button(app.context_menu, text = 'Place '+type, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', wraplength = 190, command = cmd)
         b.pack(side = 'top')
         app.context_buttons.append(b)
         
         
-    def place(self, event, summon, sqrs):
+    def place(self, event, summon, sqrs, cost):
         if grid_pos not in sqrs:
             return
         self.set_attr('magick', -cost)
@@ -1217,6 +1195,23 @@ class Witch(Entity):
         app.depop_context(event = None)
         self.summon_used = True
         
+    def legal_moves(self):
+        loc = self.loc
+        mvlist = []
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        def findall(loc, start, dist):
+            if start > dist:
+                return
+            adj = [c for c in coords if abs(c[0] - loc[0]) + abs(c[1] - loc[1]) == 1 and app.grid[c[0]][c[1]] == '']
+            for s in adj:
+                mvlist.append(s)
+                findall(s, start+1, dist)
+        findall(loc, 1, 3) 
+        setlist = []
+        for l in mvlist:
+            if l not in setlist:
+                setlist.append(l)
+        return setlist
         
     def spell(self, event = None):
         if self.spell_used == True:
@@ -1290,8 +1285,7 @@ class Witch(Entity):
         if not isinstance(app.ent_dict[id], Witch) and not isinstance(app.ent_dict[id], Summon):
              return
         self.magick -= self.spell_dict['Plague'][1]
-        root.unbind('<q>')
-        root.unbind('<a>')
+        app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
         self.spell_used = True
@@ -1345,8 +1339,7 @@ class Witch(Entity):
         if not isinstance(app.ent_dict[id], Witch) and not isinstance(app.ent_dict[id], Summon):
              return
         self.magick -= self.spell_dict['Psionic_Push'][1]
-        root.unbind('<q>')
-        root.unbind('<a>')
+        app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
         self.spell_used = True
@@ -1493,8 +1486,7 @@ class Witch(Entity):
         if not isinstance(app.ent_dict[id], Witch) and not isinstance(app.ent_dict[id], Summon):
              return
         self.magick -= self.spell_dict['Curse_of_Oriax'][1]
-        root.unbind('<q>')
-        root.unbind('<a>')
+        app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
         self.spell_used = True
@@ -1544,7 +1536,6 @@ class Witch(Entity):
         # consider 'being moved' through means other than movement ends effect
         # an effect that overwrites the ent.legal_moves() method to return []
         # undo removes the overwrite
-        #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         app.depop_context(event = None)
         root.bind('<q>', self.cleanup_spell)
         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
@@ -1564,8 +1555,7 @@ class Witch(Entity):
         if not isinstance(app.ent_dict[id], Witch) and not isinstance(app.ent_dict[id], Summon):
              return
         self.magick -= self.spell_dict['Gravity'][1]
-        root.unbind('<q>')
-        root.unbind('<a>')
+        app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
         self.spell_used = True
@@ -1648,24 +1638,6 @@ class Witch(Entity):
         print('counterspell')
         
     
-    # Maybe change name, used not only for finding legal moves, but sqrs within 3 spaces of entity that are unoccupied
-    def legal_moves(self):
-        loc = self.loc
-        mvlist = []
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        def findall(loc, start, dist):
-            if start > dist:
-                return
-            adj = [c for c in coords if abs(c[0] - loc[0]) + abs(c[1] - loc[1]) == 1 and app.grid[c[0]][c[1]] == '']
-            for s in adj:
-                mvlist.append(s)
-                findall(s, start+1, dist)
-        findall(loc, 1, 3) 
-        setlist = []
-        for l in mvlist:
-            if l not in setlist:
-                setlist.append(l)
-        return setlist
 
 class App(tk.Frame):
     def __init__(self, master=None):
@@ -1784,10 +1756,13 @@ class App(tk.Frame):
         # MAP
         if self.num_players == 1:
             fname = '1_player_maps/'
+            topfname = '1_player_map_tops/'
         else:
             fname = '2_player_maps/'
         self.map_img = ImageTk.PhotoImage(Image.open(fname + 'map'+str(map_number)+'.png').resize((self.map_width, self.map_height)))
-        self.canvas.create_image(0, 0, anchor='nw', image=self.map_img, tags='map')
+        self.map_top = ImageTk.PhotoImage(Image.open(topfname + 'map_top'+str(map_number)+'.png').resize((self.map_width, self.map_height)))
+        self.canvas.create_image(0, 0, anchor='nw', image=self.map_top, tags = ('maptop','map'))
+        self.canvas.create_image(0, 0, anchor='nw', image=self.map_img, tags=('mapbottom','map'))
         # CURSOR
         self.cursor_img = ImageTk.PhotoImage(Image.open("cursor.png").resize((100,100)))
         self.canvas.create_image(0,0, anchor='nw', image=self.cursor_img, tags='curs')
@@ -1964,9 +1939,10 @@ class App(tk.Frame):
                 self.canvas.delete(vis)
                 self.canvas.create_image(self.vis_dict[vis].loc[0]*100+50-self.moved_right, self.vis_dict[vis].loc[1]*100+50-self.moved_down, image = self.vis_dict[vis].img, tags = vis)
                 app.canvas.tag_raise(vis)
+        app.canvas.tag_raise('maptop')
         try: app.canvas.tag_raise('text')
         except: pass
-        root.after(300, self.animate)
+        root.after(200, self.animate)
     
     def populate_context(self, event):
         e = self.current_pos()
