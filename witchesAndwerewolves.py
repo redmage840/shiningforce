@@ -1,8 +1,26 @@
+# structure pox like curse
+
+# Ents 'on-screen during turn AOE attacks may be damaged without being in the field of view
+
+# make get_focus center map on unit instead of just bringing cursor to it (often at edge)
+
+# when take_focus on a unit at edge of visible screen (top of screen) and unit attacks 'above' itself to the unit 'just off' screen, the attack visualization is not visible (it is over the unit just off screen)
+
+# would it be possible to 'pause' in the middle of a move_loop or to keep text object on screen
+
+# speed up move_loop 'framerate'
+
+# need to do movement decrease effect for Plaguebearer pox, easy way is to assign 'move_type' attr to Ents on init,
+# currently Witches, Warriors, Bards, Plaguebearers, Undead, (NOT Shadows or Tricksters) have 'normal' movement (movement impeded by obstacles
+# make Plaguebearers damage adj on death
+
+# Are Effect objects being destroyed or are their effects simply 'undone'?
+
 # make bard song only show actual gains, do entrance()
 
-# make animations smoother by adding more(redundant) animation frames and speeding up animate() framerate
+# Make Tricksters better range or give something else to do, maybe something passive because they miss a lot
 
-# every map should have accompanying image to overlay
+# make animations smoother by adding more(redundant) animation frames and speeding up animate() framerate
 
 # to ensure text objects never go over edge of screen, always have maps have a border of impassable terrain
 
@@ -70,6 +88,7 @@ def damage(a1, a2):
     if base + dif < 1: return 1 
     else: return base + dif
 
+# GLOBALS
 curs_pos = [0, 0]
 is_object_selected = False
 selected = ''
@@ -100,6 +119,7 @@ class Effect():
         self.info = info
         self.undo = undo
         self.duration = duration
+        app.effects_counter += 1
 
 
 class Vis():
@@ -170,7 +190,6 @@ class Entity():
         # when ent moved by effect other than regular movement, must update origin also (square of origin at begin of turn)
         self.origin = []
         self.effects_dict = {}
-        self.effects_counter = 0 # for uniquely naming effects
         self.anim_dict = {}
         anims = [a for r,d,a in walk('./animations/' + self.name + '/')][0]
         anims = [a for a in anims[:] if a[-3:] == 'png']
@@ -562,39 +581,38 @@ class Shadow(Summon):
                     move_list.append(coord)
         return move_list
 
-# change name to better fit generic flavor of witches
-# attack all adjacent units, must attack at end of turn, damage nearby on death?
-# abuse with trickster
+
+# damages adjacent ents on death
 class Plaguebearer(Summon):
     def __init__(self, name, img, loc, owner, number):
         self.actions = {'pox':self.pox, 'move':self.move}
         self.attack_used = False
         self.str = 2
         self.agl = 2
-        self.end = 3
+        self.end = 5
         self.dodge = 2
         self.psyche = 4
         self.spirit = 9
         super().__init__(name, img, loc, owner, number)
         
         
-    # 
+    # give all adj units pox Effect if they have no pox effects, causes 2 spirit damage EOT, if affected ent's movement is blocked by obstacles it's movement is reduced by 1 to a minimum of 1, lasts 4 turns
     def pox(self, event = None):
         if self.attack_used == True:
             return
         root.unbind('<a>')
         root.unbind('<q>')
-        root.bind('<q>', self.finish_bard_song)
+        root.bind('<q>', self.finish_pox)
         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        sqrs = [c for c in coords if dist(self.loc, c) <= 2]
+        sqrs = [c for c in coords if dist(self.loc, c) == 1]
         app.animate_squares(sqrs)
         app.depop_context(event = None)
-        root.bind('<a>', lambda e, s = sqrs : self.do_bard_song(event = e, sqrs = s)) 
-        b = tk.Button(app.context_menu, text = 'Confirm Bard Song', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, s = sqrs : self.do_bard_song(event = e, sqrs = s))
+        root.bind('<a>', lambda e, s = sqrs : self.do_pox(event = e, sqrs = s)) 
+        b = tk.Button(app.context_menu, text = 'Confirm Pox', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, s = sqrs : self.do_pox(event = e, sqrs = s))
         b.pack(side = 'top')
         app.context_buttons.append(b)
         
-    def do_bard_song(self, event = None, sqrs = None):
+    def do_pox(self, event = None, sqrs = None):
         self.attack_used = True
 #         self.init_attack_anims()
         app.depop_context(event = None)
@@ -602,24 +620,35 @@ class Plaguebearer(Summon):
         ents = []
         for s in sqrs:
             ent = app.grid[s[0]][s[1]]
-            if ent != '' and ent != 'block':
-                if app.ent_dict[ent].owner == app.active_player:
-                    app.ent_dict[ent].set_attr('spirit', 2)
-                    app.canvas.create_text(app.ent_dict[ent].loc[0]*100-app.moved_right+50, app.ent_dict[ent].loc[1]*100-app.moved_down+50, text = '+2 Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-                    if isinstance(app.ent_dict[ent], Witch):
-                        app.ent_dict[ent].set_attr('magick', 2)
-                        app.canvas.create_text(app.ent_dict[ent].loc[0]*100-app.moved_right+50, app.ent_dict[ent].loc[1]*100-app.moved_down+70, text = '+2 Magick', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-        root.after(1666, self.finish_bard_song)
+            if ent != '' and ent != 'block' and isinstance(app.ent_dict[ent].__class__, Plaguebearer) == False:
+                #GIVE POX EFFECT if doesn't exist
+                ef_names = [v.name for k,v in app.ent_dict[ent].effects_dict.items()]
+                if 'Pox' not in ef_names:
+                    n = 'Pox'+str(app.effects_counter)
+                    # needs name, info, eot_func, undo, duration
+                    def take_2(tar):
+                        app.get_focus(tar)
+                        app.ent_dict[tar].set_attr('spirit', -2)
+                        app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+60-app.moved_down, text = '2 Spirit\n Damage\nPox', justify ='center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+                    # EOT
+                    eot = partial(take_2, ent)
+                    # UNDO
+                    def un():
+                        pass
+                    u = un
+                    # POX VIS
+                    app.ent_dict[ent].effects_dict[n] = Effect(name = 'Pox', info = 'Pox\n2 Spirit damage EOT\n-1 to Entities with normal movement', eot_func = eot , undo = u, duration = 4)
+                    app.canvas.create_text(app.ent_dict[ent].loc[0]*100-app.moved_right+50, app.ent_dict[ent].loc[1]*100-app.moved_down+50, text = 'Pox', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                
+        root.after(1666, self.finish_pox)
         
-    def finish_bard_song(self, event = None):
+    def finish_pox(self, event = None):
 #         self.init_normal_anims()
         app.rebind_all()
         app.canvas.delete('text')
         app.depop_context(event = None)
         app.cleanup_squares()
     
-    def entrance(self):
-        pass
     
     def legal_moves(self):
         loc = self.loc
@@ -632,7 +661,7 @@ class Plaguebearer(Summon):
             for s in adj:
                 mvlist.append(s)
                 findall(s, start+1, dist)
-        findall(loc, 1, 4) 
+        findall(loc, 1, 2) 
         setlist = []
         for l in mvlist:
             if l not in setlist:
@@ -1278,8 +1307,7 @@ class Witch(Entity):
         def nothing():
             pass
         eot = nothing
-        n = 'Plague' + str(self.effects_counter)
-        self.effects_counter += 1
+        n = 'Plague' + str(app.effects_counter)
         app.ent_dict[id].effects_dict['Plague'] = Effect(name = 'Plague', info = 'Plague\n Stats reduced to 1 for 3 turns', eot_func = eot, undo = p, duration = 3)
         root.after(2666, lambda  name = 'Plague' : self.cleanup_spell(name = name))
             
@@ -1479,22 +1507,16 @@ class Witch(Entity):
         def take_2(tar):
             app.get_focus(tar)
             app.ent_dict[tar].set_attr('spirit', -2)
-            time = self.timer*666
-            killtime = time
-            # for proper placement (involving moved_right/down) need to ensure that screen/map does not move during execution of EOT 
-            root.after(time, lambda pos1 =app.ent_dict[tar].loc[0]*100+50-app.moved_right , pos2 =app.ent_dict[tar].loc[1]*100+60-app.moved_down, text = '2 Spirit\n Damage', justify ='center', font = ('Andale Mono', 14), fill = 'white', tags = 'text' : app.canvas.create_text(pos1, pos2, text=text, justify = justify, font=font, fill=fill, tags=tags))
-            self.timer += 1
-            time = self.timer*666
-            root.after(time, lambda t = 'text' : app.canvas.delete(t))
-            self.timer += 1
+            # Separate end_turn into EOT loop
+            # each EOT effect return to the EOT loop after a timer
+            # make sure EOTloop and end_turn have unbound_all()
+            # Eot loop handles kill and text object destr
+            app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+50-app.moved_down, text = '2 Spirit\n Damage\nCurse', justify ='center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
             if app.ent_dict[tar].spirit <= 0:
-                root.after(killtime, lambda pos1 =app.ent_dict[tar].loc[0]*100+50-app.moved_right , pos2 =app.ent_dict[tar].loc[1]*100+95-app.moved_down, text = app.ent_dict[tar].name + '\nKilled...', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text' : app.canvas.create_text(pos1, pos2, text=text, font=font, justify = justify, fill=fill, tags=tags))
-                root.after(time, lambda id = tar : app.kill(id))
-                root.after(time, lambda t = 'text' : app.canvas.delete(t))
+                app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+90-app.moved_down, text = app.ent_dict[tar].name + '\nKilled...', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
             
         eot = partial(take_2, id)
-        n = 'Curse_of_Oriax' + str(self.effects_counter)
-        self.effects_counter += 1
+        n = 'Curse_of_Oriax' + str(app.effects_counter)
         app.ent_dict[id].effects_dict[n] = Effect(name = 'Curse_of_Oriax', info = 'Curse_of_Oriax\n Stats reduced by 1 for 3 turns\n2 Spirit damage per turn', eot_func = eot, undo = p, duration = 3)
         root.after(2666, lambda  name = 'Curse_of_Oriax' : self.cleanup_spell(name = name))
         
@@ -1547,8 +1569,7 @@ class Witch(Entity):
         def nothing():
             pass
         eot = nothing
-        n = 'Gravity' + str(self.effects_counter)
-        self.effects_counter += 1
+        n = 'Gravity' + str(app.effects_counter)
         app.ent_dict[id].effects_dict[n] = Effect(name = 'Gravity', info = 'Gravity\nCannot move and agl and dodge reduced by 2 for 2 turns', eot_func = eot, undo = p, duration = 2)
         root.after(2666, lambda  name = 'Gravity' : self.cleanup_spell(name = name))
         print('gravity')
@@ -1622,6 +1643,7 @@ class App(tk.Frame):
         self.help_buttons = []
         # list to hold entity that is being animated as 'attacking'
         self.attacking = []
+        self.effects_counter = 0 # used for uniquely naming Effects with the same prefix/name
         self.p1_witch = ''
         self.p2_witch = ''
         self.choose_num_players()
@@ -1844,41 +1866,78 @@ class App(tk.Frame):
     def end_turn(self):
         self.unbind_all()
         self.depop_context(event = None)
-        for ent in self.ent_dict.keys():
-            if self.ent_dict[ent].owner == self.active_player:
-                # DO SPELL EFFECTS / UNDOS
-                for ef in list(self.ent_dict[ent].effects_dict.keys()):
-                    self.ent_dict[ent].effects_dict[ef].eot_func()
-                    # ent is killed by an EOT func effect, break so as not to attempt to execute any more of this ent's EOT effects
-                    # ent is programmatically killed by app.kill() called from EOT func on timer
-                    if self.ent_dict[ent].spirit <= 0:
-                        break
-                    self.ent_dict[ent].effects_dict[ef].duration -= 1
-                    if self.ent_dict[ent].effects_dict[ef].duration <= 0:
-                        # CALL UNDO / DELETE EFFECT
-                        self.ent_dict[ent].effects_dict[ef].undo()
-                        del self.ent_dict[ent].effects_dict[ef]
-                # RESET SPELLS / MOVEMENT / ATTACKS
-                self.ent_dict[ent].move_used = False
-                if isinstance(self.ent_dict[ent], Witch):
-                    self.ent_dict[ent].spell_used = False
-                    self.ent_dict[ent].summon_used = False
-                elif isinstance(self.ent_dict[ent], Summon):
-                    self.ent_dict[ent].attack_used = False
-        # END OF CYCLE FOR ALL ENTS
-        time = max([self.ent_dict[x].timer for x in self.ent_dict.keys()])
-        time *= 1332
-        for x in self.ent_dict.keys():
-            self.ent_dict[x].timer = 1
+        # first do EOT loop, rest of this becomes finish_end_turn()
+        # get list of all ents, pass in first ent, loop pops front and calls 
+        ents_list = [v for k,v in self.ent_dict.items() if v.owner == self.active_player]
+        self.eot_loop(ents_list[0], ents_list)
+        
+        
+    # HANDLE EACH ENT BY PASSING ENT AND ITS EFFECTS TO EFFECTS_LOOP
+    def eot_loop(self, ent, ents_list):
+        ef_list = [v for k,v in ent.effects_dict.items()]
+        if ef_list != []:
+            ef = ef_list[0]
+            self.effects_loop(ef, ef_list, ent, ents_list)
+        else: # NO EFFECTS FOR ENT, POP ENT_LIST, CHECK IF EMPTY, CONTINUE OR FINISH_END_TURN
+            ents_list = ents_list[1:]
+            if ents_list != []:
+                ent = ents_list[0]
+                self.eot_loop(ent, ents_list)
+            else: # ENTS_LIST EMPTY, FINISH_END_TURN
+                self.finish_end_turn()
+            
+                
+    # exec an ef.eot_func, pop ef_list continue
+    def effects_loop(self, ef, ef_list, ent, ents_list):
+        self.canvas.delete('text') # deletes the last effect's text object
+        k = [k for k,v in self.ent_dict.items() if v == ent]
+        self.get_focus(k[0])
+        ef.eot_func()
+        if ent.spirit <= 0: # ENT KILLED, DO NOT EXEC ANY MORE OF ITS EFFECTS, POP ENTS LIST OR EXIT
+            root.after(999, lambda e = k[0] : self.kill(e))
+            ents_list = ents_list[1:]
+            if ents_list != []:
+                root.after(999, lambda e = ents_list[0], el = ents_list : self.eot_loop(e, el))
+            else: # NO MORE ENTS, FINISH_END_TURN
+                root.after(999, self.finish_end_turn)
+        else:# CONTINUE PROCESSING THIS EFFECT 
+            # CHECK IF EFFECT DURATION ENDS AND CALL UNDO IF SO
+            ef.duration -= 1
+            if ef.duration <= 0:
+                ef.undo()
+                #debug
+                key = [k for k,v in ent.effects_dict.items() if v == ef]
+                del ent.effects_dict[key[0]]
+            # MORE EFFECTS?
+            ef_list = ef_list[1:]
+            if ef_list != []: # MORE EFFECTS FOR THIS ENT
+                root.after(999, lambda ef = ef_list[0], efl = ef_list, en = ent, enl = ents_list : self.effects_loop(ef, efl, en, enl))
+            else: # NO MORE FOR THIS ENT, CHECK IF MORE ENTS
+                ents_list = ents_list[1:]
+                if ents_list != []: # MORE ENTS TO PROCESS EFFECTS FOR
+                    root.after(999, lambda e = ents_list[0], el = ents_list : self.eot_loop(e, el))
+                else: # NO MORE ENTS, FINISH_END_TURN
+                    root.after(999, self.finish_end_turn)
+                    
+    def finish_end_turn(self):
+        self.canvas.delete('text') # deletes the last text object when exiting loops
+        ents = [v for k,v in self.ent_dict.items()]
+        for ent in ents:
+            # RESET SPELLS / MOVEMENT / ATTACKS
+            ent.move_used = False
+            if isinstance(ent, Witch):
+                ent.spell_used = False
+                ent.summon_used = False
+            elif isinstance(ent, Summon):
+                ent.attack_used = False
         if self.active_player == 'p1':
             self.unbind_all()
             self.active_player = 'p2'
         elif self.active_player == 'p2':
             self.active_player = 'p1'
-        root.after(time, self.start_turn)
-        
-        
-        
+        self.start_turn()
+                    
+                    
     def get_focus(self, w):
         while grid_pos[0] < self.ent_dict[w].loc[0]:
             self.move_curs(dir = 'Right')
