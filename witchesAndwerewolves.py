@@ -421,12 +421,9 @@ class Trickster(Summon):
         app.rebind_all()
         root.unbind('<q>')
         root.unbind('<a>')
-        root.unbind('<space>')
-        root.unbind('<z>')
         my_agl = self.get_attr('agl')
         target_dodge = app.ent_dict[id].get_attr('dodge')
         dist = damage(my_agl, target_dodge)
-        dist = dist//2 + 1
         app.depop_context(event = None)
         app.cleanup_squares()
         sqrs = self.confuse_sqrs(dist)
@@ -485,8 +482,8 @@ class Shadow(Summon):
         self.actions = {'attack':self.shadow_attack, 'move':self.move}
         self.attack_used = False
         self.str = 3
-        self.agl = 3
-        self.end = 2
+        self.agl = 4
+        self.end = 3
         self.dodge = 4
         self.psyche = 4
         self.spirit = 8
@@ -614,7 +611,7 @@ class Plaguebearer(Summon):
                         app.canvas.create_text(app.ent_dict[ent].loc[0]*100-app.moved_right+50, app.ent_dict[ent].loc[1]*100-app.moved_down+70, text = '+2 Magick', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
         root.after(1666, self.finish_bard_song)
         
-    def finish_bard_song(self):
+    def finish_bard_song(self, event = None):
 #         self.init_normal_anims()
         app.rebind_all()
         app.canvas.delete('text')
@@ -692,7 +689,7 @@ class Bard(Summon):
                         app.canvas.create_text(app.ent_dict[ent].loc[0]*100-app.moved_right+50, app.ent_dict[ent].loc[1]*100-app.moved_down+70, text = '+2 Magick', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
         root.after(1666, self.finish_bard_song)
         
-    def finish_bard_song(self):
+    def finish_bard_song(self, event = None):
 #         self.init_normal_anims()
         app.rebind_all()
         app.canvas.delete('text')
