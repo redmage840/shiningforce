@@ -1,36 +1,25 @@
-# can this setup handle Ents that occupy multiple squares? large Ents that would occupy 2 or 4 or 6 squares...
+# should get_focus and pause slightly before AI do stuff
+
+# during move_loop, every few moves or every move or at end, call get_focus to 'see where going'
+# animate squares for AI movement
+
+# why is curse of oriax 'pausing' slightly on cast?
+
+# undead ai chooses a 'closest target' before moving, then after moving if it cannot attack the previously chosen target, it will forgo attacking even if it could now reach another target, this occurs when randomly choosing from equidistant targets to 'move towards' and being unable to reach the one targeted due to obstacles/otherEnts
+
+# make turn order based on agl, can choose randomly among ties
 
 # make cursor more visible, esp under highlighted squares
 
-# randomize Pox starting anim by calling rotate_image a random amount of times, SHOULD NOT randomize all VIS starting anims
-
-# text objects are still partially cutoff by attacking enemy on left or right edge of screen, can fix this (and get_focus() problem) by making cursor_move() move the background when not only at edge of screen, but 2 units from edge of screen (until within 2 units of edge of map width/height) at that point, having the map 'border' will prevent text objects from being cutoff
-
-# get_focus not edge of screen, move_cursor 'one more' both axes
-
-# Ents 'on-screen during turn AOE attacks may be damaged without being in the field of view
-
-# make get_focus center map on unit instead of just bringing cursor to it (often at edge)
-
-# when take_focus on a unit at edge of visible screen (top of screen) and unit attacks 'above' itself to the unit 'just off' screen, the attack visualization is not visible (it is over the unit just off screen)
-
 # would it be possible to 'pause' in the middle of a move_loop or to keep text object on screen
-
-# speed up move_loop 'framerate'
 
 # need to do movement decrease effect for Plaguebearer pox, easy way is to assign 'move_type' attr to Ents on init,
 # currently Witches, Warriors, Bards, Plaguebearers, Undead, (NOT Shadows or Tricksters) have 'normal' movement (movement impeded by obstacles
 # make Plaguebearers damage adj on death
 
-# Are Effect objects being destroyed or are their effects simply 'undone'?
-
 # make bard song only show actual gains, do entrance()
 
 # Make Tricksters better range or give something else to do, maybe something passive because they miss a lot
-
-# make animations smoother by adding more(redundant) animation frames and speeding up animate() framerate
-
-# to ensure text objects never go over edge of screen, always have maps have a border of impassable terrain
 
 # witches need something to do when run out of magick
 
@@ -40,7 +29,7 @@
 
 # normal movement animations should 'follow path' of legal squares
 
-# show current spell effects in 'info', currently easily overruns room with even 2 effects, find way to display effects info somewhere with enough room rather not use popup
+# make get_info scroll a bit longer to hold more effects
 
 # random spell element, 'deck' of spells, tarot deck, random spells, or build a spell deck and draw some each turn
 
@@ -48,7 +37,7 @@
 
 # make walking/movement animations
 
-# need better animations for plague, psionic push, gravity
+# need better animations for psionic push, gravity
 
 # magick regen rate or squares on maps that regen
 
@@ -173,13 +162,21 @@ class Sqr():
         self.img = self.anim_dict[self.anim_counter]
 
 class Entity():
-    def __init__(self, name, img, loc, owner):
+    def __init__(self, name, img, loc, owner, type = 'normal'):
         self.timer = 1 # COUNTER FOR TIMING EOT EFFECT TEXT OBJECTS
         self.name = name
         self.img = img
         self.loc = loc
         self.owner = owner
         self.move_used = False
+        self.type = type
+        if isinstance(self, Witch):
+            self.tags = self.name
+        elif self.type == 'large':
+            self.tags = ('large', self.number)
+        elif isinstance(self, Summon):
+            self.tags = self.number
+            
         if isinstance(self, Witch) or isinstance(self, Summon):
             self.base_str = self.str
             self.base_agl = self.agl
@@ -338,7 +335,7 @@ class Entity():
             if x % 20 == 0 or y % 20 == 0:
                 self.rotate_image()
                 app.canvas.delete(id)
-                app.canvas.create_image(x, y, image = self.img, tags = id)
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
             if x > endx:
                 x -= 10
                 app.canvas.move(id, -10, 0)
@@ -351,6 +348,7 @@ class Entity():
             if y < endy: 
                 y += 10
                 app.canvas.move(id, 0, 10)
+            app.canvas.tag_raise('large')
             app.canvas.tag_raise('maptop')
             if x == endx and y == endy:
                 self.finish_move(id, end_sqr, start_sqr) # EXIT
@@ -373,7 +371,7 @@ class Entity():
             app.grid[newloc[0]][newloc[1]] = self.number
             tg = self.number
         app.canvas.delete(tg)
-        app.canvas.create_image(newloc[0]*100+50-app.moved_right, newloc[1]*100+50-app.moved_down, image = self.img, tags = tg)
+        app.canvas.create_image(newloc[0]*100+50-app.moved_right, newloc[1]*100+50-app.moved_down, image = self.img, tags = self.tags)
         self.move_used = True
         self.cleanup_move()
         
@@ -385,9 +383,9 @@ class Entity():
     
 
 class Summon(Entity):
-    def __init__(self, name, img, loc, owner, number):
+    def __init__(self, name, img, loc, owner, number, type = 'normal'):
         self.number = number
-        super().__init__(name, img, loc, owner)
+        super().__init__(name, img, loc, owner, type = type)
         
 class Trickster(Summon):
     def __init__(self, name, img, loc, owner, number):
@@ -433,9 +431,7 @@ class Trickster(Summon):
         app.unbind_all()
         id = app.current_pos()
         my_psyche = self.get_attr('psyche')
-        print('my_psyche ', my_psyche)
         target_psyche = app.ent_dict[id].get_attr('psyche')
-        print('target_psyche ', target_psyche)
         if to_hit(my_psyche, target_psyche) == True:
             app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Confuse Hit!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
             app.after(1666, lambda id = id : self.do_attack(id))
@@ -468,13 +464,15 @@ class Trickster(Summon):
     def confuse(self, event = None, id = None, sqrs = None):
         if grid_pos not in sqrs:
             return
+        if app.ent_dict[id].type == 'large':
+            return
         app.grid[app.ent_dict[id].loc[0]][app.ent_dict[id].loc[1]] = ''
         app.canvas.delete(id)
         oldloc = app.ent_dict[id].loc
         app.ent_dict[id].loc = grid_pos[:]
         app.ent_dict[id].origin = grid_pos[:]
         app.grid[grid_pos[0]][grid_pos[1]] = id
-        app.canvas.create_image(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+50-app.moved_down, image = app.ent_dict[id].img, tags = id)
+        app.canvas.create_image(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+50-app.moved_down, image = app.ent_dict[id].img, tags = app.ent_dict[id].tags)
         self.cancel_attack(event = None)
     
     def confuse_sqrs(self, dist):
@@ -635,6 +633,9 @@ class Plaguebearer(Summon):
                     n2 = 'Pox' + str(app.effects_counter) # not an effect, just need unique int
                     app.effects_counter += 1 # that is why this is incr manually here, no Effect init
                     app.vis_dict[n2] = Vis(name = 'Pox', loc = s)
+                    rand_start_anim = randrange(1,7)
+                    for i in range(rand_start_anim):
+                        app.vis_dict[n2].rotate_image()
                     app.canvas.create_image(s[0]*100+50-app.moved_right, s[1]*100+50-app.moved_down, image = app.vis_dict[n2].img, tags = 'Pox')
                     n = 'Pox'+str(app.effects_counter)
                     # needs name, info, eot_func, undo, duration
@@ -659,11 +660,9 @@ class Plaguebearer(Summon):
         try:
             app.canvas.delete('Pox')
             keys = [k for k in app.vis_dict.keys() if k[:3] == 'Pox']
-            print(keys)
             for k in keys:
                 del app.vis_dict[k]
-        except:
-            print('error in finish pox')
+        except: pass
         app.rebind_all()
         app.canvas.delete('text')
         app.depop_context(event = None)
@@ -767,6 +766,208 @@ class Bard(Summon):
         return setlist
         
         
+class White_dragon(Summon):
+    def __init__(self, name, img, loc, owner, number):
+        self.actions = {'attack':self.white_dragon_attack}
+        self.attack_used = False
+        self.str = 8
+        self.agl = 5
+        self.end = 9
+        self.dodge = 3
+        self.psyche = 8
+        self.spirit = 66
+#         self.type = 'large'
+#         self.movement = 'flying'
+        super().__init__(name, img, loc, owner, number, type = 'large')
+        # BLOCK SQUARE BELOW
+        sqr = [loc[0], loc[1]+1]
+        app.grid[sqr[0]][sqr[1]] = self.number
+
+        # For cleanup on death, all large Ents need a function similar
+    def large_undo(self):
+        app.grid[self.loc[0]][self.loc[1]+1] = ''
+        
+    def do_white_dragon_ai(self, ents_list):
+        # GET LIST OF ENEMY ENTS, PICK ONE OF THE CLOSEST
+        enemy_ents = [x for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p1']
+        min = dist(app.ent_dict[enemy_ents[0]].loc, self.loc)
+        closest = [enemy_ents[0]]
+        for ent in enemy_ents:
+            if dist(app.ent_dict[ent].loc, self.loc) < min:
+                min = dist(app.ent_dict[ent].loc, self.loc)
+                closest = [ent]
+            elif dist(app.ent_dict[ent].loc, self.loc) == min:
+                closest.append(ent)
+        target = closest[0]
+        print('dragon target ', target)
+        t_loc = app.ent_dict[target].loc
+        atk_sqrs = self.legal_attacks()
+        print('dragon legal_attacks ', atk_sqrs)
+        # IF TARGET IS WITHIN ATTACK, ATTACK IT, EXIT THROUGH UNDEAD_ATTACK()
+        if t_loc in atk_sqrs:
+            self.white_dragon_attack(ents_list, target)
+        else: # EXIT OR MOVE
+            mov_sqrs = self.legal_moves()
+            print('dragon legal moves ', mov_sqrs)
+        # CANNOT MOVE AND COULD NOT ATTACK TARGET NOT WITHIN CURRENT RANGE, GO TO NEXT AI UNIT OR END TURN IF NONE
+            if mov_sqrs == []:
+                ents_list = ents_list[1:]
+                if ents_list == []:
+                    app.end_turn()
+                else:
+                    root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
+            else:
+        # ATTEMPT MOVE TOWARDS TARGET AND ATTEMPT ATTACK ON TARGET
+                self.white_dragon_move(ents_list, target)
+            
+    def white_dragon_move(self, ents_list, target):
+        global selected
+        mov_sqrs = self.legal_moves()
+        # AMONG LEGAL MOVES, PICK ONE THAT MINIMIZES DISTANCE BETWEEN SELF AND TARGET
+        best = mov_sqrs[0]
+        min = dist(mov_sqrs[0], app.ent_dict[target].loc)
+        for s in mov_sqrs:
+            if dist(s, app.ent_dict[target].loc) < min:
+                best = s
+                min = dist(s, app.ent_dict[target].loc)
+        print('in white_dragon_move, best move is ', best)
+        print('in white_dragon_move, target is ', target)
+        id = self.number
+        x = self.loc[0]*100+50-app.moved_right
+        y = self.loc[1]*100+50-app.moved_down
+        endx = best[0]*100+50-app.moved_right
+        endy = best[1]*100+50-app.moved_down
+        start_sqr = self.loc[:]
+        end_sqr = best[:]
+        selected = self.number
+        # MOVE LOOP
+        # get focus here?
+        def move_loop(id, x, y, endx, endy, start_sqr, end_sqr):
+            if x % 25 == 0 or y % 25 == 0:
+                # this isnt working because loc is old
+#                 app.get_focus(self.number)
+                self.rotate_image()
+                app.canvas.delete(id)
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+            if x > endx:
+                x -= 10
+                app.canvas.move(id, -10, 0)
+            if x < endx: 
+                x += 10
+                app.canvas.move(id, 10, 0)
+            if y > endy: 
+                y -= 10
+                app.canvas.move(id, 0, -10)
+            if y < endy: 
+                y += 10
+                app.canvas.move(id, 0, 10)
+            app.canvas.tag_raise('large')
+            app.canvas.tag_raise('maptop')
+            if x == endx and y == endy:
+                self.finish_move(id, end_sqr, start_sqr, target, ents_list) # EXIT
+            else: # CONTINUE LOOP
+                root.after(66, lambda id = id, x = x, y = y, e = endx, e2 = endy, s = start_sqr, s2 = end_sqr : move_loop(id, x, y, e, e2, s, s2))
+        move_loop(id, x, y, endx, endy, start_sqr, end_sqr)
+            
+            
+            
+    def finish_move(self, id, end_sqr, start_sqr, target, ents_list):
+        global selected
+        selected = ''
+        self.loc = end_sqr[:]
+        self.origin = end_sqr[:]
+        app.grid[start_sqr[0]][start_sqr[1]] = ''
+        app.grid[start_sqr[0]][start_sqr[1]+1] = ''
+        app.grid[end_sqr[0]][end_sqr[1]] = self.number
+        app.grid[end_sqr[0]][end_sqr[1]+1] = self.number
+        app.get_focus(self.number)
+#         app.canvas.create_image(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+50-app.moved_down, image = self.img, tags = self.number)
+        # IF TARGET NOW WITHIN RANGE, MAKE ATTACK ON IT
+        atk_sqrs = self.legal_attacks()
+        print('in dragon finish_move, target is ', target)
+        print('in dragon finish_move, atk_sqrs is ', atk_sqrs)
+        t_loc = app.ent_dict[target].loc[:]
+        print('in dragon finish_move, target loc is ', t_loc)
+        if t_loc in atk_sqrs:
+            self.white_dragon_attack(ents_list, target) # EXIT THROUGH UNDEAD_ATTACK()
+        else:
+        # CANNOT ATTACK, EXIT FUNC
+            ents_list = ents_list[1:]
+            if ents_list == []:
+                app.end_turn()
+            else:
+                root.after(666, lambda e = ents_list : app.do_ai_loop(e))
+    
+    def white_dragon_attack(self, ents_list, id):
+        app.get_focus(self.number)
+        self.init_attack_anims()
+        my_agl = self.get_attr('agl')
+        target_dodge = app.ent_dict[id].get_attr('dodge')
+        if to_hit(my_agl, target_dodge) == True:
+            # HIT, SHOW VIS, DO DAMAGE, EXIT
+            my_str = self.get_attr('str')
+            target_end = app.ent_dict[id].get_attr('end')
+            d = damage(my_str, target_end)
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'White Dragon\nAttack Hit!\n' + str(d) + ' Spirit Damage', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+            app.ent_dict[id].set_attr('spirit', -d)
+            if app.ent_dict[id].spirit <= 0:
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+            root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id)) # EXIT THROUGH CLEANUP_ATTACK()
+        else:
+            # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'White Dragon\nAttack Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+            root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id))
+        
+    def cleanup_attack(self, ents_list, id):
+        if app.ent_dict[id].spirit <= 0:
+            app.kill(id)
+        self.init_normal_anims()
+        try: app.canvas.delete('text')
+        except: pass
+        ents_list = ents_list[1:]
+        if ents_list == []:
+            app.end_turn()
+        else:
+            root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
+        
+        
+        # Any sqr within dist 2
+    def legal_attacks(self):
+        sqrs = []
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        for coord in coords:
+            if dist(coord, self.loc) <= 2:
+                if app.grid[coord[0]][coord[1]] != '' and app.grid[coord[0]][coord[1]] != 'block':
+                    sqrs.append(coord)
+        return sqrs
+        
+        # has flight (not impeded by obstacles, must land in square where 'below' square is unoccupied
+    def legal_moves(self):
+        loc = self.loc
+        mvlist = []
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        for c in coords:
+            if app.grid[c[0]][c[1]] == '' and dist(self.loc, c) <= 6:
+                # make sure below square exists and is empty
+                n = [c[0],c[1]+1]
+                if n in coords and app.grid[n[0]][n[1]] == '':
+                    mvlist.append(c)
+        return mvlist
+                 
+#         def findall(loc, start, dist):
+#             if start > dist:
+#                 return
+#             adj = [c for c in coords if abs(c[0] - loc[0]) + abs(c[1] - loc[1]) == 1 and app.grid[c[0]][c[1]] == '']
+#             for s in adj:
+#                 mvlist.append(s)
+#                 findall(s, start+1, dist)
+#         findall(loc, 1, 3) 
+#         setlist = []
+#         for l in mvlist:
+#             if l not in setlist:
+#                 setlist.append(l)
+#         return setlist
+        
 class Undead(Summon):
     def __init__(self, name, img, loc, owner, number):
         self.actions = {'attack':self.undead_attack}
@@ -831,10 +1032,10 @@ class Undead(Summon):
         selected = self.number
         # MOVE LOOP
         def move_loop(id, x, y, endx, endy, start_sqr, end_sqr):
-            if x % 20 == 0 or y % 20 == 0:
+            if x % 25 == 0 or y % 25 == 0:
                 self.rotate_image()
                 app.canvas.delete(id)
-                app.canvas.create_image(x, y, image = self.img, tags = id)
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
             if x > endx:
                 x -= 10
                 app.canvas.move(id, -10, 0)
@@ -847,6 +1048,7 @@ class Undead(Summon):
             if y < endy: 
                 y += 10
                 app.canvas.move(id, 0, 10)
+            app.canvas.tag_raise('large')
             app.canvas.tag_raise('maptop')
             if x == endx and y == endy:
                 self.finish_move(id, end_sqr, start_sqr, target, ents_list) # EXIT
@@ -1099,7 +1301,7 @@ class Witch(Entity):
             self.spirit = 70
             self.magick = 85
             
-        super().__init__(name, img, loc, owner)
+        super().__init__(name, img, loc, owner, type = 'normal')
         
     
     def summon(self, event = None):
@@ -1203,7 +1405,7 @@ class Witch(Entity):
         s = summon(name = name, img = img, loc = grid_pos[:], owner = app.active_player, number = number)
         app.ent_dict[number] = s
         self.summon_dict[number] = s
-        app.canvas.create_image(grid_pos[0]*100+50-app.moved_right, grid_pos[1]*100+50-app.moved_down, image = img, tags = number)
+        app.canvas.create_image(grid_pos[0]*100+50-app.moved_right, grid_pos[1]*100+50-app.moved_down, image = img, tags = s.tags)
         app.grid[grid_pos[0]][grid_pos[1]] = number
         app.cleanup_squares()
         app.unbind_all()
@@ -1280,7 +1482,7 @@ class Witch(Entity):
         # Agnes' spells center around Death/Decay/Disease/Telekinetics
     def plague(self, event = None):
             # currently effects dif from description, one target, no to_hit check
-            # attrs reduced to 1 (str, agl, end, dodge, psyche) lasting until 3 opp turns have passed
+            # attrs reduced to by 3 to a minimum of 1 (str, agl, end, dodge, psyche) lasting until 3 opp turns have passed
         app.depop_context(event = None)
         root.bind('<q>', lambda name = 'Plague' : self.cleanup_spell(name = name))
         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
@@ -1310,7 +1512,12 @@ class Witch(Entity):
         app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Plague', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
         # DO PLAGUE EFFECTS
         def plague_effect(stat):
-            return 1
+            if stat < 1:
+                return stat
+            else:
+                stat -= 3
+            if stat < 1:
+                return 1
         f = plague_effect
         app.ent_dict[id].str_effects.append(f)
         app.ent_dict[id].end_effects.append(f)
@@ -1352,10 +1559,11 @@ class Witch(Entity):
         id = app.current_pos()
         if not isinstance(app.ent_dict[id], Witch) and not isinstance(app.ent_dict[id], Summon):
              return
-        self.magick -= self.spell_dict['Psionic_Push'][1]
+        # cannot target large
+        if app.ent_dict[id].type == 'large':
+            return
         app.depop_context(event = None)
         app.cleanup_squares()
-        self.spell_used = True
         loc = app.ent_dict[id].loc[:]
         ps = []
         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
@@ -1397,6 +1605,8 @@ class Witch(Entity):
         global selected, selected_vis
         if sqr not in sqrs:
             return
+        self.spell_used = True
+        self.magick -= self.spell_dict['Psionic_Push'][1]
         app.unbind_all()
         app.cleanup_squares()
         app.depop_context(event = None)
@@ -1418,7 +1628,7 @@ class Witch(Entity):
                 app.canvas.delete(vis)
                 app.canvas.delete(ent)
                 app.canvas.create_image(x, y, image = app.vis_dict[vis].img, tags = 'Psionic_Push')
-                app.canvas.create_image(x, y, image = app.ent_dict[ent].img, tags = ent)
+                app.canvas.create_image(x, y, image = app.ent_dict[ent].img, tags = app.ent_dict[ent].tags)
             app.canvas.tag_raise(vis)
             if x > endx:
                 x -= 10
@@ -1829,7 +2039,7 @@ class App(tk.Frame):
             loc = [self.map_width//100-2, self.map_height//100-2]
         witch_img = ImageTk.PhotoImage(Image.open('avatars/' + witch +'.png'))
         self.ent_dict[witch] = Witch(name = witch, img = witch_img, loc = loc, owner = 'p' + str(player_num))
-        self.canvas.create_image(self.ent_dict[witch].loc[0]*100+50-self.moved_right, self.ent_dict[witch].loc[1]*100+50-self.moved_down, image = self.ent_dict[witch].img, tags = witch)
+        self.canvas.create_image(self.ent_dict[witch].loc[0]*100+50-self.moved_right, self.ent_dict[witch].loc[1]*100+50-self.moved_down, image = self.ent_dict[witch].img, tags = self.ent_dict[witch].tags)
         self.grid[self.ent_dict[witch].loc[0]][self.ent_dict[witch].loc[1]] = witch
         # EXIT FOR 1 PLAYER
         if self.num_players == 1:
@@ -1843,7 +2053,7 @@ class App(tk.Frame):
                 img = eval(x)
                 ent = eval(next(itlst))
                 self.ent_dict[ent.number] = ent
-                self.canvas.create_image(self.ent_dict[ent.number].loc[0]*100+50, self.ent_dict[ent.number].loc[1]*100+50, image = self.ent_dict[ent.number].img)
+                self.canvas.create_image(ent.loc[0]*100+50, ent.loc[1]*100+50, image = ent.img, tags = ent.tags)
                 self.grid[self.ent_dict[ent.number].loc[0]][self.ent_dict[ent.number].loc[1]] = ent.number
                 c1 += 1
                 if c1 == end:
@@ -1879,6 +2089,8 @@ class App(tk.Frame):
         self.get_focus(ent)
         if self.ent_dict[ent].name == 'Undead':
             self.ent_dict[ent].do_undead_ai(ents)
+        elif self.ent_dict[ent].name == 'White_dragon':
+            self.ent_dict[ent].do_white_dragon_ai(ents)
         
         
         
@@ -1972,18 +2184,20 @@ class App(tk.Frame):
             if ent != selected:
                 self.ent_dict[ent].rotate_image()
                 self.canvas.delete(ent)
-                self.canvas.create_image(self.ent_dict[ent].loc[0]*100+50-self.moved_right, self.ent_dict[ent].loc[1]*100+50-self.moved_down, image = self.ent_dict[ent].img, tags = ent)
+                self.canvas.create_image(self.ent_dict[ent].loc[0]*100+50-self.moved_right, self.ent_dict[ent].loc[1]*100+50-self.moved_down, image = self.ent_dict[ent].img, tags = app.ent_dict[ent].tags)
         for sqr in self.sqr_dict.keys():
             self.sqr_dict[sqr].rotate_image()
             self.canvas.delete(sqr)
             self.canvas.create_image(self.sqr_dict[sqr].loc[0]*100+50-self.moved_right, self.sqr_dict[sqr].loc[1]*100+50-self.moved_down, image = self.sqr_dict[sqr].img, tags = sqr)
+        app.canvas.tag_raise('large')
+        app.canvas.tag_raise('maptop')
         for vis in self.vis_dict.keys():
             if vis != selected_vis:
                 self.vis_dict[vis].rotate_image()
                 self.canvas.delete(vis)
                 self.canvas.create_image(self.vis_dict[vis].loc[0]*100+50-self.moved_right, self.vis_dict[vis].loc[1]*100+50-self.moved_down, image = self.vis_dict[vis].img, tags = vis)
                 app.canvas.tag_raise(vis)
-        app.canvas.tag_raise('maptop')
+#         app.canvas.tag_raise('vis')
         try: app.canvas.tag_raise('text')
         except: pass
         root.after(200, self.animate)
@@ -1993,7 +2207,6 @@ class App(tk.Frame):
         if e == '' or e == 'block':
             return
         if self.context_buttons != []:
-            print('app.context_buttons not empty')
             return
         self.repop_help_buttons()
         expanded_name = e.replace('_',' ')
@@ -2042,16 +2255,8 @@ class App(tk.Frame):
         
         # map_pos is how much map has moved [x,y]
         # curs_pos is relative to screen (stays within around [0,0] to [9,6] relative to screen size
-        # grid_pos is always absolute position of grid where cursor appears
-        # so on a grid with width 19(0-19), should be able to move to x18 (2 less than map pixel width(2000) /100)
-        # so when grid_pos[0] ==1 : return
-        # 
-        
+        # grid_pos is always absolute position of grid where cursor appears (relates to app.grid)
         if event.keysym == 'Left' or dir == 'Left':
-            print('left key')
-            print('curs_pos is ', curs_pos)
-            print('grid_pos is ', grid_pos)
-            print('map_pos is ', map_pos)
             if curs_pos[0] > 1: # leftmost possible cursor position
                 self.canvas.move('curs', -100, 0)
 #                 self.canvas.move(selected, -100, 0)
@@ -2063,10 +2268,6 @@ class App(tk.Frame):
                 grid_pos[0] -= 1
                 
         elif event.keysym == 'Right' or dir == 'Right':
-            print('right key')
-            print('curs_pos is ', curs_pos)
-            print('grid_pos is ', grid_pos)
-            print('map_pos is ', map_pos)
             if grid_pos[0] == ((self.map_width//100) - 1):
                 return
             if curs_pos[0] < ((frame_width//100)-1):
@@ -2230,6 +2431,9 @@ class App(tk.Frame):
         # DEBUG handle if killing witch
         # If witch is dead, show popup with victory/defeat
         self.canvas.delete(id)
+        # destroy surrounding squares of large Ents
+        if app.ent_dict[id].type == 'large':
+            app.ent_dict[id].large_undo()
         self.grid[self.ent_dict[id].loc[0]][self.ent_dict[id].loc[1]] = ''
         del self.ent_dict[id]
         # if id begins with 'a' belongs to protag_witch, else belongs to antag_witch
