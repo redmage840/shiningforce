@@ -1,4 +1,12 @@
-# structure pox like curse
+# can this setup handle Ents that occupy multiple squares? large Ents that would occupy 2 or 4 or 6 squares...
+
+# make cursor more visible, esp under highlighted squares
+
+# randomize Pox starting anim by calling rotate_image a random amount of times, SHOULD NOT randomize all VIS starting anims
+
+# text objects are still partially cutoff by attacking enemy on left or right edge of screen, can fix this (and get_focus() problem) by making cursor_move() move the background when not only at edge of screen, but 2 units from edge of screen (until within 2 units of edge of map width/height) at that point, having the map 'border' will prevent text objects from being cutoff
+
+# get_focus not edge of screen, move_cursor 'one more' both axes
 
 # Ents 'on-screen during turn AOE attacks may be damaged without being in the field of view
 
@@ -329,8 +337,8 @@ class Entity():
         def move_loop(id, x, y, endx, endy, start_sqr, end_sqr):
             if x % 20 == 0 or y % 20 == 0:
                 self.rotate_image()
-            app.canvas.delete(id)
-            app.canvas.create_image(x, y, image = self.img, tags = id)
+                app.canvas.delete(id)
+                app.canvas.create_image(x, y, image = self.img, tags = id)
             if x > endx:
                 x -= 10
                 app.canvas.move(id, -10, 0)
@@ -624,6 +632,10 @@ class Plaguebearer(Summon):
                 #GIVE POX EFFECT if doesn't exist
                 ef_names = [v.name for k,v in app.ent_dict[ent].effects_dict.items()]
                 if 'Pox' not in ef_names:
+                    n2 = 'Pox' + str(app.effects_counter) # not an effect, just need unique int
+                    app.effects_counter += 1 # that is why this is incr manually here, no Effect init
+                    app.vis_dict[n2] = Vis(name = 'Pox', loc = s)
+                    app.canvas.create_image(s[0]*100+50-app.moved_right, s[1]*100+50-app.moved_down, image = app.vis_dict[n2].img, tags = 'Pox')
                     n = 'Pox'+str(app.effects_counter)
                     # needs name, info, eot_func, undo, duration
                     def take_2(tar):
@@ -638,12 +650,20 @@ class Plaguebearer(Summon):
                     u = un
                     # POX VIS
                     app.ent_dict[ent].effects_dict[n] = Effect(name = 'Pox', info = 'Pox\n2 Spirit damage EOT\n-1 to Entities with normal movement', eot_func = eot , undo = u, duration = 4)
-                    app.canvas.create_text(app.ent_dict[ent].loc[0]*100-app.moved_right+50, app.ent_dict[ent].loc[1]*100-app.moved_down+50, text = 'Pox', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                    app.canvas.create_text(app.ent_dict[ent].loc[0]*100-app.moved_right+50, app.ent_dict[ent].loc[1]*100-app.moved_down+90, text = 'Pox', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
                 
         root.after(1666, self.finish_pox)
         
     def finish_pox(self, event = None):
 #         self.init_normal_anims()
+        try:
+            app.canvas.delete('Pox')
+            keys = [k for k in app.vis_dict.keys() if k[:3] == 'Pox']
+            print(keys)
+            for k in keys:
+                del app.vis_dict[k]
+        except:
+            print('error in finish pox')
         app.rebind_all()
         app.canvas.delete('text')
         app.depop_context(event = None)
@@ -813,8 +833,8 @@ class Undead(Summon):
         def move_loop(id, x, y, endx, endy, start_sqr, end_sqr):
             if x % 20 == 0 or y % 20 == 0:
                 self.rotate_image()
-            app.canvas.delete(id)
-            app.canvas.create_image(x, y, image = self.img, tags = id)
+                app.canvas.delete(id)
+                app.canvas.create_image(x, y, image = self.img, tags = id)
             if x > endx:
                 x -= 10
                 app.canvas.move(id, -10, 0)
@@ -1312,7 +1332,6 @@ class Witch(Entity):
         root.after(2666, lambda  name = 'Plague' : self.cleanup_spell(name = name))
             
     # PSIONIC PUSH
-    # DEBUG lack of vis when use on origin square
     def psionic_push(self, event = None):
         app.depop_context(event = None)
         root.bind('<q>', lambda name = 'Psionic_Push' : self.cleanup_spell(name = name))
@@ -1396,29 +1415,29 @@ class Witch(Entity):
             if x % 25 == 0 and y % 25 == 0:
                 app.vis_dict[vis].rotate_image()
                 app.ent_dict[ent].rotate_image()
-            app.canvas.delete(vis)
-            app.canvas.delete(ent)
-            app.canvas.create_image(x, y, image = app.vis_dict[vis].img, tags = 'Psionic_Push')
-            app.canvas.create_image(x, y, image = app.ent_dict[ent].img, tags = ent)
+                app.canvas.delete(vis)
+                app.canvas.delete(ent)
+                app.canvas.create_image(x, y, image = app.vis_dict[vis].img, tags = 'Psionic_Push')
+                app.canvas.create_image(x, y, image = app.ent_dict[ent].img, tags = ent)
             app.canvas.tag_raise(vis)
             if x > endx:
-                x -= 5
-                app.canvas.move(vis, -5, 0)
-                app.canvas.move(ent, -5, 0)
+                x -= 10
+                app.canvas.move(vis, -10, 0)
+                app.canvas.move(ent, -10, 0)
             elif x < endx: 
-                x += 5
-                app.canvas.move(vis, 5, 0)
-                app.canvas.move(ent, 5, 0)
+                x += 10
+                app.canvas.move(vis, 10, 0)
+                app.canvas.move(ent, 10, 0)
             if y > endy: 
-                y -= 5
-                app.canvas.move(vis, 0, -5)
-                app.canvas.move(ent, 0, -5)
+                y -= 10
+                app.canvas.move(vis, 0, -10)
+                app.canvas.move(ent, 0, -10)
             elif y < endy: 
-                y += 5
-                app.canvas.move(vis, 0, 5)
-                app.canvas.move(ent, 0, 5)
+                y += 10
+                app.canvas.move(vis, 0, 10)
+                app.canvas.move(ent, 0, 10)
             if x == endx and y == endy:
-                self.finish_psionic_push(ent, sqr, start_sqr)
+                root.after(666, lambda e = ent, s = sqr, ss = start_sqr : self.finish_psionic_push(e, s, ss))
             else:
                 root.after(50, lambda p = 'Psionic_Push', id = id, x = x, y = y, endx = endx, endy = endy, s = sqr, s2 = start_sqr : psi_move_loop(p, id, x, y, endx, endy, s, s2))
         if sqr == start_loc:
@@ -2020,47 +2039,66 @@ class App(tk.Frame):
             event.keysym = None
         frame_width = self.canvas.winfo_width()
         frame_height = self.canvas.winfo_height()
+        
+        # map_pos is how much map has moved [x,y]
+        # curs_pos is relative to screen (stays within around [0,0] to [9,6] relative to screen size
+        # grid_pos is always absolute position of grid where cursor appears
+        # so on a grid with width 19(0-19), should be able to move to x18 (2 less than map pixel width(2000) /100)
+        # so when grid_pos[0] ==1 : return
+        # 
+        
         if event.keysym == 'Left' or dir == 'Left':
-            if curs_pos[0] > 0: # leftmost possible cursor position, always zero
+            print('left key')
+            print('curs_pos is ', curs_pos)
+            print('grid_pos is ', grid_pos)
+            print('map_pos is ', map_pos)
+            if curs_pos[0] > 1: # leftmost possible cursor position
                 self.canvas.move('curs', -100, 0)
-                self.canvas.move(selected, -100, 0)
+#                 self.canvas.move(selected, -100, 0)
                 curs_pos[0] -= 1
                 grid_pos[0] -= 1
-            elif map_pos[0] > 0: # leftmost possible map position, always zero
+            elif map_pos[0] > 0 : # leftmost possible map position, always zero
                 map_pos[0] -= 1
                 self.move_map('Left')
                 grid_pos[0] -= 1
+                
         elif event.keysym == 'Right' or dir == 'Right':
+            print('right key')
+            print('curs_pos is ', curs_pos)
+            print('grid_pos is ', grid_pos)
+            print('map_pos is ', map_pos)
             if grid_pos[0] == ((self.map_width//100) - 1):
                 return
             if curs_pos[0] < ((frame_width//100)-1):
                 self.canvas.move('curs', 100, 0)
-                self.canvas.move(selected, 100, 0)
+#                 self.canvas.move(selected, 100, 0)
                 curs_pos[0] += 1
                 grid_pos[0] += 1
-            elif map_pos[0] < ((self.map_width//100)-(frame_width//100)):
+            elif map_pos[0] < ((self.map_width//100)-(frame_width//100)-1):
                 self.move_map('Right')
                 map_pos[0] += 1
                 grid_pos[0] += 1
+                
         elif event.keysym == 'Up' or dir == 'Up':
-            if curs_pos[1] > 0: # topmost, always zero
+            if curs_pos[1] > 1: # topmost
                 self.canvas.move('curs', 0, -100)
-                self.canvas.move(selected, 0, -100)
+#                 self.canvas.move(selected, 0, -100)
                 curs_pos[1] -= 1
                 grid_pos[1] -= 1
             elif map_pos[1] > 0: # topmost, always zero
                 self.move_map('Down')
                 map_pos[1] -= 1
                 grid_pos[1] -= 1
+                
         elif event.keysym == 'Down' or dir == 'Down':
             if grid_pos[1] == ((self.map_height//100)-1):
                 return
             if curs_pos[1] < ((frame_height//100)-1):
                 self.canvas.move('curs', 0, 100)
-                self.canvas.move(selected, 0, 100)
+#                 self.canvas.move(selected, 0, 100)
                 curs_pos[1] += 1
                 grid_pos[1] += 1
-            elif map_pos[1] < ((self.map_height//100)-(frame_height//100)):
+            elif map_pos[1] < ((self.map_height//100)-(frame_height//100)-1):
                 self.move_map('Up')
                 map_pos[1] += 1
                 grid_pos[1] += 1
