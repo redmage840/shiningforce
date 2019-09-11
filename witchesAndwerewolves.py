@@ -1,7 +1,10 @@
-# should get_focus and pause slightly before AI do stuff
+# raise cursor over stuff or make it blink or something
 
-# during move_loop, every few moves or every move or at end, call get_focus to 'see where going'
-# animate squares for AI movement
+# undead AI also needs to get_focus on target before move
+
+# end_turn effects, same effect text shows no vis to distinguish from exact same effect (same effect done consecutively)
+
+# should get_focus and pause slightly before AI do stuff
 
 # why is curse of oriax 'pausing' slightly on cast?
 
@@ -542,9 +545,9 @@ class Shadow(Summon):
         app.depop_context(event = None)
         id = app.current_pos()
         app.unbind_all()
-        my_str = self.get_attr('str')
-        target_end = app.ent_dict[id].get_attr('end')
-        if to_hit(my_str, target_end) == True:
+        my_agl = self.get_attr('agl')
+        target_dodge = app.ent_dict[id].get_attr('dodge')
+        if to_hit(my_agl, target_dodge) == True:
             # VISUAL TO HIT, go ahead and show dmg here also
             my_psyche = self.get_attr('psyche')
             target_psyche = app.ent_dict[id].get_attr('psyche')
@@ -770,9 +773,9 @@ class White_dragon(Summon):
     def __init__(self, name, img, loc, owner, number):
         self.actions = {'attack':self.white_dragon_attack}
         self.attack_used = False
-        self.str = 8
-        self.agl = 5
-        self.end = 9
+        self.str = 10
+        self.agl = 6
+        self.end = 10
         self.dodge = 3
         self.psyche = 8
         self.spirit = 66
@@ -805,7 +808,7 @@ class White_dragon(Summon):
         print('dragon legal_attacks ', atk_sqrs)
         # IF TARGET IS WITHIN ATTACK, ATTACK IT, EXIT THROUGH UNDEAD_ATTACK()
         if t_loc in atk_sqrs:
-            self.white_dragon_attack(ents_list, target)
+            root.after(666, lambda el = ents_list, t = target : self.white_dragon_attack(el, t))
         else: # EXIT OR MOVE
             mov_sqrs = self.legal_moves()
             print('dragon legal moves ', mov_sqrs)
@@ -818,34 +821,42 @@ class White_dragon(Summon):
                     root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
             else:
         # ATTEMPT MOVE TOWARDS TARGET AND ATTEMPT ATTACK ON TARGET
-                self.white_dragon_move(ents_list, target)
+#                 app.get_focus(target)
+                # make focus_square(sqr) which gets focus on a location instead of ent id
+                mov_sqrs = self.legal_moves()
+                best = mov_sqrs[0]
+                min = dist(mov_sqrs[0], app.ent_dict[target].loc)
+                for s in mov_sqrs:
+                    if dist(s, app.ent_dict[target].loc) < min:
+                        best = s
+                        min = dist(s, app.ent_dict[target].loc)
+                app.after(1333, lambda sqr = best : app.focus_square(sqr))
+                app.after(1666, lambda el = ents_list, t = target, sqr = best : self.white_dragon_move(el, t, sqr))
             
-    def white_dragon_move(self, ents_list, target):
+    def white_dragon_move(self, ents_list, target, sqr):
         global selected
-        mov_sqrs = self.legal_moves()
-        # AMONG LEGAL MOVES, PICK ONE THAT MINIMIZES DISTANCE BETWEEN SELF AND TARGET
-        best = mov_sqrs[0]
-        min = dist(mov_sqrs[0], app.ent_dict[target].loc)
-        for s in mov_sqrs:
-            if dist(s, app.ent_dict[target].loc) < min:
-                best = s
-                min = dist(s, app.ent_dict[target].loc)
-        print('in white_dragon_move, best move is ', best)
+#         mov_sqrs = self.legal_moves()
+#         # AMONG LEGAL MOVES, PICK ONE THAT MINIMIZES DISTANCE BETWEEN SELF AND TARGET
+#         best = mov_sqrs[0]
+#         min = dist(mov_sqrs[0], app.ent_dict[target].loc)
+#         for s in mov_sqrs:
+#             if dist(s, app.ent_dict[target].loc) < min:
+#                 best = s
+#                 min = dist(s, app.ent_dict[target].loc)
+        print('in white_dragon_move, best move is ', sqr)
         print('in white_dragon_move, target is ', target)
         id = self.number
         x = self.loc[0]*100+50-app.moved_right
         y = self.loc[1]*100+50-app.moved_down
-        endx = best[0]*100+50-app.moved_right
-        endy = best[1]*100+50-app.moved_down
+        endx = sqr[0]*100+50-app.moved_right
+        endy = sqr[1]*100+50-app.moved_down
         start_sqr = self.loc[:]
-        end_sqr = best[:]
+        end_sqr = sqr[:]
         selected = self.number
         # MOVE LOOP
         # get focus here?
         def move_loop(id, x, y, endx, endy, start_sqr, end_sqr):
             if x % 25 == 0 or y % 25 == 0:
-                # this isnt working because loc is old
-#                 app.get_focus(self.number)
                 self.rotate_image()
                 app.canvas.delete(id)
                 app.canvas.create_image(x, y, image = self.img, tags = self.tags)
@@ -889,14 +900,15 @@ class White_dragon(Summon):
         t_loc = app.ent_dict[target].loc[:]
         print('in dragon finish_move, target loc is ', t_loc)
         if t_loc in atk_sqrs:
-            self.white_dragon_attack(ents_list, target) # EXIT THROUGH UNDEAD_ATTACK()
+            root.after(666, lambda t = target : app.get_focus(t))
+            root.after(1333, lambda el = ents_list, t = target : self.white_dragon_attack(el, t)) # EXIT THROUGH ATTACK()
         else:
         # CANNOT ATTACK, EXIT FUNC
             ents_list = ents_list[1:]
             if ents_list == []:
-                app.end_turn()
+                root.after(666, app.end_turn)
             else:
-                root.after(666, lambda e = ents_list : app.do_ai_loop(e))
+                root.after(666, lambda el = ents_list : app.do_ai_loop(el))
     
     def white_dragon_attack(self, ents_list, id):
         app.get_focus(self.number)
@@ -998,37 +1010,38 @@ class Undead(Summon):
         atk_sqrs = self.legal_attacks()
         # IF TARGET IS WITHIN ATTACK, ATTACK IT, EXIT THROUGH UNDEAD_ATTACK()
         if t_loc in atk_sqrs:
-            self.undead_attack(ents_list, target)
+            root.after(666, lambda el = ents_list, t = target : self.undead_attack(el, t))
         else: # EXIT OR MOVE
             mov_sqrs = self.legal_moves()
         # CANNOT MOVE AND COULD NOT ATTACK TARGET NOT WITHIN CURRENT RANGE, GO TO NEXT AI UNIT OR END TURN IF NONE
             if mov_sqrs == []:
                 ents_list = ents_list[1:]
                 if ents_list == []:
-                    app.end_turn()
+                    root.after(666, app.end_turn)
                 else:
                     root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
             else:
         # ATTEMPT MOVE TOWARDS TARGET AND ATTEMPT ATTACK ON TARGET
-                self.undead_move(ents_list, target)
+                mov_sqrs = self.legal_moves()
+                # AMONG LEGAL MOVES, PICK ONE THAT MINIMIZES DISTANCE BETWEEN SELF AND TARGET
+                best = mov_sqrs[0]
+                min = dist(mov_sqrs[0], app.ent_dict[target].loc)
+                for s in mov_sqrs:
+                    if dist(s, app.ent_dict[target].loc) < min:
+                        best = s
+                        min = dist(s, app.ent_dict[target].loc)
+                root.after(999, lambda s = best : app.focus_square(s))
+                root.after(1666, lambda el = ents_list, t = target, sqr = best : self.undead_move(el, t, sqr))
             
-    def undead_move(self, ents_list, target):
+    def undead_move(self, ents_list, target, sqr):
         global selected
-        mov_sqrs = self.legal_moves()
-        # AMONG LEGAL MOVES, PICK ONE THAT MINIMIZES DISTANCE BETWEEN SELF AND TARGET
-        best = mov_sqrs[0]
-        min = dist(mov_sqrs[0], app.ent_dict[target].loc)
-        for s in mov_sqrs:
-            if dist(s, app.ent_dict[target].loc) < min:
-                best = s
-                min = dist(s, app.ent_dict[target].loc)
         id = self.number
         x = self.loc[0]*100+50-app.moved_right
         y = self.loc[1]*100+50-app.moved_down
-        endx = best[0]*100+50-app.moved_right
-        endy = best[1]*100+50-app.moved_down
+        endx = sqr[0]*100+50-app.moved_right
+        endy = sqr[1]*100+50-app.moved_down
         start_sqr = self.loc[:]
-        end_sqr = best[:]
+        end_sqr = sqr[:]
         selected = self.number
         # MOVE LOOP
         def move_loop(id, x, y, endx, endy, start_sqr, end_sqr):
@@ -1109,7 +1122,7 @@ class Undead(Summon):
         if ents_list == []:
             app.end_turn()
         else:
-            root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
+            root.after(666, lambda e = ents_list : app.do_ai_loop(e))
         
         
     def legal_attacks(self):
@@ -1512,24 +1525,21 @@ class Witch(Entity):
         app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Plague', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
         # DO PLAGUE EFFECTS
         def plague_effect(stat):
-            if stat < 1:
-                return stat
-            else:
-                stat -= 3
+            stat -= 3
             if stat < 1:
                 return 1
+            else:
+                return stat
         f = plague_effect
         app.ent_dict[id].str_effects.append(f)
         app.ent_dict[id].end_effects.append(f)
         app.ent_dict[id].agl_effects.append(f)
         app.ent_dict[id].dodge_effects.append(f)
-        app.ent_dict[id].psyche_effects.append(f)
         def un(i):
             app.ent_dict[i].str_effects.remove(plague_effect)
             app.ent_dict[i].end_effects.remove(plague_effect)
             app.ent_dict[i].agl_effects.remove(plague_effect)
             app.ent_dict[i].dodge_effects.remove(plague_effect)
-            app.ent_dict[i].psyche_effects.remove(plague_effect)
         p = partial(un, id)
         def nothing():
             pass
@@ -1718,7 +1728,11 @@ class Witch(Entity):
         app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Curse\nof\nOriax', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
         # DO Curse_of_Oriax EFFECTS
         def curse_of_oriax_effect(stat):
-            return stat - 1
+            stat -= 1
+            if stat < 1:
+                return 1
+            else:
+                return stat
         f = curse_of_oriax_effect
         app.ent_dict[id].str_effects.append(f)
         app.ent_dict[id].end_effects.append(f)
@@ -1781,7 +1795,11 @@ class Witch(Entity):
         app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Gravity', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
         # DO Curse_of_Oriax EFFECTS
         def gravity_effect(stat):
-            return stat - 2
+            stat - 2
+            if stat < 1:
+                return 1
+            else:
+                return stat
         f = gravity_effect
         app.ent_dict[id].agl_effects.append(f)
         app.ent_dict[id].dodge_effects.append(f)
@@ -2178,6 +2196,17 @@ class App(tk.Frame):
             self.move_curs(dir = 'Down')
         while grid_pos[1] > self.ent_dict[w].loc[1]:
             self.move_curs(dir = 'Up')
+            
+    def focus_square(self, s):
+        while grid_pos[0] < s[0]:
+            self.move_curs(dir = 'Right')
+        while grid_pos[0] > s[0]:
+            self.move_curs(dir = 'Left')
+        while grid_pos[1] < s[1]:
+            self.move_curs(dir = 'Down')
+        while grid_pos[1] > s[1]:
+            self.move_curs(dir = 'Up')
+    
         
     def animate(self):
         for ent in self.ent_dict.keys():
