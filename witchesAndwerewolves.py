@@ -401,7 +401,7 @@ class Trickster(Summon):
     # for vis, maybe get image of target...
     # simu anims would be just a bunch of opaque 'glass' / greyscale opacity
     # then grab 2 copies of target image, drag one left, one right across the opacity
-    # target gets + 3 dodge effect, lasts 3 turns
+    # target gets + 4 dodge effect, lasts 3 turns
     # have to resize for larger units
     # create_image the targets image with 'left' tag
     # create_image simulacrum anim(img) with 'left' tag
@@ -438,18 +438,18 @@ class Trickster(Summon):
         self.attack_used = True
         # DO SIMULACRUM EFFECTS
         def simulacrum_effect(stat):
-            stat += 3
+            stat += 4
             return stat
         f = simulacrum_effect
         app.ent_dict[id].dodge_effects.append(f)
         def un(i):
-            app.ent_dict[i].dodge_effects.remove(plague_effect)
+            app.ent_dict[i].dodge_effects.remove(simulacrum_effect)
         p = partial(un, id)
         def nothing():
             pass
         eot = nothing
         n = 'Simulacrum' + str(app.effects_counter)
-        app.ent_dict[id].effects_dict['Simulacrum'] = Effect(name = 'Simulacrum', info = 'Simulacrum\nDodge incr by 3 for 3 turns', eot_func = eot, undo = p, duration = 3)
+        app.ent_dict[id].effects_dict['Simulacrum'] = Effect(name = 'Simulacrum', info = 'Simulacrum\nDodge incr by 4 for 3 turns', eot_func = eot, undo = p, duration = 3)
         # DO SIMULACRUM VISUALS
         
         start_loc = app.ent_dict[id].loc[:]
