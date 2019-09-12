@@ -1,4 +1,6 @@
-# maybe just make cursor anims pause longer on 'zero' and 'peak' (9 i think)
+
+
+# maybe make dragon attack further 'down' since he doesn't 'see' from his lower square, maybe make range longer, do attack anims
 
 # why is curse of oriax 'pausing' slightly on cast?
 
@@ -179,7 +181,7 @@ class Entity():
             self.base_dodge = self.dodge
             self.base_psyche = self.psyche
             self.base_spirit = self.spirit
-            if isinstance(self, Witch):
+            if isinstance(self, Witch) or isinstance(self, Trickster):
                 self.base_magick = self.magick
             
             self.str_effects = []
@@ -261,7 +263,7 @@ class Entity():
             self.spirit += amount
             if self.spirit > self.base_spirit:
                 self.spirit = self.base_spirit
-        elif isinstance(self, Witch):
+        elif isinstance(self, Witch) or isinstance(self, Trickster):
             if attr == 'magick':
                 self. magick += amount
                 if self.magick > self.base_magick:
@@ -384,7 +386,7 @@ class Summon(Entity):
         
 class Trickster(Summon):
     def __init__(self, name, img, loc, owner, number):
-        self.actions = {'confuse':self.trickster_attack, 'move':self.move}
+        self.actions = {'Simulacrum':self.simulacrum,'Dark Doorway':self.dark_doorway,'Move':self.move}
         self.attack_used = False
         self.str = 2
         self.agl = 3
@@ -392,10 +394,143 @@ class Trickster(Summon):
         self.dodge = 4
         self.psyche = 5
         self.spirit = 10
+        self.magick = 23
         super().__init__(name, img, loc, owner, number)
         
         
-    def trickster_attack(self, event = None):
+    # for vis, maybe get image of target...
+    # simu anims would be just a bunch of opaque 'glass' / greyscale opacity
+    # then grab 2 copies of target image, drag one left, one right across the opacity
+    # target gets + 3 dodge effect, lasts 3 turns
+    # have to resize for larger units
+    # create_image the targets image with 'left' tag
+    # create_image simulacrum anim(img) with 'left' tag
+    # create_image the targets image with 'right' tag
+    # create_image simulacrum anim(img) with 'right' tag
+    # move each in loop by tag
+    def simulacrum(self, event):
+        if self.attack_used == True or self.magick < 3:
+            return
+        app.depop_context(event = None)
+        root.bind('<q>', self.cancel_attack)
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [s for s in coords if dist(self.loc, s) <= 4]
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_simulacrum(event = e, sqr = s, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Choose Target For Simulacrum', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_simulacrum(e, s, sqrs))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+        
+    def do_simulacrum(self, event, sqr, sqrs):
+        if app.current_pos() == '' or app.current_pos() == 'block':
+            return
+        if sqr not in sqrs:
+            return
+        # target must be Summon, Witch, (future type...)
+        id = app.current_pos()
+        print(id)
+        if not isinstance(app.ent_dict[id], Witch) and not isinstance(app.ent_dict[id], Summon):
+             return
+        self.set_attr('magick', -3)
+        app.unbind_all()
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        self.attack_used = True
+        # DO SIMULACRUM EFFECTS
+        def simulacrum_effect(stat):
+            stat += 3
+            return stat
+        f = simulacrum_effect
+        app.ent_dict[id].dodge_effects.append(f)
+        def un(i):
+            app.ent_dict[i].dodge_effects.remove(plague_effect)
+        p = partial(un, id)
+        def nothing():
+            pass
+        eot = nothing
+        n = 'Simulacrum' + str(app.effects_counter)
+        app.ent_dict[id].effects_dict['Simulacrum'] = Effect(name = 'Simulacrum', info = 'Simulacrum\nDodge incr by 3 for 3 turns', eot_func = eot, undo = p, duration = 3)
+        # DO SIMULACRUM VISUALS
+        
+        start_loc = app.ent_dict[id].loc[:]
+        app.vis_dict['Simulacrum'] = Vis(name = 'Simulacrum', loc = start_loc[:])
+        app.canvas.create_image(start_loc[0]*100+50-app.moved_right, start_loc[1]*100+50-app.moved_down, image = app.ent_dict[id].img, tags = 'left')
+        app.canvas.create_image(start_loc[0]*100+50-app.moved_right, start_loc[1]*100+50-app.moved_down, image = app.ent_dict[id].img, tags = 'right')
+        app.canvas.create_image(start_loc[0]*100+50-app.moved_right, start_loc[1]*100+50-app.moved_down, image = app.vis_dict['Simulacrum'].img, tags = ('Simulacrum','right'))
+        app.canvas.create_image(start_loc[0]*100+50-app.moved_right, start_loc[1]*100+50-app.moved_down, image = app.vis_dict['Simulacrum'].img, tags = ('Simulacrum','left'))
+        
+        app.canvas.create_text(start_loc[0]*100+50-app.moved_right, start_loc[1]*100+95-app.moved_down, text = 'Simulacrum', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+        x = start_loc[0]*100+50-app.moved_right
+        y = start_loc[1]*100+50-app.moved_down
+        # end loc is not another sqr just an offset to X coord (not Y), but 2 X offsets (going in each direction)
+        end_left = start_loc[0]*100-app.moved_right # minus 50 from center
+        end_right = start_loc[0]*100+100-app.moved_right # plus 50 from center
+#         endy = sqr[1]*100+50-app.moved_down
+        # prevent animation from redrawing at start_loc
+#         selected = id
+        selected_vis = 'Simulacrum'
+        # will need two loops maybe
+        # just moving the created images of target (not redrawing or preventing redraw of original)
+        # each 'left' and 'right' vis image needs to be rotated, deleted, and redrawn (not moved)
+        def simulacrum_loop_left(vis, x, y, end_left, tar):
+            if x % 5 == 0: # this just gets new image (flickers simulacrum opacity)
+                app.vis_dict[vis].rotate_image()
+                app.canvas.delete('left') # this deletes both vis left and right
+#                 app.canvas.delete(ent)
+                app.canvas.create_image(x, y, image = app.ent_dict[tar].img, tags = 'left')
+                app.canvas.create_image(x, y, image = app.vis_dict[vis].img, tags = ('Simulacrum','left'))
+#                 app.canvas.create_image(x, y, image = app.ent_dict[ent].img, tags = app.ent_dict[ent].tags)
+            app.canvas.tag_raise(vis)
+            # end_left always starts less than x
+            if x > end_left:
+                x -= 10
+                app.canvas.move('left',-10,0)
+            if x == end_left:
+                pass
+#                 root.after(666, self.cleanup_simulacrum)
+            else:
+                root.after(100, lambda vis = 'Simulacrum', x = x, y = y, end_left = end_left, tar = tar : simulacrum_loop_left(vis, x, y, end_left, tar))
+                
+        def simulacrum_loop_right(vis, x, y, end_right, tar):
+            if x % 5 == 0: # this just gets new image (flickers simulacrum opacity)
+                app.vis_dict[vis].rotate_image()
+                app.canvas.delete('right') # this deletes both vis left and right
+#                 app.canvas.delete(ent)
+                app.canvas.create_image(x, y, image = app.ent_dict[tar].img, tags = 'right')
+                app.canvas.create_image(x, y, image = app.vis_dict[vis].img, tags = ('Simulacrum','right'))
+#                 app.canvas.create_image(x, y, image = app.ent_dict[ent].img, tags = app.ent_dict[ent].tags)
+            app.canvas.tag_raise(vis)
+            # end_right always starts greater than x
+            if x < end_right:
+                x += 10
+                app.canvas.move('right',10,0)
+            if x == end_right:
+                root.after(666, self.cleanup_simulacrum)
+            else:
+                root.after(100, lambda vis = 'Simulacrum', x = x, y = y, end_right = end_right, tar = tar : simulacrum_loop_right(vis, x, y, end_right, tar))
+                
+        simulacrum_loop_left('Simulacrum', x, y, end_left, id)
+        simulacrum_loop_right('Simulacrum', x, y, end_right, id)
+        
+        ###############################################################################################
+#         app.vis_dict['Simulacrum'] = Vis(name = 'Simulacrum', loc = sqr)
+#         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Simulacrum'].img, tags = 'Simulacrum')
+        
+    def cleanup_simulacrum(self):
+#         for x in range(1, len(self.spell_dict.keys())+1):
+#             root.unbind(str(x))
+        app.unbind_all()
+        app.rebind_all()
+        app.cleanup_squares()
+        app.depop_context(event = None)
+        app.canvas.delete('left')
+        app.canvas.delete('right')
+        app.canvas.delete('Simulacrum')
+        del app.vis_dict['Simulacrum']
+        app.canvas.delete('text')
+        
+        
+    def dark_doorway(self, event = None):
         if self.attack_used == True:
             return
         root.unbind('<q>')
@@ -403,63 +538,52 @@ class Trickster(Summon):
         root.unbind('<a>')
         sqrs = []
         coord_pairs = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        for coord in coord_pairs:
-            if abs(coord[0] - self.loc[0]) == 1 and coord[1] == self.loc[1]:
-                sqrs.append(coord)
-            elif coord[0] == self.loc[0] and abs(coord[1] - self.loc[1]) == 1:
-                sqrs.append(coord)
+        for c in coord_pairs:
+            if dist(c, self.loc) <= 2:
+                sqrs.append(c)
         app.animate_squares(sqrs)
         app.depop_context(event = None)
-        root.bind('<a>', lambda e, s = sqrs : self.check_hit(e, sqrs = s))
-        b = tk.Button(app.context_menu, text = 'Confirm Confuse', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, s = sqrs : self.check_hit(event = e, sqrs = s))
+        root.bind('<a>', lambda e, s = sqrs : self.choose_target(e, sqrs = s))
+        b = tk.Button(app.context_menu, text = 'Choose Target', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, s = sqrs : self.choose_target(event = e, sqrs = s))
         b.pack(side = 'top')
         app.context_buttons.append(b)
 
         
         
-    def check_hit(self, event = None, sqrs = None):
+    def choose_target(self, event = None, sqrs = None):
         if grid_pos not in sqrs:
             return
         if app.current_pos() == '' or app.current_pos() == 'block':
             return
+        id = app.current_pos()
+        if app.ent_dict[id].type == 'large':
+            return
         app.depop_context(event = None)
         app.unbind_all()
-        id = app.current_pos()
-        my_psyche = self.get_attr('psyche')
-        target_psyche = app.ent_dict[id].get_attr('psyche')
-        if to_hit(my_psyche, target_psyche) == True:
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Confuse Hit!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-            app.after(1666, lambda id = id : self.do_attack(id))
-        else:
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Confuse Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-            app.after(1666, lambda e = None : self.cancel_attack(event = None))
-        self.attack_used = True
-        
-    def do_attack(self, id):
         app.rebind_all()
         root.unbind('<q>')
         root.unbind('<a>')
-        my_agl = self.get_attr('agl')
+        self.attack_used = True
+        self.set_attr('magick', -2)
+        my_psyche = self.get_attr('psyche')
         target_dodge = app.ent_dict[id].get_attr('dodge')
-        dist = damage(my_agl, target_dodge)
-        app.depop_context(event = None)
+        distance = damage(my_psyche, target_dodge)
         app.cleanup_squares()
-        sqrs = self.confuse_sqrs(dist)
+        sqrs = self.doorway_squares(distance)
         if sqrs == []:
-            self.attack_used = True
-            self.cancel_attack(event = None)
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+60-app.moved_down, text = 'No Available Area', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+            root.after(666, self.cancel_attack)
             return
         app.animate_squares(sqrs)
-        root.bind('<a>', lambda e, t = id, s = sqrs : self.confuse(e, id = t, sqrs = s))
-        b = tk.Button(app.context_menu, text = 'Choose Square', font = ('chalkduster', 24), fg = 'tan3', wraplength = 190, highlightbackground = 'tan3', command = lambda e = None, id = id, s = sqrs : self.confuse(e, id, s))
+        root.bind('<a>', lambda e, t = id, s = sqrs : self.do_dark_doorway(e, id = t, sqrs = s))
+        b = tk.Button(app.context_menu, text = 'Choose Location', font = ('chalkduster', 24), fg = 'tan3', wraplength = 190, highlightbackground = 'tan3', command = lambda e = None, id = id, s = sqrs : self.do_dark_doorway(e, id, s))
         b.pack(side = 'top')
         app.context_buttons.append(b)
 
     
-    def confuse(self, event = None, id = None, sqrs = None):
+    #Put VIS IN HERE
+    def do_dark_doorway(self, event = None, id = None, sqrs = None):
         if grid_pos not in sqrs:
-            return
-        if app.ent_dict[id].type == 'large':
             return
         app.grid[app.ent_dict[id].loc[0]][app.ent_dict[id].loc[1]] = ''
         app.canvas.delete(id)
@@ -470,13 +594,13 @@ class Trickster(Summon):
         app.canvas.create_image(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+50-app.moved_down, image = app.ent_dict[id].img, tags = app.ent_dict[id].tags)
         self.cancel_attack(event = None)
     
-    def confuse_sqrs(self, dist):
+    def doorway_squares(self, distance):
         sqr_list = []
         coord_pairs = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        for coord in coord_pairs:
-            if app.grid[coord[0]][coord[1]] == '':
-                if abs(coord[0] - self.loc[0]) + abs(coord[1] - self.loc[1]) <= dist:
-                    sqr_list.append(coord)
+        for c in coord_pairs:
+            if dist(c, self.loc) <= distance: 
+                if app.grid[c[0]][c[1]] == '':
+                    sqr_list.append(c)
         return sqr_list
     
     def cancel_attack(self, event = None):
@@ -688,7 +812,7 @@ class Plaguebearer(Summon):
 # healer / magick recovery?
 class Bard(Summon):
     def __init__(self, name, img, loc, owner, number):
-        self.actions = {'Bard Song':self.bard_song, 'Entrance':self.entrance, 'move':self.move}
+        self.actions = {'Unholy Chant':self.unholy_chant, 'Entrance':self.entrance, 'move':self.move}
         self.attack_used = False
         self.str = 2
         self.agl = 4
@@ -700,22 +824,22 @@ class Bard(Summon):
         
         
     # All friendly units within dist2 regain 2 Spirit and 2 Magick, ensure not greater than base
-    def bard_song(self, event = None):
+    def unholy_chant(self, event = None):
         if self.attack_used == True:
             return
         root.unbind('<a>')
         root.unbind('<q>')
-        root.bind('<q>', self.finish_bard_song)
+        root.bind('<q>', self.finish_unholy_chant)
         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         sqrs = [c for c in coords if dist(self.loc, c) <= 2]
         app.animate_squares(sqrs)
         app.depop_context(event = None)
-        root.bind('<a>', lambda e, s = sqrs : self.do_bard_song(event = e, sqrs = s)) 
-        b = tk.Button(app.context_menu, text = 'Confirm Bard Song', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, s = sqrs : self.do_bard_song(event = e, sqrs = s))
+        root.bind('<a>', lambda e, s = sqrs : self.do_unholy_chant(event = e, sqrs = s)) 
+        b = tk.Button(app.context_menu, text = 'Confirm Bard Song', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, s = sqrs : self.do_unholy_chant(event = e, sqrs = s))
         b.pack(side = 'top')
         app.context_buttons.append(b)
         
-    def do_bard_song(self, event = None, sqrs = None):
+    def do_unholy_chant(self, event = None, sqrs = None):
         self.attack_used = True
 #         self.init_attack_anims()
         app.depop_context(event = None)
@@ -727,12 +851,12 @@ class Bard(Summon):
                 if app.ent_dict[ent].owner == app.active_player:
                     app.ent_dict[ent].set_attr('spirit', 2)
                     app.canvas.create_text(app.ent_dict[ent].loc[0]*100-app.moved_right+50, app.ent_dict[ent].loc[1]*100-app.moved_down+50, text = '+2 Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-                    if isinstance(app.ent_dict[ent], Witch):
+                    if isinstance(app.ent_dict[ent], Witch) or isinstance(app.ent_dict[ent], Trickster):
                         app.ent_dict[ent].set_attr('magick', 2)
                         app.canvas.create_text(app.ent_dict[ent].loc[0]*100-app.moved_right+50, app.ent_dict[ent].loc[1]*100-app.moved_down+70, text = '+2 Magick', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-        root.after(1666, self.finish_bard_song)
+        root.after(1666, self.finish_unholy_chant)
         
-    def finish_bard_song(self, event = None):
+    def finish_unholy_chant(self, event = None):
 #         self.init_normal_anims()
         app.rebind_all()
         app.canvas.delete('text')
@@ -1465,10 +1589,9 @@ class Witch(Entity):
     
     def cleanup_spell(self, event = None, name = None):
         global selected, selected_vis
-        root.unbind('<q>')
-        root.unbind('<a>')
         for x in range(1, len(self.spell_dict.keys())+1):
             root.unbind(str(x))
+        app.unbind_all()
         app.rebind_all()
         app.cleanup_squares()
         app.depop_context(event = None)
@@ -2258,7 +2381,7 @@ class App(tk.Frame):
                 i += 1
                 root.bind(str(i), call)
                 p = partial(call, None)
-                b = tk.Button(self.context_menu, text = str(i) + ' : ' + act, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = p)
+                b = tk.Button(self.context_menu, text = str(i) + ' : ' + act, wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = p)
                 b.pack(side = 'top')
                 self.context_buttons.append(b)
         
@@ -2403,7 +2526,7 @@ class App(tk.Frame):
         txt += 'Dodge:' + str(self.ent_dict[ent].get_attr('dodge')) + '\n'
         txt += 'Psyche:' + str(self.ent_dict[ent].get_attr('psyche')) + '\n'
         txt += 'Spirit:' + str(self.ent_dict[ent].spirit) + '\n'
-        if isinstance(self.ent_dict[ent], Witch):
+        if isinstance(self.ent_dict[ent], Witch) or isinstance(self.ent_dict[ent], Trickster):
             txt += 'Magick:' + str(self.ent_dict[ent].magick) + '\n'
         for ef in self.ent_dict[ent].effects_dict.keys():
             txt += self.ent_dict[ent].effects_dict[ef].name.replace('_',' ') + '\n'
@@ -2485,6 +2608,8 @@ class App(tk.Frame):
                 del self.ent_dict[self.p2_witch].summon_dict[id]
             
     def unbind_all(self):
+        for x in range(10):
+            root.unbind(str(x))
         root.unbind('<Right>')
         root.unbind('<Left>')
         root.unbind('<Up>')
