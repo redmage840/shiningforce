@@ -1,4 +1,8 @@
+# when ending turn, cursor took focus(?) maybe on a Trickster before starting on AI units...
 
+# cursor tag_raise and large object animation tag raise cause slight flicker of cursor
+
+# prob limit simulacrum stacking
 
 # maybe make dragon attack further 'down' since he doesn't 'see' from his lower square, maybe make range longer, do attack anims
 
@@ -19,12 +23,6 @@
 # Make Tricksters better range or give something else to do, maybe something passive because they miss a lot
 
 # witches need something to do when run out of magick
-
-# confuse doesnt hit very often, make it more accurate and use some finite resource of trickster, 
-
-# make trickster confuse animations, trickster movement animation different, shadow movement animation
-
-# normal movement animations should 'follow path' of legal squares
 
 # make get_info scroll a bit longer to hold more effects
 
@@ -412,7 +410,7 @@ class Trickster(Summon):
         if self.attack_used == True or self.magick < 3:
             return
         app.depop_context(event = None)
-        root.bind('<q>', self.cancel_attack)
+        root.bind('<q>', self.cleanup_simulacrum)
         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         sqrs = [s for s in coords if dist(self.loc, s) <= 4]
         app.animate_squares(sqrs)
@@ -431,7 +429,7 @@ class Trickster(Summon):
         print(id)
         if not isinstance(app.ent_dict[id], Witch) and not isinstance(app.ent_dict[id], Summon):
              return
-        self.set_attr('magick', -3)
+        self.set_attr('magick', -4)
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -534,7 +532,7 @@ class Trickster(Summon):
         if self.attack_used == True:
             return
         root.unbind('<q>')
-        root.bind('<q>', self.cancel_attack)
+        root.bind('<q>', self.cleanup_dark_doorway)
         root.unbind('<a>')
         sqrs = []
         coord_pairs = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
@@ -564,7 +562,7 @@ class Trickster(Summon):
         root.unbind('<q>')
         root.unbind('<a>')
         self.attack_used = True
-        self.set_attr('magick', -2)
+        self.set_attr('magick', -4)
         my_psyche = self.get_attr('psyche')
         target_dodge = app.ent_dict[id].get_attr('dodge')
         distance = damage(my_psyche, target_dodge)
@@ -572,7 +570,7 @@ class Trickster(Summon):
         sqrs = self.doorway_squares(distance)
         if sqrs == []:
             app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+60-app.moved_down, text = 'No Available Area', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
-            root.after(666, self.cancel_attack)
+            root.after(666, self.cleanup_dark_doorway)
             return
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, t = id, s = sqrs : self.do_dark_doorway(e, id = t, sqrs = s))
@@ -585,14 +583,24 @@ class Trickster(Summon):
     def do_dark_doorway(self, event = None, id = None, sqrs = None):
         if grid_pos not in sqrs:
             return
+        oldloc = app.ent_dict[id].loc
+        newloc = grid_pos[:]
+        app.vis_dict['Dark_doorway'] = Vis(name = 'Dark_doorway', loc = oldloc[:])
+        vis = app.vis_dict['Dark_doorway']
+        app.canvas.create_image(oldloc[0], oldloc[1], image = vis.img)
+        root.after(999, lambda newloc = newloc, id = id : self.finish_dark_doorway(newloc, id))
+        
+    def finish_dark_doorway(self, newloc, id):
         app.grid[app.ent_dict[id].loc[0]][app.ent_dict[id].loc[1]] = ''
         app.canvas.delete(id)
-        oldloc = app.ent_dict[id].loc
-        app.ent_dict[id].loc = grid_pos[:]
-        app.ent_dict[id].origin = grid_pos[:]
-        app.grid[grid_pos[0]][grid_pos[1]] = id
+        app.ent_dict[id].loc = newloc[:]
+        app.ent_dict[id].origin = newloc[:]
+        app.grid[newloc[0]][newloc[1]] = id
         app.canvas.create_image(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+50-app.moved_down, image = app.ent_dict[id].img, tags = app.ent_dict[id].tags)
-        self.cancel_attack(event = None)
+        del app.vis_dict['Dark_doorway']
+        app.vis_dict['Dark_doorway'] = Vis(name = 'Dark_doorway', loc = newloc[:])
+        vis = app.vis_dict['Dark_doorway']
+        root.after(1333, self.cleanup_dark_doorway)
     
     def doorway_squares(self, distance):
         sqr_list = []
@@ -603,7 +611,10 @@ class Trickster(Summon):
                     sqr_list.append(c)
         return sqr_list
     
-    def cancel_attack(self, event = None):
+    def cleanup_dark_doorway(self, event = None):
+        try:
+            del app.vis_dict['Dark_doorway']
+        except: pass
         app.canvas.delete('text')
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -863,6 +874,8 @@ class Bard(Summon):
         app.depop_context(event = None)
         app.cleanup_squares()
     
+    
+    #
     def entrance(self):
         pass
     
@@ -890,7 +903,7 @@ class White_dragon(Summon):
         self.actions = {'attack':self.white_dragon_attack}
         self.attack_used = False
         self.str = 10
-        self.agl = 6
+        self.agl = 8
         self.end = 10
         self.dodge = 3
         self.psyche = 8
@@ -1209,7 +1222,7 @@ class Undead(Summon):
                 root.after(666, lambda e = ents_list : app.do_ai_loop(e))
     
     def undead_attack(self, ents_list, id):
-        app.get_focus(self.number)
+        app.get_focus(id)
         self.init_attack_anims()
         my_agl = self.get_attr('agl')
         target_dodge = app.ent_dict[id].get_attr('dodge')
@@ -1630,6 +1643,9 @@ class Witch(Entity):
         id = app.current_pos()
         if not isinstance(app.ent_dict[id], Witch) and not isinstance(app.ent_dict[id], Summon):
              return
+        # PLAGUE CANNOT BE STACKED WITH OTHER PLAGUES
+        if 'Plague' in app.ent_dict[id].effects_dict.keys():
+            return
         self.magick -= self.spell_dict['Plague'][1]
         app.unbind_all()
         app.depop_context(event = None)
@@ -1660,7 +1676,7 @@ class Witch(Entity):
             pass
         eot = nothing
         n = 'Plague' + str(app.effects_counter)
-        app.ent_dict[id].effects_dict['Plague'] = Effect(name = 'Plague', info = 'Plague\n Stats reduced to 1 for 3 turns', eot_func = eot, undo = p, duration = 3)
+        app.ent_dict[id].effects_dict['Plague'] = Effect(name = 'Plague', info = 'Plague\n Stats reduced by 3 for 3 turns', eot_func = eot, undo = p, duration = 3)
         root.after(2666, lambda  name = 'Plague' : self.cleanup_spell(name = name))
             
     # PSIONIC PUSH
