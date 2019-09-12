@@ -1,18 +1,10 @@
-# raise cursor over stuff or make it blink or something
-
-# undead AI also needs to get_focus on target before move
-
-# end_turn effects, same effect text shows no vis to distinguish from exact same effect (same effect done consecutively)
-
-# should get_focus and pause slightly before AI do stuff
+# maybe just make cursor anims pause longer on 'zero' and 'peak' (9 i think)
 
 # why is curse of oriax 'pausing' slightly on cast?
 
 # undead ai chooses a 'closest target' before moving, then after moving if it cannot attack the previously chosen target, it will forgo attacking even if it could now reach another target, this occurs when randomly choosing from equidistant targets to 'move towards' and being unable to reach the one targeted due to obstacles/otherEnts
 
 # make turn order based on agl, can choose randomly among ties
-
-# make cursor more visible, esp under highlighted squares
 
 # would it be possible to 'pause' in the middle of a move_loop or to keep text object on screen
 
@@ -920,7 +912,7 @@ class White_dragon(Summon):
             my_str = self.get_attr('str')
             target_end = app.ent_dict[id].get_attr('end')
             d = damage(my_str, target_end)
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'White Dragon\nAttack Hit!\n' + str(d) + ' Spirit Damage', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+40, text = 'White Dragon\nAttack Hit!\n' + str(d) + ' Spirit Damage', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
             app.ent_dict[id].set_attr('spirit', -d)
             if app.ent_dict[id].spirit <= 0:
                 app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
@@ -1275,9 +1267,9 @@ class Witch(Entity):
         self.summon_ids = 0
         
         if name == 'Agnes_Sampson':
-            self.spell_dict['Plague'] = (self.plague, 5)
-            self.spell_dict['Psionic_Push'] = (self.psionic_push, 4)
-            self.spell_dict['Curse_of_Oriax'] = (self.curse_of_oriax, 5)
+            self.spell_dict['Plague'] = (self.plague, 7)
+            self.spell_dict['Psionic_Push'] = (self.psionic_push, 3)
+            self.spell_dict['Curse_of_Oriax'] = (self.curse_of_oriax, 6)
             self.spell_dict['Gravity'] = (self.gravity, 5)
             self.spell_dict["Beleth's_Command"] = (self.beleths_command, 8)
             self.str = 4
@@ -2000,7 +1992,8 @@ class App(tk.Frame):
         self.canvas.create_image(0, 0, anchor='nw', image=self.map_img, tags=('mapbottom','map'))
         # CURSOR
         self.cursor_img = ImageTk.PhotoImage(Image.open("cursor.png").resize((100,100)))
-        self.canvas.create_image(0,0, anchor='nw', image=self.cursor_img, tags='curs')
+        self.vis_dict['cursor'] = Vis(name = 'cursor', loc = [2,2])
+        self.canvas.create_image(2,2, anchor='nw', image=self.cursor_img, tags='cursor')
         # CHOOSE WITCH
         self.choose_witch()
         
@@ -2138,17 +2131,18 @@ class App(tk.Frame):
                 
     # exec an ef.eot_func, pop ef_list continue
     def effects_loop(self, ef, ef_list, ent, ents_list):
-        self.canvas.delete('text') # deletes the last effect's text object
+#         self.canvas.delete('text') # deletes the last effect's text object
         k = [k for k,v in self.ent_dict.items() if v == ent]
         self.get_focus(k[0])
         ef.eot_func()
+#         root.after(666, cmd)
         if ent.spirit <= 0: # ENT KILLED, DO NOT EXEC ANY MORE OF ITS EFFECTS, POP ENTS LIST OR EXIT
-            root.after(999, lambda e = k[0] : self.kill(e))
+            root.after(1333, lambda e = k[0] : self.kill(e))
             ents_list = ents_list[1:]
             if ents_list != []:
-                root.after(999, lambda e = ents_list[0], el = ents_list : self.eot_loop(e, el))
+                root.after(1333, lambda e = ents_list[0], el = ents_list : self.eot_loop(e, el))
             else: # NO MORE ENTS, FINISH_END_TURN
-                root.after(999, self.finish_end_turn)
+                root.after(1333, self.finish_end_turn)
         else:# CONTINUE PROCESSING THIS EFFECT 
             # CHECK IF EFFECT DURATION ENDS AND CALL UNDO IF SO
             ef.duration -= 1
@@ -2160,7 +2154,8 @@ class App(tk.Frame):
             # MORE EFFECTS?
             ef_list = ef_list[1:]
             if ef_list != []: # MORE EFFECTS FOR THIS ENT
-                root.after(999, lambda ef = ef_list[0], efl = ef_list, en = ent, enl = ents_list : self.effects_loop(ef, efl, en, enl))
+                root.after(999, lambda t = 'text' : self.canvas.delete(t))
+                root.after(1333, lambda ef = ef_list[0], efl = ef_list, en = ent, enl = ents_list : self.effects_loop(ef, efl, en, enl))
             else: # NO MORE FOR THIS ENT, CHECK IF MORE ENTS
                 ents_list = ents_list[1:]
                 if ents_list != []: # MORE ENTS TO PROCESS EFFECTS FOR
@@ -2224,7 +2219,10 @@ class App(tk.Frame):
             if vis != selected_vis:
                 self.vis_dict[vis].rotate_image()
                 self.canvas.delete(vis)
-                self.canvas.create_image(self.vis_dict[vis].loc[0]*100+50-self.moved_right, self.vis_dict[vis].loc[1]*100+50-self.moved_down, image = self.vis_dict[vis].img, tags = vis)
+                if vis == 'cursor':
+                    self.canvas.create_image(self.vis_dict[vis].loc[0]*100+50, self.vis_dict[vis].loc[1]*100+50, image = self.vis_dict[vis].img, tags = vis)
+                else:
+                    self.canvas.create_image(self.vis_dict[vis].loc[0]*100+50-self.moved_right, self.vis_dict[vis].loc[1]*100+50-self.moved_down, image = self.vis_dict[vis].img, tags = vis)
                 app.canvas.tag_raise(vis)
 #         app.canvas.tag_raise('vis')
         try: app.canvas.tag_raise('text')
@@ -2287,10 +2285,13 @@ class App(tk.Frame):
         # grid_pos is always absolute position of grid where cursor appears (relates to app.grid)
         if event.keysym == 'Left' or dir == 'Left':
             if curs_pos[0] > 1: # leftmost possible cursor position
-                self.canvas.move('curs', -100, 0)
+#                 self.canvas.move('curs', -100, 0)
 #                 self.canvas.move(selected, -100, 0)
                 curs_pos[0] -= 1
                 grid_pos[0] -= 1
+                app.vis_dict['cursor'].loc = curs_pos[:]
+                app.canvas.delete('cursor')
+                app.canvas.create_image(curs_pos[0]*100+50,curs_pos[1]*100+50, image = app.vis_dict['cursor'].img, tags = 'cursor')
             elif map_pos[0] > 0 : # leftmost possible map position, always zero
                 map_pos[0] -= 1
                 self.move_map('Left')
@@ -2300,10 +2301,13 @@ class App(tk.Frame):
             if grid_pos[0] == ((self.map_width//100) - 1):
                 return
             if curs_pos[0] < ((frame_width//100)-1):
-                self.canvas.move('curs', 100, 0)
+#                 self.canvas.move('curs', 100, 0)
 #                 self.canvas.move(selected, 100, 0)
                 curs_pos[0] += 1
                 grid_pos[0] += 1
+                app.vis_dict['cursor'].loc = curs_pos[:]
+                app.canvas.delete('cursor')
+                app.canvas.create_image(curs_pos[0]*100+50,curs_pos[1]*100+50, image = app.vis_dict['cursor'].img, tags = 'cursor')
             elif map_pos[0] < ((self.map_width//100)-(frame_width//100)-1):
                 self.move_map('Right')
                 map_pos[0] += 1
@@ -2311,10 +2315,13 @@ class App(tk.Frame):
                 
         elif event.keysym == 'Up' or dir == 'Up':
             if curs_pos[1] > 1: # topmost
-                self.canvas.move('curs', 0, -100)
+#                 self.canvas.move('curs', 0, -100)
 #                 self.canvas.move(selected, 0, -100)
                 curs_pos[1] -= 1
                 grid_pos[1] -= 1
+                app.vis_dict['cursor'].loc = curs_pos[:]
+                app.canvas.delete('cursor')
+                app.canvas.create_image(curs_pos[0]*100+50,curs_pos[1]*100+50, image = app.vis_dict['cursor'].img, tags = 'cursor')
             elif map_pos[1] > 0: # topmost, always zero
                 self.move_map('Down')
                 map_pos[1] -= 1
@@ -2324,10 +2331,13 @@ class App(tk.Frame):
             if grid_pos[1] == ((self.map_height//100)-1):
                 return
             if curs_pos[1] < ((frame_height//100)-1):
-                self.canvas.move('curs', 0, 100)
+#                 self.canvas.move('curs', 0, 100)
 #                 self.canvas.move(selected, 0, 100)
                 curs_pos[1] += 1
                 grid_pos[1] += 1
+                app.vis_dict['cursor'].loc = curs_pos[:]
+                app.canvas.delete('cursor')
+                app.canvas.create_image(curs_pos[0]*100+50,curs_pos[1]*100+50, image = app.vis_dict['cursor'].img, tags = 'cursor')
             elif map_pos[1] < ((self.map_height//100)-(frame_height//100)-1):
                 self.move_map('Up')
                 map_pos[1] += 1
@@ -2417,17 +2427,19 @@ class App(tk.Frame):
         self.depop_context(event = None)
 #         self.repop_help_buttons()
         
+        
+        # kokonor
     def show_avatar_info(self, witch):
         self.info_popup = tk.Toplevel()
         self.info_popup.grab_set()
         self.info_popup.attributes('-topmost', 'true')
         self.info_popup.title(witch)
         text = open('avatar_info/' + witch + '.txt', 'r').read()
-        f = tk.Frame(self.info_popup)
+        f = tk.Frame(self.info_popup, bg = 'black')
         f.pack()
-        l = tk.Label(f, text = text, font = ('chalkduster', 24))
+        l = tk.Label(f, text = text, wraplength = root.winfo_screenwidth()-90, bg = 'black', fg = 'indianred', font = ('kokonor', 18))
         l.pack()
-        close = tk.Button(self.info_popup, text = 'close', font = ('chalkduster', 24), highlightbackground = 'tan3', command = lambda win = self.info_popup : self.destroy_release(win))
+        close = tk.Button(f, text = 'close', font = ('chalkduster', 24), highlightbackground = 'black', command = lambda win = self.info_popup : self.destroy_release(win))
         close.pack()
     
     def animate_squares(self, sqrs):
