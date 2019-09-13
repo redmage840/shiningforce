@@ -1,7 +1,13 @@
-# DO PROGRESSION FROM LEVEL 1 TO 2 / VICTORY CONDITIONS / MAP TRIGGERS
-# map triggers loop
-# on map load check map number
-# if mapnum is 1: 
+# animation loop seems to be moving faster in second level
+# tag_lower()s helped, but something is persisting from opening sequence, same map/units are much faster AFTER end_level()
+# probably not destroying one of the opening screens but drawing on top of it
+
+# at end_level, check all existing vars and attrs of root widget to test for memory leaks, is App instance a child of root(tk.TK) or just inheriting from it?
+
+# in ai_loop have some AI units hold 'state' of either 'active' or 'waiting', when map trigger is met (move closely enough) turn them 'active', when no user units 'close' enough turn to 'waiting'
+
+
+# Do 'load game' at 1-2 player choice, a save game is the ent_dict, grid, globals, map, maybe state of all vars cleaned during end_level,...? Load would assign all these variables, create_map_cursor(), load_map_triggers(), start_turn(),...
 
 # what is difference in move_loop and psionic push move loop? psipush is much faster...
 
@@ -326,6 +332,7 @@ class Entity():
                 self.rotate_image()
                 app.canvas.delete(id)
                 app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+                app.canvas.tag_lower((self.tags), 'maptop')
             if x > endx:
                 x -= 10
                 app.canvas.move(id, -10, 0)
@@ -338,8 +345,8 @@ class Entity():
             if y < endy: 
                 y += 10
                 app.canvas.move(id, 0, 10)
-            app.canvas.tag_raise('large')
-            app.canvas.tag_raise('maptop')
+            app.canvas.tag_raise('large', (self.tags))
+#             app.canvas.tag_raise('maptop')
             app.canvas.tag_raise('cursor')
             if x == endx and y == endy:
                 self.finish_move(id, end_sqr, start_sqr) # EXIT
@@ -582,6 +589,8 @@ class Trickster(Summon):
     def do_gateway(self, event = None, id = None, sqrs = None):
         if grid_pos not in sqrs:
             return
+        app.unbind_all()
+        app.depop_context(event = None)
         oldloc = app.ent_dict[id].loc[:]
         newloc = grid_pos[:]
         app.vis_dict['Gateway'] = Vis(name = 'Gateway', loc = oldloc[:])
@@ -1051,6 +1060,7 @@ class White_Dragon(Summon):
                 self.rotate_image()
                 app.canvas.delete(id)
                 app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+                app.canvas.tag_lower((self.tags), 'maptop')
             if x > endx:
                 x -= 10
                 app.canvas.move(id, -10, 0)
@@ -1063,8 +1073,8 @@ class White_Dragon(Summon):
             if y < endy: 
                 y += 10
                 app.canvas.move(id, 0, 10)
-            app.canvas.tag_raise('large')
-            app.canvas.tag_raise('maptop')
+#             app.canvas.tag_raise('large', (self.tags))
+#             app.canvas.tag_raise('maptop')
             app.canvas.tag_raise('cursor')
             if x == endx and y == endy:
                 self.finish_move(id, end_sqr, start_sqr, target, ents_list) # EXIT
@@ -1246,6 +1256,7 @@ class Undead(Summon):
                 self.rotate_image()
                 app.canvas.delete(id)
                 app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+                app.canvas.tag_lower((self.tags), 'maptop')
             if x > endx:
                 x -= 10
                 app.canvas.move(id, -10, 0)
@@ -1258,8 +1269,8 @@ class Undead(Summon):
             if y < endy: 
                 y += 10
                 app.canvas.move(id, 0, 10)
-            app.canvas.tag_raise('large')
-            app.canvas.tag_raise('maptop')
+            app.canvas.tag_raise('large', (self.tags))
+#             app.canvas.tag_raise('maptop')
             app.canvas.tag_raise('cursor')
             if x == endx and y == endy:
                 self.finish_move(id, end_sqr, start_sqr, target, ents_list) # EXIT
@@ -2099,6 +2110,7 @@ class App(tk.Frame):
         self.title_screen = ImageTk.PhotoImage(Image.open('titleScreen8.png').resize((root.winfo_screenwidth(),root.winfo_screenheight())))
 #         self.subtitle = ImageTk.PhotoImage(Image.open('subtitle.png'))
         self.game_title = tk.Canvas(root, width = root.winfo_screenwidth(), bg = 'black', highlightthickness = 0, height = root.winfo_screenheight())
+        print('game title canvas line 2105 is ', self.game_title)
         self.game_title.create_image(0,0, image =self.title_screen, anchor = 'nw')
 #         self.game_title = tk.Label(root, image = self.title_screen, pady = 66, bg = 'black')
         self.game_title.pack(side = 'top')
@@ -2125,19 +2137,27 @@ class App(tk.Frame):
         else:
             self.load_map_triggers(map_number = 0)
             
-    def load_map_triggers(self, map_number):
+    def load_map_triggers(self, map_number, protaganist = None):
         if map_number == 0:
             self.map_triggers = []
             def is_white_dragon_dead():
-                print('in is_white_dragon_dead')
                 if 'b12' not in [v.number for k,v in self.ent_dict.items() if isinstance(v, Summon)]:
                     return 'victory'
                 else:
                     return None
             self.map_triggers.append(is_white_dragon_dead)
             self.create_map_curs_context(map_number)
+        elif map_number == 1:
+            self.map_triggers = []
+            def is_white_dragon_dead():
+                if 'b12' not in [v.number for k,v in self.ent_dict.items() if isinstance(v, Summon)]:
+                    return 'victory'
+                else:
+                    return None
+            self.map_triggers.append(is_white_dragon_dead)
+            self.create_map_curs_context(map_number, protaganist = protaganist)
         else:
-            self.create_map_curs_context(map_number)
+            print('you are winner hahaha')
         
     def choose_map(self):
         self.choosemap = tk.Label(root, text = 'Choose Map', fg = 'tan3', bg = 'black', font = ('chalkduster', 38))
@@ -2164,7 +2184,7 @@ class App(tk.Frame):
         del self.map_button_list
         self.create_map_curs_context(map_number)
         
-    def create_map_curs_context(self, map_number):
+    def create_map_curs_context(self, map_number, protaganist = None):
         # GET MAP DIMENSIONS
         if self.num_players == 1:
             filename = '1_player_map_info/map' + str(map_number) + '.txt'
@@ -2186,6 +2206,7 @@ class App(tk.Frame):
         # CONTEXT MENU
         self.con_bg = ImageTk.PhotoImage(Image.open('texture2.png').resize(( 200, root.winfo_screenheight())))
         self.context_menu = tk.Canvas(root, bg = 'black', bd=0, highlightthickness=0, relief='raised', height = root.winfo_screenheight(), width = 200)
+        print('contxt menu line 2192 is ', self.context_menu)
         self.context_menu.pack_propagate(0)
         self.context_menu.pack(side = 'left', fill = 'both', expand = 'false')
         self.context_menu.create_image(0, 0, anchor = 'nw', image = self.con_bg)
@@ -2197,6 +2218,7 @@ class App(tk.Frame):
         if self.map_height < height:
             height = self.map_height
         self.canvas = tk.Canvas(root, width = width, bg = 'black', height = height, bd=0, highlightthickness=0, relief='raised')
+        print('main canvas self.canvas at line 2203 is ', self.canvas)
         self.canvas.pack()
         # MAP
         if self.num_players == 1:
@@ -2206,14 +2228,18 @@ class App(tk.Frame):
             fname = '2_player_maps/'
         self.map_img = ImageTk.PhotoImage(Image.open(fname + 'map'+str(map_number)+'.png').resize((self.map_width, self.map_height)))
         self.map_top = ImageTk.PhotoImage(Image.open(topfname + 'map_top'+str(map_number)+'.png').resize((self.map_width, self.map_height)))
-        self.canvas.create_image(0, 0, anchor='nw', image=self.map_top, tags = ('maptop','map'))
         self.canvas.create_image(0, 0, anchor='nw', image=self.map_img, tags=('mapbottom','map'))
+        self.canvas.create_image(0, 0, anchor='nw', image=self.map_top, tags = ('maptop','map'))
         # CURSOR
         self.cursor_img = ImageTk.PhotoImage(Image.open("cursor.png").resize((100,100)))
         self.vis_dict['cursor'] = Vis(name = 'cursor', loc = [2,2])
         self.canvas.create_image(2,2, anchor='nw', image=self.cursor_img, tags='cursor')
-        # CHOOSE WITCH
-        self.choose_witch()
+        # CHOOSE WITCH IF 2 PLAYER OR FIRST LEVEL
+        # OTHERWISE LOAD WITCH FROM PREVIOUS LEVEL (EVENTUALLY SHOULD BE PERSISTENT OBJECT, CARRY OVER ANY LONG-TERM CHANGED STATE)
+        if protaganist:
+            self.load_witch(witch = protaganist, player_num = 1)
+        else:
+            self.choose_witch()
         
     def choose_witch(self, player_num = 1):
         self.avatar_popup = tk.Toplevel()
@@ -2425,12 +2451,13 @@ class App(tk.Frame):
                 self.ent_dict[ent].rotate_image()
                 self.canvas.delete(ent)
                 self.canvas.create_image(self.ent_dict[ent].loc[0]*100+50-self.moved_right, self.ent_dict[ent].loc[1]*100+50-self.moved_down, image = self.ent_dict[ent].img, tags = app.ent_dict[ent].tags)
+                app.canvas.tag_lower((app.ent_dict[ent].tags), ('maptop'))
         for sqr in self.sqr_dict.keys():
             self.sqr_dict[sqr].rotate_image()
             self.canvas.delete(sqr)
             self.canvas.create_image(self.sqr_dict[sqr].loc[0]*100+50-self.moved_right, self.sqr_dict[sqr].loc[1]*100+50-self.moved_down, image = self.sqr_dict[sqr].img, tags = sqr)
         app.canvas.tag_raise('large')
-        app.canvas.tag_raise('maptop')
+#         app.canvas.tag_raise('maptop')
         app.canvas.tag_raise('cursor')
         for vis in self.vis_dict.keys():
             if vis != selected_vis:
@@ -2444,7 +2471,7 @@ class App(tk.Frame):
 #         app.canvas.tag_raise('vis')
         try: app.canvas.tag_raise('text')
         except: pass
-        root.after(200, self.animate)
+        root.after(300, self.animate)
         
         # MAP TRIGGER LOOP
         # ALL MAP TRIGGERS ARE FUNCTIONS THAT CHECK FOR CONDITIONS AND EITHER DO STUFF IN RESPONSE
@@ -2459,6 +2486,7 @@ class App(tk.Frame):
     def end_level(self):
         global curs_pos, is_object_selected, selected, selected_vis, map_pos, grid_pos
         print('level finished')
+        protaganist = self.p1_witch
         prev_map_num = int(self.map[3:])
         newmap_num = prev_map_num + 1
         for child in root.winfo_children():
@@ -2488,7 +2516,12 @@ class App(tk.Frame):
         self.p1_witch = ''
         self.p2_witch = ''
 
-        self.load_map_triggers(newmap_num)
+# maybe just check this again during next level, at load, and during, see if anything persists from first map
+#         print('locals are ', locals())
+#         print('globals are ', globals())
+#         print('root vars ', vars(root))
+#         print('app vars ', vars(app))
+        self.load_map_triggers(newmap_num, protaganist)
         
         
     
@@ -2510,6 +2543,7 @@ class App(tk.Frame):
         # DEBUG make info button into label that holds the info
         self.cntxt_info_bg = ImageTk.PhotoImage(Image.open('page.png'))
         bg = tk.Canvas(self.context_menu, width = 190, height = 295, bg = 'burlywood4', bd=0, relief='raised', highlightthickness=0)
+        print('bg of contxt canvas line 2519 is ', bg)
         bg.pack(side = 'top')
         bg.create_image(0,0, image = self.cntxt_info_bg, anchor = 'nw')
         bg.create_text(15, 15, text=expanded_name + '\n' + self.get_info_text(e), width = 190, anchor = 'nw', font = ('chalkduster', 18), fill = 'indianred')
