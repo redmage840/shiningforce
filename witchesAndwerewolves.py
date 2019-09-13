@@ -1,3 +1,8 @@
+# DO PROGRESSION FROM LEVEL 1 TO 2 / VICTORY CONDITIONS / MAP TRIGGERS
+# map triggers loop
+# on map load check map number
+# if mapnum is 1: 
+
 # what is difference in move_loop and psionic push move loop? psipush is much faster...
 
 # AI can get stuck behind obstacles trying to minimize distance only, needs to pathfind
@@ -591,7 +596,8 @@ class Trickster(Summon):
         app.ent_dict[id].origin = newloc[:]
         app.grid[newloc[0]][newloc[1]] = id
         app.canvas.delete('Gateway')
-        del app.vis_dict['Gateway']
+        try: del app.vis_dict['Gateway']
+        except: pass
         app.vis_dict['Gateway'] = Vis(name = 'Gateway', loc = newloc[:])
         vis = app.vis_dict['Gateway']
         root.after(1666, lambda id = id, newloc = newloc : self.place_entity(id, newloc))
@@ -967,7 +973,7 @@ class White_Dragon(Summon):
         self.end = 11
         self.dodge = 3
         self.psyche = 8
-        self.spirit = 66
+        self.spirit = 1
 #         self.type = 'large'
 #         self.movement = 'flying'
         super().__init__(name, img, loc, owner, number, type = 'large')
@@ -1093,6 +1099,14 @@ class White_Dragon(Summon):
             else:
                 root.after(666, lambda el = ents_list : app.do_ai_loop(el))
     
+    
+    # ATTACK ANIMS
+    # init attack anims
+    # create a vis that begins at 'mouth' and is 'selected' so it isnt animated by animate loop
+    # endpoint is target.loc
+    # as progressing through anim loop, rotate vis image 
+    # how to show 'direction'...
+    # if x,y coords are less/more
     def white_dragon_attack(self, ents_list, id):
         app.get_focus(self.number)
         self.init_attack_anims()
@@ -2110,6 +2124,15 @@ class App(tk.Frame):
             self.choose_map()
         else:
             map_number = 0
+            self.map_triggers = []
+            def is_white_dragon_dead():
+                print('in is_white_dragon_dead')
+                print(' list comp here is ', [v.number for k,v in self.ent_dict.items() if isinstance(v, Summon)])
+                if 'b12' not in [v.number for k,v in self.ent_dict.items() if isinstance(v, Summon)]:
+                    return 'victory'
+                else:
+                    return None
+            self.map_triggers.append(is_white_dragon_dead)
             self.create_map_curs_context(map_number)
         
     def choose_map(self):
@@ -2262,6 +2285,7 @@ class App(tk.Frame):
                     break
             self.start_turn()
             self.animate()
+            self.map_trigger_loop()
         # CHOOSE SECOND PLAYER WITCH
         elif self.num_players == 2 and self.p2_witch == '':
             self.choose_witch(player_num = 2)
@@ -2417,6 +2441,27 @@ class App(tk.Frame):
         try: app.canvas.tag_raise('text')
         except: pass
         root.after(200, self.animate)
+        
+        # MAP TRIGGER LOOP
+        # ALL MAP TRIGGERS ARE FUNCTIONS THAT CHECK FOR CONDITIONS AND EITHER DO STUFF IN RESPONSE
+        # OR IF THEY RETURN 'victory', END LEVEL
+    def map_trigger_loop(self):
+        for mt in self.map_triggers:
+            if mt() == 'victory':
+                self.end_level()
+            else:
+                root.after(666, self.map_trigger_loop)
+        
+    def end_level(self):
+        print('level finished')
+        prev_map_num = int(self.map[3:])
+        newmap = prev_map_num + 1
+        for child in root.winfo_children():
+            child.destroy()
+        # THIS WORKS, JUST NEED TO CLEAN ALL VARS LIKE GRID, SELF.STUFF, GLOBALS
+        self.create_map_curs_context(newmap)
+        
+        
     
     def populate_context(self, event):
         e = self.current_pos()

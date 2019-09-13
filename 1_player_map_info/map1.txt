@@ -1,17 +1,11 @@
-1200
-600
+2000
+2000
 []
-ImageTk.PhotoImage(Image.open('summon_imgs/undead.png'))
-Undead(name = 'Undead', img = img, loc =[11,5], owner = 'p2', number = 'b0')
-ImageTk.PhotoImage(Image.open('summon_imgs/undead.png'))
-Undead(name = 'Undead', img = img, loc =[9,5], owner = 'p2', number = 'b1')
-ImageTk.PhotoImage(Image.open('summon_imgs/undead.png'))
-Undead(name = 'Undead', img = img, loc =[8,5], owner = 'p2', number = 'b2')
-ImageTk.PhotoImage(Image.open('summon_imgs/undead.png'))
-Undead(name = 'Undead', img = img, loc =[6,5], owner = 'p2', number = 'b3')
 ImageTk.PhotoImage(Image.open('summon_imgs/undead.png'))
 Undead(name = 'Undead', img = img, loc =[5,5], owner = 'p2', number = 'b4')
 ImageTk.PhotoImage(Image.open('summon_imgs/undead.png'))
-Undead(name = 'Undead', img = img, loc =[3,5], owner = 'p2', number = 'b5')
+Undead(name = 'Undead', img = img, loc =[11,14], owner = 'p2', number = 'b6')
 ImageTk.PhotoImage(Image.open('summon_imgs/undead.png'))
-Undead(name = 'Undead', img = img, loc =[2,3], owner = 'p2', number = 'b6')
+Undead(name = 'Undead', img = img, loc =[14,17], owner = 'p2', number = 'b11')
+ImageTk.PhotoImage(Image.open('summon_imgs/White_dragon.png'))
+White_Dragon(name = 'White_Dragon', img = img, loc =[9,9], owner = 'p2', number = 'b12')
