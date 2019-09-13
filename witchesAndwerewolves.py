@@ -2123,16 +2123,20 @@ class App(tk.Frame):
         if self.num_players == 2:
             self.choose_map()
         else:
-            map_number = 0
+            self.load_map_triggers(map_number = 0)
+            
+    def load_map_triggers(self, map_number):
+        if map_number == 0:
             self.map_triggers = []
             def is_white_dragon_dead():
                 print('in is_white_dragon_dead')
-                print(' list comp here is ', [v.number for k,v in self.ent_dict.items() if isinstance(v, Summon)])
                 if 'b12' not in [v.number for k,v in self.ent_dict.items() if isinstance(v, Summon)]:
                     return 'victory'
                 else:
                     return None
             self.map_triggers.append(is_white_dragon_dead)
+            self.create_map_curs_context(map_number)
+        else:
             self.create_map_curs_context(map_number)
         
     def choose_map(self):
@@ -2453,15 +2457,41 @@ class App(tk.Frame):
                 root.after(666, self.map_trigger_loop)
         
     def end_level(self):
+        global curs_pos, is_object_selected, selected, selected_vis, map_pos, grid_pos
         print('level finished')
         prev_map_num = int(self.map[3:])
-        newmap = prev_map_num + 1
+        newmap_num = prev_map_num + 1
         for child in root.winfo_children():
             child.destroy()
         # THIS WORKS, JUST NEED TO CLEAN ALL VARS LIKE GRID, SELF.STUFF, GLOBALS
-        self.create_map_curs_context(newmap)
+        # GLOBALS
+        curs_pos = [0, 0]
+        is_object_selected = False
+        selected = ''
+        selected_vis = ''
+        map_pos = [0, 0]
+        grid_pos = [0,0]
+        
+        self.img_dict = {} # is this still used?
+        self.ent_dict = {}
+        self.sqr_dict = {}
+        self.vis_dict = {}
+        self.active_player = 'p1'
+        self.num_players = 1
+        self.moved_right = 0
+        self.moved_down = 0
+        self.context_buttons = []
+        self.help_buttons = []
+        # list to hold entity that is being animated as 'attacking'
+        self.attacking = []
+        self.effects_counter = 0 # used for uniquely naming Effects with the same prefix/name
+        self.p1_witch = ''
+        self.p2_witch = ''
+
+        self.load_map_triggers(newmap_num)
         
         
+    
     
     def populate_context(self, event):
         e = self.current_pos()
