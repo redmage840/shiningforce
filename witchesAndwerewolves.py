@@ -54,10 +54,10 @@ from os import walk
 from PIL import ImageTk,Image
 from random import choice, randrange
 from functools import partial
-# import time
+from pickle import dump, load
+# filehandler = open(filename, 'r') 
+# object = pickle.load(filehandler)
 
-# hack
-refresher = 0
 
 # convenience funcs
 def dist(loc1, loc2):
@@ -2109,6 +2109,51 @@ class Witch(Entity):
         print('counterspell')
         
     
+    
+class VerticalScrolledFrame(tk.Frame):
+    """A pure Tkinter scrollable frame that actually works!
+
+    * Use the 'interior' attribute to place widgets inside the scrollable frame
+    * Construct and pack/place/grid normally
+    * This frame only allows vertical scrolling
+    """
+    def __init__(self, parent, *args, **kw):
+        tk.Frame.__init__(self, parent, *args, **kw)            
+
+        # create a canvas object and a vertical scrollbar for scrolling it
+        vscrollbar = tk.Scrollbar(self, orient=tk.VERTICAL)
+        vscrollbar.pack(fill=tk.Y, side=tk.RIGHT, expand=tk.FALSE)
+        canvas = tk.Canvas(self, bd=0, highlightthickness=0,
+                        yscrollcommand=vscrollbar.set)
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=tk.TRUE)
+        vscrollbar.config(command=canvas.yview)
+
+        # reset the view
+        canvas.xview_moveto(0)
+        canvas.yview_moveto(0)
+
+        # create a frame inside the canvas which will be scrolled with it
+        self.interior = interior = tk.Frame(canvas)
+        interior_id = canvas.create_window(0, 0, window=interior,
+                                           anchor=tk.NW)
+
+        # track changes to the canvas and frame width and sync them,
+        # also updating the scrollbar
+        def _configure_interior(event):
+            # update the scrollbars to match the size of the inner frame
+            size = (interior.winfo_reqwidth(), interior.winfo_reqheight())
+            canvas.config(scrollregion="0 0 %s %s" % size)
+            if interior.winfo_reqwidth() != canvas.winfo_width():
+                # update the canvas's width to fit the inner frame
+                canvas.config(width=interior.winfo_reqwidth())
+
+        interior.bind('<Configure>', _configure_interior)
+
+        def _configure_canvas(event):
+            if interior.winfo_reqwidth() != canvas.winfo_width():
+                # update the inner frame's width to fill the canvas
+                canvas.itemconfigure(interior_id, width=canvas.winfo_width())
+        canvas.bind('<Configure>', _configure_canvas)
 
 # maybe am still in some logical context while executing everything...
 class App(tk.Frame):
@@ -2146,6 +2191,20 @@ class App(tk.Frame):
         
         self.two_player = tk.Button(root, text = '2 Player', fg = 'tan3', highlightbackground = 'tan3', font = ('chalkduster', 24), command = lambda num = 2 : self.num_chose(num))
         self.game_title.create_window(root.winfo_screenwidth()/2, root.winfo_screenheight()-70, anchor='s', window = self.two_player)
+        
+        self.load_button = tk.Button(root, text = 'Load Game', fg = 'tan3', highlightbackground = 'tan3', font = ('chalkduster', 24), command = self.try_load)
+        self.game_title.create_window(root.winfo_screenwidth()/2, root.winfo_screenheight()-20, anchor='s', window = self.load_button)
+        
+    def try_load(self):
+        saves = [s for r,d,s in walk('save_games/')][0]
+        saves = [s for s in saves[:] if s[0] != '.']
+        # create a button for each save and a cancel button
+        self.saves_buttons = []
+        self.scroll_frame = VerticalScrolledFrame(root)
+        self.game_title.create_window(10,10, anchor = 'nw', window = self.scroll_frame)
+        for s in saves:
+            b = tk.Button(self.scroll_frame.interior, text = s)
+            b.pack() 
         
     def num_chose(self, num):
         self.num_players = num
@@ -2594,7 +2653,8 @@ class App(tk.Frame):
         filename = 'save_games/savegame' + str(len(saves))
         with open(filename, 'w+') as f:
             # must be string,
-            f.write(protaganist_object)
+#             f.write(protaganist_object)
+            dump(protaganist_object, f)
     
     
     def populate_context(self, event):
