@@ -1,15 +1,4 @@
-# also need to stop map_trigger loop
-
-# its because i am now calling all continuous loops TWICE, have restarted the loops on second iteration, need to stop continuous loops (loops that dont exit themselves) during end_level / cleanup
-
-# animation loop seems to be moving faster in second level
-# tag_lower()s helped, but something is persisting from opening sequence, same map/units are much faster AFTER end_level()
-# probably not destroying one of the opening screens but drawing on top of it
-
-# at end_level, check all existing vars and attrs of root widget to test for memory leaks, is App instance a child of root(tk.TK) or just inheriting from it?
-
 # in ai_loop have some AI units hold 'state' of either 'active' or 'waiting', when map trigger is met (move closely enough) turn them 'active', when no user units 'close' enough turn to 'waiting'
-
 
 # Do 'load game' at 1-2 player choice, a save game is the ent_dict, grid, globals, map, maybe state of all vars cleaned during end_level,...? Load would assign all these variables, create_map_cursor(), load_map_triggers(), start_turn(),...
 
@@ -222,6 +211,15 @@ class Entity():
         anims = [a for a in anims[:] if a[-3:] == 'png']
         for i, anim in enumerate(anims):
             a = ImageTk.PhotoImage(Image.open('attack_animations/' + self.name + '/' + anim))
+            self.anim_dict[i] = a
+            
+    def init_cast_anims(self):
+        self.anim_dict = {}
+        self.anim_counter = 0
+        anims = [a for r,d,a in walk('./casting_animations/' + self.name + '/')][0]
+        anims = [a for a in anims[:] if a[-3:] == 'png']
+        for i, anim in enumerate(anims):
+            a = ImageTk.PhotoImage(Image.open('casting_animations/' + self.name + '/' + anim))
             self.anim_dict[i] = a
             
     def init_normal_anims(self):
@@ -1690,6 +1688,7 @@ class Witch(Entity):
     
     def cleanup_spell(self, event = None, name = None):
         global selected, selected_vis
+        self.init_normal_anims()
         for x in range(1, len(self.spell_dict.keys())+1):
             root.unbind(str(x))
         app.unbind_all()
@@ -1734,6 +1733,7 @@ class Witch(Entity):
         # PLAGUE CANNOT BE STACKED WITH OTHER PLAGUES
         if 'Plague' in app.ent_dict[id].effects_dict.keys():
             return
+        self.init_cast_anims()
         self.magick -= self.spell_dict['Plague'][1]
         app.unbind_all()
         app.depop_context(event = None)
@@ -1765,7 +1765,7 @@ class Witch(Entity):
         eot = nothing
         n = 'Plague' + str(app.effects_counter)
         app.ent_dict[id].effects_dict['Plague'] = Effect(name = 'Plague', info = 'Plague\n Stats reduced by 3 for 3 turns', eot_func = eot, undo = p, duration = 3)
-        root.after(2666, lambda  name = 'Plague' : self.cleanup_spell(name = name))
+        root.after(3666, lambda  name = 'Plague' : self.cleanup_spell(name = name))
             
     # PSIONIC PUSH
     def psionic_push(self, event = None):
@@ -1835,6 +1835,7 @@ class Witch(Entity):
         if sqr not in sqrs:
             return
         self.spell_used = True
+        self.init_cast_anims()
         self.magick -= self.spell_dict['Psionic_Push'][1]
         app.unbind_all()
         app.cleanup_squares()
@@ -1911,7 +1912,7 @@ class Witch(Entity):
                 # MISS
                 else:
                     app.canvas.create_text(app.ent_dict[ent].loc[0]*100+50-app.moved_right, app.ent_dict[ent].loc[1]*100+70-app.moved_down, text = 'Agility\nSave',justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
-            root.after(2666, lambda s = 'Psionic_Push' : self.cleanup_spell(name = s))
+            root.after(3666, lambda s = 'Psionic_Push' : self.cleanup_spell(name = s))
         else:
             self.cleanup_spell(name = 'Psionic_Push')
         
@@ -1938,6 +1939,7 @@ class Witch(Entity):
         if not isinstance(app.ent_dict[id], Witch) and not isinstance(app.ent_dict[id], Summon):
              return
         self.magick -= self.spell_dict['Curse_of_Oriax'][1]
+        self.init_cast_anims()
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -1977,7 +1979,7 @@ class Witch(Entity):
         eot = partial(take_2, id)
         n = 'Curse_of_Oriax' + str(app.effects_counter)
         app.ent_dict[id].effects_dict[n] = Effect(name = 'Curse_of_Oriax', info = 'Curse_of_Oriax\n Stats reduced by 1 for 3 turns\n2 Spirit damage per turn', eot_func = eot, undo = p, duration = 3)
-        root.after(2666, lambda  name = 'Curse_of_Oriax' : self.cleanup_spell(name = name))
+        root.after(3666, lambda  name = 'Curse_of_Oriax' : self.cleanup_spell(name = name))
         
     def gravity(self, event = None):
         # consider 'being moved' through means other than movement ends effect
@@ -2002,6 +2004,7 @@ class Witch(Entity):
         if not isinstance(app.ent_dict[id], Witch) and not isinstance(app.ent_dict[id], Summon):
              return
         self.magick -= self.spell_dict['Gravity'][1]
+        self.init_cast_anims()
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -2034,7 +2037,7 @@ class Witch(Entity):
         eot = nothing
         n = 'Gravity' + str(app.effects_counter)
         app.ent_dict[id].effects_dict[n] = Effect(name = 'Gravity', info = 'Gravity\nCannot move and agl and dodge reduced by 2 for 2 turns', eot_func = eot, undo = p, duration = 2)
-        root.after(2666, lambda  name = 'Gravity' : self.cleanup_spell(name = name))
+        root.after(3666, lambda  name = 'Gravity' : self.cleanup_spell(name = name))
         print('gravity')
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     def beleths_command(self, event = None):
@@ -2177,6 +2180,7 @@ class App(tk.Frame):
         self.choosemap.pack()
         # CHOOSE MAPS
         maps = [m for r,d,m in walk('./2_player_maps')][0]
+        maps = [m for m in maps[:] if m[0] != '.']
         self.map_button_list = []
         self.tmp_mapimg_dict = {}
         for i,map in enumerate(maps):
@@ -2255,7 +2259,7 @@ class App(tk.Frame):
         else:
             self.choose_witch()
         
-    # debug here i think, not destroying toplevel
+    # Called twice for 2player mode, first call defaults to first player choice, second call passes player_num = 2
     def choose_witch(self, player_num = 1):
         self.avatar_popup = tk.Toplevel(root)
         self.avatar_popup.attributes('-topmost', 'true')
@@ -2301,16 +2305,12 @@ class App(tk.Frame):
             self.avatar_popup.witch_widgets.append(b)
         
     def load_witch(self, witch, player_num):
-        try: 
-            del self.avatar_popup
-            del self.wrapped_funcs
-        except: pass
         if player_num == 1:
             self.p1_witch = witch
             loc = [2,2]
         elif player_num == 2:
             self.p2_witch = witch
-            loc = [self.map_width//100-2, self.map_height//100-2]
+            loc = [self.map_width//100-3, self.map_height//100-3]
         witch_img = ImageTk.PhotoImage(Image.open('avatars/' + witch +'.png'))
         self.ent_dict[witch] = Witch(name = witch, img = witch_img, loc = loc, owner = 'p' + str(player_num))
         self.canvas.create_image(self.ent_dict[witch].loc[0]*100+50-self.moved_right, self.ent_dict[witch].loc[1]*100+50-self.moved_down, image = self.ent_dict[witch].img, tags = self.ent_dict[witch].tags)
@@ -2506,7 +2506,7 @@ class App(tk.Frame):
         global curs_pos, is_object_selected, selected, selected_vis, map_pos, grid_pos
         print('level finished')
         root.after_cancel(self.animate_id)
-        rooot.after_cancel(self.map_trigger_id)
+        root.after_cancel(self.map_trigger_id)
         protaganist = self.p1_witch
         prev_map_num = int(self.map[3:])
         newmap_num = prev_map_num + 1
@@ -2525,7 +2525,6 @@ class App(tk.Frame):
         self.sqr_dict = {}
         self.vis_dict = {}
         self.active_player = 'p1'
-        self.num_players = 1
         self.moved_right = 0
         self.moved_down = 0
         self.context_buttons = []
@@ -2533,14 +2532,17 @@ class App(tk.Frame):
         # list to hold entity that is being animated as 'attacking'
         self.attacking = []
         self.effects_counter = 0 # used for uniquely naming Effects with the same prefix/name
-        self.p1_witch = ''
-        self.p2_witch = ''
-
-# maybe just check this again during next level, at load, and during, see if anything persists from first map
-#         print('locals are ', locals())
-#         print('globals are ', globals())
-#         print('root vars ', vars(root))
-#         print('app vars ', vars(app))
+        # CALL IN-BETWEEN LEVEL SCREEN / VICTORY SCREEN
+        # GIVE ANY STORYLINE RELATED TO FINISHED AND NEXT LEVEL
+        # GIVE OPTION TO SAVE PROGRESS
+        # WILL NEED, AT SOME POINT, TO SAVE ACTUAL WITCH OBJECT (NOT JUST STRING NAME), TO HOLD PERSISTENT CHANGES
+        self.load_cutscene(prev_map_num, protaganist)
+        
+        
+    def load_cutscene(self, prev_map_num, protaganist):
+        # Make cutscene using background pictures and overlay unit models
+        
+        # LOAD NEXT MAP
         self.load_map_triggers(newmap_num, protaganist)
         
         
