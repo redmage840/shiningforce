@@ -1,3 +1,7 @@
+# consider removing 'smoke' from agnes casting anims
+
+# is origin still used without old movement setup?
+
 # in ai_loop have some AI units hold 'state' of either 'active' or 'waiting', when map trigger is met (move closely enough) turn them 'active', when no user units 'close' enough turn to 'waiting'
 
 # Do 'load game' at 1-2 player choice, a save game is the ent_dict, grid, globals, map, maybe state of all vars cleaned during end_level,...? Load would assign all these variables, create_map_cursor(), load_map_triggers(), start_turn(),...
@@ -155,7 +159,7 @@ class Sqr():
 
 class Entity():
     def __init__(self, name, img, loc, owner, type = 'normal'):
-        self.timer = 1 # COUNTER FOR TIMING EOT EFFECT TEXT OBJECTS
+#         self.timer = 1 # COUNTER FOR TIMING EOT EFFECT TEXT OBJECTS
         self.name = name
         self.img = img
         self.loc = loc
@@ -1531,6 +1535,20 @@ class Witch(Entity):
             
         super().__init__(name, img, loc, owner, type = 'normal')
         
+    def reset_transient_vars(self):
+        self.summon_dict = {}
+        self.summon_ids = 0
+        self.spell_used = False
+        self.summon_used = False
+        self.spirit = self.base_spirit
+        self.magick = self.base_magick
+        self.str_effects = []
+        self.agl_effects = []
+        self.end_effects = []
+        self.dodge_effects = []
+        self.psyche_effects = []
+        self.move_used = False
+        self.effects_dict = {}
     
     def summon(self, event = None):
                 # show vis in context_menu, summon used? eventually DEBUG fine for now
@@ -2143,8 +2161,8 @@ class App(tk.Frame):
         else:
             self.load_map_triggers(map_number = 0)
             
-    def load_map_triggers(self, map_number, protaganist = None):
-        if map_number == 0:
+    def load_map_triggers(self, map_number, protaganist_object = None):
+        if map_number == 0: # FIRST AREA, NO 'CONTINUATION' OF BY PASSING PROTAG OBJECT
             self.map_triggers = []
             def is_white_dragon_dead():
                 if 'b12' not in [v.number for k,v in self.ent_dict.items() if isinstance(v, Summon)]:
@@ -2161,7 +2179,7 @@ class App(tk.Frame):
                 else:
                     return None
             self.map_triggers.append(is_white_dragon_dead)
-            self.create_map_curs_context(map_number, protaganist = protaganist)
+            self.create_map_curs_context(map_number, protaganist_object = protaganist_object)
         elif map_number == 2:
             self.map_triggers = []
             def is_white_dragon_dead():
@@ -2170,7 +2188,7 @@ class App(tk.Frame):
                 else:
                     return None
             self.map_triggers.append(is_white_dragon_dead)
-            self.create_map_curs_context(map_number, protaganist = protaganist)
+            self.create_map_curs_context(map_number, protaganist_object = protaganist_object)
         else:
             print('you are winner hahaha')
         
@@ -2201,7 +2219,9 @@ class App(tk.Frame):
         del self.map_button_list
         self.create_map_curs_context(map_number)
         
-    def create_map_curs_context(self, map_number, protaganist = None):
+        
+        # IF PROTAG, LOAD PROTAG AND DO NOT RE-INIT WITCH
+    def create_map_curs_context(self, map_number, protaganist_object = None):
         # GET MAP DIMENSIONS
         if self.num_players == 1:
             filename = '1_player_map_info/map' + str(map_number) + '.txt'
@@ -2254,8 +2274,8 @@ class App(tk.Frame):
         self.canvas.create_image(250, 250, image=self.cursor_img, tags='cursor')
         # CHOOSE WITCH IF 2 PLAYER OR FIRST LEVEL
         # OTHERWISE LOAD WITCH FROM PREVIOUS LEVEL (EVENTUALLY SHOULD BE PERSISTENT OBJECT, CARRY OVER ANY LONG-TERM CHANGED STATE)
-        if protaganist:
-            self.load_witch(witch = protaganist, player_num = 1)
+        if protaganist_object:
+            self.load_witch(witch = protaganist_object.name, player_num = 1, protaganist_object = protaganist_object)
         else:
             self.choose_witch()
         
@@ -2304,15 +2324,20 @@ class App(tk.Frame):
             self.avatar_popup.witch_widgets.append(b2)
             self.avatar_popup.witch_widgets.append(b)
         
-    def load_witch(self, witch, player_num):
+    def load_witch(self, witch = None, player_num = None, protaganist_object = None):
         if player_num == 1:
             self.p1_witch = witch
             loc = [2,2]
         elif player_num == 2:
             self.p2_witch = witch
             loc = [self.map_width//100-3, self.map_height//100-3]
-        witch_img = ImageTk.PhotoImage(Image.open('avatars/' + witch +'.png'))
-        self.ent_dict[witch] = Witch(name = witch, img = witch_img, loc = loc, owner = 'p' + str(player_num))
+        # if protaganist_object, instead load its data
+        if protaganist_object:
+            protaganist_object.loc = loc[:]
+            self.ent_dict[witch] = protaganist_object
+        else:
+            witch_img = ImageTk.PhotoImage(Image.open('avatars/' + witch +'.png'))
+            self.ent_dict[witch] = Witch(name = witch, img = witch_img, loc = loc, owner = 'p' + str(player_num))
         self.canvas.create_image(self.ent_dict[witch].loc[0]*100+50-self.moved_right, self.ent_dict[witch].loc[1]*100+50-self.moved_down, image = self.ent_dict[witch].img, tags = self.ent_dict[witch].tags)
         self.grid[self.ent_dict[witch].loc[0]][self.ent_dict[witch].loc[1]] = witch
         # EXIT FOR 1 PLAYER
@@ -2507,7 +2532,8 @@ class App(tk.Frame):
         print('level finished')
         root.after_cancel(self.animate_id)
         root.after_cancel(self.map_trigger_id)
-        protaganist = self.p1_witch
+        protaganist_object  = app.ent_dict[self.p1_witch]
+        protaganist_object.reset_transient_vars()
         prev_map_num = int(self.map[3:])
         newmap_num = prev_map_num + 1
         for child in root.winfo_children():
@@ -2536,10 +2562,10 @@ class App(tk.Frame):
         # GIVE ANY STORYLINE RELATED TO FINISHED AND NEXT LEVEL
         # GIVE OPTION TO SAVE PROGRESS
         # WILL NEED, AT SOME POINT, TO SAVE ACTUAL WITCH OBJECT (NOT JUST STRING NAME), TO HOLD PERSISTENT CHANGES
-        self.load_cutscene(prev_map_num, protaganist)
+        self.load_cutscene(prev_map_num, protaganist_object)
         
         
-    def load_cutscene(self, prev_map_num, protaganist):
+    def load_cutscene(self, prev_map_num, protaganist_object):
         # Make cutscene using background pictures and overlay unit models
         self.cut_scene = ImageTk.PhotoImage(Image.open('cut_scenes/cut_scene'+str(prev_map_num)+'.png').resize((root.winfo_screenwidth(),root.winfo_screenheight())))
         self.cut_canvas = tk.Canvas(root, width = root.winfo_screenwidth(), bg = 'black', highlightthickness = 0, height = root.winfo_screenheight())
@@ -2549,23 +2575,26 @@ class App(tk.Frame):
         with open(filename) as f:
             text = f.read()
         self.cut_text = tk.Label(root, text = text, wraplength = root.winfo_screenwidth()-90, bg = 'black', fg = 'indianred', font = ('kokonor', 18))
-#         self.cut_text.pack(side = 'bottom')
-        
-
-# CONT OR SAVE BUTTONS        
-        self.next_level = tk.Button(root, text = 'Next Area', fg = 'tan3', highlightbackground = 'tan3', font = ('chalkduster', 24), command = lambda n = prev_map_num+1, p = protaganist : self.advance_cutscene(n,p))
-        self.cut_canvas.create_window(root.winfo_screenwidth()/2, root.winfo_screenheight()-120, anchor='s', window = self.next_level)
         self.cut_canvas.create_window(root.winfo_screenwidth()/2, root.winfo_screenheight()-180, anchor='s', window = self.cut_text)
-#         
-#         self.two_player = tk.Button(root, text = '2 Player', fg = 'tan3', highlightbackground = 'tan3', font = ('chalkduster', 24), command = lambda num = 2 : self.num_chose(num))
-#         self.game_title.create_window(root.winfo_screenwidth()/2, root.winfo_screenheight()-70, anchor='s', window = self.two_player)
+# CONT OR SAVE BUTTONS        
+        self.next_area_button = tk.Button(root, text = 'Next Area', fg = 'tan3', highlightbackground = 'tan3', font = ('chalkduster', 24), command = lambda n = prev_map_num+1, po = protaganist_object : self.next_area(n,po))
+        self.cut_canvas.create_window(root.winfo_screenwidth()/2-100, root.winfo_screenheight()-80, anchor='s', window = self.next_area_button)
+        self.save_game_button = tk.Button(root, text = 'Save Game', fg = 'tan3', highlightbackground = 'tan3', font = ('chalkduster', 24), command = lambda n = prev_map_num+1, po = protaganist_object : self.save_game(n, po))
+        self.cut_canvas.create_window(root.winfo_screenwidth()/2+100, root.winfo_screenheight()-80, anchor='s', window = self.save_game_button)
         
-    def advance_cutscene(self, new_map_num, protaganist):
+    def next_area(self, new_map_num, protaganist_object):
         self.cut_canvas.destroy()
         # LOAD NEXT MAP
-        self.load_map_triggers(new_map_num, protaganist)
+        self.load_map_triggers(new_map_num, protaganist_object)
         
-        
+    def save_game(self, new_map_num, protaganist_object):
+        print(vars(protaganist_object))
+        saves = [s for r,d,s in walk('./save_games')][0]
+        saves = [s for s in saves[:] if s[0] != '.']
+        filename = 'save_games/savegame' + str(len(saves))
+        with open(filename, 'w+') as f:
+            # must be string,
+            f.write(protaganist_object)
     
     
     def populate_context(self, event):
