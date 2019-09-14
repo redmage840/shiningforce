@@ -1,3 +1,5 @@
+# its because i am now calling all continuous loops TWICE, have restarted the loops on second iteration, need to stop continuous loops (loops that dont exit themselves) during end_level / cleanup
+
 # animation loop seems to be moving faster in second level
 # tag_lower()s helped, but something is persisting from opening sequence, same map/units are much faster AFTER end_level()
 # probably not destroying one of the opening screens but drawing on top of it
@@ -58,6 +60,9 @@ from PIL import ImageTk,Image
 from random import choice, randrange
 from functools import partial
 # import time
+
+# hack
+refresher = 0
 
 # convenience funcs
 def dist(loc1, loc2):
@@ -591,6 +596,7 @@ class Trickster(Summon):
             return
         app.unbind_all()
         app.depop_context(event = None)
+        app.cleanup_squares()
         oldloc = app.ent_dict[id].loc[:]
         newloc = grid_pos[:]
         app.vis_dict['Gateway'] = Vis(name = 'Gateway', loc = oldloc[:])
@@ -2081,12 +2087,12 @@ class Witch(Entity):
         
     
 
+# maybe am still in some logical context while executing everything...
 class App(tk.Frame):
     def __init__(self, master=None):
         super().__init__(master)
         self.master = master
         self.pack()
-        self.img_dict = {} # is this still used?
         self.ent_dict = {}
         self.sqr_dict = {}
         self.vis_dict = {}
@@ -2108,30 +2114,25 @@ class App(tk.Frame):
         # Papyrus 240
     def choose_num_players(self):
         self.title_screen = ImageTk.PhotoImage(Image.open('titleScreen8.png').resize((root.winfo_screenwidth(),root.winfo_screenheight())))
-#         self.subtitle = ImageTk.PhotoImage(Image.open('subtitle.png'))
         self.game_title = tk.Canvas(root, width = root.winfo_screenwidth(), bg = 'black', highlightthickness = 0, height = root.winfo_screenheight())
-        print('game title canvas line 2105 is ', self.game_title)
         self.game_title.create_image(0,0, image =self.title_screen, anchor = 'nw')
-#         self.game_title = tk.Label(root, image = self.title_screen, pady = 66, bg = 'black')
         self.game_title.pack(side = 'top')
-#         self.marquee = tk.Label(root, image = self.subtitle, bg = 'black', pady = 10)
-#         self.marquee.pack(side = 'top')
+        
         self.one_player = tk.Button(root, text = '1 Player', fg = 'tan3', highlightbackground = 'tan3', font = ('chalkduster', 24), command = lambda num = 1 : self.num_chose(num))
-        self.b_win = self.game_title.create_window(root.winfo_screenwidth()/2, root.winfo_screenheight()-120, anchor='s', window = self.one_player)
-#         self.one_player.pack(pady = 9)
+        self.game_title.create_window(root.winfo_screenwidth()/2, root.winfo_screenheight()-120, anchor='s', window = self.one_player)
+        
         self.two_player = tk.Button(root, text = '2 Player', fg = 'tan3', highlightbackground = 'tan3', font = ('chalkduster', 24), command = lambda num = 2 : self.num_chose(num))
-        self.b2_win = self.game_title.create_window(root.winfo_screenwidth()/2, root.winfo_screenheight()-70, anchor='s', window = self.two_player)
-#         self.two_player = tk.Button(root, text = '2 Player', fg = 'tan3', highlightbackground = 'tan3', font = ('chalkduster', 24), command = lambda num = 2 : self.num_chose(num))
-#         self.two_player.pack(pady = 9)
+        self.game_title.create_window(root.winfo_screenwidth()/2, root.winfo_screenheight()-70, anchor='s', window = self.two_player)
         
     def num_chose(self, num):
         self.num_players = num
         self.game_title.destroy()
-#         self.marquee.destroy()
-#         self.b_win.destroy()
-#         self.b2_win.destroy()
         self.one_player.destroy()
         self.two_player.destroy()
+        del self.title_screen
+        del self.game_title
+        del self.one_player
+        del self.two_player
         if self.num_players == 2:
             self.choose_map()
         else:
@@ -2156,9 +2157,19 @@ class App(tk.Frame):
                     return None
             self.map_triggers.append(is_white_dragon_dead)
             self.create_map_curs_context(map_number, protaganist = protaganist)
+        elif map_number == 2:
+            self.map_triggers = []
+            def is_white_dragon_dead():
+                if 'b12' not in [v.number for k,v in self.ent_dict.items() if isinstance(v, Summon)]:
+                    return 'victory'
+                else:
+                    return None
+            self.map_triggers.append(is_white_dragon_dead)
+            self.create_map_curs_context(map_number, protaganist = protaganist)
         else:
             print('you are winner hahaha')
         
+    # ONLY CALLED IN 2 PLAYER MODE
     def choose_map(self):
         self.choosemap = tk.Label(root, text = 'Choose Map', fg = 'tan3', bg = 'black', font = ('chalkduster', 38))
         self.choosemap.pack()
@@ -2206,7 +2217,6 @@ class App(tk.Frame):
         # CONTEXT MENU
         self.con_bg = ImageTk.PhotoImage(Image.open('texture2.png').resize(( 200, root.winfo_screenheight())))
         self.context_menu = tk.Canvas(root, bg = 'black', bd=0, highlightthickness=0, relief='raised', height = root.winfo_screenheight(), width = 200)
-        print('contxt menu line 2192 is ', self.context_menu)
         self.context_menu.pack_propagate(0)
         self.context_menu.pack(side = 'left', fill = 'both', expand = 'false')
         self.context_menu.create_image(0, 0, anchor = 'nw', image = self.con_bg)
@@ -2218,7 +2228,6 @@ class App(tk.Frame):
         if self.map_height < height:
             height = self.map_height
         self.canvas = tk.Canvas(root, width = width, bg = 'black', height = height, bd=0, highlightthickness=0, relief='raised')
-        print('main canvas self.canvas at line 2203 is ', self.canvas)
         self.canvas.pack()
         # MAP
         if self.num_players == 1:
@@ -2226,14 +2235,17 @@ class App(tk.Frame):
             topfname = '1_player_map_tops/'
         else:
             fname = '2_player_maps/'
-        self.map_img = ImageTk.PhotoImage(Image.open(fname + 'map'+str(map_number)+'.png').resize((self.map_width, self.map_height)))
-        self.map_top = ImageTk.PhotoImage(Image.open(topfname + 'map_top'+str(map_number)+'.png').resize((self.map_width, self.map_height)))
+            topfname = '2_player_map_tops/'
+        self.map_img = ImageTk.PhotoImage(Image.open(fname + 'map'+str(map_number)+'.png'))
+        self.map_top = ImageTk.PhotoImage(Image.open(topfname + 'map_top'+str(map_number)+'.png'))
         self.canvas.create_image(0, 0, anchor='nw', image=self.map_img, tags=('mapbottom','map'))
         self.canvas.create_image(0, 0, anchor='nw', image=self.map_top, tags = ('maptop','map'))
         # CURSOR
         self.cursor_img = ImageTk.PhotoImage(Image.open("cursor.png").resize((100,100)))
         self.vis_dict['cursor'] = Vis(name = 'cursor', loc = [2,2])
-        self.canvas.create_image(2,2, anchor='nw', image=self.cursor_img, tags='cursor')
+        curs_pos = [2,2]
+        grid_pos = [2,2]
+        self.canvas.create_image(250, 250, image=self.cursor_img, tags='cursor')
         # CHOOSE WITCH IF 2 PLAYER OR FIRST LEVEL
         # OTHERWISE LOAD WITCH FROM PREVIOUS LEVEL (EVENTUALLY SHOULD BE PERSISTENT OBJECT, CARRY OVER ANY LONG-TERM CHANGED STATE)
         if protaganist:
@@ -2241,12 +2253,13 @@ class App(tk.Frame):
         else:
             self.choose_witch()
         
+    # debug here i think, not destroying toplevel
     def choose_witch(self, player_num = 1):
-        self.avatar_popup = tk.Toplevel()
+        self.avatar_popup = tk.Toplevel(root)
         self.avatar_popup.attributes('-topmost', 'true')
         self.avatar_popup.attributes("-fullscreen", True)
         self.avatar_popup.config(bg = 'black')
-        self.avatar_popup.grab_set()
+#         self.avatar_popup.grab_set()
         label = tk.Label(self.avatar_popup, text = 'Choose Player ' + str(player_num) + ' Witch', font = ('chalkduster', 36), fg = 'indianred', bg = 'black')
         label.pack(side = 'top')
         if player_num == 1:
@@ -2286,6 +2299,10 @@ class App(tk.Frame):
             self.avatar_popup.witch_widgets.append(b)
         
     def load_witch(self, witch, player_num):
+        try: 
+            del self.avatar_popup
+            del self.wrapped_funcs
+        except: pass
         if player_num == 1:
             self.p1_witch = witch
             loc = [2,2]
@@ -2471,7 +2488,7 @@ class App(tk.Frame):
 #         app.canvas.tag_raise('vis')
         try: app.canvas.tag_raise('text')
         except: pass
-        root.after(300, self.animate)
+        self.animate_id = root.after(300, self.animate)
         
         # MAP TRIGGER LOOP
         # ALL MAP TRIGGERS ARE FUNCTIONS THAT CHECK FOR CONDITIONS AND EITHER DO STUFF IN RESPONSE
@@ -2486,6 +2503,7 @@ class App(tk.Frame):
     def end_level(self):
         global curs_pos, is_object_selected, selected, selected_vis, map_pos, grid_pos
         print('level finished')
+        root.after_cancel(self.animate_id)
         protaganist = self.p1_witch
         prev_map_num = int(self.map[3:])
         newmap_num = prev_map_num + 1
@@ -2493,14 +2511,13 @@ class App(tk.Frame):
             child.destroy()
         # THIS WORKS, JUST NEED TO CLEAN ALL VARS LIKE GRID, SELF.STUFF, GLOBALS
         # GLOBALS
-        curs_pos = [0, 0]
+        curs_pos = [2, 2]
         is_object_selected = False
         selected = ''
         selected_vis = ''
         map_pos = [0, 0]
-        grid_pos = [0,0]
+        grid_pos = [2,2]
         
-        self.img_dict = {} # is this still used?
         self.ent_dict = {}
         self.sqr_dict = {}
         self.vis_dict = {}
@@ -2583,8 +2600,6 @@ class App(tk.Frame):
         # grid_pos is always absolute position of grid where cursor appears (relates to app.grid)
         if event.keysym == 'Left' or dir == 'Left':
             if curs_pos[0] > 1: # leftmost possible cursor position
-#                 self.canvas.move('curs', -100, 0)
-#                 self.canvas.move(selected, -100, 0)
                 curs_pos[0] -= 1
                 grid_pos[0] -= 1
                 app.vis_dict['cursor'].loc = curs_pos[:]
@@ -2599,8 +2614,6 @@ class App(tk.Frame):
             if grid_pos[0] == ((self.map_width//100) - 1):
                 return
             if curs_pos[0] < ((frame_width//100)-1):
-#                 self.canvas.move('curs', 100, 0)
-#                 self.canvas.move(selected, 100, 0)
                 curs_pos[0] += 1
                 grid_pos[0] += 1
                 app.vis_dict['cursor'].loc = curs_pos[:]
@@ -2610,11 +2623,8 @@ class App(tk.Frame):
                 self.move_map('Right')
                 map_pos[0] += 1
                 grid_pos[0] += 1
-                
         elif event.keysym == 'Up' or dir == 'Up':
             if curs_pos[1] > 1: # topmost
-#                 self.canvas.move('curs', 0, -100)
-#                 self.canvas.move(selected, 0, -100)
                 curs_pos[1] -= 1
                 grid_pos[1] -= 1
                 app.vis_dict['cursor'].loc = curs_pos[:]
@@ -2624,13 +2634,10 @@ class App(tk.Frame):
                 self.move_map('Down')
                 map_pos[1] -= 1
                 grid_pos[1] -= 1
-                
         elif event.keysym == 'Down' or dir == 'Down':
             if grid_pos[1] == ((self.map_height//100)-1):
                 return
             if curs_pos[1] < ((frame_height//100)-1):
-#                 self.canvas.move('curs', 0, 100)
-#                 self.canvas.move(selected, 0, 100)
                 curs_pos[1] += 1
                 grid_pos[1] += 1
                 app.vis_dict['cursor'].loc = curs_pos[:]
@@ -2723,7 +2730,6 @@ class App(tk.Frame):
     def cancel_end_turn(self):
         self.rebind_all()
         self.depop_context(event = None)
-#         self.repop_help_buttons()
         
         
         # kokonor
