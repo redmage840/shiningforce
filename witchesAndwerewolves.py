@@ -1,3 +1,5 @@
+# also need to stop map_trigger loop
+
 # its because i am now calling all continuous loops TWICE, have restarted the loops on second iteration, need to stop continuous loops (loops that dont exit themselves) during end_level / cleanup
 
 # animation loop seems to be moving faster in second level
@@ -2498,12 +2500,13 @@ class App(tk.Frame):
             if mt() == 'victory':
                 self.end_level()
             else:
-                root.after(666, self.map_trigger_loop)
+                self.map_trigger_id = root.after(666, self.map_trigger_loop)
         
     def end_level(self):
         global curs_pos, is_object_selected, selected, selected_vis, map_pos, grid_pos
         print('level finished')
         root.after_cancel(self.animate_id)
+        rooot.after_cancel(self.map_trigger_id)
         protaganist = self.p1_witch
         prev_map_num = int(self.map[3:])
         newmap_num = prev_map_num + 1
