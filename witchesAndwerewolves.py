@@ -2203,8 +2203,21 @@ class App(tk.Frame):
         self.scroll_frame = VerticalScrolledFrame(root)
         self.game_title.create_window(10,10, anchor = 'nw', window = self.scroll_frame)
         for s in saves:
-            b = tk.Button(self.scroll_frame.interior, text = s)
-            b.pack() 
+            # expand filename into readable
+            with open('save_games/'+s, 'rb') as f:
+                obj = load(f)
+                cmd = lambda obj = obj : self.load_game(obj)
+                b = tk.Button(self.scroll_frame.interior, text = s, command = cmd)
+                b.pack() 
+                self.saves_buttons.append(b)
+                
+    def load_game(self, obj):
+        # destroy titlescreen
+        self.game_title.destroy()
+        # same problem with location had on new map area
+        # was it setting grid_pos, curs_pos?
+        self.load_map_triggers(map_number = obj.current_area, protaganist_object = obj)
+#         self.create_map_curs_context(map_number = obj.current_area, protaganist_object = obj)
         
     def num_chose(self, num):
         self.num_players = num
@@ -2281,6 +2294,7 @@ class App(tk.Frame):
         
         # IF PROTAG, LOAD PROTAG AND DO NOT RE-INIT WITCH
     def create_map_curs_context(self, map_number, protaganist_object = None):
+        global curs_pos, grid_pos
         # GET MAP DIMENSIONS
         if self.num_players == 1:
             filename = '1_player_map_info/map' + str(map_number) + '.txt'
@@ -2390,9 +2404,12 @@ class App(tk.Frame):
         elif player_num == 2:
             self.p2_witch = witch
             loc = [self.map_width//100-3, self.map_height//100-3]
-        # if protaganist_object, instead load its data
+        # if protaganist_object, instead load its data, RE-INIT IMAGES THAT CANNOT BE SERIALIZED BY PICKLE DUMP
         if protaganist_object:
             protaganist_object.loc = loc[:]
+            witch_img = ImageTk.PhotoImage(Image.open('avatars/' + witch +'.png'))
+            protaganist_object.img = witch_img
+            protaganist_object.init_normal_anims()
             self.ent_dict[witch] = protaganist_object
         else:
             witch_img = ImageTk.PhotoImage(Image.open('avatars/' + witch +'.png'))
@@ -2647,13 +2664,15 @@ class App(tk.Frame):
         self.load_map_triggers(new_map_num, protaganist_object)
         
     def save_game(self, new_map_num, protaganist_object):
-        print(vars(protaganist_object))
+        protaganist_object.current_area = new_map_num
         saves = [s for r,d,s in walk('./save_games')][0]
         saves = [s for s in saves[:] if s[0] != '.']
+        # later should open text input to write filename
         filename = 'save_games/savegame' + str(len(saves))
-        with open(filename, 'w+') as f:
-            # must be string,
-#             f.write(protaganist_object)
+        with open(filename, 'wb+') as f:
+            # have to strip tkinter objects from protag obj
+            protaganist_object.img = None
+            protaganist_object.anim_dict = {}
             dump(protaganist_object, f)
     
     
