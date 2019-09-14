@@ -2541,9 +2541,29 @@ class App(tk.Frame):
         
     def load_cutscene(self, prev_map_num, protaganist):
         # Make cutscene using background pictures and overlay unit models
+        self.cut_scene = ImageTk.PhotoImage(Image.open('cut_scenes/cut_scene'+str(prev_map_num)+'.png').resize((root.winfo_screenwidth(),root.winfo_screenheight())))
+        self.cut_canvas = tk.Canvas(root, width = root.winfo_screenwidth(), bg = 'black', highlightthickness = 0, height = root.winfo_screenheight())
+        self.cut_canvas.create_image(0,0, image =self.cut_scene, anchor = 'nw')
+        self.cut_canvas.pack(side = 'top')
+        filename = 'cut_scene_texts/cut_scene_text'+str(prev_map_num)+'.txt'
+        with open(filename) as f:
+            text = f.read()
+        self.cut_text = tk.Label(root, text = text, wraplength = root.winfo_screenwidth()-90, bg = 'black', fg = 'indianred', font = ('kokonor', 18))
+#         self.cut_text.pack(side = 'bottom')
         
+
+# CONT OR SAVE BUTTONS        
+        self.next_level = tk.Button(root, text = 'Next Area', fg = 'tan3', highlightbackground = 'tan3', font = ('chalkduster', 24), command = lambda n = prev_map_num+1, p = protaganist : self.advance_cutscene(n,p))
+        self.cut_canvas.create_window(root.winfo_screenwidth()/2, root.winfo_screenheight()-120, anchor='s', window = self.next_level)
+        self.cut_canvas.create_window(root.winfo_screenwidth()/2, root.winfo_screenheight()-180, anchor='s', window = self.cut_text)
+#         
+#         self.two_player = tk.Button(root, text = '2 Player', fg = 'tan3', highlightbackground = 'tan3', font = ('chalkduster', 24), command = lambda num = 2 : self.num_chose(num))
+#         self.game_title.create_window(root.winfo_screenwidth()/2, root.winfo_screenheight()-70, anchor='s', window = self.two_player)
+        
+    def advance_cutscene(self, new_map_num, protaganist):
+        self.cut_canvas.destroy()
         # LOAD NEXT MAP
-        self.load_map_triggers(newmap_num, protaganist)
+        self.load_map_triggers(new_map_num, protaganist)
         
         
     
