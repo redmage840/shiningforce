@@ -1,10 +1,18 @@
+# add 'start position dependent on map' get from map_info
+
+# AI units have property 'target' (unit they will try to minimize distance to) target is updated under certain conditions or prevented from updating under conditions, will need to check for existence if not updating 'get_target()'
+
+# Make intro screen(s) for first level load
+
+# create_window on main canvas with level objectives on load
+
+# make maps with source lighting matching shadows, make appropriate shadows for maptop
+
 # consider removing 'smoke' from agnes casting anims
 
 # is origin still used without old movement setup?
 
 # in ai_loop have some AI units hold 'state' of either 'active' or 'waiting', when map trigger is met (move closely enough) turn them 'active', when no user units 'close' enough turn to 'waiting'
-
-# Do 'load game' at 1-2 player choice, a save game is the ent_dict, grid, globals, map, maybe state of all vars cleaned during end_level,...? Load would assign all these variables, create_map_cursor(), load_map_triggers(), start_turn(),...
 
 # what is difference in move_loop and psionic push move loop? psipush is much faster...
 
@@ -2110,33 +2118,27 @@ class Witch(Entity):
         
     
     
-class VerticalScrolledFrame(tk.Frame):
-    """A pure Tkinter scrollable frame that actually works!
-
+class VerticalScrolledFrame(tk.Frame): 
+    '''
     * Use the 'interior' attribute to place widgets inside the scrollable frame
     * Construct and pack/place/grid normally
     * This frame only allows vertical scrolling
-    """
+    '''
     def __init__(self, parent, *args, **kw):
-        tk.Frame.__init__(self, parent, *args, **kw)            
-
+        tk.Frame.__init__(self, parent, *args, **kw)
         # create a canvas object and a vertical scrollbar for scrolling it
-        vscrollbar = tk.Scrollbar(self, orient=tk.VERTICAL)
+        vscrollbar = tk.Scrollbar(self, orient=tk.VERTICAL, relief = 'raised', troughcolor = 'black', highlightbackground = 'black', width = 13)
         vscrollbar.pack(fill=tk.Y, side=tk.RIGHT, expand=tk.FALSE)
-        canvas = tk.Canvas(self, bd=0, highlightthickness=0,
+        canvas = tk.Canvas(self, bd=0, highlightthickness=0, bg = 'black',
                         yscrollcommand=vscrollbar.set)
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=tk.TRUE)
         vscrollbar.config(command=canvas.yview)
-
         # reset the view
         canvas.xview_moveto(0)
         canvas.yview_moveto(0)
-
         # create a frame inside the canvas which will be scrolled with it
         self.interior = interior = tk.Frame(canvas)
-        interior_id = canvas.create_window(0, 0, window=interior,
-                                           anchor=tk.NW)
-
+        interior_id = canvas.create_window(0, 0, window = interior, anchor = 'nw')
         # track changes to the canvas and frame width and sync them,
         # also updating the scrollbar
         def _configure_interior(event):
@@ -2146,7 +2148,6 @@ class VerticalScrolledFrame(tk.Frame):
             if interior.winfo_reqwidth() != canvas.winfo_width():
                 # update the canvas's width to fit the inner frame
                 canvas.config(width=interior.winfo_reqwidth())
-
         interior.bind('<Configure>', _configure_interior)
 
         def _configure_canvas(event):
@@ -2199,17 +2200,20 @@ class App(tk.Frame):
         saves = [s for r,d,s in walk('save_games/')][0]
         saves = [s for s in saves[:] if s[0] != '.']
         # create a button for each save and a cancel button
-        self.saves_buttons = []
         self.scroll_frame = VerticalScrolledFrame(root)
-        self.game_title.create_window(10,10, anchor = 'nw', window = self.scroll_frame)
+        self.game_title.create_window(root.winfo_screenwidth()/2 + root.winfo_screenwidth()/8, root.winfo_screenheight()-220, anchor = 'nw', window = self.scroll_frame)
+        self.game_title.saves_buttons = []
         for s in saves:
             # expand filename into readable
             with open('save_games/'+s, 'rb') as f:
                 obj = load(f)
                 cmd = lambda obj = obj : self.load_game(obj)
-                b = tk.Button(self.scroll_frame.interior, text = s, command = cmd)
+                b = tk.Button(self.scroll_frame.interior, text = s, width = 13, wraplength = 190, fg = 'indianred', highlightbackground = 'black', font = ('chalkduster', 24), relief = 'raised', command = cmd)
                 b.pack() 
-                self.saves_buttons.append(b)
+                self.game_title.saves_buttons.append(b)
+        cancel_b = tk.Button(self.scroll_frame.interior, text = 'Cancel', bg = 'black', fg = 'black', width = 13, highlightbackground = 'black', font = ('chalkduster', 24), relief = 'raised', command = self.scroll_frame.destroy)
+        cancel_b.pack(side = 'bottom')
+        self.game_title.saves_buttons.append(cancel_b)
                 
     def load_game(self, obj):
         # destroy titlescreen
@@ -2233,6 +2237,7 @@ class App(tk.Frame):
         else:
             self.load_map_triggers(map_number = 0)
             
+    # make each branch load the intro scene for level, with 'continue' button when done reading/displaying to call create_map_curs_context
     def load_map_triggers(self, map_number, protaganist_object = None):
         if map_number == 0: # FIRST AREA, NO 'CONTINUATION' OF BY PASSING PROTAG OBJECT
             self.map_triggers = []
@@ -2242,7 +2247,10 @@ class App(tk.Frame):
                 else:
                     return None
             self.map_triggers.append(is_white_dragon_dead)
-            self.create_map_curs_context(map_number)
+            
+            self.load_intro_scene(map_number)# DONT NEED PROTAG OBJECT ON FIRST AREA
+#             self.create_map_curs_context(map_number)
+            
         elif map_number == 1:
             self.map_triggers = []
             def is_white_dragon_dead():
@@ -2251,7 +2259,10 @@ class App(tk.Frame):
                 else:
                     return None
             self.map_triggers.append(is_white_dragon_dead)
-            self.create_map_curs_context(map_number, protaganist_object = protaganist_object)
+            
+            self.load_intro_scene(map_number, protaganist_object = protaganist_object)
+#             self.create_map_curs_context(map_number, protaganist_object = protaganist_object)
+            
         elif map_number == 2:
             self.map_triggers = []
             def is_white_dragon_dead():
@@ -2260,9 +2271,25 @@ class App(tk.Frame):
                 else:
                     return None
             self.map_triggers.append(is_white_dragon_dead)
-            self.create_map_curs_context(map_number, protaganist_object = protaganist_object)
+            
+            self.load_intro_scene(map_number, protaganist_object = protaganist_object)
+#             self.create_map_curs_context(map_number, protaganist_object = protaganist_object)
         else:
             print('you are winner hahaha')
+        
+    def load_intro_scene(self, map_number = None, protaganist_object = None):
+        self.intro_scene = ImageTk.PhotoImage(Image.open('intro_scenes/intro_scene'+str(map_number)+'.png').resize((root.winfo_screenwidth(),root.winfo_screenheight())))
+        self.intro_canvas = tk.Canvas(root, width = root.winfo_screenwidth(), bg = 'black', highlightthickness = 0, height = root.winfo_screenheight())
+        self.intro_canvas.create_image(0,0, image =self.intro_scene, anchor = 'nw')
+        self.intro_canvas.pack(side = 'top')
+        filename = 'intro_scene_texts/intro_scene_text'+str(map_number)+'.txt'
+        with open(filename) as f:
+            text = f.read()
+        self.intro_text = tk.Label(root, text = text, wraplength = root.winfo_screenwidth()-90, bg = 'black', fg = 'indianred', font = ('kokonor', 18))
+        self.intro_canvas.create_window(root.winfo_screenwidth()/2, root.winfo_screenheight()-180, anchor='s', window = self.intro_text)
+# CONT OR SAVE BUTTONS        
+        self.start_area_button = tk.Button(root, text = 'Start Area', fg = 'tan3', highlightbackground = 'tan3', font = ('chalkduster', 24), command = lambda n = map_number, po = protaganist_object : self.create_map_curs_context(n,po))
+        self.intro_canvas.create_window(root.winfo_screenwidth()/2-100, root.winfo_screenheight()-80, anchor='s', window = self.start_area_button)
         
     # ONLY CALLED IN 2 PLAYER MODE
     def choose_map(self):
@@ -2295,6 +2322,7 @@ class App(tk.Frame):
         # IF PROTAG, LOAD PROTAG AND DO NOT RE-INIT WITCH
     def create_map_curs_context(self, map_number, protaganist_object = None):
         global curs_pos, grid_pos
+        self.intro_canvas.destroy()
         # GET MAP DIMENSIONS
         if self.num_players == 1:
             filename = '1_player_map_info/map' + str(map_number) + '.txt'
