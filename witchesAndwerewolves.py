@@ -1,3 +1,21 @@
+# bricks in wall in maptop cover units, fallen bricks 
+
+# contagion Vis will last longer than it takes to get to next action, either make faster cleanup or wait for cleanup or extend time between AI loop
+
+# move 'choose witch screen' before first 'intro screen'
+
+
+# orcs now make 'best attempt' to minimize distance when no path can be found
+# this still results in moving 'wrong' direction when better paths are blocked by Ents
+# instead of 'best attempt to min distance', remove temporary blocks (any Ents) from grid repr, then find path, then iterate over path backwards and move to the first legal sqr, if no legal_moves along path do not move just wait (better than moving wrong direction)
+# could be improved by replacing one Ent at a time, find path, then after all paths are accumulated, choose one with greatest distance or that minimizes distance to closest target and move as far as possible along it
+
+# warrior movement encourages engaging everything from 'top -> down', probably should change
+
+# death anims, at least delay before something like contagion
+
+# replace undead ai with orc pathfinding, maybe just leave them dumb...
+
 # orcs need to get focus on move square
 
 # check tag raise/lower priority, some redundancy,  i think its the general Ent do_move or loop
@@ -85,6 +103,7 @@ from PIL import ImageTk,Image
 from random import choice, randrange
 from functools import partial
 from pickle import dump, load
+from copy import deepcopy
 # filehandler = open(filename, 'r') 
 # object = pickle.load(filehandler)
 
@@ -1465,25 +1484,56 @@ class Orc_axeman(Summon):
                 smallpaths = [y for y in paths if len(y) == min(len(y) for y in paths)]
                 if smallpaths != []: # MOVE ALONG PATH AS FAR AS POSSIBLE, ATTEMPT ATTACK
                     apath = smallpaths[0]
-                    root.after(666, lambda el = ents_list, a = apath : self.orc_axeman_move(el, a))
-                else: # NO POTENTIAL PATHS TO ANY TARGETS, UNIT IS BLOCKED IN (PROBABLY BY FRIENDLY ENTS
-                    ents_list = ents_list[1:]
-                    if ents_list == []:
-                        root.after(666, app.end_turn)
+                    # FIND FURTHEST SQR ALONG PATH THAT CAN BE MOVED TO
+                    moves = self.legal_moves()
+                    for sqr in apath[::-1]: # START WITH SQRS CLOSEST TO TARGET
+                        if sqr in moves:
+                            endloc = sqr[:] # AMONG SQRS POSSIBLE TO MOVE TO, THIS IS CLOSEST TO GOAL
+                            break
+                    tar_loc = apath[-1] # SQR CONTAINING TARGET TO ATTACK
+                    root.after(666, lambda sqr = endloc[:] : app.focus_square(sqr))
+                    root.after(1333, lambda el = ents_list, endloc = endloc, tar_loc = tar_loc : self.orc_axeman_move(el, endloc, tar_loc))
+                else: # NO PATHS TO TARGET, MAKE BEST EFFORT MINIMIZE DIST MOVE
+                    # change to 'remove friendly ents', find path, move along path as far as possible
+                    egrid = deepcopy(app.grid)
+                    friendly_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p2']
+                    for eloc in friendly_ent_locs:
+                        egrid[eloc[0]][eloc[1]] = ''
+                    # NOW FIND PATH AND PASS TO MOVE
+                    for el in enemy_ent_locs:
+                        path = bfs(self.loc[:], el, egrid[:]) # BFS ON ALTERED GRID (FRIENDLY ENTS REMOVED)
+                        if path:
+                            paths.append(path)
+                    smallpaths = [y for y in paths if len(y) == min(len(y) for y in paths)]
+                    if smallpaths != []: # MOVE ALONG PATH AS FAR AS POSSIBLE, ATTEMPT ATTACK
+                        apath = smallpaths[0]
+                        # FIND FURTHEST SQR ALONG PATH THAT CAN BE MOVED TO
+                        moves = self.legal_moves()
+                        print('start loc ', self.loc)
+                        print('moves is ', moves)
+                        print('grid is ', app.grid)
+                        for sqr in apath[::-1]: # START WITH SQRS CLOSEST TO TARGET
+                            if sqr in moves:
+                                endloc = sqr[:] # AMONG SQRS POSSIBLE TO MOVE TO, THIS IS CLOSEST TO GOAL
+                                break
+                        tar_loc = apath[-1] # SQR CONTAINING TARGET TO ATTACK
+                        # here need to 'trim path' to prevent moving to square 'through' friendly ents
+                        
+                        
+                        root.after(666, lambda sqr = endloc[:] : app.focus_square(sqr))
+                        root.after(1333, lambda el = ents_list, endloc = endloc, tar_loc = tar_loc : self.orc_axeman_move(el, endloc, tar_loc))
                     else:
-                        root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
+                        ents_list = ents_list[1:]
+                        if ents_list == []:
+                            root.after(666, app.end_turn)
+                        else:
+                            root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
             
             
-    def orc_axeman_move(self, ents_list, apath):
+    def orc_axeman_move(self, ents_list, endloc, tarloc):
         global selected
-        # FIND SQUARE FURTHEST ALONG PATH THAT IS WITHIN RANGE
-        moves = self.legal_moves()
-        for sqr in apath[::-1]: # START WITH SQRS CLOSEST TO TARGET
-            if sqr in moves:
-                endloc = sqr[:] # AMONG SQRS POSSIBLE TO MOVE TO, THIS IS CLOSEST TO GOAL
-                break
-        fs = apath[-1]
-        target = app.grid[fs[0]][fs[1]]
+        # FIND SQUARE FURTHEST ALONG PATH THAT IS WITHIN MOVE RANGE
+        target = app.grid[tarloc[0]][tarloc[1]]
         id = self.number
         x = self.loc[0]*100+50-app.moved_right
         y = self.loc[1]*100+50-app.moved_down
@@ -1522,6 +1572,7 @@ class Orc_axeman(Summon):
         move_loop(id, x, y, endx, endy, start_sqr, end_sqr)
             
             
+    # change to attack any within range, not ncsrly original target
     # DONE MOVING, ATTEMPT ATTACK AND EXIT
     def finish_move(self, id, end_sqr, start_sqr, target, ents_list):
         global selected
@@ -1535,7 +1586,8 @@ class Orc_axeman(Summon):
         atk_sqrs = self.legal_attacks()
         t_loc = app.ent_dict[target].loc[:]
         if t_loc in atk_sqrs:
-            self.orc_axeman_attack(ents_list, target) # EXIT THROUGH ATTACK
+            root.after(666, lambda t = target : app.get_focus(t))
+            root.after(1333, lambda el = ents_list, t = target : self.orc_axeman_attack(el, t)) # EXIT THROUGH ATTACK
         else:
         # CANNOT ATTACK, EXIT FUNC
             ents_list = ents_list[1:]
@@ -1587,16 +1639,16 @@ class Orc_axeman(Summon):
         return sqrs
         
     def legal_moves(self):
-        loc = self.loc
+        loc = self.loc[:]
         mvlist = []
         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        def findall(loc, start, dist):
-            if start > dist:
+        def findall(loc, start, distance):
+            if start > distance:
                 return
-            adj = [c for c in coords if abs(c[0] - loc[0]) + abs(c[1] - loc[1]) == 1 and app.grid[c[0]][c[1]] == '']
+            adj = [c for c in coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
             for s in adj:
                 mvlist.append(s)
-                findall(s, start+1, dist)
+                findall(s, start+1, distance)
         findall(loc, 1, 3) 
         setlist = []
         for l in mvlist:
