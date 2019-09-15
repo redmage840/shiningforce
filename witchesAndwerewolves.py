@@ -1,12 +1,34 @@
+# orcs need to get focus on move square
+
+# check tag raise/lower priority, some redundancy,  i think its the general Ent do_move or loop
+
+# Units using bfs for pathfinding should make best attempt to minimize distance if no path can be found
+
+
+# Bards being able to freely replenish magic and having AI units 'wait' until close combines not well, encourages waiting around until built all the way back up. Not only this, but you could stay out of range of triggers and keep on summoning, maybe have a max amount of summons... Enemy triggers would 'see' you as soon as close enough to cast any spell to prevent staying on edge of triggers and using spells.
+# with above approach, still encourages waiting outside of triggers until replenished/full summons
+# probably better to not have wait triggers, since that encourages slowplay (isolating AI units, drawing them out, waiting until replenished)
+# general structure is ALL enemies will begin to advance on protag, this way the structure of difficulty can be controlled by staggering waves of enemies based on initial placement/movement
+# this encourages a constant, increasing pace where you are more pressed for 'time', no slow-play
+# what would encourage protag to do anything but sit back and wait for the waves?
+# moving around the map could influence the structure of waves by outpacing the slower AI units, encouraging the faster ones to engage prematurely
+# try and structure level terrain/groups of AI units so that protag cannot continuously 'kite' slow units
+# do this by having movement outpace the killing of units, so that you can move to increase distance between slow and faster waves, but eventually be backed into a corner
+# still need to stop the possibility of maxing out on bards so you have infi replenish magick, and then can summon infi, can this be prevented just with pressure of approaching enemies?
+# if there only exist units that can be outpaced, can just run around and heal and keep summoning or casting
+# can this be controlled with 'tight hallway' levels, where you will be quickly backed into a corner?
+# a lot of this points to the fact that free magick replenish is problematic
+# a hard limit on magick might be preferable
+
+# do entrance finish bard, expand on shadow, maybe change warrior around (moves randomly, moves back and side only 1 space, ...)
+
+# make first level with triggers, undead, orcs, orc leader
+
+# change position of intro_scene text
+
 # add 'start position dependent on map' get from map_info
 
 # AI units have property 'target' (unit they will try to minimize distance to) target is updated under certain conditions or prevented from updating under conditions, will need to check for existence if not updating 'get_target()'
-
-# Make intro screen(s) for first level load
-
-# create_window on main canvas with level objectives on load
-
-# make maps with source lighting matching shadows, make appropriate shadows for maptop
 
 # consider removing 'smoke' from agnes casting anims
 
@@ -70,6 +92,25 @@ from pickle import dump, load
 # convenience funcs
 def dist(loc1, loc2):
     return abs(loc1[0] - loc2[0]) + abs(loc1[1] - loc2[1])
+
+# getting to goal but it isnt EMPTY it has the target!
+# Need to have goal of empty square within range of target
+def bfs(start, goal, grid):
+    coords = [[x,y] for x in range(len(grid[0])) for y in range(len(grid[1]))] # get list of coords from gridsize
+    path = []
+    q = [[start]]
+    visited = [start]
+    while q:
+        path = q[0]
+        q = q[1:]
+        last = path[-1]
+        if dist(last, goal) == 1:
+            return path + [goal]
+        adj = [c for c in coords if dist(c, last) == 1 and grid[c[0]][c[1]] == '']
+        for s in adj:
+            if s not in visited:
+                q.append(path + [s])
+                visited.append(s)
 
 def to_hit(a1, a2):
     base = 5
@@ -350,6 +391,7 @@ class Entity():
                 app.canvas.delete(id)
                 app.canvas.create_image(x, y, image = self.img, tags = self.tags)
                 app.canvas.tag_lower((self.tags), 'maptop')
+#                 app.canvas.tag_lower((self.tags), 'large')
             if x > endx:
                 x -= 10
                 app.canvas.move(id, -10, 0)
@@ -1275,6 +1317,7 @@ class Undead(Summon):
                 app.canvas.delete(id)
                 app.canvas.create_image(x, y, image = self.img, tags = self.tags)
                 app.canvas.tag_lower((self.tags), 'maptop')
+                app.canvas.tag_lower((self.tags), 'large')
             if x > endx:
                 x -= 10
                 app.canvas.move(id, -10, 0)
@@ -1378,14 +1421,188 @@ class Undead(Summon):
             if l not in setlist:
                 setlist.append(l)
         return setlist
-#     def legal_moves(self):
-#         sqrs = []
-#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-#         for coord in coords:
-#             if app.grid[coord[0]][coord[1]] == '':
-#                 if (bool(abs(coord[0] - self.loc[0]) == 1) ^ bool(abs(coord[1] - self.loc[1]) == 1)) and dist(coord, self.loc) == 1:
-#                     sqrs.append(coord)
-#         return sqrs
+        
+        
+class Orc_axeman(Summon):
+    def __init__(self, name, img, loc, owner, number):
+        self.actions = {'attack':self.orc_axeman_attack}
+        self.attack_used = False
+        self.str = 4
+        self.agl = 3
+        self.end = 4
+        self.dodge = 3
+        self.psyche = 2
+        self.spirit = 12
+        # if given target, override search for closest enemy
+        # instead always attempt to attack/move towards target
+        # IF CANNOT ATTACK TARGET, AFTER MOVING TOWARDS TARGET IF STILL CANNOT ATTACK TARGET, ATTEMPT TO ATTACK OTHER?
+        self.target = ''
+        super().__init__(name, img, loc, owner, number)
+        
+    def do_target_ai(self, ents_list):
+        pass
+        
+    #  ORC AXEMAN AI
+    def do_orc_axeman_ai(self, ents_list):
+        if self.target != '': # GIVEN PRIORITY OVER OTHER ENTS, ONLY TRY TO ATTACK THIS ENT
+            self.do_target_ai(ents_list)
+        else: # NO TARGET PRIORITY, ATTEMPT ATTACK FROM STARTLOC
+            atk_sqrs = self.legal_attacks()
+            atk_sqrs = [x for x in atk_sqrs if app.ent_dict[app.grid[x[0]][x[1]]].owner == 'p1']
+            if atk_sqrs != []:
+                any = atk_sqrs[0]
+                id = app.grid[any[0]][any[1]]
+                root.after(666, lambda id = id : app.get_focus(id))
+                root.after(1333, lambda el = ents_list, id = id : self.orc_axeman_attack(el, id)) # ATTACK
+            else: # CANNOT ATTACK FROM START LOC, GET TARGET AND MOVE TOWARDS
+                enemy_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p1']
+                paths = []
+                for el in enemy_ent_locs:
+                # REMEMBER NOT GETTING PATH TO UNIT LOCATION, ONLY TO SQUARE WITHIN RANGE
+                    path = bfs(self.loc[:], el, app.grid[:])
+                    if path:
+                        paths.append(path)
+                smallpaths = [y for y in paths if len(y) == min(len(y) for y in paths)]
+                if smallpaths != []: # MOVE ALONG PATH AS FAR AS POSSIBLE, ATTEMPT ATTACK
+                    apath = smallpaths[0]
+                    root.after(666, lambda el = ents_list, a = apath : self.orc_axeman_move(el, a))
+                else: # NO POTENTIAL PATHS TO ANY TARGETS, UNIT IS BLOCKED IN (PROBABLY BY FRIENDLY ENTS
+                    ents_list = ents_list[1:]
+                    if ents_list == []:
+                        root.after(666, app.end_turn)
+                    else:
+                        root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
+            
+            
+    def orc_axeman_move(self, ents_list, apath):
+        global selected
+        # FIND SQUARE FURTHEST ALONG PATH THAT IS WITHIN RANGE
+        moves = self.legal_moves()
+        for sqr in apath[::-1]: # START WITH SQRS CLOSEST TO TARGET
+            if sqr in moves:
+                endloc = sqr[:] # AMONG SQRS POSSIBLE TO MOVE TO, THIS IS CLOSEST TO GOAL
+                break
+        fs = apath[-1]
+        target = app.grid[fs[0]][fs[1]]
+        id = self.number
+        x = self.loc[0]*100+50-app.moved_right
+        y = self.loc[1]*100+50-app.moved_down
+        endx = endloc[0]*100+50-app.moved_right
+        endy = endloc[1]*100+50-app.moved_down
+        start_sqr = self.loc[:]
+        end_sqr = endloc[:]
+        selected = self.number
+        # MOVE LOOP
+        def move_loop(id, x, y, endx, endy, start_sqr, end_sqr):
+            if x % 25 == 0 or y % 25 == 0:
+                self.rotate_image()
+                app.canvas.delete(id)
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+                app.canvas.tag_lower((self.tags), 'maptop')
+                app.canvas.tag_lower((self.tags), 'large')
+            if x > endx:
+                x -= 10
+                app.canvas.move(id, -10, 0)
+            if x < endx: 
+                x += 10
+                app.canvas.move(id, 10, 0)
+            if y > endy: 
+                y -= 10
+                app.canvas.move(id, 0, -10)
+            if y < endy: 
+                y += 10
+                app.canvas.move(id, 0, 10)
+            app.canvas.tag_raise('large', (self.tags))
+#             app.canvas.tag_raise('maptop')
+            app.canvas.tag_raise('cursor')
+            if x == endx and y == endy:
+                self.finish_move(id, end_sqr, start_sqr, target, ents_list) # EXIT
+            else: # CONTINUE LOOP
+                root.after(66, lambda id = id, x = x, y = y, e = endx, e2 = endy, s = start_sqr, s2 = end_sqr : move_loop(id, x, y, e, e2, s, s2))
+        move_loop(id, x, y, endx, endy, start_sqr, end_sqr)
+            
+            
+    # DONE MOVING, ATTEMPT ATTACK AND EXIT
+    def finish_move(self, id, end_sqr, start_sqr, target, ents_list):
+        global selected
+        selected = ''
+        self.loc = end_sqr[:]
+        self.origin = end_sqr[:]
+        app.grid[start_sqr[0]][start_sqr[1]] = ''
+        app.grid[end_sqr[0]][end_sqr[1]] = self.number
+#         app.canvas.create_image(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+50-app.moved_down, image = self.img, tags = self.number)
+        # IF TARGET NOW WITHIN RANGE, MAKE ATTACK ON IT
+        atk_sqrs = self.legal_attacks()
+        t_loc = app.ent_dict[target].loc[:]
+        if t_loc in atk_sqrs:
+            self.orc_axeman_attack(ents_list, target) # EXIT THROUGH ATTACK
+        else:
+        # CANNOT ATTACK, EXIT FUNC
+            ents_list = ents_list[1:]
+            if ents_list == []:
+                app.end_turn()
+            else:
+                root.after(666, lambda e = ents_list : app.do_ai_loop(e))
+    
+    def orc_axeman_attack(self, ents_list, id):
+        app.get_focus(id)
+#         self.init_attack_anims()
+        my_agl = self.get_attr('agl')
+        target_dodge = app.ent_dict[id].get_attr('dodge')
+        if to_hit(my_agl, target_dodge) == True:
+            # HIT, SHOW VIS, DO DAMAGE, EXIT
+            my_str = self.get_attr('str')
+            target_end = app.ent_dict[id].get_attr('end')
+            d = damage(my_str, target_end)
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Orc Axeman Attack Hit!\n' + str(d) + ' Spirit Damage', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+            app.ent_dict[id].set_attr('spirit', -d)
+            if app.ent_dict[id].spirit <= 0:
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+            root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id)) # EXIT THROUGH CLEANUP_ATTACK()
+        else:
+            # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Orc Axeman Attack Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+            root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id))
+        
+    def cleanup_attack(self, ents_list, id):
+        if app.ent_dict[id].spirit <= 0:
+            app.kill(id)
+        self.init_normal_anims()
+        try: app.canvas.delete('text')
+        except: pass
+        ents_list = ents_list[1:]
+        if ents_list == []:
+            app.end_turn()
+        else:
+            root.after(666, lambda e = ents_list : app.do_ai_loop(e))
+        
+        
+    def legal_attacks(self):
+        sqrs = []
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        for coord in coords:
+            if (bool(abs(coord[0] - self.loc[0]) == 1) ^ bool(abs(coord[1] - self.loc[1]) == 1)) and dist(coord, self.loc) == 1:
+                if app.grid[coord[0]][coord[1]] != '' and app.grid[coord[0]][coord[1]] != 'block':
+                    sqrs.append(coord)
+        return sqrs
+        
+    def legal_moves(self):
+        loc = self.loc
+        mvlist = []
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        def findall(loc, start, dist):
+            if start > dist:
+                return
+            adj = [c for c in coords if abs(c[0] - loc[0]) + abs(c[1] - loc[1]) == 1 and app.grid[c[0]][c[1]] == '']
+            for s in adj:
+                mvlist.append(s)
+                findall(s, start+1, dist)
+        findall(loc, 1, 3) 
+        setlist = []
+        for l in mvlist:
+            if l not in setlist:
+                setlist.append(l)
+        return setlist
         
         
 class Warrior(Summon):
@@ -2493,6 +2710,8 @@ class App(tk.Frame):
         self.get_focus(ent)
         if self.ent_dict[ent].name == 'Undead':
             self.ent_dict[ent].do_undead_ai(ents)
+        elif self.ent_dict[ent].name == 'Orc_axeman':
+            self.ent_dict[ent].do_orc_axeman_ai(ents)
         elif self.ent_dict[ent].name == 'White_Dragon':
             self.ent_dict[ent].do_white_dragon_ai(ents)
         
@@ -2721,7 +2940,6 @@ class App(tk.Frame):
         # DEBUG make info button into label that holds the info
         self.cntxt_info_bg = ImageTk.PhotoImage(Image.open('page.png'))
         bg = tk.Canvas(self.context_menu, width = 190, height = 295, bg = 'burlywood4', bd=0, relief='raised', highlightthickness=0)
-        print('bg of contxt canvas line 2519 is ', bg)
         bg.pack(side = 'top')
         bg.create_image(0,0, image = self.cntxt_info_bg, anchor = 'nw')
         bg.create_text(15, 15, text=expanded_name + '\n' + self.get_info_text(e), width = 190, anchor = 'nw', font = ('chalkduster', 18), fill = 'indianred')
