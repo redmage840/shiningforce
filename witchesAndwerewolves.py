@@ -1509,9 +1509,6 @@ class Orc_axeman(Summon):
                         apath = smallpaths[0]
                         # FIND FURTHEST SQR ALONG PATH THAT CAN BE MOVED TO
                         moves = self.legal_moves()
-                        print('start loc ', self.loc)
-                        print('moves is ', moves)
-                        print('grid is ', app.grid)
                         for sqr in apath[::-1]: # START WITH SQRS CLOSEST TO TARGET
                             if sqr in moves:
                                 endloc = sqr[:] # AMONG SQRS POSSIBLE TO MOVE TO, THIS IS CLOSEST TO GOAL
