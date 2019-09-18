@@ -1,3 +1,13 @@
+# prevent damage or effect text from covering 'killed' text
+
+# 'RPS' the summons, warrior deals lots of phys (str v end) but has poor movement weak to range (dodge) but high end, shadow deals agl v dodg range atk and avoids range (high dodg) but low end str, trickster helps shadow and warrior by augment move and def (agl and dodg), plagber weakens hard to hit and damage enemies (stat lowers) and has AOE (contagion) that combines well with psionic push or gateway and good defense versus range (dodg), bard ...(remove unholy chant as is) 
+# this way a level could be designed to be hard for a particular combination to win... many range against warriors, high dodge versus range...
+# make witch spells cantrip(free, minor effects) or arcane(cost magick, major effects), one of each per turn
+# no hard summon cap ncsry without magick regen, in 1player mode, protag object gains new abilities/stats
+ 
+
+# being able to cast more than one spell per turn would make for more interesting combos, maybe just two spells, one free, one not
+
 # victory condition happens too fast, need to freeze screen and show 'confirm' or 'notice'
 
 # gateway not checking magick cost
@@ -518,28 +528,18 @@ class Summon(Entity):
         
 class Trickster(Summon):
     def __init__(self, name, img, loc, owner, number):
-        self.actions = {'Simulacrum':self.simulacrum,'Gateway':self.gateway,'Move':self.move}
+        self.actions = {'Simulacrum':self.simulacrum,'Gate':self.gate,'Move':self.move}
         self.attack_used = False
         self.str = 2
         self.agl = 3
         self.end = 2
-        self.dodge = 4
+        self.dodge = 5
         self.psyche = 5
         self.spirit = 10
         self.magick = 23
         super().__init__(name, img, loc, owner, number)
         
         
-    # for vis, maybe get image of target...
-    # simu anims would be just a bunch of opaque 'glass' / greyscale opacity
-    # then grab 2 copies of target image, drag one left, one right across the opacity
-    # target gets + 4 dodge effect, lasts 3 turns
-    # have to resize for larger units
-    # create_image the targets image with 'left' tag
-    # create_image simulacrum anim(img) with 'left' tag
-    # create_image the targets image with 'right' tag
-    # create_image simulacrum anim(img) with 'right' tag
-    # move each in loop by tag
     def simulacrum(self, event):
         if self.attack_used == True or self.magick < 3:
             return
@@ -565,25 +565,27 @@ class Trickster(Summon):
         # PREVENT STACKING OF SIMULACRUM
         if 'Simulacrum' in app.ent_dict[id].effects_dict.keys():
             return
-        self.set_attr('magick', -4)
+        self.set_attr('magick', -3)
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
         self.attack_used = True
         # DO SIMULACRUM EFFECTS
         def simulacrum_effect(stat):
-            stat += 4
+            stat += 3
             return stat
         f = simulacrum_effect
+        app.ent_dict[id].agl_effects.append(f)
         app.ent_dict[id].dodge_effects.append(f)
         def un(i):
+            app.ent_dict[i].agl_effects.remove(simulacrum_effect)
             app.ent_dict[i].dodge_effects.remove(simulacrum_effect)
         p = partial(un, id)
         def nothing():
             return None
         eot = nothing
         n = 'Simulacrum' + str(app.effects_counter)
-        app.ent_dict[id].effects_dict['Simulacrum'] = Effect(name = 'Simulacrum', info = 'Simulacrum\nDodge incr by 4 for 3 turns', eot_func = eot, undo = p, duration = 3)
+        app.ent_dict[id].effects_dict['Simulacrum'] = Effect(name = 'Simulacrum', info = 'Simulacrum\nAgl, Dodge incr by 3 for 3 turns', eot_func = eot, undo = p, duration = 3)
         # DO SIMULACRUM VISUALS
         
         start_loc = app.ent_dict[id].loc[:]
@@ -596,32 +598,21 @@ class Trickster(Summon):
         app.canvas.create_text(start_loc[0]*100+50-app.moved_right, start_loc[1]*100+95-app.moved_down, text = 'Simulacrum', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
         x = start_loc[0]*100+50-app.moved_right
         y = start_loc[1]*100+50-app.moved_down
-        # end loc is not another sqr just an offset to X coord (not Y), but 2 X offsets (going in each direction)
         end_left = start_loc[0]*100-app.moved_right # minus 50 from center
         end_right = start_loc[0]*100+100-app.moved_right # plus 50 from center
-#         endy = sqr[1]*100+50-app.moved_down
-        # prevent animation from redrawing at start_loc
-#         selected = id
         selected_vis = 'Simulacrum'
-        # will need two loops maybe
-        # just moving the created images of target (not redrawing or preventing redraw of original)
-        # each 'left' and 'right' vis image needs to be rotated, deleted, and redrawn (not moved)
         def simulacrum_loop_left(vis, x, y, end_left, tar):
             if x % 5 == 0: # this just gets new image (flickers simulacrum opacity)
                 app.vis_dict[vis].rotate_image()
                 app.canvas.delete('left') # this deletes both vis left and right
-#                 app.canvas.delete(ent)
                 app.canvas.create_image(x, y, image = app.ent_dict[tar].img, tags = 'left')
                 app.canvas.create_image(x, y, image = app.vis_dict[vis].img, tags = ('Simulacrum','left'))
-#                 app.canvas.create_image(x, y, image = app.ent_dict[ent].img, tags = app.ent_dict[ent].tags)
             app.canvas.tag_raise(vis)
-            # end_left always starts less than x
             if x > end_left:
                 x -= 10
                 app.canvas.move('left',-10,0)
             if x == end_left:
                 pass
-#                 root.after(666, self.cleanup_simulacrum)
             else:
                 root.after(100, lambda vis = 'Simulacrum', x = x, y = y, end_left = end_left, tar = tar : simulacrum_loop_left(vis, x, y, end_left, tar))
                 
@@ -629,12 +620,9 @@ class Trickster(Summon):
             if x % 5 == 0: # this just gets new image (flickers simulacrum opacity)
                 app.vis_dict[vis].rotate_image()
                 app.canvas.delete('right') # this deletes both vis left and right
-#                 app.canvas.delete(ent)
                 app.canvas.create_image(x, y, image = app.ent_dict[tar].img, tags = 'right')
                 app.canvas.create_image(x, y, image = app.vis_dict[vis].img, tags = ('Simulacrum','right'))
-#                 app.canvas.create_image(x, y, image = app.ent_dict[ent].img, tags = app.ent_dict[ent].tags)
             app.canvas.tag_raise(vis)
-            # end_right always starts greater than x
             if x < end_right:
                 x += 10
                 app.canvas.move('right',10,0)
@@ -646,13 +634,8 @@ class Trickster(Summon):
         simulacrum_loop_left('Simulacrum', x, y, end_left, id)
         simulacrum_loop_right('Simulacrum', x, y, end_right, id)
         
-        ###############################################################################################
-#         app.vis_dict['Simulacrum'] = Vis(name = 'Simulacrum', loc = sqr)
-#         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Simulacrum'].img, tags = 'Simulacrum')
         
     def cleanup_simulacrum(self, event = None):
-#         for x in range(1, len(self.spell_dict.keys())+1):
-#             root.unbind(str(x))
         app.unbind_all()
         app.rebind_all()
         app.cleanup_squares()
@@ -665,11 +648,11 @@ class Trickster(Summon):
         app.canvas.delete('text')
         
         
-    def gateway(self, event = None):
-        if self.attack_used == True:
+    def gate(self, event = None):
+        if self.attack_used == True or self.magick < 3:
             return
         root.unbind('<q>')
-        root.bind('<q>', self.cleanup_gateway)
+        root.bind('<q>', self.cleanup_gate)
         root.unbind('<a>')
         sqrs = []
         coord_pairs = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
@@ -699,25 +682,25 @@ class Trickster(Summon):
         root.unbind('<q>')
         root.unbind('<a>')
         self.attack_used = True
-        self.set_attr('magick', -4)
+        self.set_attr('magick', -3)
         my_psyche = self.get_attr('psyche')
-        target_dodge = app.ent_dict[id].get_attr('dodge')
-        distance = damage(my_psyche, target_dodge)
+        target_psyche = app.ent_dict[id].get_attr('psyche')
+        distance = damage(my_psyche, target_psyche)
         app.cleanup_squares()
         sqrs = self.doorway_squares(distance)
         if sqrs == []:
             app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+60-app.moved_down, text = 'No Available Area', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
-            root.after(999, self.cleanup_gateway)
+            root.after(999, self.cleanup_gate)
         else:
             app.animate_squares(sqrs)
-            root.bind('<a>', lambda e, id = id, sqrs = sqrs : self.do_gateway(e, id = id, sqrs = sqrs))
-            b = tk.Button(app.context_menu, text = 'Choose Location', font = ('chalkduster', 24), fg = 'tan3', wraplength = 190, highlightbackground = 'tan3', command = lambda e = None, id = id, s = sqrs : self.do_gateway(e, id, s))
+            root.bind('<a>', lambda e, id = id, sqrs = sqrs : self.do_gate(e, id = id, sqrs = sqrs))
+            b = tk.Button(app.context_menu, text = 'Choose Location', font = ('chalkduster', 24), fg = 'tan3', wraplength = 190, highlightbackground = 'tan3', command = lambda e = None, id = id, s = sqrs : self.do_gate(e, id, s))
             b.pack(side = 'top')
             app.context_buttons.append(b)
 
     
     #Put VIS IN HERE
-    def do_gateway(self, event = None, id = None, sqrs = None):
+    def do_gate(self, event = None, id = None, sqrs = None):
         if grid_pos not in sqrs:
             return
         app.unbind_all()
@@ -725,29 +708,29 @@ class Trickster(Summon):
         app.cleanup_squares()
         oldloc = app.ent_dict[id].loc[:]
         newloc = grid_pos[:]
-        app.vis_dict['Gateway'] = Vis(name = 'Gateway', loc = oldloc[:])
-        vis = app.vis_dict['Gateway']
+        app.vis_dict['Gate'] = Vis(name = 'Gate', loc = oldloc[:])
+        vis = app.vis_dict['Gate']
         app.canvas.create_image(oldloc[0]*100+50-app.moved_right, oldloc[1]*100+50-app.moved_down, image = vis.img, tags = 'Gateway')
-        root.after(1666, lambda newloc = newloc, id = id : self.finish_gateway(newloc, id))
+        root.after(1666, lambda newloc = newloc, id = id : self.finish_gate(newloc, id))
         
-    def finish_gateway(self, newloc, id):
+    def finish_gate(self, newloc, id):
         app.grid[app.ent_dict[id].loc[0]][app.ent_dict[id].loc[1]] = ''
         app.canvas.delete(id)
         app.ent_dict[id].loc = newloc[:]
         app.ent_dict[id].origin = newloc[:]
         app.grid[newloc[0]][newloc[1]] = id
-        app.canvas.delete('Gateway')
-        try: del app.vis_dict['Gateway']
+        app.canvas.delete('Gate')
+        try: del app.vis_dict['Gate']
         except: pass
-        app.vis_dict['Gateway'] = Vis(name = 'Gateway', loc = newloc[:])
-        vis = app.vis_dict['Gateway']
+        app.vis_dict['Gate'] = Vis(name = 'Gate', loc = newloc[:])
+        vis = app.vis_dict['Gate']
         root.after(1666, lambda id = id, newloc = newloc : self.place_entity(id, newloc))
         
     def place_entity(self, id, newloc):
-        app.canvas.delete('Gateway')
-        del app.vis_dict['Gateway']
+        app.canvas.delete('Gate')
+        del app.vis_dict['Gate']
         app.canvas.create_image(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+50-app.moved_down, image = app.ent_dict[id].img, tags = app.ent_dict[id].tags)
-        root.after(666, self.cleanup_gateway)
+        root.after(666, self.cleanup_gate)
     
     def doorway_squares(self, distance):
         sqr_list = []
@@ -758,9 +741,9 @@ class Trickster(Summon):
                     sqr_list.append(c)
         return sqr_list
     
-    def cleanup_gateway(self, event = None):
+    def cleanup_gate(self, event = None):
         try:
-            del app.vis_dict['Gateway']
+            del app.vis_dict['Gate']
         except: pass
         app.canvas.delete('text')
         app.depop_context(event = None)
@@ -786,9 +769,9 @@ class Shadow(Summon):
         self.str = 3
         self.agl = 4
         self.end = 3
-        self.dodge = 4
-        self.psyche = 4
-        self.spirit = 8
+        self.dodge = 5
+        self.psyche = 5
+        self.spirit = 12
         super().__init__(name, img, loc, owner, number)
         
         
@@ -802,6 +785,10 @@ class Shadow(Summon):
         coord_pairs = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         for coord in coord_pairs:
             if abs(coord[0] - self.loc[0]) == 1 and abs(coord[1] - self.loc[1]) == 1:
+                sqrs.append(coord)
+            elif abs(coord[0] - self.loc[0]) == 2 and abs(coord[1] - self.loc[1]) == 2:
+                sqrs.append(coord)
+            elif abs(coord[0] - self.loc[0]) == 3 and abs(coord[1] - self.loc[1]) == 3:
                 sqrs.append(coord)
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, sqrs = sqrs : self.check_hit(e, sqrs))
@@ -1494,7 +1481,13 @@ class Tortured_Soul(Summon):
     
     def tortured_soul_attack(self, ents_list, id):
         app.get_focus(id)
-#         self.init_attack_anims()
+        self.init_attack_anims()
+        # make range atk vis
+        visloc = app.ent_dict[id].loc[:]
+        app.vis_dict['Tortured_Soul_Agony'] = Vis(name = 'Tortured_Soul_Agony', loc = visloc)
+        app.canvas.create_image(visloc[0]*100+50-app.moved_right, visloc[1]*100+50-app.moved_down, image = app.vis_dict['Tortured_Soul_Agony'].img, tags = 'Tortured_Soul_Agony')
+        app.canvas.create_text(visloc[0]*100+50-app.moved_right, visloc[1]*100+95-app.moved_down, text = 'Agony', font = ('Andale Mono', 16), fill = 'orangered4', tags = 'text')
+        
         my_agl = self.get_attr('agl')
         target_dodge = app.ent_dict[id].get_attr('dodge')
         if to_hit(my_agl, target_dodge) == True:
@@ -1506,16 +1499,34 @@ class Tortured_Soul(Summon):
             app.ent_dict[id].set_attr('spirit', -d)
             if app.ent_dict[id].spirit <= 0:
                 app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-            root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id)) # EXIT THROUGH CLEANUP_ATTACK()
         else:
-            # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
             app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Tortured Soul Attack Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-            root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id))
+
+#         def agony_loop(starty, endy, x, el, id):
+#             if starty > endy:
+#                 app.vis_dict['Tortured_Soul_Agony'].rotate_image()
+#                 app.canvas.delete('Tortured_Soul_Agony')
+#                 app.canvas.create_image(x, starty, image = app.vis_dict['Tortured_Soul_Agony'].img, tags = 'Tortured_Soul_Agony')
+#                 starty -= 10
+#                 app.canvas.move('Moonlight', 0, -10)
+#                 app.canvas.tag_raise('Tortured_Soul_Agony')
+#             if starty == endy:
+#                 root.after(333, lambda  el = el, id = id : self.cleanup_attack(el, id))
+#             else:
+#                 root.after(166, lambda sy = starty, ey = endy, x = x, el = el, id = id : agony_loop(sy, ey, x, el, id))
+#                 
+#         starty = visloc[1]*100+90-app.moved_down
+#         endy = visloc[1]*100+10-app.moved_down
+#         agony_loop(locy, locy-120, locx)
+        root.after(3666, lambda  el = ents_list, id = id : self.cleanup_attack(el, id))
+        
         
     def cleanup_attack(self, ents_list, id):
         if app.ent_dict[id].spirit <= 0:
             app.kill(id)
         self.init_normal_anims()
+        app.canvas.delete('Tortured_Soul_Agony')
+        del app.vis_dict['Tortured_Soul_Agony']
         try: app.canvas.delete('text')
         except: pass
         ents_list = ents_list[1:]
@@ -2036,22 +2047,9 @@ class Warrior(Summon):
         root.bind('<q>', self.cancel_attack)
         sqrs = []
         coord_pairs = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        if app.active_player == 'p1':
-            for coord in coord_pairs:
-                if abs(coord[0] - self.loc[0]) == 1 and coord[1] == self.loc[1]:
-                    sqrs.append(coord)
-                elif abs(coord[0] - self.loc[0]) == 1 and coord[1]-1 == self.loc[1]:
-                    sqrs.append(coord)
-                elif coord[0] == self.loc[0] and coord[1]-1 == self.loc[1]:
-                    sqrs.append(coord)
-        elif app.active_player == 'p2':
-            for coord in coord_pairs:
-                if abs(coord[0] - self.loc[0]) == 1 and coord[1] == self.loc[1]:
-                    sqrs.append(coord)
-                elif abs(coord[0] - self.loc[0]) == 1 and coord[1]+1 == self.loc[1]:
-                    sqrs.append(coord)
-                elif coord[0] == self.loc[0] and coord[1]+1 == self.loc[1]:
-                    sqrs.append(coord)
+        for c in coord_pairs:
+            if dist(self.loc, c) == 1:
+                sqrs.append(c)
         app.animate_squares(sqrs)
         app.depop_context(event = None)
         root.bind('<a>', lambda e, s = sqrs : self.check_hit(event = e, sqrs = s)) 
@@ -2070,8 +2068,8 @@ class Warrior(Summon):
         app.unbind_all()
         id = app.current_pos()
         my_agl = self.get_attr('agl')
-        target_dodge = app.ent_dict[id].get_attr('dodge')
-        if to_hit(my_agl, target_dodge) == True:
+        target_agl = app.ent_dict[id].get_attr('agl')
+        if to_hit(my_agl, target_agl) == True:
             my_str = self.get_attr('str')
             target_end = app.ent_dict[id].get_attr('end')
             d = damage(my_str, target_end)
@@ -2101,39 +2099,33 @@ class Warrior(Summon):
         loc = self.loc
         mvlist = []
         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        def findall(loc, start, dist):
-            if start > dist:
-                return
-            # need different 'front' depending on player
-            if app.active_player == 'p1':
-                front = [c for c in coords if c[0] == loc[0] and c[1]-1 == loc[1] and app.grid[c[0]][c[1]] == '']
-            elif app.active_player == 'p2':
-                front = [c for c in coords if c[0] == loc[0] and c[1]+1 == loc[1] and app.grid[c[0]][c[1]] == '']
-            for s in front:
-                mvlist.append(s)
-                findall(s, start+1, dist)
-        findall(loc, 1, 3) 
-        setlist = []
-        for l in mvlist:
-            if l not in setlist:
-                setlist.append(l)
-        return setlist
+        for c in coords:
+            if abs(c[0] - loc[0]) <= 2 and c[1] == loc[1] and c != loc:
+                mvlist.append(c)
+            elif c[0] == loc[0] and abs(c[1] - loc[1]) <= 2 and c != loc:
+                mvlist.append(c)
+        return mvlist
                     
 class Witch(Entity):
     def __init__(self, name, img, loc, owner):
         self.actions = {'spell':self.spell, 'summon':self.summon, 'move':self.move}
-        self.spell_used = False
+#         self.spell_used = False
+        self.cantrip_used = False
+        self.arcane_used = False
         self.summon_used = False
-        self.spell_dict = {}
+        self.arcane_dict = {}
+        self.cantrip_dict = {}
         self.summon_dict = {}
         self.summon_ids = 0
         
         if name == 'Agnes_Sampson':
-            self.spell_dict['Psionic_Push'] = (self.psionic_push, 0)
-            self.spell_dict['Plague'] = (self.plague, 6)
-            self.spell_dict['Curse_of_Oriax'] = (self.curse_of_oriax, 5)
-            self.spell_dict['Gravity'] = (self.gravity, 5)
-            self.spell_dict["Beleth's_Command"] = (self.beleths_command, 8)
+            self.cantrip_dict['Psionic_Push'] = (self.psionic_push)
+            self.cantrip_dict['Scrye'] = (self.scrye)
+            self.cantrip_dict['Moonlight'] = (self.moonlight)
+            self.arcane_dict['Plague'] = (self.plague, 6)
+            self.arcane_dict['Curse_of_Oriax'] = (self.curse_of_oriax, 5)
+            self.arcane_dict['Gravity'] = (self.gravity, 5)
+            self.arcane_dict["Beleth's_Command"] = (self.beleths_command, 8)
             self.str = 4
             self.agl = 2
             self.end = 3
@@ -2173,7 +2165,9 @@ class Witch(Entity):
     def reset_transient_vars(self):
         self.summon_dict = {}
         self.summon_ids = 0
-        self.spell_used = False
+#         self.spell_used = False
+        self.cantrip_used = False
+        self.arcane_used = False
         self.summon_used = False
         self.spirit = self.base_spirit
         self.magick = self.base_magick
@@ -2313,15 +2307,49 @@ class Witch(Entity):
         return setlist
         
     def spell(self, event = None):
-        if self.spell_used == True:
-            return
+#         if self.spell_used == True:
+#             return
         app.depop_context(event = None)
-        # DEBUG need to unbind most keys here, rebind on cleanup_spell which should be always exited through whether successful cast or cancel
         root.unbind('<a>')
         root.unbind('<q>')
         root.bind('<q>', self.cleanup_spell)
-        # SPELL
-        for i, name_spellcosttuple in enumerate(self.spell_dict.items()):
+        b1 = tk.Button(app.context_menu, wraplength = 190, text = 'Cantrip', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = self.cantrip)
+        b1.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b1)
+        root.bind(str(1), self.cantrip)
+        b2 = tk.Button(app.context_menu, wraplength = 190, text = 'Arcane', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = self.arcane)
+        b2.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b2)
+        root.bind(str(2), self.arcane)
+        
+    def cantrip(self, event = None):
+        if self.cantrip_used == True:
+            return
+#         app.unbind_all()
+        app.depop_context(event = None)
+        app.unbind('<q>')
+        app.unbind('<a>')
+        root.bind('<q>', self.cleanup_spell)
+        for i, item in enumerate(self.cantrip_dict.items()):
+            name = item[0]
+            name = name.replace('_', ' ')
+            spell = item[1]
+            i += 1
+            b1 = tk.Button(app.context_menu, wraplength = 190, text = str(i) +' : '+ name + ' •', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = spell)
+            b1.pack(side = 'top', pady = 2)
+            root.bind(str(i), spell)
+            app.context_buttons.append(b1)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = self.cleanup_spell)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
+        
+    def arcane(self, event = None):
+        if self.arcane_used == True:
+            return
+        app.unbind_all()
+        app.depop_context(event = None)
+        root.bind('<q>', self.cleanup_spell)
+        for i, name_spellcosttuple in enumerate(self.arcane_dict.items()):
             name = name_spellcosttuple[0]
             name = name.replace('_', ' ')
             spell = name_spellcosttuple[1][0]
@@ -2342,8 +2370,6 @@ class Witch(Entity):
     def cleanup_spell(self, event = None, name = None):
         global selected, selected_vis
         self.init_normal_anims()
-        for x in range(1, len(self.spell_dict.keys())+1):
-            root.unbind(str(x))
         app.unbind_all()
         app.rebind_all()
         app.cleanup_squares()
@@ -2358,9 +2384,60 @@ class Witch(Entity):
         selected_vis = ''
         
         
-        # Need to incorporate 'magick cost' and rules for regenerating/regaining magick, probably certain squares that replenish a set amount every turn, or squares that appear for a limited amount of time/turns that replenish
 # AGNES SPELLS
-        # Agnes' spells center around Death/Decay/Disease/Telekinetics
+# Agnes' spells center around Death/Decay/Disease/Telekinetics/Cosmology
+    def scrye(self, event = None):
+        pass
+    
+    def moonlight(self, event = None):
+        app.depop_context(event = None)
+        root.bind('<q>', lambda name = 'Moonlight' : self.cleanup_spell(name = name))
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [s for s in coords if dist(self.loc, s) <= 4]
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_moonlight(event = e, s = s, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Choose Target For Moonlight', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_moonlight(e, s, sqrs))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+        
+    def do_moonlight(self, event, s, sqrs):
+        global selected_vis
+        id = app.grid[s[0]][s[1]]
+        if id == '' or id == 'block':
+            return
+        if s not in sqrs:
+            return
+        if not isinstance(app.ent_dict[id], Trickster) and not isinstance(app.ent_dict[id], Warrior) and not isinstance(app.ent_dict[id], Bard) and not isinstance(app.ent_dict[id], Shadow):
+             return
+        app.unbind_all()
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        self.init_cast_anims()
+        app.ent_dict[id].set_attr('spirit', 3)
+        self.cantrip_used = True
+        app.vis_dict['Moonlight'] = Vis(name = 'Moonlight', loc = s)
+        app.canvas.create_image(s[0]*100+50-app.moved_right, s[1]*100+70-app.moved_down, image = app.vis_dict['Moonlight'].img, tags = 'Moonlight')
+        app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+65-app.moved_down, text = 'Moonlight\n+3 Spirit', font = ('Andale Mono', 16), fill = 'azure', tags = 'text')
+        selected_vis = 'Moonlight'
+        
+        # needs to be moved upwards at the same rate, when rotating image also move up one tick
+        def moonlight_loop(starty, endy, x):
+            if starty > endy:
+                app.vis_dict['Moonlight'].rotate_image()
+                app.canvas.delete('Moonlight')
+                app.canvas.create_image(x, starty, image = app.vis_dict['Moonlight'].img, tags = 'Moonlight')
+                starty -= 10
+                app.canvas.move('Moonlight', 0, -10)
+                app.canvas.tag_raise('Moonlight')
+            if starty == endy:
+                root.after(333, lambda  name = 'Moonlight' : self.cleanup_spell(name = name))
+            else:
+                root.after(166, lambda sy = starty, ey = endy, x = x : moonlight_loop(sy, ey, x))
+                
+        locy = s[1]*100+70-app.moved_down
+        locx = s[0]*100+50-app.moved_right
+        moonlight_loop(locy, locy-120, locx)
+        
     def plague(self, event = None):
             # currently effects dif from description, one target, no to_hit check
             # attrs reduced to by 3 to a minimum of 1 (str, agl, end, dodge, psyche) lasting until 3 opp turns have passed
@@ -2387,11 +2464,11 @@ class Witch(Entity):
         if 'Plague' in app.ent_dict[id].effects_dict.keys():
             return
         self.init_cast_anims()
-        self.magick -= self.spell_dict['Plague'][1]
+        self.magick -= self.arcane_dict['Plague'][1]
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
-        self.spell_used = True
+        self.arcane_used = True
         app.vis_dict['Plague'] = Vis(name = 'Plague', loc = sqr)
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Plague'].img, tags = 'Plague')
         app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Plague', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
@@ -2487,9 +2564,9 @@ class Witch(Entity):
         global selected, selected_vis
         if sqr not in sqrs:
             return
-        self.spell_used = True
+        self.cantrip_used = True
         self.init_cast_anims()
-        self.magick -= self.spell_dict['Psionic_Push'][1]
+#         self.magick -= self.cantrip_dict['Psionic_Push'][1]
         app.unbind_all()
         app.cleanup_squares()
         app.depop_context(event = None)
@@ -2591,12 +2668,12 @@ class Witch(Entity):
         id = app.current_pos()
         if not isinstance(app.ent_dict[id], Witch) and not isinstance(app.ent_dict[id], Summon):
              return
-        self.magick -= self.spell_dict['Curse_of_Oriax'][1]
+        self.magick -= self.arcane_dict['Curse_of_Oriax'][1]
         self.init_cast_anims()
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
-        self.spell_used = True
+        self.arcane_used = True
         app.vis_dict['Curse_of_Oriax'] = Vis(name = 'Curse_of_Oriax', loc = sqr)
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Curse_of_Oriax'].img, tags = 'Curse_of_Oriax')
         app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Curse\nof\nOriax', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
@@ -2656,12 +2733,12 @@ class Witch(Entity):
         id = app.current_pos()
         if not isinstance(app.ent_dict[id], Witch) and not isinstance(app.ent_dict[id], Summon):
              return
-        self.magick -= self.spell_dict['Gravity'][1]
+        self.magick -= self.arcane_dict['Gravity'][1]
         self.init_cast_anims()
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
-        self.spell_used = True
+        self.arcane_used = True
         app.vis_dict['Gravity'] = Vis(name = 'Gravity', loc = sqr)
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Gravity'].img, tags = 'Gravity')
         app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Gravity', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
@@ -2843,12 +2920,8 @@ class App(tk.Frame):
         self.game_title.saves_buttons.append(cancel_b)
                 
     def load_game(self, obj):
-        # destroy titlescreen
         self.game_title.destroy()
-        # same problem with location had on new map area
-        # was it setting grid_pos, curs_pos?
         self.load_map_triggers(map_number = obj.current_area, protaganist_object = obj)
-#         self.create_map_curs_context(map_number = obj.current_area, protaganist_object = obj)
         
     def num_chose(self, num):
         self.num_players = num
@@ -2862,11 +2935,17 @@ class App(tk.Frame):
         if self.num_players == 2:
             self.choose_map()
         else:
-            self.load_map_triggers(map_number = 0)
+        # first choose_witch() here
+            self.choose_witch(player_num = 1)
+#             self.load_map_triggers(map_number = 0)
             
     # make each branch load the intro scene for level, with 'continue' button when done reading/displaying to call create_map_curs_context
-    def load_map_triggers(self, map_number, protaganist_object = None):
+    def load_map_triggers(self, map_number, witch = None, protaganist_object = None):
         if map_number == 0: # FIRST AREA, NO 'CONTINUATION' OF BY PASSING PROTAG OBJECT
+            # CLEANUP FROM CHOOSE_WITCH
+            self.avatar_popup.destroy()
+            del self.wrapped_funcs
+            self.p1_witch = witch
             self.map_triggers = []
             def kill_all_enemies():
                 all = [k for k,v in self.ent_dict.items() if v.owner == 'p2']
@@ -3003,11 +3082,11 @@ class App(tk.Frame):
         grid_pos = [2,2]
         self.canvas.create_image(250, 250, image=self.cursor_img, tags='cursor')
         # CHOOSE WITCH IF 2 PLAYER OR FIRST LEVEL
-        # OTHERWISE LOAD WITCH FROM PREVIOUS LEVEL (EVENTUALLY SHOULD BE PERSISTENT OBJECT, CARRY OVER ANY LONG-TERM CHANGED STATE)
         if protaganist_object:
             self.load_witch(witch = protaganist_object.name, player_num = 1, protaganist_object = protaganist_object)
-        else:
-            self.choose_witch()
+        else:# LOADING FIRST LEVEL, NOT SAVE GAME
+            self.load_witch(witch = self.p1_witch, player_num = 1, protaganist_object = None)
+#             self.choose_witch()
         
     # Called twice for 2player mode, first call defaults to first player choice, second call passes player_num = 2
     def choose_witch(self, player_num = 1):
@@ -3034,7 +3113,9 @@ class App(tk.Frame):
             f.pack(side = 'left')
             self.avatar_popup.witch_widgets.append(f)
             b = tk.Button(f)
-            p = partial(self.load_witch, witch[:-4], player_num)
+            # change below to call load_map_trigger(witchname)
+            p = partial(self.load_map_triggers, map_number = 0, witch = witch[:-4])
+#             p = partial(self.load_witch, witch[:-4], player_num)
             cmd = lambda win = self.avatar_popup, p = p : self.release_wrapper(win, p)
             self.wrapped_funcs.append(p)
             photo = ImageTk.PhotoImage(Image.open('./portraits/' + witch))
@@ -3193,7 +3274,8 @@ class App(tk.Frame):
             # RESET SPELLS / MOVEMENT / ATTACKS
             ent.move_used = False
             if isinstance(ent, Witch):
-                ent.spell_used = False
+                ent.cantrip_used = False
+                ent.arcane_used = False
                 ent.summon_used = False
             elif isinstance(ent, Summon):
                 ent.attack_used = False
@@ -3227,6 +3309,7 @@ class App(tk.Frame):
     
         
     def animate(self):
+        global selected, selected_vis
         for ent in self.ent_dict.keys():
             if ent != selected:
                 self.ent_dict[ent].rotate_image()
@@ -3250,7 +3333,10 @@ class App(tk.Frame):
                 else:
                     self.canvas.create_image(self.vis_dict[vis].loc[0]*100+50-self.moved_right, self.vis_dict[vis].loc[1]*100+50-self.moved_down, image = self.vis_dict[vis].img, tags = vis)
                 app.canvas.tag_raise(vis)
-#         app.canvas.tag_raise('vis')
+        try: # LOWER THE CURSOR BELOW MOVING ANIMATIONS (VIS)
+            app.canvas.tag_lower(('cursor'), (selected_vis))
+            print('selected_vis ', selected_vis)
+        except: pass
         try: app.canvas.tag_raise('text')
         except: pass
         self.animate_id = root.after(300, self.animate)
