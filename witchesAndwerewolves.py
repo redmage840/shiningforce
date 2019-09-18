@@ -1,87 +1,27 @@
+# balance spell costs, make arcane powerful but a waste of magick on small Ents so that structure of most map strategies is coming up with ideal summon team and saving enough magick for correct arcanes to use on 'bosses', while making creative use of cantrips/summon synergy
+
+# for pathing, when attempting reroute on egrid after finding no direct path, if the egrid path is much greater than dist(self.loc, goal) than do not move along it at all (probably better to wait for things to move in that case) 'much greater' can be defined simply as 3-6 greater int value when comparing egrid path length and dist from location
+
 # prevent damage or effect text from covering 'killed' text
 
 # 'RPS' the summons, warrior deals lots of phys (str v end) but has poor movement weak to range (dodge) but high end, shadow deals agl v dodg range atk and avoids range (high dodg) but low end str, trickster helps shadow and warrior by augment move and def (agl and dodg), plagber weakens hard to hit and damage enemies (stat lowers) and has AOE (contagion) that combines well with psionic push or gateway and good defense versus range (dodg), bard ...(remove unholy chant as is) 
 # this way a level could be designed to be hard for a particular combination to win... many range against warriors, high dodge versus range...
 # make witch spells cantrip(free, minor effects) or arcane(cost magick, major effects), one of each per turn
 # no hard summon cap ncsry without magick regen, in 1player mode, protag object gains new abilities/stats
- 
-
-# being able to cast more than one spell per turn would make for more interesting combos, maybe just two spells, one free, one not
 
 # victory condition happens too fast, need to freeze screen and show 'confirm' or 'notice'
-
-# gateway not checking magick cost
-
-# with hard limit on magick, structure each summon so it is good against certain enemies/levels, so a player is encouraged to figure out the best series of summon for a particular level and not just good synergy in general
-
-# trickster not checking magick cost correctly, allows for negative magick
 
 # get rid of unholy chant regen magick, give tricksters something to do with no magick, make shadows better, fix warrior movement (although it would be more interesting for PvP, it makes 1player mode have to structure all maps 'top vs bottom')
 
 # get focus before destroying text objects from effects loop
 
-# instead of first bfs for any path, compare the open path to the egrid path, if egrid path is much better (sometimes first open path is worse than waiting or moving some on egrid path)
-
-# maybe need way to 'light' shadowed areas?
-
-# ents that are trivially blocked but close to a target, will 'give up' in favor of an ent that is pathable but very far away
-
-# make move sqrs blink both black and white/red/silver so they can be seen in shadows
-
-# when no path exists and using empty grid to make apx path, replacing Ents may cause moving Ent to make a 'short move' on the path that lead right into a friendly Ent without attempting a trivial reroute (will sacrifice most of move range in pursuit of egrid path that is trivially 'blocked')
-
-# might be better to just have summon cap and no magick regen
-
-# make level 2 map shadows transparent
-
-# pathfinding, find shortest path on emptygrid to closest Ent, each sqr has distance value from target, if path becomes blocked find path to sqr along original path (egrid path) with least distance value, if closest ent changes, recalculate egrid path
-
-# warriors would be more interesting if they did something besides sit (rely on gateway)
-
-# shadows dont have a role against non-witch/magick users
-
-# trickster movement is more annoying than an interesting limit
-
-
-# miss less often for both sides
-
-# prob less small enemies, more powerful ones with random complex actions (move around a lot, move away, 'teleport', ranged attacks)
-# and bards stacking is kind of lame
-
-# if no path, find closest sqr to a target with path?
-
-# egrid move alt not seeming to work /close distance
-
-# bfs causes long reroutes when a path does exist, but a much shorter path is blocked by friendly ents
-
-# dumb bfs shows weakness, finding random paths that arent very close to shortest
-
-# moveloops and shadows tag_raise or lower
-
-# bricks in wall in maptop cover units, fallen bricks 
+# bricks in wall in maptop cover units, fallen bricks, level 1
 
 # contagion Vis will last longer than it takes to get to next action, either make faster cleanup or wait for cleanup or extend time between AI loop
 
-# move 'choose witch screen' before first 'intro screen'
-
-
-# orcs now make 'best attempt' to minimize distance when no path can be found
-# this still results in moving 'wrong' direction when better paths are blocked by Ents
-# instead of 'best attempt to min distance', remove temporary blocks (any Ents) from grid repr, then find path, then iterate over path backwards and move to the first legal sqr, if no legal_moves along path do not move just wait (better than moving wrong direction)
-# could be improved by replacing one Ent at a time, find path, then after all paths are accumulated, choose one with greatest distance or that minimizes distance to closest target and move as far as possible along it
-
-# warrior movement encourages engaging everything from 'top -> down', probably should change
-
 # death anims, at least delay before something like contagion
 
-# replace undead ai with orc pathfinding, maybe just leave them dumb...
-
-# orcs need to get focus on move square
-
 # check tag raise/lower priority, some redundancy,  i think its the general Ent do_move or loop
-
-# Units using bfs for pathfinding should make best attempt to minimize distance if no path can be found
-
 
 # Bards being able to freely replenish magic and having AI units 'wait' until close combines not well, encourages waiting around until built all the way back up. Not only this, but you could stay out of range of triggers and keep on summoning, maybe have a max amount of summons... Enemy triggers would 'see' you as soon as close enough to cast any spell to prevent staying on edge of triggers and using spells.
 # with above approach, still encourages waiting outside of triggers until replenished/full summons
@@ -100,23 +40,13 @@
 
 # do entrance finish bard, expand on shadow, maybe change warrior around (moves randomly, moves back and side only 1 space, ...)
 
-# make first level with triggers, undead, orcs, orc leader
-
-# change position of intro_scene text
-
 # add 'start position dependent on map' get from map_info
-
-# AI units have property 'target' (unit they will try to minimize distance to) target is updated under certain conditions or prevented from updating under conditions, will need to check for existence if not updating 'get_target()'
 
 # consider removing 'smoke' from agnes casting anims
 
 # is origin still used without old movement setup?
 
 # in ai_loop have some AI units hold 'state' of either 'active' or 'waiting', when map trigger is met (move closely enough) turn them 'active', when no user units 'close' enough turn to 'waiting'
-
-# what is difference in move_loop and psionic push move loop? psipush is much faster...
-
-# AI can get stuck behind obstacles trying to minimize distance only, needs to pathfind
 
 # doublecast / quick
 
@@ -138,8 +68,6 @@
 
 # make walking/movement animations
 
-# need better animations for psionic push, gravity
-
 # magick regen rate or squares on maps that regen
 
 # show victory conditions on map start
@@ -151,10 +79,6 @@
 # Urgent fix help text popup from disabling all input if 'clicked out of' or closed manually with window manager, either put help text on main canvas or context menu or make a full screen 'popup' like choose map dialogue
 
 # Instead of 'confirm_quit' labels, paste text across whole screen 
-
-# what happens to context_menu when attempting to populate with more buttons than it can hold, would only be an issue if ever adding a bunch more spells or summons, ideally would become a scrollbox (whatever it's called), would have populate_context count the number of buttons it is creating and when the height exceeds the screenheight...
-
-# start thinking about what map and map animation to use
 
 import tkinter as tk
 # from tkinter import ttk
@@ -2327,8 +2251,8 @@ class Witch(Entity):
             return
 #         app.unbind_all()
         app.depop_context(event = None)
-        app.unbind('<q>')
-        app.unbind('<a>')
+        root.unbind('<q>')
+        root.unbind('<a>')
         root.bind('<q>', self.cleanup_spell)
         for i, item in enumerate(self.cantrip_dict.items()):
             name = item[0]
@@ -2346,8 +2270,9 @@ class Witch(Entity):
     def arcane(self, event = None):
         if self.arcane_used == True:
             return
-        app.unbind_all()
         app.depop_context(event = None)
+        root.unbind('<q>')
+        root.unbind('<a>')
         root.bind('<q>', self.cleanup_spell)
         for i, name_spellcosttuple in enumerate(self.arcane_dict.items()):
             name = name_spellcosttuple[0]
@@ -2393,7 +2318,7 @@ class Witch(Entity):
         app.depop_context(event = None)
         root.bind('<q>', lambda name = 'Moonlight' : self.cleanup_spell(name = name))
         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        sqrs = [s for s in coords if dist(self.loc, s) <= 4]
+        sqrs = [s for s in coords if dist(self.loc, s) == 1]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_moonlight(event = e, s = s, sqrs = sqrs))
         b = tk.Button(app.context_menu, text = 'Choose Target For Moonlight', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_moonlight(e, s, sqrs))
