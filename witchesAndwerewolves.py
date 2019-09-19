@@ -1,3 +1,9 @@
+# make spells powerful enough to compete with summons cost-wise, where a user can choose to EITHER focus on summoning or just casting
+
+# what to do about deaths, need some kind of visual cue
+
+# make popups into fullscreen toplevels
+
 # balance spell costs, make arcane powerful but a waste of magick on small Ents so that structure of most map strategies is coming up with ideal summon team and saving enough magick for correct arcanes to use on 'bosses', while making creative use of cantrips/summon synergy
 
 # for pathing, when attempting reroute on egrid after finding no direct path, if the egrid path is much greater than dist(self.loc, goal) than do not move along it at all (probably better to wait for things to move in that case) 'much greater' can be defined simply as 3-6 greater int value when comparing egrid path length and dist from location
@@ -954,7 +960,7 @@ class Bard(Summon):
         super().__init__(name, img, loc, owner, number)
         
         
-    # All friendly units within dist2 regain 2 Spirit and 2 Magick, ensure not greater than base
+    # change to effect that gives +1 to all stats for 1 turn, non-stackable
     def unholy_chant(self, event = None):
         if self.attack_used == True:
             return
@@ -966,36 +972,70 @@ class Bard(Summon):
         app.animate_squares(sqrs)
         app.depop_context(event = None)
         root.bind('<a>', lambda e, s = sqrs : self.do_unholy_chant(event = e, sqrs = s)) 
-        b = tk.Button(app.context_menu, text = 'Confirm Unholy Chant', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, s = sqrs : self.do_unholy_chant(event = e, sqrs = s))
+        b = tk.Button(app.context_menu, text = 'Confirm Unholy Chant', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqrs = sqrs : self.do_unholy_chant(event = e, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        
         
     def do_unholy_chant(self, event = None, sqrs = None):
         self.attack_used = True
 #         self.init_attack_anims()
         app.depop_context(event = None)
+        app.cleanup_squares()
         app.unbind_all()
         ents = []
         for s in sqrs:
             ent = app.grid[s[0]][s[1]]
             if ent != '' and ent != 'block':
                 if app.ent_dict[ent].owner == app.active_player:
-                    app.ent_dict[ent].set_attr('spirit', 2)
-                    app.canvas.create_text(app.ent_dict[ent].loc[0]*100-app.moved_right+50, app.ent_dict[ent].loc[1]*100-app.moved_down+50, text = '+2 Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-                    if isinstance(app.ent_dict[ent], Witch) or isinstance(app.ent_dict[ent], Trickster):
-                        app.ent_dict[ent].set_attr('magick', 2)
-                        app.canvas.create_text(app.ent_dict[ent].loc[0]*100-app.moved_right+50, app.ent_dict[ent].loc[1]*100-app.moved_down+70, text = '+2 Magick', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-        root.after(1666, self.finish_unholy_chant)
+                    ef_names = [v.name for k,v in app.ent_dict[ent].effects_dict.items()]
+                    if 'Unholy_Chant' not in ef_names:
+                        n2 = 'Unholy_Chant' + str(app.effects_counter) # not an effect, just need unique int
+                        app.effects_counter += 1 # that is why this is incr manually here, no Effect init
+                        app.vis_dict[n2] = Vis(name = 'Unholy_Chant', loc = s)
+                        app.canvas.create_image(s[0]*100+50-app.moved_right, s[1]*100+50-app.moved_down, image = app.vis_dict[n2].img, tags = 'Unholy_Chant')
+                        app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+70-app.moved_down, text = 'Unholy\nChant', justify = 'center', font = ('Andale Mono', 14), fill = 'ivory3', tags = 'text')
+                        app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+90-app.moved_down, text = '+1 All Stats', font = ('Andale Mono', 12), fill = 'white', tags = 'text')
+                        def unholy_chant_effect(stat):
+                            stat += 1
+                            return stat
+                        f = unholy_chant_effect
+                        app.ent_dict[ent].str_effects.append(f)
+                        app.ent_dict[ent].end_effects.append(f)
+                        app.ent_dict[ent].agl_effects.append(f)
+                        app.ent_dict[ent].dodge_effects.append(f)
+                        app.ent_dict[ent].psyche_effects.append(f)
+                        
+                        n = 'Unholy_Chant' + str(app.effects_counter)
+                        def un(i, func):
+                            app.ent_dict[i].str_effects.remove(func)
+                            app.ent_dict[i].end_effects.remove(func)
+                            app.ent_dict[i].agl_effects.remove(func)
+                            app.ent_dict[i].dodge_effects.remove(func)
+                            app.ent_dict[i].psyche_effects.remove(func)
+                        p = partial(un, ent, f)
+                        # EOT FUNC
+                        def nothing():
+                            return None
+                        n = 'Unholy_Chant' + str(app.effects_counter)
+                        app.ent_dict[ent].effects_dict[n] = Effect(name = 'Unholy_Chant', info = 'Unholy_Chant\n Stats increased by 1 for 1 turn', eot_func = nothing, undo = p, duration = 1)
+        root.after(3666, self.finish_unholy_chant)
         
     def finish_unholy_chant(self, event = None):
 #         self.init_normal_anims()
+        try:
+            app.canvas.delete('Unholy_Chant')
+            keys = [k for k in app.vis_dict.keys() if k[:12] == 'Unholy_Chant']
+            for k in keys:
+                del app.vis_dict[k]
+        except: pass
         app.rebind_all()
         app.canvas.delete('text')
         app.depop_context(event = None)
         app.cleanup_squares()
     
     
-    #
+    ##
     def entrance(self):
         pass
     
@@ -2047,8 +2087,8 @@ class Witch(Entity):
             self.cantrip_dict['Scrye'] = (self.scrye)
             self.cantrip_dict['Moonlight'] = (self.moonlight)
             self.arcane_dict['Plague'] = (self.plague, 6)
-            self.arcane_dict['Curse_of_Oriax'] = (self.curse_of_oriax, 5)
-            self.arcane_dict['Gravity'] = (self.gravity, 5)
+            self.arcane_dict['Curse_of_Oriax'] = (self.curse_of_oriax, 4)
+            self.arcane_dict['Gravity'] = (self.gravity, 4)
             self.arcane_dict["Beleth's_Command"] = (self.beleths_command, 8)
             self.str = 4
             self.agl = 2
@@ -3160,20 +3200,38 @@ class App(tk.Frame):
             else: # ENTS_LIST EMPTY, FINISH_END_TURN
                 self.finish_end_turn()
             
-                
+    # when effect exec returns None, still need to durate, check for undo, check for more effects
     # exec an ef.eot_func, pop ef_list continue
     def effects_loop(self, ef, ef_list, ent, ents_list):
         k = [k for k,v in self.ent_dict.items() if v == ent]
         if ef.eot_func() != None:
             self.get_focus(k[0])
-        if ent.spirit <= 0: # ENT KILLED, DO NOT EXEC ANY MORE OF ITS EFFECTS, POP ENTS LIST OR EXIT
-            root.after(1333, lambda e = k[0] : self.kill(e))
-            ents_list = ents_list[1:]
-            if ents_list != []:
-                root.after(1333, lambda e = ents_list[0], el = ents_list : self.eot_loop(e, el))
-            else: # NO MORE ENTS, FINISH_END_TURN
-                root.after(1333, self.finish_end_turn)
-        else:# CONTINUE PROCESSING THIS EFFECT 
+            if ent.spirit <= 0: # ENT KILLED, DO NOT EXEC ANY MORE OF ITS EFFECTS, POP ENTS LIST OR EXIT
+                root.after(1333, lambda e = k[0] : self.kill(e))
+                ents_list = ents_list[1:]
+                if ents_list != []:
+                    root.after(1333, lambda e = ents_list[0], el = ents_list : self.eot_loop(e, el))
+                else: # NO MORE ENTS, FINISH_END_TURN
+                    root.after(1333, self.finish_end_turn)
+            else:# CONTINUE PROCESSING THIS EFFECT 
+                # CHECK IF EFFECT DURATION ENDS AND CALL UNDO IF SO
+                ef.duration -= 1
+                if ef.duration <= 0:
+                    ef.undo()
+                    key = [k for k,v in ent.effects_dict.items() if v == ef]
+                    del ent.effects_dict[key[0]]
+                # MORE EFFECTS?
+                ef_list = ef_list[1:]
+                if ef_list != []: # MORE EFFECTS FOR THIS ENT
+                    root.after(999, lambda t = 'text' : self.canvas.delete(t))
+                    root.after(1333, lambda ef = ef_list[0], efl = ef_list, en = ent, enl = ents_list : self.effects_loop(ef, efl, en, enl))
+                else: # NO MORE FOR THIS ENT, CHECK IF MORE ENTS
+                    ents_list = ents_list[1:]
+                    if ents_list != []: # MORE ENTS TO PROCESS EFFECTS FOR
+                        root.after(999, lambda e = ents_list[0], el = ents_list : self.eot_loop(e, el))
+                    else: # NO MORE ENTS, FINISH_END_TURN
+                        root.after(999, self.finish_end_turn)
+        else:
             # CHECK IF EFFECT DURATION ENDS AND CALL UNDO IF SO
             ef.duration -= 1
             if ef.duration <= 0:
@@ -3183,14 +3241,18 @@ class App(tk.Frame):
             # MORE EFFECTS?
             ef_list = ef_list[1:]
             if ef_list != []: # MORE EFFECTS FOR THIS ENT
-                root.after(999, lambda t = 'text' : self.canvas.delete(t))
-                root.after(1333, lambda ef = ef_list[0], efl = ef_list, en = ent, enl = ents_list : self.effects_loop(ef, efl, en, enl))
+#                 root.after(999, lambda t = 'text' : self.canvas.delete(t))
+#                 root.after(1333, lambda ef = ef_list[0], efl = ef_list, en = ent, enl = ents_list : 
+                self.effects_loop(ef_list[0], ef_list, ent, ents_list)
             else: # NO MORE FOR THIS ENT, CHECK IF MORE ENTS
                 ents_list = ents_list[1:]
                 if ents_list != []: # MORE ENTS TO PROCESS EFFECTS FOR
-                    root.after(999, lambda e = ents_list[0], el = ents_list : self.eot_loop(e, el))
+#                     root.after(999, lambda e = ents_list[0], el = ents_list : 
+                    self.eot_loop(ents_list[0], ents_list)
                 else: # NO MORE ENTS, FINISH_END_TURN
-                    root.after(999, self.finish_end_turn)
+#                     root.after(999, 
+                    self.finish_end_turn()
+                
                     
     def finish_end_turn(self):
         self.canvas.delete('text') # deletes the last text object when exiting loops
@@ -3260,7 +3322,6 @@ class App(tk.Frame):
                 app.canvas.tag_raise(vis)
         try: # LOWER THE CURSOR BELOW MOVING ANIMATIONS (VIS)
             app.canvas.tag_lower(('cursor'), (selected_vis))
-            print('selected_vis ', selected_vis)
         except: pass
         try: app.canvas.tag_raise('text')
         except: pass
