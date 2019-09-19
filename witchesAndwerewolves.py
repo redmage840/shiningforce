@@ -1626,7 +1626,7 @@ class Undead(Summon):
         self.actions = {'attack':self.do_attack}
         self.attack_used = False
         self.str = 4
-        self.agl = 2
+        self.agl = 3
         self.end = 4
         self.dodge = 2
         self.psyche = 2
@@ -1794,8 +1794,8 @@ class Undead(Summon):
         app.get_focus(id)
 #         self.init_attack_anims()
         my_agl = self.get_attr('agl')
-        target_dodge = app.ent_dict[id].get_attr('dodge')
-        if to_hit(my_agl, target_dodge) == True:
+        target_agl = app.ent_dict[id].get_attr('agl')
+        if to_hit(my_agl, target_agl) == True:
             # HIT, SHOW VIS, DO DAMAGE, EXIT
             my_str = self.get_attr('str')
             target_end = app.ent_dict[id].get_attr('end')
@@ -2156,12 +2156,35 @@ class Warrior(Summon):
         loc = self.loc
         mvlist = []
         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        # need to stop movement when obstructed
+        coords.remove(loc)
         for c in coords:
-            if abs(c[0] - loc[0]) <= 2 and c[1] == loc[1] and c != loc:
+            if loc[0]-1 == c[0] and c[1] == loc[1] and app.grid[c[0]][c[1]] == '':
                 mvlist.append(c)
-            elif c[0] == loc[0] and abs(c[1] - loc[1]) <= 2 and c != loc:
+                n = [c[0]-1, c[1]]
+                if n in coords:
+                    if  app.grid[n[0]][n[1]] == '':
+                        mvlist.append(n)
+            elif loc[0]+1 == c[0] and c[1] == loc[1] and app.grid[c[0]][c[1]] == '':
                 mvlist.append(c)
+                n = [c[0]+1, c[1]]
+                if n in coords:
+                    if  app.grid[n[0]][n[1]] == '':
+                        mvlist.append(n)
+            elif c[0] == loc[0] and loc[1]-1 == c[1] and app.grid[c[0]][c[1]] == '':
+                mvlist.append(c)
+                n = [c[0], c[1]-1]
+                if n in coords:
+                    if  app.grid[n[0]][n[1]] == '':
+                        mvlist.append(n)
+            elif c[0] == loc[0] and loc[1]+1 == c[1] and app.grid[c[0]][c[1]] == '':
+                mvlist.append(c)
+                n = [c[0], c[1]+1]
+                if n in coords:
+                    if  app.grid[n[0]][n[1]] == '':
+                        mvlist.append(n)
         return mvlist
+                    
                     
 class Witch(Entity):
     def __init__(self, name, img, loc, owner):
@@ -2177,7 +2200,7 @@ class Witch(Entity):
         
         if name == 'Agnes_Sampson':
             self.cantrip_dict['Psionic_Push'] = (self.psionic_push)
-            self.cantrip_dict['Scrye'] = (self.scrye)
+            self.cantrip_dict['Forcefield'] = (self.forcefield)
             self.cantrip_dict['Moonlight'] = (self.moonlight)
             self.arcane_dict['Plague'] = (self.plague, 5)
             self.arcane_dict['Curse_of_Oriax'] = (self.curse_of_oriax, 3)
@@ -2444,12 +2467,58 @@ class Witch(Entity):
         
 # AGNES SPELLS
 # Agnes' spells center around Death/Decay/Disease/Telekinetics/Cosmology
-    def scrye(self, event = None):
-        pass
-        
+    
     # make a sqr impassable for 2 turns (who gets the effect, global effects?) when to downtick?
-    def barrier(self, event = None):
-        pass
+    def forcefield(self, event = None):
+        app.depop_context(event = None)
+        root.unbind('<q>')
+        root.unbind('<a>')
+        root.bind('<q>', lambda name = 'Forcefield' : self.cleanup_spell(name = name))
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [s for s in coords if dist(self.loc, s) <= 6]
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_forcefield(event = e, sqr = s, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Choose Empty Square For Forcefield', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_forcefield(e, s, sqrs))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+        
+    def do_forcefield(self, event, sqr, sqrs):
+        if sqr not in sqrs:
+            return
+        if app.grid[sqr[0]][sqr[1]] != '':
+            return
+        self.cantrip_used = True
+        app.unbind_all()
+        app.cleanup_squares()
+        app.depop_context(event = None)
+#         app.vis_dict['Forcefield'] = Vis(name = 'Forcefield', loc = sqr[:])
+#         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Forcefield'].img, tags = 'Forcefield')
+        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Forcefield', font = ('Andale Mono', 16), fill = 'cyan2', tags = 'text')
+        # DO Forcefield EFFECTS
+        app.grid[sqr[0]][sqr[1]] = 'block'
+#         def forcefield_effect():
+#             return None
+        def un(s,v):
+            app.grid[s[0]][s[1]] = ''
+            del app.vis_dict[v]
+        def nothing():
+            return None
+        eot = nothing
+        n = 'Forcefield' + str(app.effects_counter)
+        p = partial(un, sqr[:], n)
+        # persistent Vis
+        app.vis_dict[n] = Vis(name = 'Forcefield', loc = sqr[:])
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict[n].img, tags = n)
+        app.global_effects_dict[n] = Effect(name = 'Forcefield', info = 'Block Square with a Forcefield', eot_func = eot, undo = p, duration = 2)
+        root.after(2666, lambda  name = 'Forcefield' : self.cleanup_spell(name = name))
+#         app.global_effects['Forcefield'] = Effect(name = 'Forcefield', 
+    
+    
+    
+    
+    
+    
+    
     
     def moonlight(self, event = None):
         app.depop_context(event = None)
@@ -2933,6 +3002,7 @@ class App(tk.Frame):
         self.ent_dict = {}
         self.sqr_dict = {}
         self.vis_dict = {}
+        self.global_effects_dict = {}
         self.active_player = 'p1'
         self.num_players = 1
         self.moved_right = 0
@@ -3301,8 +3371,28 @@ class App(tk.Frame):
         self.depop_context(event = None)
         # first do EOT loop, rest of this becomes finish_end_turn()
         # get list of all ents, pass in first ent, loop pops front and calls 
-        ents_list = [v for k,v in self.ent_dict.items() if v.owner == self.active_player]
-        self.eot_loop(ents_list[0], ents_list)
+        
+        # handle global effects
+        g_effects = [k for k in self.global_effects_dict.keys()]
+        self.g_effect_loop(g_effects)
+        
+    def g_effect_loop(self, g_effects):
+        if g_effects == []:
+            ents_list = [v for k,v in self.ent_dict.items() if v.owner == self.active_player]
+            self.eot_loop(ents_list[0], ents_list)
+        else:
+            key = g_effects[0]
+            ef = self.global_effects_dict[key]
+            if ef.eot_func() != None:
+                # check if things need to die
+                pass
+            else:
+                ef.duration -= 1
+                if ef.duration <= 0:
+                    ef.undo()
+                    del self.global_effects_dict[key]
+                g_effects = g_effects[1:]
+                self.g_effect_loop(g_effects)
         
         
     # HANDLE EACH ENT BY PASSING ENT AND ITS EFFECTS TO EFFECTS_LOOP
@@ -3418,9 +3508,11 @@ class App(tk.Frame):
         global selected, selected_vis
         for ent in self.ent_dict.keys():
             if ent != selected:
+            
                 self.ent_dict[ent].rotate_image()
                 self.canvas.delete(ent)
                 self.canvas.create_image(self.ent_dict[ent].loc[0]*100+50-self.moved_right, self.ent_dict[ent].loc[1]*100+50-self.moved_down, image = self.ent_dict[ent].img, tags = app.ent_dict[ent].tags)
+                
                 app.canvas.tag_lower((app.ent_dict[ent].tags), ('maptop'))
         for sqr in self.sqr_dict.keys():
             self.sqr_dict[sqr].rotate_image()
@@ -3432,12 +3524,14 @@ class App(tk.Frame):
         app.canvas.tag_raise('cursor')
         for vis in self.vis_dict.keys():
             if vis != selected_vis:
+            
                 self.vis_dict[vis].rotate_image()
                 self.canvas.delete(vis)
                 if vis == 'cursor':
                     self.canvas.create_image(self.vis_dict[vis].loc[0]*100+50, self.vis_dict[vis].loc[1]*100+50, image = self.vis_dict[vis].img, tags = vis)
                 else:
                     self.canvas.create_image(self.vis_dict[vis].loc[0]*100+50-self.moved_right, self.vis_dict[vis].loc[1]*100+50-self.moved_down, image = self.vis_dict[vis].img, tags = vis)
+                    
                 app.canvas.tag_raise(vis)
         try: # LOWER THE CURSOR BELOW MOVING ANIMATIONS (VIS)
             app.canvas.tag_lower(('cursor'), (selected_vis))
@@ -3637,11 +3731,14 @@ class App(tk.Frame):
     def move_map(self, direction):
         tmp = self.ent_dict.keys()
         ents = [x for x in tmp if x != selected]
+        pers_vis = [y for y in self.vis_dict.keys() if y != selected_vis]
         if direction == 'Left':
             self.canvas.move('map', 100, 0)
             self.moved_right -= 100
             for ent in ents:
                 self.canvas.move(ent, 100, 0)
+            for vis in pers_vis:
+                self.canvas.move(vis, 100, 0)
             for sqr in self.sqr_dict.keys():
                 self.canvas.move(sqr, 100, 0)
         elif direction == 'Right':
@@ -3649,6 +3746,8 @@ class App(tk.Frame):
             self.moved_right += 100
             for ent in ents:
                 self.canvas.move(ent, -100, 0)
+            for vis in pers_vis:
+                self.canvas.move(vis, -100, 0)
             for sqr in self.sqr_dict.keys():
                 self.canvas.move(sqr, -100, 0)
         elif direction == 'Up':
@@ -3656,6 +3755,8 @@ class App(tk.Frame):
             self.moved_down += 100
             for ent in ents:
                 self.canvas.move(ent, 0, -100)
+            for vis in pers_vis:
+                self.canvas.move(vis, 0,-100)
             for sqr in self.sqr_dict.keys():
                 self.canvas.move(sqr, 0, -100)
         elif direction == 'Down':
@@ -3663,6 +3764,8 @@ class App(tk.Frame):
             self.moved_down -= 100
             for ent in ents:
                 self.canvas.move(ent, 0, 100)
+            for vis in pers_vis:
+                self.canvas.move(vis, 0, 100)
             for sqr in self.sqr_dict.keys():
                 self.canvas.move(sqr, 0, 100)
 
@@ -3792,6 +3895,8 @@ class App(tk.Frame):
         root.bind('<a>', app.populate_context)
         root.bind('<q>', app.depop_context)
 #         root.bind('<Escape>', app.exit_fullscreen)
+        # DEBUG ####
+        root.bind('<d>', app.debugger)
 
     def confirm_quit(self):
         self.depop_context(event = None)
@@ -3826,6 +3931,8 @@ class App(tk.Frame):
         help_button.pack(side = 'bottom')
         self.context_buttons.append(help_button)
         
+    def debugger(self, event):
+        print(app.vis_dict.items())
 
 root = tk.Tk()
 app = App(master=root)
@@ -3837,6 +3944,9 @@ root.bind('<Down>', app.move_curs)
 root.bind('<a>', app.populate_context)
 root.bind('<q>', app.depop_context)
 # root.bind('<Escape>', app.exit_fullscreen)
+#### DEBUG ####
+root.bind('<d>', app.debugger)
+
 
 root.configure(background = 'black')
 
