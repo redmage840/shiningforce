@@ -1,3 +1,5 @@
+# URGENT  2player mode - make sure all effects work
+
 # make spells powerful enough to compete with summons cost-wise, where a user can choose to EITHER focus on summoning or just casting
 
 # what to do about deaths, need some kind of visual cue
@@ -455,10 +457,12 @@ class Summon(Entity):
     def __init__(self, name, img, loc, owner, number, type = 'normal'):
         self.number = number
         super().__init__(name, img, loc, owner, type = type)
-        
+
+## needs something to do when run out of magick
+## show cost for spells
 class Trickster(Summon):
     def __init__(self, name, img, loc, owner, number):
-        self.actions = {'Simulacrum':self.simulacrum,'Gate':self.gate,'Move':self.move}
+        self.actions = {'Pyrotechnics':self.pyrotechnics, 'Simulacrum•3':self.simulacrum,'Gate•3':self.gate,'Move':self.move}
         self.attack_used = False
         self.str = 2
         self.agl = 3
@@ -466,8 +470,48 @@ class Trickster(Summon):
         self.dodge = 5
         self.psyche = 5
         self.spirit = 10
-        self.magick = 23
+        self.magick = 24
         super().__init__(name, img, loc, owner, number)
+        
+    def pyrotechnics(self, event):
+        if self.attack_used == True:
+            return
+        app.depop_context(event = None)
+        root.bind('<q>', self.cleanup_pyrotechnics)
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [s for s in coords if dist(self.loc, s) <= 3]
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_pyrotechnics(event = e, sqr = s, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Choose Target For Pyrotechnics', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_pyrotechnics(e, s, sqrs))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+        
+    def do_pyrotechnics(self, event, sqr, sqrs):
+        if app.current_pos() == '' or app.current_pos() == 'block':
+            return
+        if sqr not in sqrs:
+            return
+        id = app.current_pos()
+        app.unbind_all()
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        self.attack_used = True
+        app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Pyrotechnics\n1 Spirit Damage', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+        app.ent_dict[id].set_attr('spirit', -1)
+        if app.ent_dict[id].spirit <= 0:
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+90, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+        root.after(1666, lambda e = None, id = id : self.cleanup_pyrotechnics(event = e, id = id))
+        
+    def cleanup_pyrotechnics(self, event = None, id = None):
+        app.unbind_all()
+        app.rebind_all()
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        if id:
+            if app.ent_dict[id].spirit < 0:
+                app.kill(id)
+        app.canvas.delete('text')
+        
         
         
     def simulacrum(self, event):
@@ -697,9 +741,9 @@ class Shadow(Summon):
         self.actions = {'attack':self.shadow_attack, 'move':self.move}
         self.attack_used = False
         self.str = 3
-        self.agl = 4
+        self.agl = 5
         self.end = 3
-        self.dodge = 5
+        self.dodge = 6
         self.psyche = 5
         self.spirit = 12
         super().__init__(name, img, loc, owner, number)
@@ -751,10 +795,10 @@ class Shadow(Summon):
                 app.ent_dict[id].set_attr('magick', -d)
             app.ent_dict[id].set_attr('spirit', -d)
             if app.ent_dict[id].spirit <= 0:
-                if isinstance(app.ent_dict[id], Witch):
-                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+100, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-                else:
-                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+#                 if isinstance(app.ent_dict[id], Witch):
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+100, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+#                 else:
+#                     app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
             root.after(1666, lambda e = None, id = id : self.cancel_attack(event = e, id = id))
         else:
             app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Shadow Attack Missed!\n', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
@@ -949,12 +993,12 @@ class Plaguebearer(Summon):
 # healer / magick recovery?
 class Bard(Summon):
     def __init__(self, name, img, loc, owner, number):
-        self.actions = {'Unholy Chant':self.unholy_chant, 'Entrance':self.entrance, 'move':self.move}
+        self.actions = {'Unholy Chant':self.unholy_chant, 'Discord' : self.discord, 'move':self.move}
         self.attack_used = False
         self.str = 2
         self.agl = 4
         self.end = 2
-        self.dodge = 4
+        self.dodge = 5
         self.psyche = 4
         self.spirit = 11
         super().__init__(name, img, loc, owner, number)
@@ -1032,12 +1076,61 @@ class Bard(Summon):
         app.rebind_all()
         app.canvas.delete('text')
         app.depop_context(event = None)
+#         app.cleanup_squares()
+    
+    
+    ## also needs something to do when all other summons are dead
+    # minor attack? psyche based?
+    def discord(self, event = None):
+        if self.attack_used == True:
+            return
+        root.unbind('<a>')
+        root.unbind('<q>')
+        root.bind('<q>', self.finish_discord)
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [c for c in coords if dist(self.loc, c) <= 3]
+        app.animate_squares(sqrs)
+        app.depop_context(event = None)
+        root.bind('<a>', lambda e, s = sqrs : self.do_discord(event = e, sqrs = s))
+        b = tk.Button(app.context_menu, text = 'Confirm Discord Target', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqrs = sqrs : self.do_discord(event = e, sqrs = sqrs))
+        b.pack(side = 'top')
+        app.context_buttons.append(b)
+        
+    def do_discord(self, event, sqrs):
+        target = app.current_pos()
+        if target == '' or target == 'block':
+            return
+        if app.ent_dict[target].loc not in sqrs:
+            return
+        app.unbind_all()
+        app.depop_context(event = None)
         app.cleanup_squares()
+        id = target
+        my_psyche = self.get_attr('psyche')
+        tar_psyche = app.ent_dict[id].get_attr('psyche')
+        if to_hit(my_psyche, tar_psyche) == True:
+            d = damage(my_psyche, tar_psyche)
+            d = d//2
+            if d == 0: d = 1
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Discord Hit!\n' + str(d) + ' Spirit Damage\n', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+            app.ent_dict[id].set_attr('spirit', -d)
+            if app.ent_dict[id].spirit <= 0:
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+90, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                root.after(1666, lambda id = id : app.kill(id))
+            root.after(1666, lambda e = None : self.finish_discord(event = e))
+        else:
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Discord Missed!\n', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+            root.after(1666, lambda e = None : self.finish_discord(event = e))
+        self.attack_used = True
+        
+    def finish_discord(self, event):
+        app.unbind_all()
+        app.rebind_all()
+        app.depop_context(event = None)
+        app.canvas.delete('text')
+        app.cleanup_squares()
+        
     
-    
-    ##
-    def entrance(self):
-        pass
     
     def legal_moves(self):
         loc = self.loc
@@ -1060,7 +1153,7 @@ class Bard(Summon):
         
 class White_Dragon(Summon):
     def __init__(self, name, img, loc, owner, number):
-        self.actions = {'attack':self.white_dragon_attack}
+        self.actions = {'attack':self.do_attack}
         self.attack_used = False
         self.str = 11
         self.agl = 9
@@ -1079,7 +1172,7 @@ class White_Dragon(Summon):
     def large_undo(self):
         app.grid[self.loc[0]][self.loc[1]+1] = ''
         
-    def do_white_dragon_ai(self, ents_list):
+    def do_ai(self, ents_list):
         # GET LIST OF ENEMY ENTS, PICK ONE OF THE CLOSEST
         enemy_ents = [x for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p1']
         min = dist(app.ent_dict[enemy_ents[0]].loc, self.loc)
@@ -1096,7 +1189,7 @@ class White_Dragon(Summon):
         # IF TARGET IS WITHIN ATTACK, ATTACK IT, EXIT THROUGH UNDEAD_ATTACK()
         if t_loc in atk_sqrs:
             root.after(666, lambda t = target : app.get_focus(t))
-            root.after(1333, lambda el = ents_list, t = target : self.white_dragon_attack(el, t))
+            root.after(1333, lambda el = ents_list, t = target : self.do_attack(el, t))
         else: # EXIT OR MOVE
             mov_sqrs = self.legal_moves()
         # CANNOT MOVE AND COULD NOT ATTACK TARGET NOT WITHIN CURRENT RANGE, GO TO NEXT AI UNIT OR END TURN IF NONE
@@ -1185,7 +1278,7 @@ class White_Dragon(Summon):
         t_loc = app.ent_dict[target].loc[:]
         if t_loc in atk_sqrs:
             root.after(666, lambda t = target : app.get_focus(t))
-            root.after(1333, lambda el = ents_list, t = target : self.white_dragon_attack(el, t)) # EXIT THROUGH ATTACK()
+            root.after(1333, lambda el = ents_list, t = target : self.do_attack(el, t)) # EXIT THROUGH ATTACK()
         else:
         # CANNOT ATTACK, EXIT FUNC
             ents_list = ents_list[1:]
@@ -1202,7 +1295,7 @@ class White_Dragon(Summon):
     # as progressing through anim loop, rotate vis image 
     # how to show 'direction'...
     # if x,y coords are less/more
-    def white_dragon_attack(self, ents_list, id):
+    def do_attack(self, ents_list, id):
         app.get_focus(self.number)
         self.init_attack_anims()
         my_agl = self.get_attr('agl')
@@ -1275,12 +1368,12 @@ class White_Dragon(Summon):
         
 class Tortured_Soul(Summon):
     def __init__(self, name, img, loc, owner, number):
-        self.actions = {'attack':self.tortured_soul_attack}
+        self.actions = {'attack':self.do_attack}
         self.attack_used = False
-        self.str = 6
+        self.str = 7
         self.agl = 5
-        self.end = 6
-        self.dodge = 5
+        self.end = 7
+        self.dodge = 4
         self.psyche = 2
         self.spirit = 23
         # if given target, override search for closest enemy
@@ -1293,7 +1386,7 @@ class Tortured_Soul(Summon):
         pass
         
     #  TORTURED SOUL AI
-    def do_tortured_soul_ai(self, ents_list):
+    def do_ai(self, ents_list):
         if self.target != '': # GIVEN PRIORITY OVER OTHER ENTS, ONLY TRY TO ATTACK THIS ENT
             self.do_target_ai(ents_list)
         else: # NO TARGET PRIORITY, ATTEMPT ATTACK FROM STARTLOC
@@ -1303,7 +1396,7 @@ class Tortured_Soul(Summon):
                 any = atk_sqrs[0]
                 id = app.grid[any[0]][any[1]]
                 root.after(666, lambda id = id : app.get_focus(id))
-                root.after(1333, lambda el = ents_list, id = id : self.tortured_soul_attack(el, id)) # ATTACK
+                root.after(1333, lambda el = ents_list, id = id : self.do_attack(el, id)) # ATTACK
             else: # CANNOT ATTACK FROM START LOC, GET TARGET AND MOVE TOWARDS
                 enemy_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p1']
                 paths = []
@@ -1434,7 +1527,7 @@ class Tortured_Soul(Summon):
             any = enemy_ents[0]
             id = app.grid[any[0]][any[1]]
             root.after(666, lambda t = id : app.get_focus(t))
-            root.after(1333, lambda el = ents_list, t = id : self.tortured_soul_attack(el, t)) # EXIT THROUGH ATTACK
+            root.after(1333, lambda el = ents_list, t = id : self.do_attack(el, t)) # EXIT THROUGH ATTACK
         else:
         # CANNOT ATTACK, EXIT FUNC
             ents_list = ents_list[1:]
@@ -1443,7 +1536,7 @@ class Tortured_Soul(Summon):
             else:
                 root.after(666, lambda e = ents_list : app.do_ai_loop(e))
     
-    def tortured_soul_attack(self, ents_list, id):
+    def do_attack(self, ents_list, id):
         app.get_focus(id)
         self.init_attack_anims()
         # make range atk vis
@@ -1457,8 +1550,8 @@ class Tortured_Soul(Summon):
         if to_hit(my_agl, target_dodge) == True:
             # HIT, SHOW VIS, DO DAMAGE, EXIT
             my_str = self.get_attr('str')
-            target_end = app.ent_dict[id].get_attr('end')
-            d = damage(my_str, target_end)
+            target_psyche = app.ent_dict[id].get_attr('psyche')
+            d = damage(my_str, target_psyche)
             app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Tortured Soul Attack Hit!\n' + str(d) + ' Spirit Damage', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
             app.ent_dict[id].set_attr('spirit', -d)
             if app.ent_dict[id].spirit <= 0:
@@ -1530,7 +1623,7 @@ class Tortured_Soul(Summon):
         
 class Undead(Summon):
     def __init__(self, name, img, loc, owner, number):
-        self.actions = {'attack':self.undead_attack}
+        self.actions = {'attack':self.do_attack}
         self.attack_used = False
         self.str = 4
         self.agl = 2
@@ -1547,7 +1640,7 @@ class Undead(Summon):
         
     #  UNDEAD AI
     # instead of calling bfs on each potential target, can i walk grid with bfs until any enemy is found?
-    def do_undead_ai(self, ents_list):
+    def do_ai(self, ents_list):
         if self.target != '': # GIVEN PRIORITY OVER OTHER ENTS, ONLY TRY TO ATTACK THIS ENT
             self.do_target_ai(ents_list)
         else: # NO TARGET PRIORITY, ATTEMPT ATTACK FROM STARTLOC
@@ -1557,7 +1650,7 @@ class Undead(Summon):
                 any = atk_sqrs[0]
                 id = app.grid[any[0]][any[1]]
                 root.after(666, lambda id = id : app.get_focus(id))
-                root.after(1333, lambda el = ents_list, id = id : self.undead_attack(el, id)) # ATTACK
+                root.after(1333, lambda el = ents_list, id = id : self.do_attack(el, id)) # ATTACK
             else: # CANNOT ATTACK FROM START LOC, GET TARGET AND MOVE TOWARDS
                 enemy_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p1']
                 paths = []
@@ -1688,7 +1781,7 @@ class Undead(Summon):
             any = enemy_ents[0]
             id = app.grid[any[0]][any[1]]
             root.after(666, lambda t = id : app.get_focus(t))
-            root.after(1333, lambda el = ents_list, t = id : self.undead_attack(el, t)) # EXIT THROUGH ATTACK
+            root.after(1333, lambda el = ents_list, t = id : self.do_attack(el, t)) # EXIT THROUGH ATTACK
         else:
         # CANNOT ATTACK, EXIT FUNC
             ents_list = ents_list[1:]
@@ -1697,7 +1790,7 @@ class Undead(Summon):
             else:
                 root.after(666, lambda e = ents_list : app.do_ai_loop(e))
     
-    def undead_attack(self, ents_list, id):
+    def do_attack(self, ents_list, id):
         app.get_focus(id)
 #         self.init_attack_anims()
         my_agl = self.get_attr('agl')
@@ -1760,12 +1853,12 @@ class Undead(Summon):
         
 class Orc_Axeman(Summon):
     def __init__(self, name, img, loc, owner, number):
-        self.actions = {'attack':self.orc_axeman_attack}
+        self.actions = {'attack':self.do_attack}
         self.attack_used = False
         self.str = 6
         self.agl = 4
         self.end = 6
-        self.dodge = 3
+        self.dodge = 4
         self.psyche = 2
         self.spirit = 27
         # if given target, override search for closest enemy
@@ -1779,7 +1872,7 @@ class Orc_Axeman(Summon):
         
     #  ORC AXEMAN AI
     # instead of calling bfs on each potential target, can i walk grid with bfs until any enemy is found?
-    def do_orc_axeman_ai(self, ents_list):
+    def do_ai(self, ents_list):
         if self.target != '': # GIVEN PRIORITY OVER OTHER ENTS, ONLY TRY TO ATTACK THIS ENT
             self.do_target_ai(ents_list)
         else: # NO TARGET PRIORITY, ATTEMPT ATTACK FROM STARTLOC
@@ -1789,7 +1882,7 @@ class Orc_Axeman(Summon):
                 any = atk_sqrs[0]
                 id = app.grid[any[0]][any[1]]
                 root.after(666, lambda id = id : app.get_focus(id))
-                root.after(1333, lambda el = ents_list, id = id : self.orc_axeman_attack(el, id)) # ATTACK
+                root.after(1333, lambda el = ents_list, id = id : self.do_attack(el, id)) # ATTACK
             else: # CANNOT ATTACK FROM START LOC, GET TARGET AND MOVE TOWARDS
                 enemy_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p1']
                 paths = []
@@ -1920,7 +2013,7 @@ class Orc_Axeman(Summon):
             any = enemy_ents[0]
             id = app.grid[any[0]][any[1]]
             root.after(666, lambda t = id : app.get_focus(t))
-            root.after(1333, lambda el = ents_list, t = id : self.orc_axeman_attack(el, t)) # EXIT THROUGH ATTACK
+            root.after(1333, lambda el = ents_list, t = id : self.do_attack(el, t)) # EXIT THROUGH ATTACK
         else:
         # CANNOT ATTACK, EXIT FUNC
             ents_list = ents_list[1:]
@@ -1929,7 +2022,7 @@ class Orc_Axeman(Summon):
             else:
                 root.after(666, lambda e = ents_list : app.do_ai_loop(e))
     
-    def orc_axeman_attack(self, ents_list, id):
+    def do_attack(self, ents_list, id):
         app.get_focus(id)
 #         self.init_attack_anims()
         my_agl = self.get_attr('agl')
@@ -1994,10 +2087,10 @@ class Warrior(Summon):
     def __init__(self, name, img, loc, owner, number):
         self.actions = {'attack':self.warrior_attack, 'move':self.move}
         self.attack_used = False
-        self.str = 4
+        self.str = 5
         self.agl = 4
         self.end = 4
-        self.dodge = 2
+        self.dodge = 1
         self.psyche = 2
         self.spirit = 13
         super().__init__(name, img, loc, owner, number)
@@ -2086,8 +2179,8 @@ class Witch(Entity):
             self.cantrip_dict['Psionic_Push'] = (self.psionic_push)
             self.cantrip_dict['Scrye'] = (self.scrye)
             self.cantrip_dict['Moonlight'] = (self.moonlight)
-            self.arcane_dict['Plague'] = (self.plague, 6)
-            self.arcane_dict['Curse_of_Oriax'] = (self.curse_of_oriax, 4)
+            self.arcane_dict['Plague'] = (self.plague, 5)
+            self.arcane_dict['Curse_of_Oriax'] = (self.curse_of_oriax, 3)
             self.arcane_dict['Gravity'] = (self.gravity, 4)
             self.arcane_dict["Beleth's_Command"] = (self.beleths_command, 8)
             self.str = 4
@@ -2098,11 +2191,11 @@ class Witch(Entity):
             self.spirit = 75
             self.magick = 75
         elif name == 'Fakir_Ali':
-            self.spell_dict['Horrid_Wilting'] = (self.horrid_wilting,4)
-            self.spell_dict['Boiling_Blood'] = (self.boiling_blood, 3)
-            self.spell_dict['Dark_Sun'] = (self.dark_sun, 4)
-            self.spell_dict['Command_of_Osiris'] = (self.command_of_osiris, 5)
-            self.spell_dict['Disintegrate'] = (self.disintegrate, 4)
+            self.cantrip_dict['Boiling_Blood'] = (self.boiling_blood, 3)
+            self.cantrip_dict['Dark_Sun'] = (self.dark_sun, 4)
+            self.arcane_dict['Horrid_Wilting'] = (self.horrid_wilting,4)
+            self.arcane_dict['Command_of_Osiris'] = (self.command_of_osiris, 5)
+            self.arcane_dict['Disintegrate'] = (self.disintegrate, 4)
             self.str = 3
             self.agl = 2
             self.end = 5
@@ -2151,7 +2244,7 @@ class Witch(Entity):
         root.bind('1', lambda e, cls = 'Warrior', cost = 10 : self.place_summon(e, cls, cost))
         root.bind('2', lambda e, cls = 'Trickster', cost = 8 : self.place_summon(e, cls, cost))
         root.bind('3', lambda e, cls = 'Shadow', cost = 7 : self.place_summon(e, cls, cost))
-        root.bind('4', lambda e, cls = 'Bard', cost = 9 : self.place_summon(e, cls, cost))
+        root.bind('4', lambda e, cls = 'Bard', cost = 11 : self.place_summon(e, cls, cost))
         root.bind('5', lambda e, cls = 'Plaguebearer', cost = 7 : self.place_summon(e, cls, cost))
         b1 = tk.Button(app.context_menu, text = '1:Warrior •10', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, cls = 'Warrior', cost = 10 : self.place_summon(e, cls, cost))
         b1.pack(side = 'top', pady = 2)
@@ -2162,7 +2255,7 @@ class Witch(Entity):
         b3 = tk.Button(app.context_menu, text = '3:Shadow •7', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, cls = 'Shadow', cost = 7 : self.place_summon(e, cls, cost))
         b3.pack(side = 'top', pady = 2)
         app.context_buttons.append(b3)
-        b4 = tk.Button(app.context_menu, text = '4:Bard •9', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, cls = 'Bard', cost = 9 : self.place_summon(e, cls, cost))
+        b4 = tk.Button(app.context_menu, text = '4:Bard •11', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, cls = 'Bard', cost = 9 : self.place_summon(e, cls, cost))
         b4.pack(side = 'top', pady = 2)
         app.context_buttons.append(b4)
         b5 = tk.Button(app.context_menu, text = '5:Plaguebearer\n•7', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, cls = 'Plaguebearer', cost = 7 : self.place_summon(e, cls, cost))
@@ -2352,6 +2445,10 @@ class Witch(Entity):
 # AGNES SPELLS
 # Agnes' spells center around Death/Decay/Disease/Telekinetics/Cosmology
     def scrye(self, event = None):
+        pass
+        
+    # make a sqr impassable for 2 turns (who gets the effect, global effects?) when to downtick?
+    def barrier(self, event = None):
         pass
     
     def moonlight(self, event = None):
@@ -2599,6 +2696,8 @@ class Witch(Entity):
             for ent in adj_ents:
                 if app.ent_dict[ent].attr_check('agl') == False:
                     d = damage(tar_str, app.ent_dict[ent].get_attr('end'))
+                    d = d//2
+                    if d == 0: d = 1
                     app.ent_dict[ent].set_attr('spirit', -d)
                     app.canvas.create_text(app.ent_dict[ent].loc[0]*100+50-app.moved_right, app.ent_dict[ent].loc[1]*100+70-app.moved_down, text = str(d) + ' Spirit\nDamage', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
                     if app.ent_dict[ent].spirit <= 0:
@@ -2845,6 +2944,7 @@ class App(tk.Frame):
         self.effects_counter = 0 # used for uniquely naming Effects with the same prefix/name
         self.p1_witch = ''
         self.p2_witch = ''
+        self.two_player_map_num = 0
         self.choose_num_players()
         
         # Luminari 280
@@ -2984,18 +3084,21 @@ class App(tk.Frame):
             self.map_button_list.append(b)
         
     def map_choice_cleanup(self, map_number):
+        self.two_player_map_num = map_number
         self.choosemap.destroy()
         del self.tmp_mapimg_dict
         for b in self.map_button_list:
             b.destroy()
         del self.map_button_list
-        self.create_map_curs_context(map_number)
+        self.choose_witch(player_num = 1)
+#         self.create_map_curs_context(map_number)
         
         
         # IF PROTAG, LOAD PROTAG AND DO NOT RE-INIT WITCH
     def create_map_curs_context(self, map_number, protaganist_object = None):
         global curs_pos, grid_pos
-        self.intro_canvas.destroy()
+        try: self.intro_canvas.destroy()
+        except: pass
         # GET MAP DIMENSIONS
         if self.num_players == 1:
             filename = '1_player_map_info/map' + str(map_number) + '.txt'
@@ -3079,7 +3182,22 @@ class App(tk.Frame):
             self.avatar_popup.witch_widgets.append(f)
             b = tk.Button(f)
             # change below to call load_map_trigger(witchname)
-            p = partial(self.load_map_triggers, map_number = 0, witch = witch[:-4])
+            if player_num == 1 and self.num_players == 2:
+                def wrap(somePartial, witch_name):
+                    self.p1_witch = witch_name
+                    print('p1_witch, ', self.p1_witch)
+                    somePartial()
+                p1 = partial(self.choose_witch, player_num = 2)
+                p = partial(wrap, p1, witch[:-4])
+            elif player_num == 2 and self.num_players == 2:
+                def wrap(somePartial, witch_name):
+                    self.p2_witch = witch_name
+                    print('p2_witch', self.p2_witch)
+                    somePartial()
+                p1 = partial(self.create_map_curs_context, map_number = self.two_player_map_num)
+                p = partial(wrap, p1, witch[:-4])
+            else:
+                p = partial(self.load_map_triggers, map_number = 0, witch = witch[:-4])
 #             p = partial(self.load_witch, witch[:-4], player_num)
             cmd = lambda win = self.avatar_popup, p = p : self.release_wrapper(win, p)
             self.wrapped_funcs.append(p)
@@ -3140,10 +3258,11 @@ class App(tk.Frame):
             self.animate()
             self.map_trigger_loop()
         # CHOOSE SECOND PLAYER WITCH
-        elif self.num_players == 2 and self.p2_witch == '':
-            self.choose_witch(player_num = 2)
+        elif self.num_players == 2 and player_num == 1:# and self.p2_witch == '':
+            self.load_witch(witch = self.p2_witch, player_num = 2)
+#             self.choose_witch(player_num = 2)
         # EXIT CHOOSING IF BOTH FINISHED AND START TURN
-        elif self.num_players == 2 and self.p2_witch != '':
+        else: #self.num_players == 2 and self.p2_witch != '':
             self.start_turn()
             self.animate()
         
@@ -3167,13 +3286,13 @@ class App(tk.Frame):
         ent = ents[0]
         self.get_focus(ent)
         if self.ent_dict[ent].name == 'Undead':
-            self.ent_dict[ent].do_undead_ai(ents)
+            self.ent_dict[ent].do_ai(ents)
         elif self.ent_dict[ent].name == 'Orc_Axeman':
-            self.ent_dict[ent].do_orc_axeman_ai(ents)
+            self.ent_dict[ent].do_ai(ents)
         elif self.ent_dict[ent].name == 'Tortured_Soul':
-            self.ent_dict[ent].do_tortured_soul_ai(ents)
+            self.ent_dict[ent].do_ai(ents)
         elif self.ent_dict[ent].name == 'White_Dragon':
-            self.ent_dict[ent].do_white_dragon_ai(ents)
+            self.ent_dict[ent].do_ai(ents)
         
         
         
