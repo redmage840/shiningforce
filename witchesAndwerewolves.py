@@ -1,3 +1,5 @@
+# create 'tunnel/hallway' level where you need to progress to a certain point in some amount of time
+
 # URGENT  2player mode - make sure all effects work
 
 # make spells powerful enough to compete with summons cost-wise, where a user can choose to EITHER focus on summoning or just casting
@@ -12,18 +14,9 @@
 
 # prevent damage or effect text from covering 'killed' text
 
-# 'RPS' the summons, warrior deals lots of phys (str v end) but has poor movement weak to range (dodge) but high end, shadow deals agl v dodg range atk and avoids range (high dodg) but low end str, trickster helps shadow and warrior by augment move and def (agl and dodg), plagber weakens hard to hit and damage enemies (stat lowers) and has AOE (contagion) that combines well with psionic push or gateway and good defense versus range (dodg), bard ...(remove unholy chant as is) 
-# this way a level could be designed to be hard for a particular combination to win... many range against warriors, high dodge versus range...
-# make witch spells cantrip(free, minor effects) or arcane(cost magick, major effects), one of each per turn
-# no hard summon cap ncsry without magick regen, in 1player mode, protag object gains new abilities/stats
-
 # victory condition happens too fast, need to freeze screen and show 'confirm' or 'notice'
 
-# get rid of unholy chant regen magick, give tricksters something to do with no magick, make shadows better, fix warrior movement (although it would be more interesting for PvP, it makes 1player mode have to structure all maps 'top vs bottom')
-
 # get focus before destroying text objects from effects loop
-
-# bricks in wall in maptop cover units, fallen bricks, level 1
 
 # contagion Vis will last longer than it takes to get to next action, either make faster cleanup or wait for cleanup or extend time between AI loop
 
@@ -31,26 +24,9 @@
 
 # check tag raise/lower priority, some redundancy,  i think its the general Ent do_move or loop
 
-# Bards being able to freely replenish magic and having AI units 'wait' until close combines not well, encourages waiting around until built all the way back up. Not only this, but you could stay out of range of triggers and keep on summoning, maybe have a max amount of summons... Enemy triggers would 'see' you as soon as close enough to cast any spell to prevent staying on edge of triggers and using spells.
-# with above approach, still encourages waiting outside of triggers until replenished/full summons
-# probably better to not have wait triggers, since that encourages slowplay (isolating AI units, drawing them out, waiting until replenished)
-# general structure is ALL enemies will begin to advance on protag, this way the structure of difficulty can be controlled by staggering waves of enemies based on initial placement/movement
-# this encourages a constant, increasing pace where you are more pressed for 'time', no slow-play
-# what would encourage protag to do anything but sit back and wait for the waves?
-# moving around the map could influence the structure of waves by outpacing the slower AI units, encouraging the faster ones to engage prematurely
-# try and structure level terrain/groups of AI units so that protag cannot continuously 'kite' slow units
-# do this by having movement outpace the killing of units, so that you can move to increase distance between slow and faster waves, but eventually be backed into a corner
-# still need to stop the possibility of maxing out on bards so you have infi replenish magick, and then can summon infi, can this be prevented just with pressure of approaching enemies?
-# if there only exist units that can be outpaced, can just run around and heal and keep summoning or casting
-# can this be controlled with 'tight hallway' levels, where you will be quickly backed into a corner?
-# a lot of this points to the fact that free magick replenish is problematic
-# a hard limit on magick might be preferable
-
-# do entrance finish bard, expand on shadow, maybe change warrior around (moves randomly, moves back and side only 1 space, ...)
-
 # add 'start position dependent on map' get from map_info
 
-# consider removing 'smoke' from agnes casting anims
+# consider removing 'smoke' from agnes casting anims?
 
 # is origin still used without old movement setup?
 
@@ -62,17 +38,9 @@
 
 # maybe make dragon attack further 'down' since he doesn't 'see' from his lower square, maybe make range longer, do attack anims
 
-# undead ai chooses a 'closest target' before moving, then after moving if it cannot attack the previously chosen target, it will forgo attacking even if it could now reach another target, this occurs when randomly choosing from equidistant targets to 'move towards' and being unable to reach the one targeted due to obstacles/otherEnts
-
 # would it be possible to 'pause' in the middle of a move_loop or to keep text object on screen
 
-# make unholy chant only show actual gains, do entrance()
-
-# witches need something to do when run out of magick
-
 # make get_info scroll a bit longer to hold more effects
-
-# make AI ent that will bring out the flaw in warriors
 
 # make walking/movement animations
 
@@ -81,8 +49,6 @@
 # show victory conditions on map start
 
 # animate titlescreen
-
-# place bg image on main canvas so edges of map show that, ie border
 
 # Urgent fix help text popup from disabling all input if 'clicked out of' or closed manually with window manager, either put help text on main canvas or context menu or make a full screen 'popup' like choose map dialogue
 
@@ -2217,8 +2183,8 @@ class Witch(Entity):
             self.cantrip_dict['Boiling_Blood'] = (self.boiling_blood, 3)
             self.cantrip_dict['Dark_Sun'] = (self.dark_sun, 4)
             self.arcane_dict['Horrid_Wilting'] = (self.horrid_wilting,4)
-            self.arcane_dict['Command_of_Osiris'] = (self.command_of_osiris, 5)
             self.arcane_dict['Disintegrate'] = (self.disintegrate, 4)
+            self.arcane_dict['Command_of_Osiris'] = (self.command_of_osiris, 5)
             self.str = 3
             self.agl = 2
             self.end = 5
@@ -2911,8 +2877,59 @@ class Witch(Entity):
 # FAKIR ALI SPELLS
         # Ali's spells center around Heat/Fire/Resistance/Mummification
     def horrid_wilting(self, event = None):
-            # make attack (psyche versus str) spirit damage, on any target within range 4 and all adjacent enemy units
+        # make attack (psyche versus str) spirit damage, on any target within range 4 and all adjacent enemy units
+        app.depop_context(event = None)
+        root.bind('<q>', lambda name = 'Horrid_Wilting' : self.cleanup_spell(name = name))
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [s for s in coords if dist(self.loc, s) <= 4]
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_horrid_wilting(event = e, sqr = s, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Choose Target For Horrid Wilting', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_horrid_wilting(e, s, sqrs))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+        
+    def do_horrid_wilting(self, event, sqr, sqrs):
+        if sqr not in sqrs:
+            return
+        if app.grid[sqr[0]][sqr[1]] == '' or app.grid[sqr[0]][sqr[1]] == 'block':
+            return
+        app.depop_context(event = None)
+        app.unbind_all()
+        app.cleanup_squares()
+        # get ent and all adj ents
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        adj_sqrs = [s for s in coords if dist(sqr, s) == 1 and app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
+        adj_ents = [app.grid[s[0]][s[1]] for s in adj_sqrs if app.ent_dict[app.grid[s[0]][s[1]]].owner != self.owner] 
+        all_targets = adj_ents + [app.grid[sqr[0]][sqr[1]]]
+        for id in all_targets:
+            n = 'Horrid_Wilting' + str(app.effects_counter) # not an effect, just need unique int
+            app.effects_counter += 1 # that is why this is incr manually here, no Effect init
+            loc = app.ent_dict[id].loc[:]
+            app.vis_dict[n] = Vis(name = 'Horrid_Wilting', loc = loc)
+            def cleanup_vis(name):
+                app.canvas.delete(name)
+                del app.vis_dict[name]
+            root.after(3666, lambda n = n : cleanup_vis(n))
+            rand_start_anim = randrange(1,7)
+            for i in range(rand_start_anim):
+                app.vis_dict[n].rotate_image()
+            app.canvas.create_image(loc[0]*100+50-app.moved_right, loc[1]*100+50-app.moved_down, image = app.vis_dict[n].img, tags = 'Horrid_Wilting')
+            app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+50-app.moved_down-30, text = 'Horrid\nWilting', justify ='center', font = ('Andale Mono', 14), fill = 'wheat2', tags = 'text')
+            # HIT OR MISS
+            my_psyche = self.get_attr('psyche')
+            tar_psyche = app.ent_dict[id].get_attr('psyche')
+            if to_hit(my_psyche, tar_psyche) == True:
+                tar_end = app.ent_dict[id].get_attr('end')
+                d = damage(my_psyche, tar_end)
+                app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+60-app.moved_down, text = 'Hit, '+str(d)+'\nSpirit Damage', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+                app.ent_dict[id].set_attr('spirit', -d)
+                if app.ent_dict[id].spirit <= 0:
+                    app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+90-app.moved_down, text = app.ent_dict[id].name.replace('_',' ') + '\nKilled...', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+            else:
+                app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+70-app.moved_down, text = 'Miss', justify ='center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+        root.after(3666, lambda  name = 'Horrid_Wilting' : self.cleanup_spell(name = name))
         print('horrid_wilting')
+        
         
     def boiling_blood(self, event = None):
             # Caster takes spirit damage (own inverted psyche versus own end) and affects one 'warrior' summon within range 3, any attacks made by the affected target do +5 spirit damage if they would otherwise do any spirit damage, target's agl is increased to 5 if it is less than 5, end is reduced to 1, either value may be later modified but this modification takes precedence over previous effects, affected ent takes 1 spirit damage at the end of every owner's turn
@@ -3896,7 +3913,7 @@ class App(tk.Frame):
         root.bind('<q>', app.depop_context)
 #         root.bind('<Escape>', app.exit_fullscreen)
         # DEBUG ####
-        root.bind('<d>', app.debugger)
+#         root.bind('<d>', app.debugger)
 
     def confirm_quit(self):
         self.depop_context(event = None)
@@ -3931,8 +3948,8 @@ class App(tk.Frame):
         help_button.pack(side = 'bottom')
         self.context_buttons.append(help_button)
         
-    def debugger(self, event):
-        print(app.vis_dict.items())
+#     def debugger(self, event):
+#         print(app.vis_dict.items())
 
 root = tk.Tk()
 app = App(master=root)
@@ -3945,7 +3962,7 @@ root.bind('<a>', app.populate_context)
 root.bind('<q>', app.depop_context)
 # root.bind('<Escape>', app.exit_fullscreen)
 #### DEBUG ####
-root.bind('<d>', app.debugger)
+# root.bind('<d>', app.debugger)
 
 
 root.configure(background = 'black')
