@@ -1,4 +1,14 @@
+# maybe delete EOT effect text between effects, maybe
+
+# 2 player mode discriminate summon owner
+
+# 2 player mode needs some sort of terrain objective, reasons to engage or hold areas, when and where
+
+# prob just place summon cap and dont use magick for summons, balance all summons they are close as is, this allows for my combinations of gameplay (more spells cast, summon team)
+
 # create 'tunnel/hallway' level where you need to progress to a certain point in some amount of time
+
+# should contagion stack?
 
 # URGENT  2player mode - make sure all effects work
 
@@ -428,7 +438,7 @@ class Summon(Entity):
 ## show cost for spells
 class Trickster(Summon):
     def __init__(self, name, img, loc, owner, number):
-        self.actions = {'Pyrotechnics':self.pyrotechnics, 'Simulacrum•3':self.simulacrum,'Gate•3':self.gate,'Move':self.move}
+        self.actions = {'Pyrotechnics':self.pyrotechnics, 'Simulacrum •3':self.simulacrum,'Gate•3':self.gate,'Move':self.move}
         self.attack_used = False
         self.str = 2
         self.agl = 3
@@ -707,7 +717,7 @@ class Shadow(Summon):
         self.actions = {'attack':self.shadow_attack, 'move':self.move}
         self.attack_used = False
         self.str = 3
-        self.agl = 5
+        self.agl = 4
         self.end = 3
         self.dodge = 6
         self.psyche = 5
@@ -816,7 +826,7 @@ class Plaguebearer(Summon):
             ents = [app.grid[s[0]][s[1]] for s in sqrs if app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
             for e in ents:
                 # cannot stack contagion
-                ef_names = [v for k,v in app.ent_dict[e].effects_dict.items() if v.name == 'Contagion']
+                ef_names = [v.name for k,v in app.ent_dict[e].effects_dict.items() if v.name == 'Contagion']
                 if 'Contagion' in ef_names:
                     continue
                 else:
@@ -1028,7 +1038,7 @@ class Bard(Summon):
                         def nothing():
                             return None
                         n = 'Unholy_Chant' + str(app.effects_counter)
-                        app.ent_dict[ent].effects_dict[n] = Effect(name = 'Unholy_Chant', info = 'Unholy_Chant\n Stats increased by 1 for 1 turn', eot_func = nothing, undo = p, duration = 1)
+                        app.ent_dict[ent].effects_dict[n] = Effect(name = 'Unholy_Chant', info = 'Unholy_Chant\n Stats increased by 1 for 1 turn', eot_func = nothing, undo = p, duration = 2)
         root.after(3666, self.finish_unholy_chant)
         
     def finish_unholy_chant(self, event = None):
@@ -1039,6 +1049,8 @@ class Bard(Summon):
             for k in keys:
                 del app.vis_dict[k]
         except: pass
+        app.cleanup_squares()
+        app.unbind_all()
         app.rebind_all()
         app.canvas.delete('text')
         app.depop_context(event = None)
@@ -2055,8 +2067,8 @@ class Warrior(Summon):
         self.attack_used = False
         self.str = 5
         self.agl = 4
-        self.end = 4
-        self.dodge = 1
+        self.end = 5
+        self.dodge = 2
         self.psyche = 2
         self.spirit = 13
         super().__init__(name, img, loc, owner, number)
@@ -2156,6 +2168,8 @@ class Witch(Entity):
     def __init__(self, name, img, loc, owner):
         self.actions = {'spell':self.spell, 'summon':self.summon, 'move':self.move}
 #         self.spell_used = False
+        self.summon_cap = 6
+        self.summon_count = 0
         self.cantrip_used = False
         self.arcane_used = False
         self.summon_used = False
@@ -2168,29 +2182,30 @@ class Witch(Entity):
             self.cantrip_dict['Psionic_Push'] = (self.psionic_push)
             self.cantrip_dict['Forcefield'] = (self.forcefield)
             self.cantrip_dict['Moonlight'] = (self.moonlight)
-            self.arcane_dict['Plague'] = (self.plague, 5)
+            self.arcane_dict['Plague'] = (self.plague, 7)
             self.arcane_dict['Curse_of_Oriax'] = (self.curse_of_oriax, 3)
-            self.arcane_dict['Gravity'] = (self.gravity, 4)
+            self.arcane_dict['Gravity'] = (self.gravity, 5)
             self.arcane_dict["Beleth's_Command"] = (self.beleths_command, 8)
             self.str = 4
-            self.agl = 2
-            self.end = 3
-            self.dodge = 3
-            self.psyche = 4
-            self.spirit = 75
+            self.agl = 3
+            self.end = 4
+            self.dodge = 4
+            self.psyche = 6
+            self.spirit = 40
             self.magick = 75
         elif name == 'Fakir_Ali':
-            self.cantrip_dict['Boiling_Blood'] = (self.boiling_blood, 3)
-            self.cantrip_dict['Dark_Sun'] = (self.dark_sun, 4)
+            self.cantrip_dict['Boiling_Blood'] = (self.boiling_blood)
+            self.cantrip_dict['Dark_Sun'] = (self.dark_sun)
+            self.cantrip_dict['Meditate'] = (self.meditate)
             self.arcane_dict['Horrid_Wilting'] = (self.horrid_wilting,4)
-            self.arcane_dict['Disintegrate'] = (self.disintegrate, 4)
+            self.arcane_dict['Disintegrate'] = (self.disintegrate, 6)
             self.arcane_dict['Command_of_Osiris'] = (self.command_of_osiris, 5)
             self.str = 3
-            self.agl = 2
-            self.end = 5
+            self.agl = 4
+            self.end = 6
             self.dodge = 3
-            self.psyche = 3
-            self.spirit = 85
+            self.psyche = 5
+            self.spirit = 50
             self.magick = 70
         elif name == 'Morgan_LeFay':
             self.spell_dict['Enchant'] = (self.enchant, 4)
@@ -2199,11 +2214,11 @@ class Witch(Entity):
             self.spell_dict["Noden's_Command"] = (self.nodens_command, 6)
             self.spell_dict['Wild_Hunt'] = (self.wild_hunt, 7)
             self.str = 2
-            self.agl = 4
+            self.agl = 5
             self.end = 3
-            self.dodge = 4
-            self.psyche = 3
-            self.spirit = 70
+            self.dodge = 6
+            self.psyche = 5
+            self.spirit = 35
             self.magick = 85
             
         super().__init__(name, img, loc, owner, type = 'normal')
@@ -2224,30 +2239,31 @@ class Witch(Entity):
         self.psyche_effects = []
         self.move_used = False
         self.effects_dict = {}
+        self.summon_count = 0
     
     def summon(self, event = None):
                 # show vis in context_menu, summon used? eventually DEBUG fine for now
         if self.summon_used == True:
             return
         app.depop_context(event = None)
-        root.bind('1', lambda e, cls = 'Warrior', cost = 10 : self.place_summon(e, cls, cost))
-        root.bind('2', lambda e, cls = 'Trickster', cost = 8 : self.place_summon(e, cls, cost))
-        root.bind('3', lambda e, cls = 'Shadow', cost = 7 : self.place_summon(e, cls, cost))
-        root.bind('4', lambda e, cls = 'Bard', cost = 11 : self.place_summon(e, cls, cost))
-        root.bind('5', lambda e, cls = 'Plaguebearer', cost = 7 : self.place_summon(e, cls, cost))
-        b1 = tk.Button(app.context_menu, text = '1:Warrior •10', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, cls = 'Warrior', cost = 10 : self.place_summon(e, cls, cost))
+        root.bind('1', lambda e, cls = 'Warrior' : self.place_summon(e, cls))
+        root.bind('2', lambda e, cls = 'Trickster' : self.place_summon(e, cls))
+        root.bind('3', lambda e, cls = 'Shadow' : self.place_summon(e, cls))
+        root.bind('4', lambda e, cls = 'Bard': self.place_summon(e, cls))
+        root.bind('5', lambda e, cls = 'Plaguebearer' : self.place_summon(e, cls))
+        b1 = tk.Button(app.context_menu, text = '1:Warrior', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, cls = 'Warrior' : self.place_summon(e, cls))
         b1.pack(side = 'top', pady = 2)
         app.context_buttons.append(b1)
-        b2 = tk.Button(app.context_menu, text = '2:Trickster •8', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, cls = 'Trickster', cost = 8 : self.place_summon(e, cls, cost))
+        b2 = tk.Button(app.context_menu, text = '2:Trickster', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, cls = 'Trickster' : self.place_summon(e, cls))
         b2.pack(side = 'top', pady = 2)
         app.context_buttons.append(b2)
-        b3 = tk.Button(app.context_menu, text = '3:Shadow •7', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, cls = 'Shadow', cost = 7 : self.place_summon(e, cls, cost))
+        b3 = tk.Button(app.context_menu, text = '3:Shadow', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, cls = 'Shadow' : self.place_summon(e, cls, cost))
         b3.pack(side = 'top', pady = 2)
         app.context_buttons.append(b3)
-        b4 = tk.Button(app.context_menu, text = '4:Bard •11', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, cls = 'Bard', cost = 9 : self.place_summon(e, cls, cost))
+        b4 = tk.Button(app.context_menu, text = '4:Bard', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, cls = 'Bard' : self.place_summon(e, cls, cost))
         b4.pack(side = 'top', pady = 2)
         app.context_buttons.append(b4)
-        b5 = tk.Button(app.context_menu, text = '5:Plaguebearer\n•7', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, cls = 'Plaguebearer', cost = 7 : self.place_summon(e, cls, cost))
+        b5 = tk.Button(app.context_menu, text = '5:Plaguebearer', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, cls = 'Plaguebearer' : self.place_summon(e, cls, cost))
         b5.pack(side = 'top', pady = 2)
         app.context_buttons.append(b5)
         b6 = tk.Button(app.context_menu, text = 'Cancel', font = ('chalkduster', 24), highlightbackground = 'tan3', fg='tan3', command = self.cancel_placement)
@@ -2265,8 +2281,10 @@ class Witch(Entity):
         root.bind('<a>', app.populate_context)
 
     
-    def place_summon(self, event, type, cost):
-        if self.magick < cost:
+    def place_summon(self, event, type):
+#         if self.magick < cost:
+#             return
+        if self.summon_count >= self.summon_cap:
             return
         root.unbind('<q>')
         root.unbind('<a>')
@@ -2287,17 +2305,17 @@ class Witch(Entity):
             cls = Bard
         elif type == 'Plaguebearer':
             cls = Plaguebearer
-        cmd = lambda e = None, x = cls, y = sqrs, c = cost : self.place(e, summon = x, sqrs = y, cost = c)
-        root.bind('<a>', lambda e, x = cls, y = sqrs, c = cost: self.place(e, x, y, c))
+        cmd = lambda e = None, x = cls, y = sqrs : self.place(e, summon = x, sqrs = y)
+        root.bind('<a>', lambda e, x = cls, y = sqrs: self.place(e, x, y))
         b = tk.Button(app.context_menu, text = 'Place '+type, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', wraplength = 190, command = cmd)
         b.pack(side = 'top')
         app.context_buttons.append(b)
         
         
-    def place(self, event, summon, sqrs, cost):
+    def place(self, event, summon, sqrs):
         if grid_pos not in sqrs:
             return
-        self.set_attr('magick', -cost)
+#         self.set_attr('magick', -cost)
         root.unbind('<q>')
         root.bind('<q>', app.depop_context)
         root.unbind('<a>')
@@ -2305,9 +2323,17 @@ class Witch(Entity):
         if app.active_player == 'p1':
             number = 'a' + str(self.summon_ids)
             self.summon_ids += 1
+            self.summon_count += 1
+            # place visual summon discriminate
+            
+            
         elif app.active_player == 'p2':
             number = 'b' + str(self.summon_ids)
             self.summon_ids += 1
+            self.summon_count += 1
+            # place visual summon discriminate
+            
+            
         if summon == Warrior:
             name = 'Warrior'
             img = ImageTk.PhotoImage(Image.open('summon_imgs/Warrior.png'))
@@ -2477,13 +2503,6 @@ class Witch(Entity):
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict[n].img, tags = n)
         app.global_effects_dict[n] = Effect(name = 'Forcefield', info = 'Block Square with a Forcefield', eot_func = eot, undo = p, duration = 2)
         root.after(2666, lambda  name = 'Forcefield' : self.cleanup_spell(name = name))
-#         app.global_effects['Forcefield'] = Effect(name = 'Forcefield', 
-    
-    
-    
-    
-    
-    
     
     
     def moonlight(self, event = None):
@@ -2870,12 +2889,74 @@ class Witch(Entity):
         print('gravity')
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     def beleths_command(self, event = None):
-            # Caster is affect by 'command', while affected cannot be affected by other 'command' effects until spell ends (one 'command' effect at a time), any ent using an attack against caster first must 'to hit' caster's psyche versus attacker's psyche, a success results in normal attack, failure causes spirit damage to attacker (caster's psyche versus attacker's end) and no effects from the attack, lasts until caster has 3 turns end
+        pass
         print('beleths_command')
         
         
 # FAKIR ALI SPELLS
         # Ali's spells center around Heat/Fire/Resistance/Mummification
+    def meditate(self, event = None):
+        app.depop_context(event = None)
+        root.bind('<q>', lambda name = 'Meditate' : self.cleanup_spell(name = name))
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+#         sqrs = [s for s in coords if dist(self.loc, s) <= 4]
+#         app.animate_squares(sqrs)
+        root.bind('<a>', self.do_meditate)
+        b = tk.Button(app.context_menu, text = 'Confirm Meditate', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None : self.do_meditate(e))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+        
+    def do_meditate(self, event):
+#         self.init_cast_anims()
+        app.unbind_all()
+        app.depop_context(event = None)
+        self.cantrip_used = True
+        id = self.name
+        sqr = self.loc[:]
+        app.vis_dict['Meditate'] = Vis(name = 'Meditate', loc = sqr)
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Meditate'].img, tags = 'Meditate')
+        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Meditate', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+        # DO Meditate EFFECTS
+        def meditate_effect(stat):
+            stat += 2
+            return stat
+        f = meditate_effect
+        app.ent_dict[id].psyche_effects.append(f)
+############################################
+        def meditate_move():# REPLACE CLASS MOVEMENT
+            loc = self.loc
+            mvlist = []
+            coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+            def findall(loc, start, dist):
+                if start > dist:
+                    return
+                adj = [c for c in coords if abs(c[0] - loc[0]) + abs(c[1] - loc[1]) == 1 and app.grid[c[0]][c[1]] == '']
+                for s in adj:
+                    mvlist.append(s)
+                    findall(s, start+1, dist)
+            findall(loc, 1, 5) 
+            setlist = []
+            for l in mvlist:
+                if l not in setlist:
+                    setlist.append(l)
+            return setlist
+#####################################
+        app.ent_dict[id].legal_moves = meditate_move
+        def un(i):
+            app.ent_dict[i].psyche_effects.remove(meditate_effect)
+            p = partial(app.ent_dict[i].__class__.legal_moves, app.ent_dict[i]) #   PUT BACK CLASS METHOD MOVEMENT
+            app.ent_dict[i].legal_moves = p
+        p = partial(un, id)
+        # EOT FUNC
+        def nothing():
+            return None
+        eot = nothing
+        n = 'Meditate' + str(app.effects_counter)
+        app.ent_dict[id].effects_dict[n] = Effect(name = 'Meditate', info = 'Meditate\n+2 Psyche\n+2 Move', eot_func = eot, undo = p, duration = 1)
+        root.after(3666, lambda  name = 'Meditate' : self.cleanup_spell(name = name))
+        
+        
+        
     def horrid_wilting(self, event = None):
         # make attack (psyche versus str) spirit damage, on any target within range 4 and all adjacent enemy units
         app.depop_context(event = None)
@@ -2896,6 +2977,7 @@ class Witch(Entity):
         app.depop_context(event = None)
         app.unbind_all()
         app.cleanup_squares()
+        self.arcane_used = True
         # get ent and all adj ents
         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         adj_sqrs = [s for s in coords if dist(sqr, s) == 1 and app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
@@ -2925,28 +3007,211 @@ class Witch(Entity):
                 app.ent_dict[id].set_attr('spirit', -d)
                 if app.ent_dict[id].spirit <= 0:
                     app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+90-app.moved_down, text = app.ent_dict[id].name.replace('_',' ') + '\nKilled...', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+                    root.after(3666, lambda id = id : app.kill(id))
             else:
                 app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+70-app.moved_down, text = 'Miss', justify ='center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
         root.after(3666, lambda  name = 'Horrid_Wilting' : self.cleanup_spell(name = name))
-        print('horrid_wilting')
         
         
     def boiling_blood(self, event = None):
             # Caster takes spirit damage (own inverted psyche versus own end) and affects one 'warrior' summon within range 3, any attacks made by the affected target do +5 spirit damage if they would otherwise do any spirit damage, target's agl is increased to 5 if it is less than 5, end is reduced to 1, either value may be later modified but this modification takes precedence over previous effects, affected ent takes 1 spirit damage at the end of every owner's turn
-        print('boiling_blood')
+        app.depop_context(event = None)
+        root.unbind('<a>')
+        root.unbind('<q>')
+        root.bind('<q>', lambda name = 'Boiling_Blood' : self.cleanup_spell(name = name))
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [s for s in coords if dist(self.loc, s) == 1]
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_boiling_blood(event = e, sqr = s, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Choose Target For Boiling Blood', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_boiling_blood(e, s, sqrs))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+        
+    def do_boiling_blood(self, event, sqr, sqrs):
+        if sqr not in sqrs:
+            return
+        id = app.grid[sqr[0]][sqr[1]]
+        if not isinstance(app.ent_dict[id], Warrior):
+            return
+        self.cantrip_used = True
+        app.depop_context(event = None)
+        app.unbind_all()
+        app.cleanup_squares()
+        app.vis_dict['Boiling_Blood'] = Vis(name = 'Boiling_Blood', loc = sqr[:])
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Boiling_Blood'].img, tags = 'Boiling_Blood')
+        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Boiling\nBlood', justify = 'center', font = ('Andale Mono', 14), fill = 'firebrick2', tags = 'text')
+        # DO Boiling_Blood EFFECTS
+        def boiling_blood_str_effect(stat):
+            stat += 5
+            return stat
+        def boiling_blood_end_effect(stat):
+            return 1
+        app.ent_dict[id].str_effects.append(boiling_blood_str_effect)
+        app.ent_dict[id].end_effects.append(boiling_blood_end_effect)
+        def un(i):
+            app.ent_dict[i].str_effects.remove(boiling_blood_str_effect)
+            app.ent_dict[i].end_effects.remove(boiling_blood_end_effect)
+        p = partial(un, id)
+        # EOT FUNC
+        def take_1(tar):
+            app.get_focus(tar)
+            app.ent_dict[tar].set_attr('spirit', -1)
+            app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+50-app.moved_down, text = '1 Spirit Damage\nBoiling Blood', justify ='center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+            if app.ent_dict[tar].spirit <= 0:
+                app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+90-app.moved_down, text = app.ent_dict[tar].name.replace('_',' ') + '\nKilled...', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+            return 'Not None'
+            
+        eot = partial(take_1, id)
+        n = 'Boiling_Blood' + str(app.effects_counter)
+        app.ent_dict[id].effects_dict[n] = Effect(name = 'Boiling_Blood', info = 'Boiling_Blood\n+5 Str, End reduced to 1\n1 Spirit damage per turn', eot_func = eot, undo = p, duration = 5)
+        root.after(3666, lambda  name = 'Boiling_Blood' : self.cleanup_spell(name = name))
+        
+    
         
     def dark_sun(self, event = None):
-            # Any caster owned 'shadow' summons within range 2 get an extra attack if they have already attacked once this turn
-        print('dark_sun')
+        # Any one 'shadow' summon within range 2 gets an extra attack if they have already attacked once this turn
+        app.depop_context(event = None)
+        root.unbind('<a>')
+        root.unbind('<q>')
+        root.bind('<q>', lambda name = 'Dark_Sun' : self.cleanup_spell(name = name))
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [s for s in coords if dist(self.loc, s) <= 2]
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_dark_sun(event = e, sqr = s, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Choose Target For Dark Sun', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_dark_sun(e, s, sqrs))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+        
+    def do_dark_sun(self, event, sqr, sqrs):
+        global selected_vis
+        if sqr not in sqrs:
+            return
+        id = app.grid[sqr[0]][sqr[1]]
+        if not isinstance(app.ent_dict[id], Shadow):
+            return
+        self.cantrip_used = True
+        app.depop_context(event = None)
+        app.unbind_all()
+        app.cleanup_squares()
+        app.ent_dict[id].attack_used = False
+        app.vis_dict['Dark_Sun'] = Vis(name = 'Dark_Sun', loc = sqr[:]) #[sqr[0],sqr[1]-1])
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Dark_Sun'].img, tags = 'Dark_Sun')
+        app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+50-app.moved_down+40, text = 'Dark Sun', justify ='center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+        selected_vis = 'Dark_Sun'
+        def dark_sun_loop(starty, endy, x):
+            if starty > endy:
+                app.vis_dict['Dark_Sun'].rotate_image()
+                app.canvas.delete('Dark_Sun')
+                app.canvas.create_image(x, starty, image = app.vis_dict['Dark_Sun'].img, tags = 'Dark_Sun')
+                starty -= 10
+                app.canvas.move('Dark_Sun', 0, -10)
+                app.canvas.tag_raise('Dark_Sun')
+            if starty == endy:
+                root.after(1333, lambda  name = 'Dark_Sun' : self.cleanup_spell(name = name))
+            else:
+                root.after(299, lambda sy = starty, ey = endy, x = x : dark_sun_loop(sy, ey, x))
+                
+        locy = sqr[1]*100+70-app.moved_down
+        locx = sqr[0]*100+50-app.moved_right
+        dark_sun_loop(locy, locy-90, locx)
+        
+        
+        
+    def disintegrate(self, event = None):
+        # target gets -1 to all stats every turn (cumulative) and must make end save to avoid psyche versus psyche damage
+        app.depop_context(event = None)
+        root.bind('<q>', self.cleanup_spell)
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [s for s in coords if dist(self.loc, s) <= 4]
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_disintegrate(event = e, sqr = s, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Choose Target For Disintegrate', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_disintegrate(e, s, sqrs = sqrs))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+        
+    def do_disintegrate(self, event, sqr, sqrs):
+        if app.current_pos() == '' or app.current_pos() == 'block':
+            return
+        if sqr not in sqrs:
+            return
+        id = app.grid[sqr[0]][sqr[1]]
+        effs = [v.name for k,v in app.ent_dict[id].effects_dict.items()]
+        if 'Disintegrate' in effs:
+            return
+        self.magick -= self.arcane_dict['Disintegrate'][1]
+#         self.init_cast_anims()
+        app.unbind_all()
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        self.arcane_used = True
+        app.vis_dict['Disintegrate'] = Vis(name = 'Disintegrate', loc = sqr[:])
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Disintegrate'].img, tags = 'Disintegrate')
+        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Disintegrate', justify = 'center', font = ('Andale Mono', 14), fill = 'darkgoldenrod', tags = 'text')
+        # DO Disintegrate EFFECTS
+        def disintegrate_effect(stat):
+            stat -= 1
+            if stat < 1:
+                return 1
+            else:
+                return stat
+        f = disintegrate_effect
+        app.ent_dict[id].str_effects.append(f)
+        app.ent_dict[id].end_effects.append(f)
+        app.ent_dict[id].agl_effects.append(f)
+        app.ent_dict[id].dodge_effects.append(f)
+        app.ent_dict[id].psyche_effects.append(f)
+        def un(i):
+            for ef in app.ent_dict[i].str_effects[:]:
+                    if ef.__name__ == 'disintegrate_effect':
+                        app.ent_dict[i].str_effects.remove(ef)
+            for ef in app.ent_dict[i].end_effects[:]:
+                    if ef.__name__ == 'disintegrate_effect':
+                        app.ent_dict[i].end_effects.remove(ef)
+            for ef in app.ent_dict[i].agl_effects[:]:
+                    if ef.__name__ == 'disintegrate_effect':
+                        app.ent_dict[i].agl_effects.remove(ef)
+            for ef in app.ent_dict[i].dodge_effects[:]:
+                    if ef.__name__ == 'disintegrate_effect':
+                        app.ent_dict[i].dodge_effects.remove(ef)
+            for ef in app.ent_dict[i].psyche_effects[:]:
+                    if ef.__name__ == 'disintegrate_effect':
+                        app.ent_dict[i].psyche_effects.remove(ef)
+                
+        p = partial(un, id)
+        # EOT FUNC
+        def disint(tar):
+            def disintegrate_effect(stat):
+                stat -= 1
+                if stat < 1:
+                    return 1
+                else:
+                    return stat
+            f = disintegrate_effect
+            app.ent_dict[tar].str_effects.append(f)
+            app.ent_dict[tar].end_effects.append(f)
+            app.ent_dict[tar].agl_effects.append(f)
+            app.ent_dict[tar].dodge_effects.append(f)
+            app.ent_dict[tar].psyche_effects.append(f)
+            
+            app.get_focus(tar)
+            app.ent_dict[tar].set_attr('spirit', -1)
+            app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+50-app.moved_down, text = '1 Spirit\n Damage\nDisintegrate', justify ='center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+            if app.ent_dict[tar].spirit <= 0:
+                app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+90-app.moved_down, text = app.ent_dict[tar].name.replace('_',' ') + '\nKilled...', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+            return 'Not None'
+            
+        eot = partial(disint, id)
+        n = 'Disintegrate' + str(app.effects_counter)
+        app.ent_dict[id].effects_dict[n] = Effect(name = 'Disintegrate', info = 'Disintegrate\n Stats reduced by 1 every turn for 3 turns\n1 Spirit damage per turn', eot_func = eot, undo = p, duration = 3)
+        root.after(3111, lambda  name = 'Disintegrate' : self.cleanup_spell(name = name))
+        
+        print('disintegrate')
+        
+        
         
     def command_of_osiris(self, event = None):
             # Caster is affected by 'command' effect, normal 'command' rules apply as above, Caster cannot move, can still be moved by spell/attack effects, at end of caster's turn any adjacent ents take spirit damage (caster's psyche versus ent's end), all spirit damage done to caster is reduced to 1, lasts until caster has 3 turns end
         print('command_of_osiris')
-        
-    def disintegrate(self, event = None):
-            # Caster must make 'to hit' psyche versus psyche on target summon within range 4, affected summon has attrs (str, agl, end, dodge, psyche) reduced to 1 and cannot move until 2 of its owners turns have ended, attrs or movement cannot be affected by other spells/attack effects
-        print('disintegrate')
-        
         
 # MORGAN SPELLS
         # Morgan's spells center around Nature/Earth/Weather/Illusion
@@ -3156,14 +3421,14 @@ class App(tk.Frame):
         self.choosemap = tk.Label(root, text = 'Choose Map', fg = 'tan3', bg = 'black', font = ('chalkduster', 38))
         self.choosemap.pack()
         # CHOOSE MAPS
-        maps = [m for r,d,m in walk('./2_player_maps')][0]
+        maps = [m for r,d,m in walk('./2_player_map_portraits')][0]
         maps = [m for m in maps[:] if m[0] != '.']
         self.map_button_list = []
         self.tmp_mapimg_dict = {}
         for i,map in enumerate(maps):
             b = tk.Button(root)
             cmd = lambda indx = i : self.map_choice_cleanup(indx)
-            photo = ImageTk.PhotoImage(Image.open('./2_player_maps/' + map).resize((300,300)))
+            photo = ImageTk.PhotoImage(Image.open('./2_player_map_portraits/' + map).resize((300,300)))
             self.tmp_mapimg_dict['map'+str(i)] = photo
             b.config(image = self.tmp_mapimg_dict['map'+str(i)], bg = 'black', highlightbackground = 'tan3', command = cmd)
             # DEBUG packing will have to be fixed here for different screen sizes
@@ -3815,6 +4080,8 @@ class App(tk.Frame):
         txt += 'Spirit:' + str(self.ent_dict[ent].spirit) + '\n'
         if isinstance(self.ent_dict[ent], Witch) or isinstance(self.ent_dict[ent], Trickster):
             txt += 'Magick:' + str(self.ent_dict[ent].magick) + '\n'
+        if isinstance(self.ent_dict[ent], Witch):
+            txt += 'Summon Cap: ' + str(self.ent_dict[ent].summon_cap) + '\n'
         for ef in self.ent_dict[ent].effects_dict.keys():
             txt += self.ent_dict[ent].effects_dict[ef].name.replace('_',' ') + '\n'
         return txt
