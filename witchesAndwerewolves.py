@@ -1130,6 +1130,7 @@ class White_Dragon(Summon):
         self.spirit = 1
 #         self.type = 'large'
 #         self.movement = 'flying'
+        self.waiting = False
         super().__init__(name, img, loc, owner, number, type = 'large')
         # BLOCK SQUARE BELOW
         sqr = [loc[0], loc[1]+1]
@@ -1334,7 +1335,7 @@ class White_Dragon(Summon):
         
         
 class Tortured_Soul(Summon):
-    def __init__(self, name, img, loc, owner, number):
+    def __init__(self, name, img, loc, owner, number, waiting = False):
         self.actions = {'attack':self.do_attack}
         self.attack_used = False
         self.str = 7
@@ -1343,19 +1344,20 @@ class Tortured_Soul(Summon):
         self.dodge = 4
         self.psyche = 2
         self.spirit = 23
-        # if given target, override search for closest enemy
-        # instead always attempt to attack/move towards target
-        # IF CANNOT ATTACK TARGET, AFTER MOVING TOWARDS TARGET IF STILL CANNOT ATTACK TARGET, ATTEMPT TO ATTACK OTHER?
-        self.target = ''
+        self.waiting = waiting
         super().__init__(name, img, loc, owner, number)
         
-    def do_target_ai(self, ents_list):
-        pass
+    def pass_priority(self, ents_list):
+        ents_list = ents_list[1:]
+        if ents_list == []:
+            app.end_turn()
+        else:
+            app.do_ai_loop(ents_list)
         
     #  TORTURED SOUL AI
     def do_ai(self, ents_list):
-        if self.target != '': # GIVEN PRIORITY OVER OTHER ENTS, ONLY TRY TO ATTACK THIS ENT
-            self.do_target_ai(ents_list)
+        if self.waiting == True: # GIVEN PRIORITY OVER OTHER ENTS, ONLY TRY TO ATTACK THIS ENT
+            self.pass_priority(ents_list)
         else: # NO TARGET PRIORITY, ATTEMPT ATTACK FROM STARTLOC
             atk_sqrs = self.legal_attacks()
             atk_sqrs = [x for x in atk_sqrs if app.ent_dict[app.grid[x[0]][x[1]]].owner == 'p1']
@@ -1589,7 +1591,7 @@ class Tortured_Soul(Summon):
         
         
 class Undead(Summon):
-    def __init__(self, name, img, loc, owner, number):
+    def __init__(self, name, img, loc, owner, number, waiting = False):
         self.actions = {'attack':self.do_attack}
         self.attack_used = False
         self.str = 4
@@ -1598,18 +1600,22 @@ class Undead(Summon):
         self.dodge = 2
         self.psyche = 2
         self.spirit = 9
-        self.target = ''
+        self.waiting = waiting
         super().__init__(name, img, loc, owner, number)
         
     
-    def do_target_ai(self, ents_list):
-        pass
+    def pass_priority(self, ents_list):
+        ents_list = ents_list[1:]
+        if ents_list == []:
+            app.end_turn()
+        else:
+            app.do_ai_loop(ents_list)
         
     #  UNDEAD AI
     # instead of calling bfs on each potential target, can i walk grid with bfs until any enemy is found?
     def do_ai(self, ents_list):
-        if self.target != '': # GIVEN PRIORITY OVER OTHER ENTS, ONLY TRY TO ATTACK THIS ENT
-            self.do_target_ai(ents_list)
+        if self.waiting == True: # GIVEN PRIORITY OVER OTHER ENTS, ONLY TRY TO ATTACK THIS ENT
+            self.pass_priority(ents_list)
         else: # NO TARGET PRIORITY, ATTEMPT ATTACK FROM STARTLOC
             atk_sqrs = self.legal_attacks()
             atk_sqrs = [x for x in atk_sqrs if app.ent_dict[app.grid[x[0]][x[1]]].owner == 'p1']
@@ -1819,7 +1825,7 @@ class Undead(Summon):
         
         
 class Orc_Axeman(Summon):
-    def __init__(self, name, img, loc, owner, number):
+    def __init__(self, name, img, loc, owner, number, waiting = False):
         self.actions = {'attack':self.do_attack}
         self.attack_used = False
         self.str = 6
@@ -1828,20 +1834,21 @@ class Orc_Axeman(Summon):
         self.dodge = 5
         self.psyche = 2
         self.spirit = 27
-        # if given target, override search for closest enemy
-        # instead always attempt to attack/move towards target
-        # IF CANNOT ATTACK TARGET, AFTER MOVING TOWARDS TARGET IF STILL CANNOT ATTACK TARGET, ATTEMPT TO ATTACK OTHER?
-        self.target = ''
+        self.waiting = waiting
         super().__init__(name, img, loc, owner, number)
         
-    def do_target_ai(self, ents_list):
-        pass
+    def pass_priority(self, ents_list):
+        ents_list = ents_list[1:]
+        if ents_list == []:
+            app.end_turn()
+        else:
+            app.do_ai_loop(ents_list)
         
     #  ORC AXEMAN AI
     # instead of calling bfs on each potential target, can i walk grid with bfs until any enemy is found?
     def do_ai(self, ents_list):
-        if self.target != '': # GIVEN PRIORITY OVER OTHER ENTS, ONLY TRY TO ATTACK THIS ENT
-            self.do_target_ai(ents_list)
+        if self.waiting == True: # PASSIVE / WAITING
+            self.pass_priority(ents_list)
         else: # NO TARGET PRIORITY, ATTEMPT ATTACK FROM STARTLOC
             atk_sqrs = self.legal_attacks()
             atk_sqrs = [x for x in atk_sqrs if app.ent_dict[app.grid[x[0]][x[1]]].owner == 'p1']
@@ -3364,7 +3371,7 @@ class App(tk.Frame):
             
             self.load_intro_scene(map_number)# DONT NEED PROTAG OBJECT ON FIRST AREA
 #             self.create_map_curs_context(map_number)
-            
+    # SECOND LEVEL
         elif map_number == 1:
             self.map_triggers = []
             def kill_all_undead():
@@ -3377,7 +3384,7 @@ class App(tk.Frame):
             
             self.load_intro_scene(map_number, protaganist_object = protaganist_object)
 #             self.create_map_curs_context(map_number, protaganist_object = protaganist_object)
-            
+    # THRID LEVEL 
         elif map_number == 2:
             self.map_triggers = []
 #             def kill_all_undead():
