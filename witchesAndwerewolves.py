@@ -1,32 +1,24 @@
-# maybe delete EOT effect text between effects, maybe
+# instead of raising fog, lower everything redrawn
+
+# add death of protag triggers, scenes
 
 # 2 player mode discriminate summon owner
 
 # 2 player mode needs some sort of terrain objective, reasons to engage or hold areas, when and where
 
-# prob just place summon cap and dont use magick for summons, balance all summons they are close as is, this allows for my combinations of gameplay (more spells cast, summon team)
-
 # create 'tunnel/hallway' level where you need to progress to a certain point in some amount of time
-
-# should contagion stack?
-
-# URGENT  2player mode - make sure all effects work
-
-# make spells powerful enough to compete with summons cost-wise, where a user can choose to EITHER focus on summoning or just casting
 
 # what to do about deaths, need some kind of visual cue
 
 # make popups into fullscreen toplevels
 
-# balance spell costs, make arcane powerful but a waste of magick on small Ents so that structure of most map strategies is coming up with ideal summon team and saving enough magick for correct arcanes to use on 'bosses', while making creative use of cantrips/summon synergy
+# make tool to populate map images with 'block' objects from list of coords
 
 # for pathing, when attempting reroute on egrid after finding no direct path, if the egrid path is much greater than dist(self.loc, goal) than do not move along it at all (probably better to wait for things to move in that case) 'much greater' can be defined simply as 3-6 greater int value when comparing egrid path length and dist from location
 
 # prevent damage or effect text from covering 'killed' text
 
 # victory condition happens too fast, need to freeze screen and show 'confirm' or 'notice'
-
-# get focus before destroying text objects from effects loop
 
 # contagion Vis will last longer than it takes to get to next action, either make faster cleanup or wait for cleanup or extend time between AI loop
 
@@ -50,8 +42,6 @@
 
 # would it be possible to 'pause' in the middle of a move_loop or to keep text object on screen
 
-# make get_info scroll a bit longer to hold more effects
-
 # make walking/movement animations
 
 # magick regen rate or squares on maps that regen
@@ -59,8 +49,6 @@
 # show victory conditions on map start
 
 # animate titlescreen
-
-# Urgent fix help text popup from disabling all input if 'clicked out of' or closed manually with window manager, either put help text on main canvas or context menu or make a full screen 'popup' like choose map dialogue
 
 # Instead of 'confirm_quit' labels, paste text across whole screen 
 
@@ -484,7 +472,7 @@ class Trickster(Summon):
         app.depop_context(event = None)
         app.cleanup_squares()
         if id:
-            if app.ent_dict[id].spirit < 0:
+            if app.ent_dict[id].spirit <= 0:
                 app.kill(id)
         app.canvas.delete('text')
         
@@ -860,7 +848,8 @@ class Plaguebearer(Summon):
                     for i in range(rand_start_anim):
                         app.vis_dict[n2].rotate_image()
                     app.canvas.create_text(app.ent_dict[e].loc[0]*100-app.moved_right+50, app.ent_dict[e].loc[1]*100-app.moved_down+90, text = 'CONTAGION', justify = 'center', fill = 'green2', font = ('Andale Mono', 16), tags = ('text','contagion_text'))# CALLED DURING A SET_ATTR, SO NEED A DIFFERENT TEXT TAG TO AVOID CLEANUP OF UNRELATED TEXT OBJECTS ON CANVAS
-                    app.canvas.create_image(app.ent_dict[e].loc[0]*100+50-app.moved_right, app.ent_dict[e].loc[1]*100+50-app.moved_down, image = app.vis_dict[n2].img, tags = 'Contagion')
+                    app.canvas.create_image(app.ent_dict[e].loc[0]*100+50-app.moved_right, app.ent_dict[e].loc[1]*100+50-app.moved_down, image = app.vis_dict[n2].img, tags = n2)
+                    
             root.after(3666, self.cleanup_contagion)
             super(Plaguebearer, self).set_attr(attr, amount)
         else:
@@ -1038,7 +1027,7 @@ class Bard(Summon):
                         def nothing():
                             return None
                         n = 'Unholy_Chant' + str(app.effects_counter)
-                        app.ent_dict[ent].effects_dict[n] = Effect(name = 'Unholy_Chant', info = 'Unholy_Chant\n Stats increased by 1 for 1 turn', eot_func = nothing, undo = p, duration = 2)
+                        app.ent_dict[ent].effects_dict[n] = Effect(name = 'Unholy_Chant', info = 'Unholy_Chant\n Stats increased by 1 for 1 turn', eot_func = nothing, undo = p, duration = 1)
         root.after(3666, self.finish_unholy_chant)
         
     def finish_unholy_chant(self, event = None):
@@ -1834,9 +1823,9 @@ class Orc_Axeman(Summon):
         self.actions = {'attack':self.do_attack}
         self.attack_used = False
         self.str = 6
-        self.agl = 4
+        self.agl = 5
         self.end = 6
-        self.dodge = 4
+        self.dodge = 5
         self.psyche = 2
         self.spirit = 27
         # if given target, override search for closest enemy
@@ -2198,7 +2187,7 @@ class Witch(Entity):
             self.cantrip_dict['Dark_Sun'] = (self.dark_sun)
             self.cantrip_dict['Meditate'] = (self.meditate)
             self.arcane_dict['Horrid_Wilting'] = (self.horrid_wilting,4)
-            self.arcane_dict['Disintegrate'] = (self.disintegrate, 6)
+            self.arcane_dict['Disintegrate'] = (self.disintegrate, 7)
             self.arcane_dict['Command_of_Osiris'] = (self.command_of_osiris, 5)
             self.str = 3
             self.agl = 4
@@ -2978,6 +2967,7 @@ class Witch(Entity):
         app.unbind_all()
         app.cleanup_squares()
         self.arcane_used = True
+        self.magick -= self.arcane_dict['Horrid_Wilting'][1]
         # get ent and all adj ents
         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         adj_sqrs = [s for s in coords if dist(sqr, s) == 1 and app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
@@ -3039,7 +3029,7 @@ class Witch(Entity):
         app.cleanup_squares()
         app.vis_dict['Boiling_Blood'] = Vis(name = 'Boiling_Blood', loc = sqr[:])
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Boiling_Blood'].img, tags = 'Boiling_Blood')
-        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Boiling\nBlood', justify = 'center', font = ('Andale Mono', 14), fill = 'firebrick2', tags = 'text')
+        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Boiling\nBlood', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
         # DO Boiling_Blood EFFECTS
         def boiling_blood_str_effect(stat):
             stat += 5
@@ -3390,13 +3380,20 @@ class App(tk.Frame):
             
         elif map_number == 2:
             self.map_triggers = []
-            def is_white_dragon_dead():
-                if 'b12' not in [v.number for k,v in self.ent_dict.items() if isinstance(v, Summon)]:
-                    return 'victory'
-                else:
-                    return None
-            self.map_triggers.append(is_white_dragon_dead)
-            
+#             def kill_all_undead():
+#                 all = [k for k,v in self.ent_dict.items() if v.owner == 'p2']
+#                 if all == []:
+#                     return 'victory'
+#                 else:
+#                     return None
+#             self.map_triggers.append(kill_all_undead)
+            def activate_area_zero():
+                coords = [[6,3],[6,4],[6,5],[6,6],[6,7],[7,3],[7,4],[7,5],[7,6],[7,7],[7,8],[8,2],[8,3],[8,4],[8,5],[8,6],[8,7],[8,8],[9,2],[9,3],[9,4],[9,5],[9,6],[9,7],[9,8],[10,2],[10,3],[10,4],[10,5],[10,6],[10,7],[10,8],[11,2],[11,3],[11,4],[11,5],[11,6],[11,7],[11,8],[11,9],[12,2],[12,3],[12,4],[12,5],[12,6],[12,7],[12,8],[13,2],[13,3],[13,4],[13,5],[13,6],[13,7],[13,8],[14,2],[14,3],[14,4],[14,5],[15,2],[15,3],[15,4],[15,5],[16,2],[16,3],[16,4],[16,5],[17,2],[17,3],[17,4],[17,5],[18,2],[18,3],[18,4],[18,5],[19,2],[19,3],[19,4],[19,5],[20,2],[20,3],[20,4],[20,5],[21,2],[21,3],[21,4],[21,5],[22,2],[22,3],[22,4],[22,5],[23,2],[23,3],[23,4],[23,5],[24,2],[24,3],[24,4],[24,5],[25,2],[25,3],[25,4],[25,5],[26,2],[26,3],[26,4],[26,5],[27,2],[27,3],[27,4],[27,5],[28,2],[28,3],[28,4],[28,5]]
+                ents = [k for k,v in app.ent_dict.items() if v.owner == 'p1']
+                for ent in ents:
+                    if app.ent_dict[ent].loc in coords:
+                        app.canvas.delete('fog0')
+            self.map_triggers.append(activate_area_zero)
             self.load_intro_scene(map_number, protaganist_object = protaganist_object)
 #             self.create_map_curs_context(map_number, protaganist_object = protaganist_object)
         else:
@@ -3495,6 +3492,16 @@ class App(tk.Frame):
         self.map_top = ImageTk.PhotoImage(Image.open(topfname + 'map_top'+str(map_number)+'.png'))
         self.canvas.create_image(0, 0, anchor='nw', image=self.map_img, tags=('mapbottom','map'))
         self.canvas.create_image(0, 0, anchor='nw', image=self.map_top, tags = ('maptop','map'))
+        # FOG OF WAR ON SOME MAPS
+        if map_number == 2:
+            fogs = [f for r,d,f in walk('./1_player_map_fog/map2/')][0]
+            fogs = [f for f in fogs[:] if f[0] != '.']
+            print('fogs', fogs)
+            app.fog_holder = []
+            for i,fog in enumerate(fogs):
+                img = ImageTk.PhotoImage(Image.open('1_player_map_fog/map2/'+fog))
+                app.fog_holder.append(img)
+                app.canvas.create_image(0,0, image = img, anchor = 'nw', tags = ('fog'+str(i),'fog'))
         # CURSOR
         self.cursor_img = ImageTk.PhotoImage(Image.open("cursor.png").resize((100,100)))
         self.vis_dict['cursor'] = Vis(name = 'cursor', loc = [2,2])
@@ -3701,6 +3708,7 @@ class App(tk.Frame):
                 root.after(1333, lambda e = k[0] : self.kill(e))
                 ents_list = ents_list[1:]
                 if ents_list != []:
+                    root.after(1111, lambda t = 'text' : app.canvas.delete(t))
                     root.after(1333, lambda e = ents_list[0], el = ents_list : self.eot_loop(e, el))
                 else: # NO MORE ENTS, FINISH_END_TURN
                     root.after(1333, self.finish_end_turn)
@@ -3714,14 +3722,15 @@ class App(tk.Frame):
                 # MORE EFFECTS?
                 ef_list = ef_list[1:]
                 if ef_list != []: # MORE EFFECTS FOR THIS ENT
-                    root.after(999, lambda t = 'text' : self.canvas.delete(t))
+                    root.after(1111, lambda t = 'text' : self.canvas.delete(t))
                     root.after(1333, lambda ef = ef_list[0], efl = ef_list, en = ent, enl = ents_list : self.effects_loop(ef, efl, en, enl))
                 else: # NO MORE FOR THIS ENT, CHECK IF MORE ENTS
                     ents_list = ents_list[1:]
                     if ents_list != []: # MORE ENTS TO PROCESS EFFECTS FOR
-                        root.after(999, lambda e = ents_list[0], el = ents_list : self.eot_loop(e, el))
+                        root.after(1111, lambda t = 'text' : app.canvas.delete(t))
+                        root.after(1333, lambda e = ents_list[0], el = ents_list : self.eot_loop(e, el))
                     else: # NO MORE ENTS, FINISH_END_TURN
-                        root.after(999, self.finish_end_turn)
+                        root.after(1333, self.finish_end_turn)
         else:
             # CHECK IF EFFECT DURATION ENDS AND CALL UNDO IF SO
             ef.duration -= 1
@@ -3796,6 +3805,8 @@ class App(tk.Frame):
                 self.canvas.create_image(self.ent_dict[ent].loc[0]*100+50-self.moved_right, self.ent_dict[ent].loc[1]*100+50-self.moved_down, image = self.ent_dict[ent].img, tags = app.ent_dict[ent].tags)
                 
                 app.canvas.tag_lower((app.ent_dict[ent].tags), ('maptop'))
+                try: app.canvas.tag_lower((app.ent_dict[ent].tags), ('fog'))
+                except: pass
         for sqr in self.sqr_dict.keys():
             self.sqr_dict[sqr].rotate_image()
             self.canvas.delete(sqr)
@@ -3820,6 +3831,8 @@ class App(tk.Frame):
         except: pass
         try: app.canvas.tag_raise('text')
         except: pass
+#         try: app.canvas.tag_raise('fog')
+#         except: pass
         self.animate_id = root.after(300, self.animate)
         
         # MAP TRIGGER LOOP
@@ -3921,7 +3934,7 @@ class App(tk.Frame):
             pass
         # DEBUG make info button into label that holds the info
         self.cntxt_info_bg = ImageTk.PhotoImage(Image.open('page.png'))
-        bg = tk.Canvas(self.context_menu, width = 190, height = 295, bg = 'burlywood4', bd=0, relief='raised', highlightthickness=0)
+        bg = tk.Canvas(self.context_menu, width = 190, height = 363, bg = 'burlywood4', bd=0, relief='raised', highlightthickness=0)
         bg.pack(side = 'top')
         bg.create_image(0,0, image = self.cntxt_info_bg, anchor = 'nw')
         bg.create_text(15, 15, text=expanded_name + '\n' + self.get_info_text(e), width = 190, anchor = 'nw', font = ('chalkduster', 18), fill = 'indianred')
@@ -4023,6 +4036,8 @@ class App(tk.Frame):
                 self.canvas.move(vis, 100, 0)
             for sqr in self.sqr_dict.keys():
                 self.canvas.move(sqr, 100, 0)
+            try: self.canvas.move('fog', 100, 0)
+            except: pass
         elif direction == 'Right':
             self.canvas.move('map', -100, 0)
             self.moved_right += 100
@@ -4032,6 +4047,8 @@ class App(tk.Frame):
                 self.canvas.move(vis, -100, 0)
             for sqr in self.sqr_dict.keys():
                 self.canvas.move(sqr, -100, 0)
+            try: self.canvas.move('fog', -100, 0)
+            except: pass
         elif direction == 'Up':
             self.canvas.move('map', 0, -100)
             self.moved_down += 100
@@ -4041,6 +4058,8 @@ class App(tk.Frame):
                 self.canvas.move(vis, 0,-100)
             for sqr in self.sqr_dict.keys():
                 self.canvas.move(sqr, 0, -100)
+            try: self.canvas.move('fog', 0, -100)
+            except: pass
         elif direction == 'Down':
             self.canvas.move('map', 0, 100)
             self.moved_down -= 100
@@ -4050,6 +4069,8 @@ class App(tk.Frame):
                 self.canvas.move(vis, 0, 100)
             for sqr in self.sqr_dict.keys():
                 self.canvas.move(sqr, 0, 100)
+            try: self.canvas.move('fog', 0, 100)
+            except: pass
 
     # Helper functions
     def help(self):
