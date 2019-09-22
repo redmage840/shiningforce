@@ -3645,20 +3645,34 @@ class App(tk.Frame):
         elif self.num_players == 1 and p == 'p2':
             # DEBUG BOT STUFF HERE
             to_act = [x for x in self.ent_dict.keys() if self.ent_dict[x].owner == 'p2']
-            self.get_focus(to_act[0])
+#             self.get_focus(to_act[0])
             root.after(1666, lambda ents = to_act : self.do_ai_loop(ents))
         
     def do_ai_loop(self, ents):
+        global curs_pos
         ent = ents[0]
-        self.get_focus(ent)
-        if self.ent_dict[ent].name == 'Undead':
-            self.ent_dict[ent].do_ai(ents)
-        elif self.ent_dict[ent].name == 'Orc_Axeman':
-            self.ent_dict[ent].do_ai(ents)
-        elif self.ent_dict[ent].name == 'Tortured_Soul':
-            self.ent_dict[ent].do_ai(ents)
-        elif self.ent_dict[ent].name == 'White_Dragon':
-            self.ent_dict[ent].do_ai(ents)
+        if self.ent_dict[ent].waiting == True: # IS THIS ENT WAITING
+            waiting_status = [v.waiting for k,v in self.ent_dict.items() if v.owner == 'p2']
+            if False not in waiting_status: # ARE ALL ENTS WAITING
+                self.canvas.create_text(curs_pos[0]*100+50-self.moved_right, curs_pos[1]*100+50-self.moved_down, text = 'No Enemies to Act...', font = ('Andale Mono', 16), fill = 'white', tags = 'text')
+                root.after(1999, lambda t = 'text' : self.canvas.delete(t))
+                root.after(1999, self.end_turn)
+            else: # CONTINUE WITH ENTS NOT WAITING
+                ents = ents[1:]
+#                 if ents == []:
+#                     self.end_turn()
+#                 else:
+                self.do_ai_loop(ents)
+        else:
+            self.get_focus(ent)
+            if self.ent_dict[ent].name == 'Undead':
+                self.ent_dict[ent].do_ai(ents)
+            elif self.ent_dict[ent].name == 'Orc_Axeman':
+                self.ent_dict[ent].do_ai(ents)
+            elif self.ent_dict[ent].name == 'Tortured_Soul':
+                self.ent_dict[ent].do_ai(ents)
+            elif self.ent_dict[ent].name == 'White_Dragon':
+                self.ent_dict[ent].do_ai(ents)
         
         
         
