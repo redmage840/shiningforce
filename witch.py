@@ -3315,10 +3315,10 @@ class Witch(Entity):
             my_psyche = self.get_attr('psyche')
             tar_psyche = app.ent_dict[id].get_attr('psyche')
             d = damage(my_psyche, tar_psyche)
-            app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+60-app.moved_down, text = str(d)+' Spirit Damage', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+            app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+75-app.moved_down, text = str(d)+' Spirit Damage', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
             app.ent_dict[id].set_attr('spirit', -d)
             if app.ent_dict[id].spirit <= 0:
-                app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+90-app.moved_down, text = app.ent_dict[id].name.replace('_',' ') + '\nKilled...', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+                app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+100-app.moved_down, text = app.ent_dict[id].name.replace('_',' ') + '\nKilled...', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
                 root.after(3666, lambda id = id : app.kill(id))
         root.after(3666, lambda  name = 'Pestilence' : self.cleanup_spell(name = name))
     
