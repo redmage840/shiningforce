@@ -2659,6 +2659,7 @@ class Witch(Entity):
             self.cantrip_dict['Forcefield'] = (self.forcefield)
             self.cantrip_dict['Moonlight'] = (self.moonlight)
             self.arcane_dict['Plague'] = (self.plague, 7)
+            self.arcane_dict['Pestilence'] = (self.pestilence, 8)
             self.arcane_dict['Curse_of_Oriax'] = (self.curse_of_oriax, 3)
             self.arcane_dict['Gravity'] = (self.gravity, 5)
             self.arcane_dict["Beleth's_Command"] = (self.beleths_command, 8)
@@ -2673,8 +2674,9 @@ class Witch(Entity):
             self.cantrip_dict['Boiling_Blood'] = (self.boiling_blood)
             self.cantrip_dict['Dark_Sun'] = (self.dark_sun)
             self.cantrip_dict['Meditate'] = (self.meditate)
-            self.arcane_dict['Horrid_Wilting'] = (self.horrid_wilting,4)
+            self.arcane_dict['Horrid_Wilting'] = (self.horrid_wilting,5)
             self.arcane_dict['Disintegrate'] = (self.disintegrate, 7)
+            self.arcane_dict['Mummify'] = (self.mummify, 6)
             self.arcane_dict['Command_of_Osiris'] = (self.command_of_osiris, 5)
             self.str = 3
             self.agl = 4
@@ -3241,6 +3243,88 @@ class Witch(Entity):
             self.cleanup_spell(name = 'Psionic_Push')
         
         
+    def pestilence(self, event = None):
+        # AOE damage in straight line
+        app.depop_context(event = None)
+        root.bind('<q>', self.cleanup_spell)
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [s for s in coords if dist(self.loc, s) <= 3]
+        for s in sqrs[:]:
+            if abs(s[0]-self.loc[0]) == 1 and abs(s[1]-self.loc[1]) == 1:
+                sqrs.remove(s)
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_pestilence(event = e, sqr = s, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Choose Target For Pestilence', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_pestilence(e, s, sqrs = sqrs))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+        
+    def do_pestilence(self, event, sqr, sqrs):
+        if sqr not in sqrs:
+            return
+        if app.grid[sqr[0]][sqr[1]] == '' or app.grid[sqr[0]][sqr[1]] == 'block':
+            return
+        app.depop_context(event = None)
+        app.unbind_all()
+        app.cleanup_squares()
+        self.arcane_used = True
+        self.magick -= self.arcane_dict['Pestilence'][1]
+        # get ent and all adj ents
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        target = app.grid[sqr[0]][sqr[1]]
+        all_targets = [target]
+        all_squares = []
+        # get direction and sign
+        if abs(sqr[0]-self.loc[0]) > abs(sqr[1]-self.loc[1]):# direction is left/right
+            if sqr[0] > self.loc[0]:# sign is pos
+                # get ents in this direction
+                for c in coords:
+                    if sqr[0] < c[0] <= sqr[0]+4 and c[1] == sqr[1]:
+                        all_squares.append(c)
+            else:#sign is neg
+                for c in coords:
+                    if sqr[0] > c[0] >= sqr[0]-4 and c[1] == sqr[1]:
+                        all_squares.append(c)
+        else:#direction is up/down
+            if sqr[1] > self.loc[1]:# sign is pos
+                # get ents in this direction
+                for c in coords:
+                    if sqr[1] < c[1] <= sqr[1]+4 and c[0] == sqr[0]:
+                        all_squares.append(c)
+            else:#sign is neg
+                for c in coords:
+                    if sqr[1] > c[1] >= sqr[1]-4 and c[0] == sqr[0]:
+                        all_squares.append(c)
+        all_targets += [app.grid[s[0]][s[1]] for s in all_squares if app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
+        
+        # Change to 'rolling vis' start first, delay, start next
+        for id in all_targets:
+            n = 'Pestilence' + str(app.effects_counter) # not an effect, just need unique int
+            app.effects_counter += 1 # that is why this is incr manually here, no Effect init
+            loc = app.ent_dict[id].loc[:]
+            app.vis_dict[n] = Vis(name = 'Pestilence', loc = loc)
+            def cleanup_vis(name):
+                app.canvas.delete(name)
+                del app.vis_dict[name]
+            root.after(3666, lambda n = n : cleanup_vis(n))
+            rand_start_anim = randrange(1,7)
+            for i in range(rand_start_anim):
+                app.vis_dict[n].rotate_image()
+            app.canvas.create_image(loc[0]*100+50-app.moved_right, loc[1]*100+50-app.moved_down, image = app.vis_dict[n].img, tags = n)
+            app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+50-app.moved_down-30, text = 'Pestilence', justify ='center', font = ('Andale Mono', 14), fill = 'gray75', tags = 'text')
+            # DAMAGE
+            my_psyche = self.get_attr('psyche')
+            tar_psyche = app.ent_dict[id].get_attr('psyche')
+            d = damage(my_psyche, tar_psyche)
+            app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+60-app.moved_down, text = str(d)+' Spirit Damage', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+            app.ent_dict[id].set_attr('spirit', -d)
+            if app.ent_dict[id].spirit <= 0:
+                app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+90-app.moved_down, text = app.ent_dict[id].name.replace('_',' ') + '\nKilled...', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+                root.after(3666, lambda id = id : app.kill(id))
+        root.after(3666, lambda  name = 'Pestilence' : self.cleanup_spell(name = name))
+    
+    
+    
+        
     # CURSE OF ORIAX
     def curse_of_oriax(self, event = None):
             # Any target is inflicted with 'curse', while cursed takes 2 spirit damage at end of every owner's turn and minus 1 to every stat (not spirit, magick, movement)
@@ -3458,7 +3542,7 @@ class Witch(Entity):
         # get ent and all adj ents
         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         adj_sqrs = [s for s in coords if dist(sqr, s) == 1 and app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
-        adj_ents = [app.grid[s[0]][s[1]] for s in adj_sqrs if app.ent_dict[app.grid[s[0]][s[1]]].owner != self.owner] 
+        adj_ents = [app.grid[s[0]][s[1]] for s in adj_sqrs] #if app.ent_dict[app.grid[s[0]][s[1]]].owner != self.owner] 
         all_targets = adj_ents + [app.grid[sqr[0]][sqr[1]]]
         for id in all_targets:
             n = 'Horrid_Wilting' + str(app.effects_counter) # not an effect, just need unique int
@@ -3472,7 +3556,7 @@ class Witch(Entity):
             rand_start_anim = randrange(1,7)
             for i in range(rand_start_anim):
                 app.vis_dict[n].rotate_image()
-            app.canvas.create_image(loc[0]*100+50-app.moved_right, loc[1]*100+50-app.moved_down, image = app.vis_dict[n].img, tags = 'Horrid_Wilting')
+            app.canvas.create_image(loc[0]*100+50-app.moved_right, loc[1]*100+50-app.moved_down, image = app.vis_dict[n].img, tags = n)
             app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+50-app.moved_down-30, text = 'Horrid\nWilting', justify ='center', font = ('Andale Mono', 14), fill = 'wheat2', tags = 'text')
             # HIT OR MISS
             my_psyche = self.get_attr('psyche')
@@ -3591,6 +3675,61 @@ class Witch(Entity):
         locy = sqr[1]*100+70-app.moved_down
         locx = sqr[0]*100+50-app.moved_right
         dark_sun_loop(locy, locy-90, locx)
+        
+        
+    def mummify(self, event = None):
+        # +9 to endurance and target cannot move any target 3 turns
+        app.depop_context(event = None)
+        root.bind('<q>', self.cleanup_spell)
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [s for s in coords if dist(self.loc, s) <= 2]
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_mummify(event = e, sqr = s, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Choose Target For Mummify', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_mummify(e, s, sqrs = sqrs))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+        
+    def do_mummify(self, event, sqr, sqrs):
+        if app.current_pos() == '' or app.current_pos() == 'block':
+            return
+        if sqr not in sqrs:
+            return
+        id = app.grid[sqr[0]][sqr[1]]
+        effs = [v.name for k,v in app.ent_dict[id].effects_dict.items()]
+        if 'Mummify' in effs:
+            return
+        self.magick -= self.arcane_dict['Mummify'][1]
+#         self.init_cast_anims()
+        app.unbind_all()
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        self.arcane_used = True
+        app.vis_dict['Mummify'] = Vis(name = 'Mummify', loc = sqr[:])
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Mummify'].img, tags = 'Mummify')
+        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Mummify', justify = 'center', font = ('Andale Mono', 14), fill = 'darkgoldenrod', tags = 'text')
+        # DO Mummify EFFECTS
+        def mummify_effect(stat):
+            stat += 9
+            return stat
+        f = mummify_effect
+        app.ent_dict[id].end_effects.append(f)
+        def un(i):
+            for ef in app.ent_dict[i].end_effects[:]:
+                    if ef.__name__ == 'mummify_effect':
+                        app.ent_dict[i].end_effects.remove(ef)
+            p = partial(app.ent_dict[i].__class__.legal_moves, app.ent_dict[i]) #   PUT BACK CLASS METHOD MOVEMENT
+            app.ent_dict[i].legal_moves = p
+        def mummifier():# REPLACE CLASS MOVEMENT WITH NOTHING
+            return []
+        app.ent_dict[id].legal_moves = mummifier
+        p = partial(un, id)
+        # EOT FUNC
+        def nothing():
+            return None
+        eot = nothing
+        n = 'Mummify' + str(app.effects_counter)
+        app.ent_dict[id].effects_dict[n] = Effect(name = 'Mummify', info = 'Mummify\n+9 End and cannot move', eot_func = eot, undo = p, duration = 3)
+        root.after(3666, lambda  name = 'Mummify' : self.cleanup_spell(name = name))
         
         
         
