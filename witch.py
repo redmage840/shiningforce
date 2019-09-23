@@ -82,7 +82,6 @@ def dist(loc1, loc2):
 # returns path from start to goal (list of coords)
 def bfs(start, goal, grid):
     coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)] # get list of coords from gridsize
-    print(coords)
     path = []
     q = [[start]]
     visited = [start]
@@ -1842,7 +1841,7 @@ class Undead_Knight(Summon):
         self.end = 6
         self.dodge = 8
         self.psyche = 6
-        self.spirit = 47
+        self.spirit = 66
         self.waiting = waiting
         super().__init__(name, img, loc, owner, number)
         
@@ -2070,12 +2069,12 @@ class Troll(Summon):
     def __init__(self, name, img, loc, owner, number, waiting = False):
         self.actions = {'attack':self.do_attack}
         self.attack_used = False
-        self.str = 6
-        self.agl = 5
-        self.end = 6
+        self.str = 9
+        self.agl = 6
+        self.end = 8
         self.dodge = 5
         self.psyche = 2
-        self.spirit = 27
+        self.spirit = 35
         self.waiting = waiting
         super().__init__(name, img, loc, owner, number)
         
@@ -2092,6 +2091,13 @@ class Troll(Summon):
         if self.waiting == True: # PASSIVE / WAITING
             self.pass_priority(ents_list)
         else: # NO TARGET PRIORITY, ATTEMPT ATTACK FROM STARTLOC
+            # TROLL REGEN
+            if self.spirit < 35:
+                app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+50-app.moved_down, text='Regen 2 Spirit', font= ('Andale Mono', 14), fill = 'white', tags = 'text')
+                root.after(999, lambda t = 'text' : app.canvas.delete('text'))
+                self.spirit += 2
+                if self.spirit > 35:
+                    self.spirit = 35
             atk_sqrs = self.legal_attacks()
             atk_sqrs = [x for x in atk_sqrs if app.ent_dict[app.grid[x[0]][x[1]]].owner == 'p1']
             if atk_sqrs != []:
@@ -2291,7 +2297,7 @@ class Troll(Summon):
             for s in adj:
                 mvlist.append(s)
                 findall(s, start+1, distance)
-        findall(loc, 1, 4) 
+        findall(loc, 1, 5) 
         setlist = []
         for l in mvlist:
             if l not in setlist:
@@ -4021,14 +4027,12 @@ class App(tk.Frame):
             if player_num == 1 and self.num_players == 2:
                 def wrap(somePartial, witch_name):
                     self.p1_witch = witch_name
-                    print('p1_witch, ', self.p1_witch)
                     somePartial()
                 p1 = partial(self.choose_witch, player_num = 2)
                 p = partial(wrap, p1, witch[:-4])
             elif player_num == 2 and self.num_players == 2:
                 def wrap(somePartial, witch_name):
                     self.p2_witch = witch_name
-                    print('p2_witch', self.p2_witch)
                     somePartial()
                 p1 = partial(self.create_map_curs_context, map_number = self.two_player_map_num)
                 p = partial(wrap, p1, witch[:-4])
@@ -4147,7 +4151,6 @@ class App(tk.Frame):
                 elif self.ent_dict[ent].name == 'Tortured_Soul':
                     self.ent_dict[ent].do_ai(ents)
                 elif self.ent_dict[ent].name == 'Troll':
-                    print('got here')
                     self.ent_dict[ent].do_ai(ents)
                 elif self.ent_dict[ent].name == 'Undead_Knight':
                     self.ent_dict[ent].do_ai(ents)
@@ -4351,7 +4354,6 @@ class App(tk.Frame):
         
     def end_level(self):
         global curs_pos, is_object_selected, selected, selected_vis, map_pos, grid_pos
-        print('level finished')
         root.after_cancel(self.animate_id)
         root.after_cancel(self.map_trigger_id)
         protaganist_object  = app.ent_dict[self.p1_witch]
