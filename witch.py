@@ -1,3 +1,9 @@
+# forcefield at any doorway can be used to perpetually block and use ranged attacks...
+
+# possible that fog of war was only causing problems because of map_trigger_loop 'else' bug with multiple triggers, maybe try fog of war again now that multiple triggers fixed
+
+# fix boiling blood stacking
+
 # trickster and shadow movement (teleport) anims
 
 # make shortcut button that 'blinks' all summons, vis cue to raise them above objects and highlight
@@ -1841,7 +1847,7 @@ class Undead_Knight(Summon):
         self.end = 6
         self.dodge = 8
         self.psyche = 6
-        self.spirit = 66
+        self.spirit = 76
         self.waiting = waiting
         super().__init__(name, img, loc, owner, number)
         
@@ -2659,7 +2665,7 @@ class Witch(Entity):
             self.cantrip_dict['Forcefield'] = (self.forcefield)
             self.cantrip_dict['Moonlight'] = (self.moonlight)
             self.arcane_dict['Plague'] = (self.plague, 7)
-            self.arcane_dict['Pestilence'] = (self.pestilence, 8)
+            self.arcane_dict['Pestilence'] = (self.pestilence, 10)
             self.arcane_dict['Curse_of_Oriax'] = (self.curse_of_oriax, 3)
             self.arcane_dict['Gravity'] = (self.gravity, 5)
             self.arcane_dict["Beleth's_Command"] = (self.beleths_command, 8)
@@ -2675,8 +2681,9 @@ class Witch(Entity):
             self.cantrip_dict['Dark_Sun'] = (self.dark_sun)
             self.cantrip_dict['Meditate'] = (self.meditate)
             self.arcane_dict['Horrid_Wilting'] = (self.horrid_wilting,5)
-            self.arcane_dict['Disintegrate'] = (self.disintegrate, 7)
+            self.arcane_dict['Disintegrate'] = (self.disintegrate, 6)
             self.arcane_dict['Mummify'] = (self.mummify, 6)
+            self.arcane_dict['Immolate'] = (self.immolate, 9)
             self.arcane_dict['Command_of_Osiris'] = (self.command_of_osiris, 5)
             self.str = 3
             self.agl = 4
@@ -2987,7 +2994,7 @@ class Witch(Entity):
         app.depop_context(event = None)
         root.bind('<q>', lambda name = 'Moonlight' : self.cleanup_spell(name = name))
         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        sqrs = [s for s in coords if dist(self.loc, s) == 1]
+        sqrs = [s for s in coords if dist(self.loc, s) <= 2]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_moonlight(event = e, s = s, sqrs = sqrs))
         b = tk.Button(app.context_menu, text = 'Choose Target For Moonlight', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_moonlight(e, s, sqrs))
@@ -3310,12 +3317,12 @@ class Witch(Entity):
             for i in range(rand_start_anim):
                 app.vis_dict[n].rotate_image()
             app.canvas.create_image(loc[0]*100+50-app.moved_right, loc[1]*100+50-app.moved_down, image = app.vis_dict[n].img, tags = n)
-            app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+50-app.moved_down-30, text = 'Pestilence', justify ='center', font = ('Andale Mono', 14), fill = 'gray75', tags = 'text')
+            app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+50-app.moved_down-20, text = 'Pestilence', justify ='center', font = ('Andale Mono', 14), fill = 'gray75', tags = 'text')
             # DAMAGE
             my_psyche = self.get_attr('psyche')
             tar_psyche = app.ent_dict[id].get_attr('psyche')
             d = damage(my_psyche, tar_psyche)
-            app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+75-app.moved_down, text = str(d)+' Spirit Damage', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+            app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+65-app.moved_down, text = str(d)+'\nSpirit Damage', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
             app.ent_dict[id].set_attr('spirit', -d)
             if app.ent_dict[id].spirit <= 0:
                 app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+100-app.moved_down, text = app.ent_dict[id].name.replace('_',' ') + '\nKilled...', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
@@ -3557,17 +3564,17 @@ class Witch(Entity):
             for i in range(rand_start_anim):
                 app.vis_dict[n].rotate_image()
             app.canvas.create_image(loc[0]*100+50-app.moved_right, loc[1]*100+50-app.moved_down, image = app.vis_dict[n].img, tags = n)
-            app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+50-app.moved_down-30, text = 'Horrid\nWilting', justify ='center', font = ('Andale Mono', 14), fill = 'wheat2', tags = 'text')
+            app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+50-app.moved_down-30, text = 'Horrid Wilting', justify ='center', font = ('Andale Mono', 14), fill = 'wheat2', tags = 'text')
             # HIT OR MISS
             my_psyche = self.get_attr('psyche')
             tar_psyche = app.ent_dict[id].get_attr('psyche')
             if to_hit(my_psyche, tar_psyche) == True:
                 tar_end = app.ent_dict[id].get_attr('end')
                 d = damage(my_psyche, tar_end)
-                app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+60-app.moved_down, text = 'Hit, '+str(d)+'\nSpirit Damage', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+                app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+75-app.moved_down, text = str(d)+' Spirit Damage', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
                 app.ent_dict[id].set_attr('spirit', -d)
                 if app.ent_dict[id].spirit <= 0:
-                    app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+90-app.moved_down, text = app.ent_dict[id].name.replace('_',' ') + '\nKilled...', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+                    app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+100-app.moved_down, text = app.ent_dict[id].name.replace('_',' ') + '\nKilled...', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
                     root.after(3666, lambda id = id : app.kill(id))
             else:
                 app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+70-app.moved_down, text = 'Miss', justify ='center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
@@ -3706,7 +3713,7 @@ class Witch(Entity):
         self.arcane_used = True
         app.vis_dict['Mummify'] = Vis(name = 'Mummify', loc = sqr[:])
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Mummify'].img, tags = 'Mummify')
-        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Mummify', justify = 'center', font = ('Andale Mono', 14), fill = 'darkgoldenrod', tags = 'text')
+        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+95-app.moved_down, text = 'Mummify', justify = 'center', font = ('Andale Mono', 14), fill = 'darkgoldenrod', tags = 'text')
         # DO Mummify EFFECTS
         def mummify_effect(stat):
             stat += 9
@@ -3731,6 +3738,46 @@ class Witch(Entity):
         app.ent_dict[id].effects_dict[n] = Effect(name = 'Mummify', info = 'Mummify\n+9 End and cannot move', eot_func = eot, undo = p, duration = 3)
         root.after(3666, lambda  name = 'Mummify' : self.cleanup_spell(name = name))
         
+        
+        
+    def immolate(self, event = None):
+        # high psyche damage one target
+        app.depop_context(event = None)
+        root.bind('<q>', self.cleanup_spell)
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [s for s in coords if dist(self.loc, s) <= 2]
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_immolate(event = e, sqr = s, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Choose Target For Immolate', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_immolate(e, s, sqrs = sqrs))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+        
+    def do_immolate(self, event, sqr, sqrs):
+        if app.current_pos() == '' or app.current_pos() == 'block':
+            return
+        if sqr not in sqrs:
+            return
+        id = app.grid[sqr[0]][sqr[1]]
+        self.magick -= self.arcane_dict['Immolate'][1]
+#         self.init_cast_anims()
+        app.unbind_all()
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        self.arcane_used = True
+        app.vis_dict['Immolate'] = Vis(name = 'Immolate', loc = sqr[:])
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Immolate'].img, tags = 'Immolate')
+        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+25-app.moved_down, text = 'Immolate', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+        my_psyche = self.get_attr('psyche')
+        tar_psyche = app.ent_dict[id].get_attr('psyche')
+        d = damage(my_psyche, tar_psyche)
+        d += 3
+        app.ent_dict[id].set_attr('spirit', -d)
+        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+80-app.moved_down, text = str(d)+' Spirit Damage', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+        if app.ent_dict[id].spirit <= 0:
+            app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+95-app.moved_down, text = app.ent_dict[id].name.replace('_', ' ')+' Killed...', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+            root.after(3111, lambda id = id : app.kill(id))
+                
+        root.after(3111, lambda  name = 'Immolate' : self.cleanup_spell(name = name))
         
         
     def disintegrate(self, event = None):
@@ -3821,7 +3868,6 @@ class Witch(Entity):
         app.ent_dict[id].effects_dict[n] = Effect(name = 'Disintegrate', info = 'Disintegrate\n Stats reduced by 1 every turn for 3 turns\n1 Spirit damage per turn', eot_func = eot, undo = p, duration = 3)
         root.after(3111, lambda  name = 'Disintegrate' : self.cleanup_spell(name = name))
         
-        print('disintegrate')
         
         
         
@@ -3981,6 +4027,10 @@ class App(tk.Frame):
             del self.wrapped_funcs
             self.p1_witch = witch
             self.map_triggers = []
+            def self_death():
+                if app.p1_witch not in app.ent_dict.keys():
+                    return 'game over'
+            self.map_triggers.append(self_death)
             def kill_all_enemies():
                 all = [k for k,v in self.ent_dict.items() if v.owner == 'p2']
                 if all == []:
@@ -3994,6 +4044,10 @@ class App(tk.Frame):
     # SECOND LEVEL
         elif map_number == 1:
             self.map_triggers = []
+            def self_death():
+                if app.p1_witch not in app.ent_dict.keys():
+                    return 'game over'
+            self.map_triggers.append(self_death)
             def kill_all_undead():
                 all = [k for k,v in self.ent_dict.items() if v.owner == 'p2']
                 if all == []:
@@ -4007,6 +4061,10 @@ class App(tk.Frame):
     # THRID LEVEL 
         elif map_number == 2:
             self.map_triggers = []
+            def self_death():
+                if app.p1_witch not in app.ent_dict.keys():
+                    return 'game over'
+            self.map_triggers.append(self_death)
             def kill_one_undead_knight():
                 all_knights = [v.name for k,v in self.ent_dict.items() if v.name == 'Undead_Knight']
                 if len(all_knights) <= 1:
@@ -4486,10 +4544,15 @@ class App(tk.Frame):
         # OR IF THEY RETURN 'victory', END LEVEL
     def map_trigger_loop(self):
         for mt in self.map_triggers:
-            if mt() == 'victory':
+            result = mt()
+            if result == 'victory':
                 self.end_level()
-            else:
-                self.map_trigger_id = root.after(2666, self.map_trigger_loop)
+                break
+            elif result == 'game over':
+                self.reset()
+                break
+        else:
+            self.map_trigger_id = root.after(2666, self.map_trigger_loop)
         
     def end_level(self):
         global curs_pos, is_object_selected, selected, selected_vis, map_pos, grid_pos
@@ -4882,6 +4945,29 @@ class App(tk.Frame):
         help_button = tk.Button(self.context_menu, text = 'Help', font = ('chalkduster', 24), fg='indianred', highlightbackground = 'tan3', command = self.help)
         help_button.pack(side = 'bottom')
         self.context_buttons.append(help_button)
+        
+    # called when you die in 1player mode
+    def reset(self):
+        from sys import executable, argv
+        from os import execl
+        python = executable
+        execl(python, python, * argv)
+#         self.quit()
+#         root = tk.Tk()
+#         app = App(master=root)
+#         root.bind('<Right>', app.move_curs)
+#         root.bind('<Left>', app.move_curs)
+#         root.bind('<Up>', app.move_curs)
+#         root.bind('<Down>', app.move_curs)
+#         root.bind('<a>', app.populate_context)
+#         root.bind('<q>', app.depop_context)
+#         root.configure(background = 'black')
+#         root.attributes('-transparent', True)
+#         root.attributes("-fullscreen", True)
+#         width = root.winfo_screenwidth()
+#         height = root.winfo_screenheight()
+#         root.geometry('%sx%s' % (width, height))
+#         app.mainloop()
         
 #     def debugger(self, event):
 #         print(app.vis_dict.items())
