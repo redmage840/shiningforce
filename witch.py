@@ -1,8 +1,8 @@
+# make sure reset works after compile
+
 # forcefield at any doorway can be used to perpetually block and use ranged attacks...
 
 # possible that fog of war was only causing problems because of map_trigger_loop 'else' bug with multiple triggers, maybe try fog of war again now that multiple triggers fixed
-
-# fix boiling blood stacking
 
 # trickster and shadow movement (teleport) anims
 
@@ -10,13 +10,9 @@
 
 # during move_loops, tag_lower under top is fine DURING movement BUT last image create doesnt tag_lower properly, causes flicker of moving image over 'top' tags
 
-# gate vis, remove bottom edge of doorway
-
 # instead of covering with fog, do not create until trigger
 
-# add death of protag triggers, scenes
-
-# 2 player mode discriminate summon owner
+# add death of protag scenes
 
 # 2 player mode needs some sort of terrain objective, reasons to engage or hold areas, when and where
 
@@ -25,8 +21,6 @@
 # what to do about deaths, need some kind of visual cue
 
 # make popups into fullscreen toplevels
-
-# make tool to populate map images with 'block' objects from list of coords
 
 # for pathing, when attempting reroute on egrid after finding no direct path, if the egrid path is much greater than dist(self.loc, goal) than do not move along it at all (probably better to wait for things to move in that case) 'much greater' can be defined simply as 3-6 greater int value when comparing egrid path length and dist from location
 
@@ -3601,6 +3595,9 @@ class Witch(Entity):
         id = app.grid[sqr[0]][sqr[1]]
         if not isinstance(app.ent_dict[id], Warrior):
             return
+        effs = [v.name for k,v in app.ent_dict[id].effects_dict.items()]
+        if 'Boiling_Blood' in effs:
+            return
         self.cantrip_used = True
         app.depop_context(event = None)
         app.unbind_all()
@@ -4031,6 +4028,15 @@ class App(tk.Frame):
                 if app.p1_witch not in app.ent_dict.keys():
                     return 'game over'
             self.map_triggers.append(self_death)
+            ############## GODHAND
+            def summon_trick():
+                all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
+                if 'Trickster' in all:
+                    return 'victory'
+                else:
+                    return None
+            self.map_triggers.append(summon_trick)
+            ################
             def kill_all_enemies():
                 all = [k for k,v in self.ent_dict.items() if v.owner == 'p2']
                 if all == []:
@@ -4044,6 +4050,13 @@ class App(tk.Frame):
     # SECOND LEVEL
         elif map_number == 1:
             self.map_triggers = []
+            def summon_trick():
+                all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
+                if 'Trickster' in all:
+                    return 'victory'
+                else:
+                    return None
+            self.map_triggers.append(summon_trick)
             def self_death():
                 if app.p1_witch not in app.ent_dict.keys():
                     return 'game over'
@@ -4065,16 +4078,46 @@ class App(tk.Frame):
                 if app.p1_witch not in app.ent_dict.keys():
                     return 'game over'
             self.map_triggers.append(self_death)
-            def kill_one_undead_knight():
-                all_knights = [v.name for k,v in self.ent_dict.items() if v.name == 'Undead_Knight']
-                if len(all_knights) <= 1:
-                    return 'victory'
+            def summon_trick():
+                all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
+                if 'Trickster' in all:
+                    return 'door'
                 else:
                     return None
-            self.map_triggers.append(kill_one_undead_knight)
+            self.map_triggers.append(summon_trick)
+            # depending on which is killed, load certain level
+            # knight near stairway is b7, knight near doorway is b8
+            def kill_stair_knight():
+                all_knights = [v.number for k,v in self.ent_dict.items() if v.name == 'Undead_Knight']
+                if 'b7' not in all_knights and 'b8' in all_knights:
+                    return 'stairway'
+                else:
+                    return None
+            self.map_triggers.append(kill_stair_knight)
+            def kill_door_knight():
+                all_knights = [v.number for k,v in self.ent_dict.items() if v.name == 'Undead_Knight']
+                if 'b8' not in all_knights and 'b7' in all_knights:
+                    return 'door'
+                else:
+                    return None
+            self.map_triggers.append(kill_door_knight)
+#             def kill_one_undead_knight():
+#                 all_knights = [v.name for k,v in self.ent_dict.items() if v.name == 'Undead_Knight']
+#                 if len(all_knights) <= 1:
+#                     return 'victory'
+#                 else:
+#                     return None
+#             self.map_triggers.append(kill_one_undead_knight)
             
             self.load_intro_scene(map_number, protaganist_object = protaganist_object)
 #             self.create_map_curs_context(map_number, protaganist_object = protaganist_object)
+        elif map_number == 121:
+            self.map_triggers = []
+            def self_death():
+                if app.p1_witch not in app.ent_dict.keys():
+                    return 'game over'
+            self.map_triggers.append(self_death)
+            self.load_intro_scene(map_number, protaganist_object = protaganist_object)
     # END OF GAME
         else:
             print('you are winner hahaha')
@@ -4126,6 +4169,7 @@ class App(tk.Frame):
         # IF PROTAG, LOAD PROTAG AND DO NOT RE-INIT WITCH
     def create_map_curs_context(self, map_number, protaganist_object = None):
         global curs_pos, grid_pos
+        self.map_number = map_number
         try: self.intro_canvas.destroy()
         except: pass
         # GET MAP DIMENSIONS
@@ -4142,8 +4186,10 @@ class App(tk.Frame):
         col = self.map_width//100
         row = self.map_height//100
         self.grid = [[''] * row for i in range(col)]
+        # START LOC
+        self.start_loc = eval(self.map_info[2])
         # LOAD MAP / GRID INFO / IMPASSABLE TERRAIN
-        terrain = eval(self.map_info[2])
+        terrain = eval(self.map_info[3])
         for coord in terrain:
             self.grid[coord[0]][coord[1]] = 'block'
         # CONTEXT MENU
@@ -4258,7 +4304,10 @@ class App(tk.Frame):
     def load_witch(self, witch = None, player_num = None, protaganist_object = None):
         if player_num == 1:
             self.p1_witch = witch
-            loc = [2,2]
+            if self.num_players == 2:
+                loc = [2,2]
+            else:
+                loc = self.start_loc
         elif player_num == 2:
             self.p2_witch = witch
             loc = [self.map_width//100-3, self.map_height//100-3]
@@ -4278,7 +4327,7 @@ class App(tk.Frame):
         if self.num_players == 1:
             # DEBUG LOAD BOT ENEMIES FOR PLAYER 1 HERE
             # LOAD 1 PLAYER MAP BOT UNITS
-            lst = self.map_info[3:]
+            lst = self.map_info[4:]
             c1 = 0
             end = len(lst)
             itlst = iter(lst)
@@ -4542,26 +4591,61 @@ class App(tk.Frame):
         # MAP TRIGGER LOOP
         # ALL MAP TRIGGERS ARE FUNCTIONS THAT CHECK FOR CONDITIONS AND EITHER DO STUFF IN RESPONSE
         # OR IF THEY RETURN 'victory', END LEVEL
+    # need to make specific for each level
     def map_trigger_loop(self):
-        for mt in self.map_triggers:
-            result = mt()
-            if result == 'victory':
-                self.end_level()
-                break
-            elif result == 'game over':
-                self.reset()
-                break
-        else:
-            self.map_trigger_id = root.after(2666, self.map_trigger_loop)
+        if self.map_number == 0:
+            for mt in self.map_triggers:
+                result = mt()
+                if result == 'victory':
+                    app.unbind_all()
+                    self.end_level()
+                    break
+                elif result == 'game over':
+                    self.reset()
+                    break
+            else:
+                self.map_trigger_id = root.after(1666, self.map_trigger_loop)
+        elif self.map_number == 1:
+            for mt in self.map_triggers:
+                result = mt()
+                if result == 'victory':
+                    app.unbind_all()
+                    self.end_level()
+                    break
+                elif result == 'game over':
+                    self.reset()
+                    break
+            else:
+                self.map_trigger_id = root.after(1666, self.map_trigger_loop)
+        elif self.map_number == 2:
+            for mt in self.map_triggers:
+                result = mt()
+                if result == 'stair':
+                    app.unbind_all()
+                    self.end_level(alt_route = 21)
+                    break
+                elif result == 'door':
+                    app.unbind_all()
+                    self.end_level(alt_route = 121)
+                    break
+                elif result == 'game over':
+                    self.reset()
+                    break
+            else:
+                self.map_trigger_id = root.after(1666, self.map_trigger_loop)
         
-    def end_level(self):
+    def end_level(self, alt_route = None):
         global curs_pos, is_object_selected, selected, selected_vis, map_pos, grid_pos
         root.after_cancel(self.animate_id)
         root.after_cancel(self.map_trigger_id)
         protaganist_object  = app.ent_dict[self.p1_witch]
         protaganist_object.reset_transient_vars()
-        prev_map_num = int(self.map[3:])
-        newmap_num = prev_map_num + 1
+        if alt_route:
+            prev_map_num = int(self.map[3:])
+            new_map_num = alt_route
+        else:
+            prev_map_num = int(self.map[3:])
+            new_map_num = prev_map_num + 1
         for child in root.winfo_children():
             child.destroy()
         # THIS WORKS, JUST NEED TO CLEAN ALL VARS LIKE GRID, SELF.STUFF, GLOBALS
@@ -4590,10 +4674,10 @@ class App(tk.Frame):
         # GIVE ANY STORYLINE RELATED TO FINISHED AND NEXT LEVEL
         # GIVE OPTION TO SAVE PROGRESS
         # WILL NEED, AT SOME POINT, TO SAVE ACTUAL WITCH OBJECT (NOT JUST STRING NAME), TO HOLD PERSISTENT CHANGES
-        self.load_cutscene(prev_map_num, protaganist_object)
+        self.load_cutscene(prev_map_num, new_map_num, protaganist_object)
         
         
-    def load_cutscene(self, prev_map_num, protaganist_object):
+    def load_cutscene(self, prev_map_num, new_map_num, protaganist_object):
         # Make cutscene using background pictures and overlay unit models
         self.cut_scene = ImageTk.PhotoImage(Image.open('cut_scenes/cut_scene'+str(prev_map_num)+'.png').resize((root.winfo_screenwidth(),root.winfo_screenheight())))
         self.cut_canvas = tk.Canvas(root, width = root.winfo_screenwidth(), bg = 'black', highlightthickness = 0, height = root.winfo_screenheight())
@@ -4605,9 +4689,9 @@ class App(tk.Frame):
         self.cut_text = tk.Label(root, text = text, wraplength = root.winfo_screenwidth()-90, bg = 'black', fg = 'indianred', font = ('kokonor', 18))
         self.cut_canvas.create_window(root.winfo_screenwidth()/2, root.winfo_screenheight()-180, anchor='s', window = self.cut_text)
 # CONT OR SAVE BUTTONS        
-        self.next_area_button = tk.Button(root, text = 'Next Area', fg = 'tan3', highlightbackground = 'tan3', font = ('chalkduster', 24), command = lambda n = prev_map_num+1, po = protaganist_object : self.next_area(n,po))
+        self.next_area_button = tk.Button(root, text = 'Next Area', fg = 'tan3', highlightbackground = 'tan3', font = ('chalkduster', 24), command = lambda n = new_map_num, po = protaganist_object : self.next_area(n,po))
         self.cut_canvas.create_window(root.winfo_screenwidth()/2-100, root.winfo_screenheight()-80, anchor='s', window = self.next_area_button)
-        self.save_game_button = tk.Button(root, text = 'Save Game', fg = 'tan3', highlightbackground = 'tan3', font = ('chalkduster', 24), command = lambda n = prev_map_num+1, po = protaganist_object : self.save_game(n, po))
+        self.save_game_button = tk.Button(root, text = 'Save Game', fg = 'tan3', highlightbackground = 'tan3', font = ('chalkduster', 24), command = lambda n = new_map_num, po = protaganist_object : self.save_game(n, po))
         self.cut_canvas.create_window(root.winfo_screenwidth()/2+100, root.winfo_screenheight()-80, anchor='s', window = self.save_game_button)
         
     def next_area(self, new_map_num, protaganist_object):
@@ -4617,15 +4701,29 @@ class App(tk.Frame):
         
     def save_game(self, new_map_num, protaganist_object):
         protaganist_object.current_area = new_map_num
+        # make text input, put in cut_canvas with create_window
+        self.save_game_button.destroy()
+        text_var = tk.StringVar()
+        text_var.set('filename')
+        entry = tk.Entry(root, textvariable = text_var, font = ('Andale Mono', 15), highlightbackground = 'black')
+        save_b = tk.Button(root, text = 'Save', font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'black', command = lambda t = text_var, p = protaganist_object : self.do_save(t, p))
+        self.cut_canvas.create_window(root.winfo_screenwidth()/2+100, root.winfo_screenheight()-45, anchor='s', window = save_b)
+        self.cut_canvas.create_window(root.winfo_screenwidth()/2+100, root.winfo_screenheight()-80, anchor='s', window = entry)
+        
+        
+    def do_save(self, text_var, protag_obj):
+        fname = text_var.get()
         saves = [s for r,d,s in walk('./save_games')][0]
         saves = [s for s in saves[:] if s[0] != '.']
-        # later should open text input to write filename
-        filename = 'save_games/savegame' + str(len(saves))
-        with open(filename, 'wb+') as f:
-            # have to strip tkinter objects from protag obj
-            protaganist_object.img = None
-            protaganist_object.anim_dict = {}
-            dump(protaganist_object, f)
+        if fname in saves:
+            text_var.set('filename already exists')
+            return
+        with open('save_games/'+fname, 'wb+') as f:
+            text_var.set('game saved')
+#             have to strip tkinter objects from protag obj
+            protag_obj.img = None
+            protag_obj.anim_dict = {}
+            dump(protag_obj, f)
     
     
     def populate_context(self, event):
