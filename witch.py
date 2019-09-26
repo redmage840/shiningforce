@@ -1600,15 +1600,249 @@ class Tortured_Soul(Summon):
         return setlist
         
         
+class Ghost(Summon):
+    def __init__(self, name, img, loc, owner, number, waiting = False):
+        self.actions = {'attack':self.do_attack}
+        self.attack_used = False
+        self.str = 4
+        self.agl = 9
+        self.end = 8
+        self.dodge = 9
+        self.psyche = 5
+        self.spirit = 65
+        self.waiting = waiting
+        super().__init__(name, img, loc, owner, number)
+        
+    def pass_priority(self, ents_list):
+        ents_list = ents_list[1:]
+        if ents_list == []:
+            app.end_turn()
+        else:
+            app.do_ai_loop(ents_list)
+        
+    #  GHOST AI
+    def do_ai(self, ents_list):
+        if self.waiting == True: # DO NOT MOVE TOWARDS OR ATTACK UNTIL TRIGGER
+            self.pass_priority(ents_list)
+        else: # NO TARGET PRIORITY, ATTEMPT ATTACK FROM STARTLOC
+            atk_sqrs = self.legal_attacks()
+            atk_sqrs = [x for x in atk_sqrs if app.ent_dict[app.grid[x[0]][x[1]]].owner == 'p1']
+            if atk_sqrs != []:
+                any = atk_sqrs[0]
+                id = app.grid[any[0]][any[1]]
+                root.after(666, lambda id = id : app.get_focus(id))
+                root.after(1333, lambda el = ents_list, id = id : self.do_attack(el, id)) # ATTACK
+            else: # CANNOT ATTACK FROM START LOC, GET TARGET AND MOVE TOWARDS
+                enemy_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p1']
+                paths = []
+                coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+                for el in enemy_ent_locs:
+                # FIND PATH TO SQR WITHIN RANGE OF THIS ENT
+                # Need paths 'through' objects
+                # cannot end move in 'block' or Ent
+                    goals = [c for c in coords if dist(c, el) <= 2 and app.grid[c[0]][c[1]] == '']
+                    egrid = [[''] * (app.map_height//100) for i in range(app.map_width//100)]
+                    path = bfs(self.loc[:], goals, egrid)
+                    if path:
+                        paths.append(path)
+                smallpaths = [y for y in paths if len(y) == min(len(y) for y in paths)] # THE SHORTEST PATHS AMONG PATHS
+                if smallpaths != []: # IF ANY PATHS EXIST AT ALL
+                    apath = smallpaths[0]
+                    # FIND FURTHEST SQR ALONG PATH THAT CAN BE MOVED TO
+                    moves = self.legal_moves()
+                    endloc = None
+                    for sqr in apath[::-1]: # START WITH SQRS CLOSEST TO TARGET
+                        if sqr in moves:
+                            endloc = sqr[:] # AMONG SQRS POSSIBLE TO MOVE TO, THIS IS CLOSEST TO GOAL
+                            break
+                    if endloc != None:
+                        root.after(666, lambda sqr = endloc[:] : app.focus_square(sqr))
+                        root.after(1333, lambda el = ents_list, endloc = endloc : self.ghost_move(el, endloc))
+                    else:
+                        ents_list = ents_list[1:]
+                        if ents_list == []:
+                            root.after(666, app.end_turn)
+                        else:
+                            root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
+                else: # NO PATHS TO TARGET, MAKE BEST EFFORT MINIMIZE DIST MOVE
+                # for ghost, will always be paths, this section unused
+                    # change to 'remove friendly ents', find path, move along path as far as possible
+                    egrid = deepcopy(app.grid)
+                    friendly_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p2']
+                    for eloc in friendly_ent_locs:
+                        egrid[eloc[0]][eloc[1]] = '' # EGRID NOW EMPTIED OF FRIENDLY ENTS
+                    # NOW FIND PATH AND PASS TO MOVE
+                    coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+                    for el in enemy_ent_locs:
+                        goals = [c for c in coords if dist(c, el) <= 3]
+                        path = bfs(self.loc[:], goals, egrid[:]) # BFS ON ALTERED GRID (FRIENDLY ENTS REMOVED)
+                        if path:
+                            paths.append(path)
+                    smallpaths = [y for y in paths if len(y) == min(len(y) for y in paths)]
+                    if smallpaths != []: # MOVE ALONG PATH AS FAR AS POSSIBLE, ATTEMPT ATTACK
+                        apath = smallpaths[0]
+                        # FIND FURTHEST SQR ALONG PATH THAT CAN BE MOVED TO
+                        moves = self.legal_moves()
+                        endloc = None
+                        for sqr in apath[::-1]: # START WITH SQRS CLOSEST TO TARGET
+                            if sqr in moves:
+                                endloc = sqr[:] # AMONG SQRS POSSIBLE TO MOVE TO, THIS IS CLOSEST TO GOAL
+                                break
+                        if endloc != None:
+                            # here need to 'trim path' to prevent moving to square 'through' friendly ents
+                            root.after(666, lambda sqr = endloc[:] : app.focus_square(sqr))
+                            root.after(1333, lambda el = ents_list, endloc = endloc : self.ghost_move(el, endloc))
+                        else:
+                            ents_list = ents_list[1:]
+                            if ents_list == []:
+                                root.after(666, app.end_turn)
+                            else:
+                                root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
+                    else:
+                        ents_list = ents_list[1:]
+                        if ents_list == []:
+                            root.after(666, app.end_turn)
+                        else:
+                            root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
+            
+    
+    # change to 'teleport move'
+    def ghost_move(self, ents_list, endloc):
+        global selected
+        # FIND SQUARE FURTHEST ALONG PATH THAT IS WITHIN MOVE RANGE
+        id = self.number
+        x = self.loc[0]*100+50-app.moved_right
+        y = self.loc[1]*100+50-app.moved_down
+        endx = endloc[0]*100+50-app.moved_right
+        endy = endloc[1]*100+50-app.moved_down
+        start_sqr = self.loc[:]
+        end_sqr = endloc[:]
+        selected = self.number
+        # MOVE LOOP
+        def move_loop(id, x, y, endx, endy, start_sqr, end_sqr):
+            if x % 25 == 0 or y % 25 == 0:
+                self.rotate_image()
+                app.canvas.delete(id)
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+                app.canvas.tag_lower((self.tags), 'maptop')
+                try: app.canvas.tag_lower((self.tags), 'large')
+                except: pass
+            if x > endx:
+                x -= 10
+                app.canvas.move(id, -10, 0)
+            if x < endx: 
+                x += 10
+                app.canvas.move(id, 10, 0)
+            if y > endy: 
+                y -= 10
+                app.canvas.move(id, 0, -10)
+            if y < endy: 
+                y += 10
+                app.canvas.move(id, 0, 10)
+#             try: app.canvas.tag_raise('large', (self.tags))
+#             except: pass
+#             app.canvas.tag_raise('maptop')
+            app.canvas.tag_raise('cursor')
+            if x == endx and y == endy:
+                self.finish_move(id, end_sqr, start_sqr, ents_list) # EXIT
+            else: # CONTINUE LOOP
+                root.after(66, lambda id = id, x = x, y = y, e = endx, e2 = endy, s = start_sqr, s2 = end_sqr : move_loop(id, x, y, e, e2, s, s2))
+        move_loop(id, x, y, endx, endy, start_sqr, end_sqr)
+            
+            
+    # change to attack any within range, not ncsrly original target
+    # DONE MOVING, ATTEMPT ATTACK AND EXIT
+    def finish_move(self, id, end_sqr, start_sqr, ents_list):
+        global selected
+        selected = ''
+        self.loc = end_sqr[:]
+        self.origin = end_sqr[:]
+        app.grid[start_sqr[0]][start_sqr[1]] = ''
+        app.grid[end_sqr[0]][end_sqr[1]] = self.number
+        # MAKE ATTACK ON ANY ENEMY ENT WITHIN RANGE
+        atk_sqrs = self.legal_attacks()
+        ents_near = [e for e in atk_sqrs if app.grid[e[0]][e[1]] != '' and app.grid[e[0]][e[1]] != 'block']
+        enemy_ents = [e for e in ents_near if app.ent_dict[app.grid[e[0]][e[1]]].owner == 'p1']
+        if enemy_ents != []:
+            any = enemy_ents[0]
+            id = app.grid[any[0]][any[1]]
+            root.after(666, lambda t = id : app.get_focus(t))
+            root.after(1333, lambda el = ents_list, t = id : self.do_attack(el, t)) # EXIT THROUGH ATTACK
+        else:
+        # CANNOT ATTACK, EXIT FUNC
+            ents_list = ents_list[1:]
+            if ents_list == []:
+                app.end_turn()
+            else:
+                root.after(666, lambda e = ents_list : app.do_ai_loop(e))
+    
+    def do_attack(self, ents_list, id):
+        app.get_focus(id)
+#         self.init_attack_anims()
+        # make range atk vis
+#         visloc = app.ent_dict[id].loc[:]
+#         app.vis_dict['Revenant_Terror'] = Vis(name = 'Revenant_Terror', loc = visloc)
+#         app.canvas.create_image(visloc[0]*100+50-app.moved_right, visloc[1]*100+50-app.moved_down, image = app.vis_dict['Revenant_Terror'].img, tags = 'Revenant_Terror')
+#         app.canvas.create_text(visloc[0]*100+50-app.moved_right, visloc[1]*100+105-app.moved_down, text = 'Terror', font = ('Andale Mono', 16), fill = 'gray77', tags = 'text')
+        
+        my_psyche = self.get_attr('psyche')
+        target_psyche = app.ent_dict[id].get_attr('psyche')
+        if to_hit(my_psyche, target_psyche) == True:
+            # HIT, SHOW VIS, DO DAMAGE, EXIT
+            d = damage(my_psyche, target_psyche)
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+80, text = 'Ghost Attack Hit!\n' + str(d) + ' Spirit Damage', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
+            app.ent_dict[id].set_attr('spirit', -d)
+            if app.ent_dict[id].spirit <= 0:
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+100, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
+        else:
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+80, text = 'Ghost Attack Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
+
+        root.after(3666, lambda  el = ents_list, id = id : self.cleanup_attack(el, id))
+        
+        
+    def cleanup_attack(self, ents_list, id):
+        if app.ent_dict[id].spirit <= 0:
+            app.kill(id)
+#         self.init_normal_anims()
+#         app.canvas.delete('Revenant_Terror')
+#         del app.vis_dict['Revenant_Terror']
+        try: app.canvas.delete('text')
+        except: pass
+        ents_list = ents_list[1:]
+        if ents_list == []:
+            app.end_turn()
+        else:
+            root.after(666, lambda e = ents_list : app.do_ai_loop(e))
+        
+        
+    def legal_attacks(self):
+        sqrs = []
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        for coord in coords:
+            if dist(coord, self.loc) <= 2:
+                if app.grid[coord[0]][coord[1]] != '' and app.grid[coord[0]][coord[1]] != 'block':
+                    sqrs.append(coord)
+        return sqrs
+        
+    def legal_moves(self):
+        loc = self.loc[:]
+        mvlist = []
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        for c in coords:
+            if dist(loc, c) <= 2 and app.grid[c[0]][c[1]] == '':
+                mvlist.append(c)
+        return mvlist
+        
+        
 class Revenant(Summon):
     def __init__(self, name, img, loc, owner, number, waiting = False):
         self.actions = {'attack':self.do_attack}
         self.attack_used = False
         self.str = 4
-        self.agl = 5
-        self.end = 8
-        self.dodge = 5
-        self.psyche = 7
+        self.agl = 4
+        self.end = 5
+        self.dodge = 4
+        self.psyche = 6
         self.spirit = 29
         self.waiting = waiting
         super().__init__(name, img, loc, owner, number)
@@ -1829,7 +2063,7 @@ class Revenant(Summon):
         mvlist = []
         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         for c in coords:
-            if dist(loc, c) <= 5:
+            if dist(loc, c) <= 5 and app.grid[c[0]][c[1]] == '':
                 mvlist.append(c)
         return mvlist
         
@@ -4413,13 +4647,28 @@ class App(tk.Frame):
 #             self.create_map_curs_context(map_number, protaganist_object = protaganist_object)
         elif map_number == 121:
             self.map_triggers = []
+            # victory, kill ghost
+            def kill_ghost():
+                if 'b2' not in [k for k in self.ent_dict.keys()]:
+                    return 'victory'
+                else:
+                    return None
+            self.map_triggers.append(kill_ghost)
+            # trigger ghost
+            def ghost_unwait():
+                if app.ent_dict['b2'].spirit < app.ent_dict['b2'].base_spirit:
+                    app.ent_dict['b2'].waiting = False
+                    self.map_triggers.remove(ghost_unwait)
+            self.map_triggers.append(ghost_unwait)
             # make so revenant/ghost production increases over time, kill 'boss' in library before they overwhelm
             def generate_revenants():
                 if self.turn_counter % 5 == 0:
                     if app.grid[24][4] == '':
                         img = ImageTk.PhotoImage(Image.open('summon_imgs/Revenant.png'))
-                        enemy_ents = [k for k,v in app.ent_dict.items() if v.owner == 'p2']
-                        counter = len(enemy_ents)+1
+#                         enemy_ents = [k for k,v in app.ent_dict.items() if v.owner == 'p2']
+                        # needs to be unique number
+                        counter = self.effects_counter+2 # seed with 2 to prevent collision existing Ents
+                        self.effects_counter += 3
                         id = 'b' + str(counter)
                         app.grid[24][4] = id
                         app.ent_dict[id] = Revenant(name = 'Revenant', img = img, loc =[24,4], owner = 'p2', number = id)
@@ -4733,6 +4982,8 @@ class App(tk.Frame):
 #             self.get_focus(to_act[0])
             root.after(1666, lambda ents = to_act : self.do_ai_loop(ents))
         
+        
+    # fix 'only some ents waiting' causes 'no enemies to act' text to appear
     def do_ai_loop(self, ents):
         global grid_pos
         if ents == []:
@@ -4766,6 +5017,8 @@ class App(tk.Frame):
                 elif self.ent_dict[ent].name == 'Undead_Knight':
                     self.ent_dict[ent].do_ai(ents)
                 elif self.ent_dict[ent].name == 'Revenant':
+                    self.ent_dict[ent].do_ai(ents)
+                elif self.ent_dict[ent].name == 'Ghost':
                     self.ent_dict[ent].do_ai(ents)
                 elif self.ent_dict[ent].name == 'White_Dragon':
                     self.ent_dict[ent].do_ai(ents)
@@ -5003,8 +5256,9 @@ class App(tk.Frame):
         elif self.map_number == 121:
             for mt in self.map_triggers:
                 result = mt()
-                if result == 'null branch':
+                if result == 'victory':
                     app.unbind_all()
+                    self.end_level() # next map is 122 on this route
                     break
                 elif result == 'game over':
                     self.reset()
@@ -5446,8 +5700,9 @@ class App(tk.Frame):
 #         root.geometry('%sx%s' % (width, height))
 #         app.mainloop()
         
-#     def debugger(self, event):
-#         print(app.vis_dict.items())
+    def debugger(self, event):
+        print(app.ent_dict['b2'].base_spirit)
+        print(app.ent_dict['b2'].waiting)
 
 root = tk.Tk()
 app = App(master=root)
@@ -5460,7 +5715,7 @@ root.bind('<a>', app.populate_context)
 root.bind('<q>', app.depop_context)
 # root.bind('<Escape>', app.exit_fullscreen)
 #### DEBUG ####
-# root.bind('<d>', app.debugger)
+root.bind('<d>', app.debugger)
 
 
 root.configure(background = 'black')
