@@ -1605,11 +1605,11 @@ class Revenant(Summon):
         self.actions = {'attack':self.do_attack}
         self.attack_used = False
         self.str = 4
-        self.agl = 6
-        self.end = 9
-        self.dodge = 6
+        self.agl = 5
+        self.end = 8
+        self.dodge = 5
         self.psyche = 7
-        self.spirit = 33
+        self.spirit = 29
         self.waiting = waiting
         super().__init__(name, img, loc, owner, number)
         
@@ -1783,19 +1783,19 @@ class Revenant(Summon):
         visloc = app.ent_dict[id].loc[:]
         app.vis_dict['Revenant_Terror'] = Vis(name = 'Revenant_Terror', loc = visloc)
         app.canvas.create_image(visloc[0]*100+50-app.moved_right, visloc[1]*100+50-app.moved_down, image = app.vis_dict['Revenant_Terror'].img, tags = 'Revenant_Terror')
-        app.canvas.create_text(visloc[0]*100+50-app.moved_right, visloc[1]*100+95-app.moved_down, text = 'Terror', font = ('Andale Mono', 16), fill = 'orangered4', tags = 'text')
+        app.canvas.create_text(visloc[0]*100+50-app.moved_right, visloc[1]*100+105-app.moved_down, text = 'Terror', font = ('Andale Mono', 16), fill = 'gray77', tags = 'text')
         
         my_psyche = self.get_attr('psyche')
         target_psyche = app.ent_dict[id].get_attr('psyche')
         if to_hit(my_psyche, target_psyche) == True:
             # HIT, SHOW VIS, DO DAMAGE, EXIT
             d = damage(my_psyche, target_psyche)
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Revenant Attack Hit!\n' + str(d) + ' Spirit Damage', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+80, text = 'Revenant Attack Hit!\n' + str(d) + ' Spirit Damage', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
             app.ent_dict[id].set_attr('spirit', -d)
             if app.ent_dict[id].spirit <= 0:
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+100, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
         else:
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Revenant Attack Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+80, text = 'Revenant Attack Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
 
         root.after(3666, lambda  el = ents_list, id = id : self.cleanup_attack(el, id))
         
@@ -3269,6 +3269,69 @@ class Witch(Entity):
         locx = s[0]*100+50-app.moved_right
         moonlight_loop(locy, locy-120, locx)
         
+    # destroy a summon you own to deal dmg to adj ents
+    def pain(self, event = None):
+        app.depop_context(event = None)
+        root.bind('<q>', lambda name = 'Pain' : self.cleanup_spell(name = name))
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [s for s in coords if dist(self.loc, s) <= 4]
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_pain(event = e, sqr = s, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Choose Target For Pain', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_pain(e, s, sqrs))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+        
+    def do_pain(self, event, sqr, sqrs):
+        if sqr not in sqrs:
+            return
+        id = app.grid[sqr[0]][sqr[1]]
+        if app.ent_dict[id].owner != 'p1' and not isinstance(app.ent_dict[id], Summon):
+            return
+        app.kill(id)
+        self.init_cast_anims()
+        self.magick -= self.arcane_dict['Pain'][1]
+        app.unbind_all()
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        self.arcane_used = True
+        app.vis_dict['Pain'] = Vis(name = 'Pain', loc = sqr)
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Pain'].img, tags = 'Pain')
+        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Pain', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+        root.after(1777, lambda  name = 'Pain' : self.cleanup_spell(name = name))
+        
+        
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        adj_sqrs = [s for s in coords if dist(sqr, s) == 1 and app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
+        adj_ents = [app.grid[s[0]][s[1]] for s in adj_sqrs] #if app.ent_dict[app.grid[s[0]][s[1]]].owner != self.owner] 
+        all_targets = adj_ents
+        for id in all_targets:
+            n = 'Pain' + str(app.effects_counter) # not an effect, just need unique int
+            app.effects_counter += 1 # that is why this is incr manually here, no Effect init
+            loc = app.ent_dict[id].loc[:]
+            app.vis_dict[n] = Vis(name = 'Pain_Explode', loc = loc)
+            def cleanup_vis(name):
+                app.canvas.delete(name)
+                del app.vis_dict[name]
+            root.after(3666, lambda n = n : cleanup_vis(n))
+            rand_start_anim = randrange(1,7)
+            for i in range(rand_start_anim):
+                app.vis_dict[n].rotate_image()
+            app.canvas.create_image(loc[0]*100+50-app.moved_right, loc[1]*100+50-app.moved_down, image = app.vis_dict[n].img, tags = n)
+            app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+50-app.moved_down-30, text = 'Pain', justify ='center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+            # Damage
+            my_psyche = self.get_attr('psyche')
+            tar_agl = app.ent_dict[id].get_attr('agl')
+            d = damage(my_psyche, tar_agl)
+            app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+75-app.moved_down, text = str(d)+' Spirit Damage', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+            app.ent_dict[id].set_attr('spirit', -d)
+            if app.ent_dict[id].spirit <= 0:
+                app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+100-app.moved_down, text = app.ent_dict[id].name.replace('_',' ') + '\nKilled...', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+                root.after(3666, lambda id = id : app.kill(id))
+#         root.after(3666, lambda  name = 'Pain' : self.cleanup_spell(name = name))
+
+        
+        
+        
     def plague(self, event = None):
             # currently effects dif from description, one target, no to_hit check
             # attrs reduced to by 3 to a minimum of 1 (str, agl, end, dodge, psyche) lasting until 3 opp turns have passed
@@ -4193,6 +4256,7 @@ class App(tk.Frame):
         self.p1_witch = ''
         self.p2_witch = ''
         self.two_player_map_num = 0
+        self.turn_counter = 0
         self.choose_num_players()
         
         # Luminari 280
@@ -4314,13 +4378,13 @@ class App(tk.Frame):
                 if app.p1_witch not in app.ent_dict.keys():
                     return 'game over'
             self.map_triggers.append(self_death)
-            def summon_trick():
-                all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
-                if 'Trickster' in all:
-                    return 'door'
-                else:
-                    return None
-            self.map_triggers.append(summon_trick)
+#             def summon_trick():
+#                 all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
+#                 if 'Trickster' in all:
+#                     return 'door'
+#                 else:
+#                     return None
+#             self.map_triggers.append(summon_trick)
 #             depending on which is killed, load certain level
 #             knight near stairway is b7, knight near doorway is b8
             def kill_stair_knight():
@@ -4349,11 +4413,38 @@ class App(tk.Frame):
 #             self.create_map_curs_context(map_number, protaganist_object = protaganist_object)
         elif map_number == 121:
             self.map_triggers = []
-            # read book, gain stats, summon ghosts
-            # when loc == spot, give inspect action
-            
-            # inspect paintings, gain spell, summon ghosts
-            
+            # make so revenant/ghost production increases over time, kill 'boss' in library before they overwhelm
+            def generate_revenants():
+                if self.turn_counter % 5 == 0:
+                    if app.grid[24][4] == '':
+                        img = ImageTk.PhotoImage(Image.open('summon_imgs/Revenant.png'))
+                        enemy_ents = [k for k,v in app.ent_dict.items() if v.owner == 'p2']
+                        counter = len(enemy_ents)+1
+                        id = 'b' + str(counter)
+                        app.grid[24][4] = id
+                        app.ent_dict[id] = Revenant(name = 'Revenant', img = img, loc =[24,4], owner = 'p2', number = id)
+                        
+            self.map_triggers.append(generate_revenants)
+            def read_book():
+                loc = app.ent_dict[app.p1_witch].loc[:]
+                if loc == [27,15]:
+                    app.unbind_all()
+                    self.book41 = tk.Button(root, text = 'Read Book', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.read_41_book)
+                    app.canvas.create_window(2700-app.moved_right, 1500-app.moved_down, window = self.book41)
+                    self.book41_cancel = tk.Button(root, text = 'Leave Alone', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.cancel_41_book)
+                    app.canvas.create_window(2700-app.moved_right+25, 1500-app.moved_down+33, window = self.book41_cancel)
+                    self.map_triggers.remove(read_book)
+            self.map_triggers.append(read_book)
+            def inspect_painting():
+                loc = app.ent_dict[app.p1_witch].loc[:]
+                if loc == [11,2]:
+                    app.unbind_all()
+                    self.painting41 = tk.Button(root, text = 'Inspect Painting', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.inspect_41_painting)
+                    app.canvas.create_window(1100-app.moved_right, 200-app.moved_down, window = self.painting41)
+                    self.painting41_cancel = tk.Button(root, text = 'Leave Alone', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.cancel_41_painting)
+                    app.canvas.create_window(1100-app.moved_right+25, 200-app.moved_down+34, window = self.painting41_cancel)
+                    self.map_triggers.remove(inspect_painting)
+            self.map_triggers.append(inspect_painting)
             def self_death():
                 if app.p1_witch not in app.ent_dict.keys():
                     return 'game over'
@@ -4362,6 +4453,39 @@ class App(tk.Frame):
     # END OF GAME
         else:
             print('you are winner hahaha')
+        
+    # Move trigger funcs for organization
+    def read_41_book(self):
+        loc = app.ent_dict[app.p1_witch].loc[:]
+        app.ent_dict[app.p1_witch].arcane_dict['Pain'] = (app.ent_dict[app.p1_witch].pain, 7)
+        app.canvas.create_text(loc[0]*100-app.moved_right, loc[1]*100-app.moved_down+85, text = 'Arcane Spell\n-PAIN-\nLearned', justify = 'center', font = ('Andale Mono', 16), fill = 'white', tags = 'text')
+        root.after(1999, lambda t = 'text' : app.canvas.delete(t))
+        root.after(1999, self.cancel_41_book)
+        
+    def cancel_41_book(self):
+        self.book41.destroy()
+        self.book41_cancel.destroy()
+        app.rebind_all()
+        
+    def inspect_41_painting(self):
+        loc = app.ent_dict[app.p1_witch].loc[:]
+        app.ent_dict[app.p1_witch].str += 1
+        app.ent_dict[app.p1_witch].base_str += 1
+        app.ent_dict[app.p1_witch].end += 1
+        app.ent_dict[app.p1_witch].base_end += 1
+        app.ent_dict[app.p1_witch].agl += 1
+        app.ent_dict[app.p1_witch].base_agl += 1
+        app.ent_dict[app.p1_witch].psyche += 1
+        app.ent_dict[app.p1_witch].base_psyche += 1
+        app.canvas.create_text(loc[0]*100-app.moved_right, loc[1]*100-app.moved_down+85, text = 'Permanent +1\nAll Stats', justify = 'center', font = ('Andale Mono', 16), fill = 'white', tags = 'text')
+        root.after(1999, lambda t = 'text' : app.canvas.delete(t))
+        root.after(1999, self.cancel_41_painting)
+        
+    def cancel_41_painting(self):
+        self.painting41.destroy()
+        self.painting41_cancel.destroy()
+        app.rebind_all()
+        
         
     def load_intro_scene(self, map_number = None, protaganist_object = None):
         self.intro_scene = ImageTk.PhotoImage(Image.open('intro_scenes/intro_scene'+str(map_number)+'.png').resize((root.winfo_screenwidth(),root.winfo_screenheight())))
@@ -4651,9 +4775,9 @@ class App(tk.Frame):
     def end_turn(self):
         self.unbind_all()
         self.depop_context(event = None)
+        self.turn_counter += 1
         # first do EOT loop, rest of this becomes finish_end_turn()
         # get list of all ents, pass in first ent, loop pops front and calls 
-        
         # handle global effects
         g_effects = [k for k in self.global_effects_dict.keys()]
         self.g_effect_loop(g_effects)
@@ -4876,6 +5000,17 @@ class App(tk.Frame):
                     break
             else:
                 self.map_trigger_id = root.after(1666, self.map_trigger_loop)
+        elif self.map_number == 121:
+            for mt in self.map_triggers:
+                result = mt()
+                if result == 'null branch':
+                    app.unbind_all()
+                    break
+                elif result == 'game over':
+                    self.reset()
+                    break
+            else:
+                self.map_trigger_id = root.after(1666, self.map_trigger_loop)
         
     def end_level(self, alt_route = None):
         global curs_pos, is_object_selected, selected, selected_vis, map_pos, grid_pos
@@ -4912,6 +5047,7 @@ class App(tk.Frame):
         self.help_buttons = []
         # list to hold entity that is being animated as 'attacking'
         self.attacking = []
+        self.turn_counter = 0
         self.effects_counter = 0 # used for uniquely naming Effects with the same prefix/name
         # CALL IN-BETWEEN LEVEL SCREEN / VICTORY SCREEN
         # GIVE ANY STORYLINE RELATED TO FINISHED AND NEXT LEVEL
