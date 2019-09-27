@@ -1,14 +1,8 @@
-# block out tables
-
 # level 41, should be able to occupy spawn square to prevent spawns?
-
-# fix 'only some ents waiting' causes 'no enemies to act' text to appear
 
 # make 'level' parameter for summons to increase stats and add abilities
 
 # make sure reset works after compile
-
-# forcefield at any doorway can be used to perpetually block and use ranged attacks...
 
 # possible that fog of war was only causing problems because of map_trigger_loop 'else' bug with multiple triggers, maybe try fog of war again now that multiple triggers fixed
 
@@ -23,8 +17,6 @@
 # add death of protag scenes
 
 # 2 player mode needs some sort of terrain objective, reasons to engage or hold areas, when and where
-
-# create 'tunnel/hallway' level where you need to progress to a certain point in some amount of time
 
 # what to do about deaths, need some kind of visual cue
 
@@ -42,13 +34,9 @@
 
 # check tag raise/lower priority, some redundancy,  i think its the general Ent do_move or loop
 
-# add 'start position dependent on map' get from map_info
-
 # consider removing 'smoke' from agnes casting anims?
 
 # is origin still used without old movement setup?
-
-# in ai_loop have some AI units hold 'state' of either 'active' or 'waiting', when map trigger is met (move closely enough) turn them 'active', when no user units 'close' enough turn to 'waiting'
 
 # doublecast / quick
 
@@ -4475,13 +4463,13 @@ class App(tk.Frame):
                 if app.p1_witch not in app.ent_dict.keys():
                     return 'game over'
             self.map_triggers.append(self_death)
-#             def summon_trick():
-#                 all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
-#                 if 'Trickster' in all:
-#                     return 'door'
-#                 else:
-#                     return None
-#             self.map_triggers.append(summon_trick)
+            def summon_trick():
+                all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
+                if 'Trickster' in all:
+                    return 'stairway'
+                else:
+                    return None
+            self.map_triggers.append(summon_trick)
 #             depending on which is killed, load certain level
 #             knight near stairway is b7, knight near doorway is b8
             def kill_stair_knight():
@@ -4590,6 +4578,195 @@ class App(tk.Frame):
                     return 'game over'
             self.map_triggers.append(self_death)
             self.load_intro_scene(map_number, protaganist_object = protaganist_object)
+        # LABRYNTH 
+        elif map_number == 21:
+            self.map_triggers = []
+            def self_death():
+                if app.p1_witch not in app.ent_dict.keys():
+                    return 'game over'
+            self.map_triggers.append(self_death)
+            
+            def area_eleven():
+                if app.ent_dict[app.p1_witch].loc in [[20,18],[21,18],[22,18]]:
+                    coords = [[24,18],[25,18],[26,18],[27,18],[28,18],[24,17],[25,17],[26,17],[24,16],[25,16],[26,16],[22,15],[23,15],[24,15],[25,15],[26,15],[27,15],[28,15],[22,14],[22,13],[22,12],[22,11],[22,10],[22,9],[23,14],[23,13],[23,12],[23,11],[23,10],[23,9],[20,9],[21,9],[20,10],[21,10],[25,14],[26,14],[27,14],[28,14],[25,13],[26,13],[25,12],[26,12],[28,13],[23,18]]
+                    for c in coords:
+                        app.grid[c[0]][c[1]] = ''
+                    top = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/11_top.png'))
+                    self.image_holder.append(top)
+                    bot = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/11.png'))
+                    self.image_holder.append(bot)
+                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = bot, tags = ('mapbottom','map'))
+                    app.canvas.tag_lower('mapbottom')
+                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = top, tags = ('maptop','map'))
+                    self.map_triggers.remove(area_eleven)
+            self.map_triggers.append(area_eleven)
+            
+            def area_ten():
+                if app.ent_dict[app.p1_witch].loc in [[25,13],[26,13],[25,12],[26,12]]:
+                    coords = [[25,5],[25,6],[25,7],[25,8],[25,9],[25,10],[25,11],[26,5],[26,6],[26,7],[26,8],[26,9],[26,10],[26,11]]
+                    for c in coords:
+                        app.grid[c[0]][c[1]] = ''
+                    top = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/10_top.png'))
+                    self.image_holder.append(top)
+                    bot = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/10.png'))
+                    self.image_holder.append(bot)
+                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = bot, tags = ('mapbottom','map'))
+                    app.canvas.tag_lower('mapbottom')
+                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = top, tags = ('maptop','map'))
+                    self.map_triggers.remove(area_ten)
+            self.map_triggers.append(area_ten)
+            
+            def area_nine():
+                if app.ent_dict[app.p1_witch].loc in [[25,5],[25,6],[26,5],[26,6]]:
+                    coords = [[20,5],[21,5],[22,5],[23,5],[24,5],[20,6],[21,6],[22,6],[23,6],[24,6]]
+                    for c in coords:
+                        app.grid[c[0]][c[1]] = ''
+                    top = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/9_top.png'))
+                    self.image_holder.append(top)
+                    bot = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/9.png'))
+                    self.image_holder.append(bot)
+                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = bot, tags = ('mapbottom','map'))
+                    app.canvas.tag_lower('mapbottom')
+                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = top, tags = ('maptop','map'))
+                    self.map_triggers.remove(area_nine)
+            self.map_triggers.append(area_nine)
+            
+            def area_eight():
+                if app.ent_dict[app.p1_witch].loc in [[20,9],[21,9],[20,10],[21,10]]:
+                    coords = [[19,9],[19,10],[18,6],[18,7],[18,8],[18,9],[18,10],[17,6],[17,7],[17,8],[16,8],[15,8],[14,8],[13,8],[12,8],[11,8],[10,8],[9,8],[8,8],[7,8],[7,9],[8,9],[9,9],[10,9],[11,9],[12,9]]
+                    for c in coords:
+                        app.grid[c[0]][c[1]] = ''
+                    top = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/8_top.png'))
+                    self.image_holder.append(top)
+                    bot = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/8.png'))
+                    self.image_holder.append(bot)
+                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = bot, tags = ('mapbottom','map'))
+                    app.canvas.tag_lower('mapbottom')
+                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = top, tags = ('maptop','map'))
+                    self.map_triggers.remove(area_eight)
+            self.map_triggers.append(area_eight)
+            
+            def area_seven():
+                if app.ent_dict[app.p1_witch].loc in [[8,8],[7,8],[7,9],[8,9]]:
+                    coords = [[6,8],[6,9],[5,8],[5,9],[5,10],[5,11],[5,12],[4,12],[3,12]]
+                    for c in coords:
+                        app.grid[c[0]][c[1]] = ''
+                    top = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/7_top.png'))
+                    self.image_holder.append(top)
+                    bot = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/7.png'))
+                    self.image_holder.append(bot)
+                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = bot, tags = ('mapbottom','map'))
+                    app.canvas.tag_lower('mapbottom')
+                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = top, tags = ('maptop','map'))
+                    self.map_triggers.remove(area_seven)
+            self.map_triggers.append(area_seven)
+            
+            def area_six():
+                if app.ent_dict[app.p1_witch].loc in [[5,12],[4,12],[3,12]]:
+                    coords = [[2,12],[1,12],[1,13],[1,14],[1,15],[1,16],[1,17],[1,18]]
+                    for c in coords:
+                        app.grid[c[0]][c[1]] = ''
+                    top = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/6_top.png'))
+                    self.image_holder.append(top)
+                    bot = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/6.png'))
+                    self.image_holder.append(bot)
+                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = bot, tags = ('mapbottom','map'))
+                    app.canvas.tag_lower('mapbottom')
+                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = top, tags = ('maptop','map'))
+                    self.map_triggers.remove(area_six)
+            self.map_triggers.append(area_six)
+            
+            def area_five():
+                if app.ent_dict[app.p1_witch].loc in [[1,17],[1,18]]:
+                    coords = [[2,18],[3,18],[4,18],[5,18],[6,18],[7,18],[8,18],[9,18],[10,18],[11,18],[12,18],[13,18],[14,18],[15,18],[16,18],[17,18]]
+                    for c in coords:
+                        app.grid[c[0]][c[1]] = ''
+                    top = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/5_top.png'))
+                    self.image_holder.append(top)
+                    bot = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/5.png'))
+                    self.image_holder.append(bot)
+                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = bot, tags = ('mapbottom','map'))
+                    app.canvas.tag_lower('mapbottom')
+                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = top, tags = ('maptop','map'))
+                    self.map_triggers.remove(area_five)
+            self.map_triggers.append(area_five)
+            
+            def area_four():
+                if app.ent_dict[app.p1_witch].loc in [[17,6],[18,6]]:
+                    coords = [[5,5],[6,5],[7,5],[8,5],[9,5],[10,5],[11,5],[12,5],[13,5],[14,5],[15,5],[16,5],[17,5],[18,5]]
+                    for c in coords:
+                        app.grid[c[0]][c[1]] = ''
+                    top = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/4_top.png'))
+                    self.image_holder.append(top)
+                    bot = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/4.png'))
+                    self.image_holder.append(bot)
+                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = bot, tags = ('mapbottom','map'))
+                    app.canvas.tag_lower('mapbottom')
+                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = top, tags = ('maptop','map'))
+                    self.map_triggers.remove(area_four)
+            self.map_triggers.append(area_four)
+            
+            def area_three():
+                if app.ent_dict[app.p1_witch].loc in [[5,5],[6,5]]:
+                    coords = [[4,5],[3,5],[3,6],[3,7],[3,8],[3,9],[3,10]]
+                    for c in coords:
+                        app.grid[c[0]][c[1]] = ''
+                    top = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/3_top.png'))
+                    self.image_holder.append(top)
+                    bot = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/3.png'))
+                    self.image_holder.append(bot)
+                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = bot, tags = ('mapbottom','map'))
+                    app.canvas.tag_lower('mapbottom')
+                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = top, tags = ('maptop','map'))
+                    self.map_triggers.remove(area_three)
+            self.map_triggers.append(area_three)
+            
+            def area_two():
+                if app.ent_dict[app.p1_witch].loc in [[28,13],[28,14]]:
+                    coords = [[28,4],[28,5],[28,6],[28,7],[28,8],[28,9],[28,10],[28,11],[28,12]]
+                    for c in coords:
+                        app.grid[c[0]][c[1]] = ''
+                    top = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/2_top.png'))
+                    self.image_holder.append(top)
+                    bot = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/2.png'))
+                    self.image_holder.append(bot)
+                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = bot, tags = ('mapbottom','map'))
+                    app.canvas.tag_lower('mapbottom')
+                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = top, tags = ('maptop','map'))
+                    self.map_triggers.remove(area_two)
+            self.map_triggers.append(area_two)
+            
+            def area_one():
+                if app.ent_dict[app.p1_witch].loc in [[28,4]]:
+                    coords = [[28,3],[6,2],[7,2],[8,2],[9,2],[10,2],[11,2],[12,2],[13,2],[14,2],[15,2],[16,2],[17,2],[18,2],[19,2],[20,2],[21,2],[22,2],[23,2],[24,2],[25,2],[26,2],[27,2],[28,2]]
+                    for c in coords:
+                        app.grid[c[0]][c[1]] = ''
+                    top = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/1_top.png'))
+                    self.image_holder.append(top)
+                    bot = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/1.png'))
+                    self.image_holder.append(bot)
+                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = bot, tags = ('mapbottom','map'))
+                    app.canvas.tag_lower('mapbottom')
+                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = top, tags = ('maptop','map'))
+                    self.map_triggers.remove(area_one)
+            self.map_triggers.append(area_one)
+            
+            def area_zero():
+                if app.ent_dict[app.p1_witch].loc in [[3,10]]:
+                    coords = [[2,10],[1,10],[1,9],[1,8],[1,7],[1,6],[1,5],[1,4],[1,3],[1,2],[2,2],[3,2],[4,2],[3,1]]
+                    for c in coords:
+                        app.grid[c[0]][c[1]] = ''
+                    top = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/0_top.png'))
+                    self.image_holder.append(top)
+                    bot = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/0.png'))
+                    self.image_holder.append(bot)
+                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = bot, tags = ('mapbottom','map'))
+                    app.canvas.tag_lower('mapbottom')
+                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = top, tags = ('maptop','map'))
+                    self.map_triggers.remove(area_zero)
+            self.map_triggers.append(area_zero)
+            
+            self.load_intro_scene(map_number, protaganist_object = protaganist_object)
     # END OF GAME
         else:
             print('you are winner hahaha')
@@ -4692,7 +4869,11 @@ class App(tk.Frame):
         row = self.map_height//100
         self.grid = [[''] * row for i in range(col)]
         # START LOC
-        self.start_loc = eval(self.map_info[2])
+        if self.num_players == 1:
+            self.start_loc = eval(self.map_info[2])
+        else:
+            self.start_loc = eval(self.map_info[2])[0]
+            self.p2_start_loc = eval(self.map_info[2])[1]
         # LOAD MAP / GRID INFO / IMPASSABLE TERRAIN
         terrain = eval(self.map_info[3])
         for coord in terrain:
@@ -4815,7 +4996,8 @@ class App(tk.Frame):
                 loc = self.start_loc
         elif player_num == 2:
             self.p2_witch = witch
-            loc = [self.map_width//100-3, self.map_height//100-3]
+            loc = self.p2_start_loc
+#             loc = [self.map_width//100-3, self.map_height//100-3]
         # if protaganist_object, instead load its data, RE-INIT IMAGES THAT CANNOT BE SERIALIZED BY PICKLE DUMP
         if protaganist_object:
             protaganist_object.loc = loc[:]
@@ -5133,7 +5315,7 @@ class App(tk.Frame):
         elif self.map_number == 2:
             for mt in self.map_triggers:
                 result = mt()
-                if result == 'stair':
+                if result == 'stairway':
                     app.unbind_all()
                     self.end_level(alt_route = 21)
                     break
@@ -5147,6 +5329,16 @@ class App(tk.Frame):
             else:
                 self.map_trigger_id = root.after(1666, self.map_trigger_loop)
         elif self.map_number == 121:
+            for mt in self.map_triggers:
+                result = mt()
+                if result == 'victory':
+                    app.unbind_all()
+                    self.end_level() # next map is 122 on this route
+                    break
+                elif result == 'game over':
+                    self.reset()
+                    break
+        elif self.map_number == 21:
             for mt in self.map_triggers:
                 result = mt()
                 if result == 'victory':
