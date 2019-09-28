@@ -4591,13 +4591,19 @@ class App(tk.Frame):
                     coords = [[24,18],[25,18],[26,18],[27,18],[28,18],[24,17],[25,17],[26,17],[24,16],[25,16],[26,16],[22,15],[23,15],[24,15],[25,15],[26,15],[27,15],[28,15],[22,14],[22,13],[22,12],[22,11],[22,10],[22,9],[23,14],[23,13],[23,12],[23,11],[23,10],[23,9],[20,9],[21,9],[20,10],[21,10],[25,14],[26,14],[27,14],[28,14],[25,13],[26,13],[25,12],[26,12],[28,13],[23,18]]
                     for c in coords:
                         app.grid[c[0]][c[1]] = ''
-                    top = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/11_top.png'))
-                    self.image_holder.append(top)
-                    bot = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/11.png'))
-                    self.image_holder.append(bot)
-                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = bot, tags = ('mapbottom','map'))
+                    top = Image.open('1_player_map_fog/map21/11_top.png')
+                    bot = Image.open('1_player_map_fog/map21/11.png')
+                    newbot = self.map_bottom_image
+                    newtop = self.map_top_image
+                    newbot = Image.alpha_composite(newbot, bot)
+                    newtop = Image.alpha_composite(newtop, top)
+                    self.map_bottom_image = newbot
+                    self.map_top_image = newtop
+                    self.map_bottom = ImageTk.PhotoImage(self.map_bottom_image)
+                    self.map_top = ImageTk.PhotoImage(self.map_top_image)
+                    self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_bottom, tags = ('map','mapbottom'))
+                    self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_top, tags = ('map','maptop'))
                     app.canvas.tag_lower('mapbottom')
-                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = top, tags = ('maptop','map'))
                     self.map_triggers.remove(area_eleven)
             self.map_triggers.append(area_eleven)
             
@@ -4606,13 +4612,19 @@ class App(tk.Frame):
                     coords = [[25,5],[25,6],[25,7],[25,8],[25,9],[25,10],[25,11],[26,5],[26,6],[26,7],[26,8],[26,9],[26,10],[26,11]]
                     for c in coords:
                         app.grid[c[0]][c[1]] = ''
-                    top = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/10_top.png'))
-                    self.image_holder.append(top)
-                    bot = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/10.png'))
-                    self.image_holder.append(bot)
-                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = bot, tags = ('mapbottom','map'))
+                    top = Image.open('1_player_map_fog/map21/10_top.png')
+                    bot = Image.open('1_player_map_fog/map21/10.png')
+                    newbot = self.map_bottom_image
+                    newtop = self.map_top_image
+                    newbot = Image.alpha_composite(newbot, bot)
+                    newtop = Image.alpha_composite(newtop, top)
+                    self.map_bottom_image = newbot
+                    self.map_top_image = newtop
+                    self.map_bottom = ImageTk.PhotoImage(self.map_bottom_image)
+                    self.map_top = ImageTk.PhotoImage(self.map_top_image)
+                    self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_bottom, tags = ('map','mapbottom'))
+                    self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_top, tags = ('map','maptop'))
                     app.canvas.tag_lower('mapbottom')
-                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = top, tags = ('maptop','map'))
                     self.map_triggers.remove(area_ten)
             self.map_triggers.append(area_ten)
             
@@ -4621,13 +4633,19 @@ class App(tk.Frame):
                     coords = [[20,5],[21,5],[22,5],[23,5],[24,5],[20,6],[21,6],[22,6],[23,6],[24,6]]
                     for c in coords:
                         app.grid[c[0]][c[1]] = ''
-                    top = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/9_top.png'))
-                    self.image_holder.append(top)
-                    bot = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/9.png'))
-                    self.image_holder.append(bot)
-                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = bot, tags = ('mapbottom','map'))
+                    top = Image.open('1_player_map_fog/map21/9_top.png')
+                    bot = Image.open('1_player_map_fog/map21/9.png')
+                    newbot = self.map_bottom_image
+                    newtop = self.map_top_image
+                    newbot = Image.alpha_composite(newbot, bot)
+                    newtop = Image.alpha_composite(newtop, top)
+                    self.map_bottom_image = newbot
+                    self.map_top_image = newtop
+                    self.map_bottom = ImageTk.PhotoImage(self.map_bottom_image)
+                    self.map_top = ImageTk.PhotoImage(self.map_top_image)
+                    self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_bottom, tags = ('map','mapbottom'))
+                    self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_top, tags = ('map','maptop'))
                     app.canvas.tag_lower('mapbottom')
-                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = top, tags = ('maptop','map'))
                     self.map_triggers.remove(area_nine)
             self.map_triggers.append(area_nine)
             
@@ -4636,13 +4654,19 @@ class App(tk.Frame):
                     coords = [[19,9],[19,10],[18,6],[18,7],[18,8],[18,9],[18,10],[17,6],[17,7],[17,8],[16,8],[15,8],[14,8],[13,8],[12,8],[11,8],[10,8],[9,8],[8,8],[7,8],[7,9],[8,9],[9,9],[10,9],[11,9],[12,9]]
                     for c in coords:
                         app.grid[c[0]][c[1]] = ''
-                    top = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/8_top.png'))
-                    self.image_holder.append(top)
-                    bot = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/8.png'))
-                    self.image_holder.append(bot)
-                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = bot, tags = ('mapbottom','map'))
+                    top = Image.open('1_player_map_fog/map21/8_top.png')
+                    bot = Image.open('1_player_map_fog/map21/8.png')
+                    newbot = self.map_bottom_image
+                    newtop = self.map_top_image
+                    newbot = Image.alpha_composite(newbot, bot)
+                    newtop = Image.alpha_composite(newtop, top)
+                    self.map_bottom_image = newbot
+                    self.map_top_image = newtop
+                    self.map_bottom = ImageTk.PhotoImage(self.map_bottom_image)
+                    self.map_top = ImageTk.PhotoImage(self.map_top_image)
+                    self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_bottom, tags = ('map','mapbottom'))
+                    self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_top, tags = ('map','maptop'))
                     app.canvas.tag_lower('mapbottom')
-                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = top, tags = ('maptop','map'))
                     self.map_triggers.remove(area_eight)
             self.map_triggers.append(area_eight)
             
@@ -4651,13 +4675,19 @@ class App(tk.Frame):
                     coords = [[6,8],[6,9],[5,8],[5,9],[5,10],[5,11],[5,12],[4,12],[3,12]]
                     for c in coords:
                         app.grid[c[0]][c[1]] = ''
-                    top = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/7_top.png'))
-                    self.image_holder.append(top)
-                    bot = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/7.png'))
-                    self.image_holder.append(bot)
-                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = bot, tags = ('mapbottom','map'))
+                    top = Image.open('1_player_map_fog/map21/7_top.png')
+                    bot = Image.open('1_player_map_fog/map21/7.png')
+                    newbot = self.map_bottom_image
+                    newtop = self.map_top_image
+                    newbot = Image.alpha_composite(newbot, bot)
+                    newtop = Image.alpha_composite(newtop, top)
+                    self.map_bottom_image = newbot
+                    self.map_top_image = newtop
+                    self.map_bottom = ImageTk.PhotoImage(self.map_bottom_image)
+                    self.map_top = ImageTk.PhotoImage(self.map_top_image)
+                    self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_bottom, tags = ('map','mapbottom'))
+                    self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_top, tags = ('map','maptop'))
                     app.canvas.tag_lower('mapbottom')
-                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = top, tags = ('maptop','map'))
                     self.map_triggers.remove(area_seven)
             self.map_triggers.append(area_seven)
             
@@ -4666,13 +4696,19 @@ class App(tk.Frame):
                     coords = [[2,12],[1,12],[1,13],[1,14],[1,15],[1,16],[1,17],[1,18]]
                     for c in coords:
                         app.grid[c[0]][c[1]] = ''
-                    top = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/6_top.png'))
-                    self.image_holder.append(top)
-                    bot = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/6.png'))
-                    self.image_holder.append(bot)
-                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = bot, tags = ('mapbottom','map'))
+                    top = Image.open('1_player_map_fog/map21/6_top.png')
+                    bot = Image.open('1_player_map_fog/map21/6.png')
+                    newbot = self.map_bottom_image
+                    newtop = self.map_top_image
+                    newbot = Image.alpha_composite(newbot, bot)
+                    newtop = Image.alpha_composite(newtop, top)
+                    self.map_bottom_image = newbot
+                    self.map_top_image = newtop
+                    self.map_bottom = ImageTk.PhotoImage(self.map_bottom_image)
+                    self.map_top = ImageTk.PhotoImage(self.map_top_image)
+                    self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_bottom, tags = ('map','mapbottom'))
+                    self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_top, tags = ('map','maptop'))
                     app.canvas.tag_lower('mapbottom')
-                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = top, tags = ('maptop','map'))
                     self.map_triggers.remove(area_six)
             self.map_triggers.append(area_six)
             
@@ -4681,13 +4717,19 @@ class App(tk.Frame):
                     coords = [[2,18],[3,18],[4,18],[5,18],[6,18],[7,18],[8,18],[9,18],[10,18],[11,18],[12,18],[13,18],[14,18],[15,18],[16,18],[17,18]]
                     for c in coords:
                         app.grid[c[0]][c[1]] = ''
-                    top = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/5_top.png'))
-                    self.image_holder.append(top)
-                    bot = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/5.png'))
-                    self.image_holder.append(bot)
-                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = bot, tags = ('mapbottom','map'))
+                    top = Image.open('1_player_map_fog/map21/5_top.png')
+                    bot = Image.open('1_player_map_fog/map21/5.png')
+                    newbot = self.map_bottom_image
+                    newtop = self.map_top_image
+                    newbot = Image.alpha_composite(newbot, bot)
+                    newtop = Image.alpha_composite(newtop, top)
+                    self.map_bottom_image = newbot
+                    self.map_top_image = newtop
+                    self.map_bottom = ImageTk.PhotoImage(self.map_bottom_image)
+                    self.map_top = ImageTk.PhotoImage(self.map_top_image)
+                    self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_bottom, tags = ('map','mapbottom'))
+                    self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_top, tags = ('map','maptop'))
                     app.canvas.tag_lower('mapbottom')
-                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = top, tags = ('maptop','map'))
                     self.map_triggers.remove(area_five)
             self.map_triggers.append(area_five)
             
@@ -4696,13 +4738,19 @@ class App(tk.Frame):
                     coords = [[5,5],[6,5],[7,5],[8,5],[9,5],[10,5],[11,5],[12,5],[13,5],[14,5],[15,5],[16,5],[17,5],[18,5]]
                     for c in coords:
                         app.grid[c[0]][c[1]] = ''
-                    top = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/4_top.png'))
-                    self.image_holder.append(top)
-                    bot = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/4.png'))
-                    self.image_holder.append(bot)
-                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = bot, tags = ('mapbottom','map'))
+                    top = Image.open('1_player_map_fog/map21/4_top.png')
+                    bot = Image.open('1_player_map_fog/map21/4.png')
+                    newbot = self.map_bottom_image
+                    newtop = self.map_top_image
+                    newbot = Image.alpha_composite(newbot, bot)
+                    newtop = Image.alpha_composite(newtop, top)
+                    self.map_bottom_image = newbot
+                    self.map_top_image = newtop
+                    self.map_bottom = ImageTk.PhotoImage(self.map_bottom_image)
+                    self.map_top = ImageTk.PhotoImage(self.map_top_image)
+                    self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_bottom, tags = ('map','mapbottom'))
+                    self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_top, tags = ('map','maptop'))
                     app.canvas.tag_lower('mapbottom')
-                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = top, tags = ('maptop','map'))
                     self.map_triggers.remove(area_four)
             self.map_triggers.append(area_four)
             
@@ -4711,13 +4759,19 @@ class App(tk.Frame):
                     coords = [[4,5],[3,5],[3,6],[3,7],[3,8],[3,9],[3,10]]
                     for c in coords:
                         app.grid[c[0]][c[1]] = ''
-                    top = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/3_top.png'))
-                    self.image_holder.append(top)
-                    bot = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/3.png'))
-                    self.image_holder.append(bot)
-                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = bot, tags = ('mapbottom','map'))
+                    top = Image.open('1_player_map_fog/map21/3_top.png')
+                    bot = Image.open('1_player_map_fog/map21/3.png')
+                    newbot = self.map_bottom_image
+                    newtop = self.map_top_image
+                    newbot = Image.alpha_composite(newbot, bot)
+                    newtop = Image.alpha_composite(newtop, top)
+                    self.map_bottom_image = newbot
+                    self.map_top_image = newtop
+                    self.map_bottom = ImageTk.PhotoImage(self.map_bottom_image)
+                    self.map_top = ImageTk.PhotoImage(self.map_top_image)
+                    self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_bottom, tags = ('map','mapbottom'))
+                    self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_top, tags = ('map','maptop'))
                     app.canvas.tag_lower('mapbottom')
-                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = top, tags = ('maptop','map'))
                     self.map_triggers.remove(area_three)
             self.map_triggers.append(area_three)
             
@@ -4726,13 +4780,19 @@ class App(tk.Frame):
                     coords = [[28,4],[28,5],[28,6],[28,7],[28,8],[28,9],[28,10],[28,11],[28,12]]
                     for c in coords:
                         app.grid[c[0]][c[1]] = ''
-                    top = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/2_top.png'))
-                    self.image_holder.append(top)
-                    bot = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/2.png'))
-                    self.image_holder.append(bot)
-                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = bot, tags = ('mapbottom','map'))
+                    top = Image.open('1_player_map_fog/map21/2_top.png')
+                    bot = Image.open('1_player_map_fog/map21/2.png')
+                    newbot = self.map_bottom_image
+                    newtop = self.map_top_image
+                    newbot = Image.alpha_composite(newbot, bot)
+                    newtop = Image.alpha_composite(newtop, top)
+                    self.map_bottom_image = newbot
+                    self.map_top_image = newtop
+                    self.map_bottom = ImageTk.PhotoImage(self.map_bottom_image)
+                    self.map_top = ImageTk.PhotoImage(self.map_top_image)
+                    self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_bottom, tags = ('map','mapbottom'))
+                    self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_top, tags = ('map','maptop'))
                     app.canvas.tag_lower('mapbottom')
-                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = top, tags = ('maptop','map'))
                     self.map_triggers.remove(area_two)
             self.map_triggers.append(area_two)
             
@@ -4741,13 +4801,19 @@ class App(tk.Frame):
                     coords = [[28,3],[6,2],[7,2],[8,2],[9,2],[10,2],[11,2],[12,2],[13,2],[14,2],[15,2],[16,2],[17,2],[18,2],[19,2],[20,2],[21,2],[22,2],[23,2],[24,2],[25,2],[26,2],[27,2],[28,2]]
                     for c in coords:
                         app.grid[c[0]][c[1]] = ''
-                    top = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/1_top.png'))
-                    self.image_holder.append(top)
-                    bot = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/1.png'))
-                    self.image_holder.append(bot)
-                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = bot, tags = ('mapbottom','map'))
+                    top = Image.open('1_player_map_fog/map21/1_top.png')
+                    bot = Image.open('1_player_map_fog/map21/1.png')
+                    newbot = self.map_bottom_image
+                    newtop = self.map_top_image
+                    newbot = Image.alpha_composite(newbot, bot)
+                    newtop = Image.alpha_composite(newtop, top)
+                    self.map_bottom_image = newbot
+                    self.map_top_image = newtop
+                    self.map_bottom = ImageTk.PhotoImage(self.map_bottom_image)
+                    self.map_top = ImageTk.PhotoImage(self.map_top_image)
+                    self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_bottom, tags = ('map','mapbottom'))
+                    self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_top, tags = ('map','maptop'))
                     app.canvas.tag_lower('mapbottom')
-                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = top, tags = ('maptop','map'))
                     self.map_triggers.remove(area_one)
             self.map_triggers.append(area_one)
             
@@ -4756,13 +4822,19 @@ class App(tk.Frame):
                     coords = [[2,10],[1,10],[1,9],[1,8],[1,7],[1,6],[1,5],[1,4],[1,3],[1,2],[2,2],[3,2],[4,2],[3,1]]
                     for c in coords:
                         app.grid[c[0]][c[1]] = ''
-                    top = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/0_top.png'))
-                    self.image_holder.append(top)
-                    bot = ImageTk.PhotoImage(Image.open('1_player_map_fog/map21/0.png'))
-                    self.image_holder.append(bot)
-                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = bot, tags = ('mapbottom','map'))
+                    top = Image.open('1_player_map_fog/map21/0_top.png')
+                    bot = Image.open('1_player_map_fog/map21/0.png')
+                    newbot = self.map_bottom_image
+                    newtop = self.map_top_image
+                    newbot = Image.alpha_composite(newbot, bot)
+                    newtop = Image.alpha_composite(newtop, top)
+                    self.map_bottom_image = newbot
+                    self.map_top_image = newtop
+                    self.map_bottom = ImageTk.PhotoImage(self.map_bottom_image)
+                    self.map_top = ImageTk.PhotoImage(self.map_top_image)
+                    self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_bottom, tags = ('map','mapbottom'))
+                    self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_top, tags = ('map','maptop'))
                     app.canvas.tag_lower('mapbottom')
-                    app.canvas.create_image(0-app.moved_right,0-app.moved_down, anchor = 'nw', image = top, tags = ('maptop','map'))
                     self.map_triggers.remove(area_zero)
             self.map_triggers.append(area_zero)
             
@@ -4900,10 +4972,14 @@ class App(tk.Frame):
         else:
             fname = '2_player_maps/'
             topfname = '2_player_map_tops/'
-        self.map_img = ImageTk.PhotoImage(Image.open(fname + 'map'+str(map_number)+'.png'))
-        self.map_top = ImageTk.PhotoImage(Image.open(topfname + 'map_top'+str(map_number)+'.png'))
-        self.canvas.create_image(0, 0, anchor='nw', image=self.map_img, tags=('mapbottom','map'))
-        self.canvas.create_image(0, 0, anchor='nw', image=self.map_top, tags = ('maptop','map'))
+        self.map_bottom_image = Image.open(fname + 'map'+str(map_number)+'.png')
+        self.map_bottom = ImageTk.PhotoImage(self.map_bottom_image)
+#         self.map_bottom = ImageTk.PhotoImage(Image.open(fname + 'map'+str(map_number)+'.png'))
+#         self.image_holder.append(map_bottom)
+        self.map_top_image = Image.open(topfname + 'map_top'+str(map_number)+'.png')
+        self.map_top = ImageTk.PhotoImage(self.map_top_image)
+        self.canvas.create_image(0, 0, anchor='nw', image= self.map_bottom, tags=('mapbottom','map'))
+        self.canvas.create_image(0, 0, anchor='nw', image= self.map_top, tags = ('maptop','map'))
         # FOG OF WAR ON SOME MAPS
 #         if map_number == 2:
 #             fogs = [f for r,d,f in walk('./1_player_map_fog/map2/')][0]
@@ -5253,8 +5329,8 @@ class App(tk.Frame):
                 self.canvas.create_image(self.ent_dict[ent].loc[0]*100+50-self.moved_right, self.ent_dict[ent].loc[1]*100+50-self.moved_down, image = self.ent_dict[ent].img, tags = app.ent_dict[ent].tags)
                 
                 app.canvas.tag_lower((app.ent_dict[ent].tags), ('maptop'))
-                try: app.canvas.tag_lower((app.ent_dict[ent].tags), ('fog'))
-                except: pass
+#                 try: app.canvas.tag_lower((app.ent_dict[ent].tags), ('fog'))
+#                 except: pass
         for sqr in self.sqr_dict.keys():
             self.sqr_dict[sqr].rotate_image()
             self.canvas.delete(sqr)
