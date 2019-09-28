@@ -628,9 +628,9 @@ class Trickster(Summon):
         root.unbind('<a>')
         self.attack_used = True
         self.set_attr('magick', -3)
-        my_psyche = self.get_attr('psyche')
-        target_psyche = app.ent_dict[id].get_attr('psyche')
-        distance = damage(my_psyche, target_psyche)
+#         my_psyche = self.get_attr('psyche')
+#         target_psyche = app.ent_dict[id].get_attr('psyche')
+        distance = 5 #damage(my_psyche, target_psyche)
         app.cleanup_squares()
         sqrs = self.doorway_squares(distance)
         if sqrs == []:
@@ -2879,12 +2879,12 @@ class Minotaur(Summon):
     def __init__(self, name, img, loc, owner, number, waiting = False):
         self.actions = {'attack':self.do_attack}
         self.attack_used = False
-        self.str = 9
-        self.agl = 8
-        self.end = 9
+        self.str = 11
+        self.agl = 10
+        self.end = 11
         self.dodge = 5
-        self.psyche = 7
-        self.spirit = 45
+        self.psyche = 9
+        self.spirit = 133
         self.waiting = waiting
         super().__init__(name, img, loc, owner, number)#, type = 'large')
         self.immovable = True
@@ -3065,7 +3065,7 @@ class Minotaur(Summon):
     
     def do_attack(self, ents_list, id):
         app.get_focus(id)
-#         self.init_attack_anims()
+        app.ent_dict[self.number+'top'].init_attack_anims()
         my_agl = self.get_attr('agl')
         target_dodge = app.ent_dict[id].get_attr('dodge')
         if to_hit(my_agl, target_dodge) == True:
@@ -3086,7 +3086,7 @@ class Minotaur(Summon):
     def cleanup_attack(self, ents_list, id):
         if app.ent_dict[id].spirit <= 0:
             app.kill(id)
-        self.init_normal_anims()
+        app.ent_dict[self.number+'top'].init_normal_anims()
         try: app.canvas.delete('text')
         except: pass
         ents_list = ents_list[1:]
@@ -3600,7 +3600,7 @@ class Witch(Entity):
         app.vis_dict['Moonlight'] = Vis(name = 'Moonlight', loc = s)
         app.canvas.create_image(s[0]*100+50-app.moved_right, s[1]*100+70-app.moved_down, image = app.vis_dict['Moonlight'].img, tags = 'Moonlight')
         app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+65-app.moved_down, text = 'Moonlight\n+3 Spirit', font = ('Andale Mono', 16), fill = 'azure', tags = 'text')
-        selected_vis = ['Moonlight']
+        selected_vis = 'Moonlight'
         
         # needs to be moved upwards at the same rate, when rotating image also move up one tick
         def moonlight_loop(starty, endy, x):
@@ -4312,7 +4312,7 @@ class Witch(Entity):
         app.vis_dict['Dark_Sun'] = Vis(name = 'Dark_Sun', loc = sqr[:]) #[sqr[0],sqr[1]-1])
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Dark_Sun'].img, tags = 'Dark_Sun')
         app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+50-app.moved_down+40, text = 'Dark Sun', justify ='center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
-        selected_vis = ['Dark_Sun']
+        selected_vis = 'Dark_Sun'
         def dark_sun_loop(starty, endy, x):
             if starty > endy:
                 app.vis_dict['Dark_Sun'].rotate_image()
@@ -5064,7 +5064,7 @@ class App(tk.Frame):
             
             def area_one():
                 if app.ent_dict[app.p1_witch].loc in [[28,4]]:
-                    coords = [[28,3],[6,2],[7,2],[8,2],[9,2],[10,2],[11,2],[12,2],[13,2],[14,2],[15,2],[16,2],[17,2],[18,2],[19,2],[20,2],[21,2],[22,2],[23,2],[24,2],[25,2],[26,2],[27,2],[28,2]]
+                    coords = [[28,3],[7,2],[8,2],[9,2],[10,2],[11,2],[12,2],[13,2],[14,2],[15,2],[16,2],[17,2],[18,2],[19,2],[20,2],[21,2],[22,2],[23,2],[24,2],[25,2],[26,2],[27,2],[28,2]]
                     for c in coords:
                         app.grid[c[0]][c[1]] = ''
                     top = Image.open('1_player_map_fog/map21/1_top.png')
@@ -5081,6 +5081,20 @@ class App(tk.Frame):
                     self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_top, tags = ('map','maptop'))
                     app.canvas.tag_lower('mapbottom')
                     self.map_triggers.remove(area_one)
+                    # Place chest trigger and revenant
+                    img = ImageTk.PhotoImage(Image.open('summon_imgs/Revenant.png'))
+                    app.ent_dict['b2'] = Revenant(name = 'Revenant', img = img, loc =[7,2], owner = 'p2', number = 'b2')
+                    app.grid[7][2] = 'b2'
+                    def chest1():
+                        loc = app.ent_dict[app.p1_witch].loc[:]
+                        if loc == [7,2]:
+                            app.unbind_all()
+                            self.chest21_1 = tk.Button(root, text = 'Open Chest', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.open_chest21_1)
+                            app.canvas.create_window(1100-app.moved_right, 200-app.moved_down, window = self.chest21_1)
+                            self.chest21_1_cancel = tk.Button(root, text = 'Leave Alone', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.cancel_chest1)
+                            app.canvas.create_window(1100-app.moved_right+25, 200-app.moved_down+34, window = self.chest21_1_cancel)
+                            self.map_triggers.remove(chest1)
+                    self.map_triggers.append(chest1)
             self.map_triggers.append(area_one)
             
             def area_zero():
@@ -5110,6 +5124,19 @@ class App(tk.Frame):
             print('you are winner hahaha')
         
     # Move trigger funcs for organization
+    def open_chest21_1(self):
+        loc = app.ent_dict[app.p1_witch].loc[:]
+        app.canvas.create_text(loc[0]*100-app.moved_right, loc[1]*100-app.moved_down+85, text = 'Amulet of Circe\nPermanent +2 Psyche', justify = 'center', font = ('Andale Mono', 16), fill = 'white', tags = 'text')
+        app.ent_dict[app.p1_witch].psyche += 2
+        app.ent_dict[app.p1_witch].base_psyche += 2
+        root.after(1999, lambda t = 'text' : app.canvas.delete(t))
+        root.after(1999, self.cancel_chest1)
+        
+    def cancel_chest1(self):
+        self.chest21_1.destroy()
+        self.chest21_1_cancel.destroy()
+        app.rebind_all()
+    
     def read_41_book(self):
         loc = app.ent_dict[app.p1_witch].loc[:]
         app.ent_dict[app.p1_witch].arcane_dict['Pain'] = (app.ent_dict[app.p1_witch].pain, 7)
