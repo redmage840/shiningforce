@@ -114,7 +114,7 @@ def damage(a1, a2):
 # GLOBALS
 curs_pos = [0, 0]
 is_object_selected = False
-selected = ''
+selected = []
 selected_vis = ''
 
 map_pos = [0, 0]
@@ -196,6 +196,7 @@ class Entity():
         self.owner = owner
         self.move_used = False
         self.type = type
+        self.immovable = False
         if isinstance(self, Witch):
             self.tags = self.name
         elif self.type == 'large':
@@ -359,7 +360,7 @@ class Entity():
             id = self.number
         start_sqr = self.loc[:]
         end_sqr = grid_pos[:]
-        selected = id
+        selected = [id]
         x = start_sqr[0]*100+50-app.moved_right
         y = start_sqr[1]*100+50-app.moved_down
         endx = end_sqr[0]*100+50-app.moved_right
@@ -385,7 +386,7 @@ class Entity():
             if y < endy: 
                 y += 10
                 app.canvas.move(id, 0, 10)
-            try: app.canvas.tag_raise('large', (self.tags))
+            try: app.canvas.tag_lower((self.tags), 'large')
             except: pass
 #             app.canvas.tag_raise('maptop')
             app.canvas.tag_raise('cursor')
@@ -397,7 +398,7 @@ class Entity():
             
     def finish_move(self, id, end, start):
         global selected
-        selected = ''
+        selected = []
         oldloc = start
         newloc = end
         self.loc = newloc[:]
@@ -617,6 +618,8 @@ class Trickster(Summon):
             return
         id = app.current_pos()
         if app.ent_dict[id].type == 'large':
+            return
+        if app.ent_dict[id].immovable == True:
             return
         app.depop_context(event = None)
         app.unbind_all()
@@ -1202,7 +1205,7 @@ class White_Dragon(Summon):
         endy = sqr[1]*100+50-app.moved_down
         start_sqr = self.loc[:]
         end_sqr = sqr[:]
-        selected = self.number
+        selected = [self.number]
         # MOVE LOOP
         # get focus here?
         def move_loop(id, x, y, endx, endy, start_sqr, end_sqr):
@@ -1236,7 +1239,7 @@ class White_Dragon(Summon):
             
     def finish_move(self, id, end_sqr, start_sqr, target, ents_list):
         global selected
-        selected = ''
+        selected = []
         self.loc = end_sqr[:]
         self.origin = end_sqr[:]
         app.grid[start_sqr[0]][start_sqr[1]] = ''
@@ -1450,7 +1453,7 @@ class Tortured_Soul(Summon):
         endy = endloc[1]*100+50-app.moved_down
         start_sqr = self.loc[:]
         end_sqr = endloc[:]
-        selected = self.number
+        selected = [self.number]
         # MOVE LOOP
         def move_loop(id, x, y, endx, endy, start_sqr, end_sqr):
             if x % 25 == 0 or y % 25 == 0:
@@ -1487,7 +1490,7 @@ class Tortured_Soul(Summon):
     # DONE MOVING, ATTEMPT ATTACK AND EXIT
     def finish_move(self, id, end_sqr, start_sqr, ents_list):
         global selected
-        selected = ''
+        selected = []
         self.loc = end_sqr[:]
         self.origin = end_sqr[:]
         app.grid[start_sqr[0]][start_sqr[1]] = ''
@@ -1802,7 +1805,7 @@ class Revenant(Summon):
         endy = endloc[1]*100+50-app.moved_down
         start_sqr = self.loc[:]
         end_sqr = endloc[:]
-        selected = self.number
+        selected = [self.number]
         # MOVE LOOP
         def move_loop(id, x, y, endx, endy, start_sqr, end_sqr):
             if x % 25 == 0 or y % 25 == 0:
@@ -1839,7 +1842,7 @@ class Revenant(Summon):
     # DONE MOVING, ATTEMPT ATTACK AND EXIT
     def finish_move(self, id, end_sqr, start_sqr, ents_list):
         global selected
-        selected = ''
+        selected = []
         self.loc = end_sqr[:]
         self.origin = end_sqr[:]
         app.grid[start_sqr[0]][start_sqr[1]] = ''
@@ -2033,7 +2036,7 @@ class Undead(Summon):
         endy = endloc[1]*100+50-app.moved_down
         start_sqr = self.loc[:]
         end_sqr = endloc[:]
-        selected = self.number
+        selected = [self.number]
         # MOVE LOOP
         def move_loop(id, x, y, endx, endy, start_sqr, end_sqr):
             if x % 25 == 0 or y % 25 == 0:
@@ -2070,7 +2073,7 @@ class Undead(Summon):
     # DONE MOVING, ATTEMPT ATTACK AND EXIT
     def finish_move(self, id, end_sqr, start_sqr, ents_list):
         global selected
-        selected = ''
+        selected = []
         self.loc = end_sqr[:]
         self.origin = end_sqr[:]
         app.grid[start_sqr[0]][start_sqr[1]] = ''
@@ -2267,7 +2270,7 @@ class Undead_Knight(Summon):
         endy = endloc[1]*100+50-app.moved_down
         start_sqr = self.loc[:]
         end_sqr = endloc[:]
-        selected = self.number
+        selected = [self.number]
         # MOVE LOOP
         def move_loop(id, x, y, endx, endy, start_sqr, end_sqr):
             if x % 25 == 0 or y % 25 == 0:
@@ -2304,7 +2307,7 @@ class Undead_Knight(Summon):
     # DONE MOVING, ATTEMPT ATTACK AND EXIT
     def finish_move(self, id, end_sqr, start_sqr, ents_list):
         global selected
-        selected = ''
+        selected = []
         self.loc = end_sqr[:]
         self.origin = end_sqr[:]
         app.grid[start_sqr[0]][start_sqr[1]] = ''
@@ -2506,7 +2509,7 @@ class Troll(Summon):
         endy = endloc[1]*100+50-app.moved_down
         start_sqr = self.loc[:]
         end_sqr = endloc[:]
-        selected = self.number
+        selected = [self.number]
         # MOVE LOOP
         def move_loop(id, x, y, endx, endy, start_sqr, end_sqr):
             if x % 25 == 0 or y % 25 == 0:
@@ -2543,7 +2546,7 @@ class Troll(Summon):
     # DONE MOVING, ATTEMPT ATTACK AND EXIT
     def finish_move(self, id, end_sqr, start_sqr, ents_list):
         global selected
-        selected = ''
+        selected = []
         self.loc = end_sqr[:]
         self.origin = end_sqr[:]
         app.grid[start_sqr[0]][start_sqr[1]] = ''
@@ -2738,7 +2741,7 @@ class Orc_Axeman(Summon):
         endy = endloc[1]*100+50-app.moved_down
         start_sqr = self.loc[:]
         end_sqr = endloc[:]
-        selected = self.number
+        selected = [self.number]
         # MOVE LOOP
         def move_loop(id, x, y, endx, endy, start_sqr, end_sqr):
             if x % 25 == 0 or y % 25 == 0:
@@ -2775,7 +2778,7 @@ class Orc_Axeman(Summon):
     # DONE MOVING, ATTEMPT ATTACK AND EXIT
     def finish_move(self, id, end_sqr, start_sqr, ents_list):
         global selected
-        selected = ''
+        selected = []
         self.loc = end_sqr[:]
         self.origin = end_sqr[:]
         app.grid[start_sqr[0]][start_sqr[1]] = ''
@@ -2815,6 +2818,269 @@ class Orc_Axeman(Summon):
         else:
             # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
             app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Orc Axeman Attack Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+            root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id))
+        
+    def cleanup_attack(self, ents_list, id):
+        if app.ent_dict[id].spirit <= 0:
+            app.kill(id)
+        self.init_normal_anims()
+        try: app.canvas.delete('text')
+        except: pass
+        ents_list = ents_list[1:]
+        if ents_list == []:
+            app.end_turn()
+        else:
+            root.after(666, lambda e = ents_list : app.do_ai_loop(e))
+        
+        
+    def legal_attacks(self):
+        sqrs = []
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        for coord in coords:
+            if dist(coord, self.loc) == 1:
+                if app.grid[coord[0]][coord[1]] != '' and app.grid[coord[0]][coord[1]] != 'block':
+                    sqrs.append(coord)
+        return sqrs
+        
+    def legal_moves(self):
+        loc = self.loc[:]
+        mvlist = []
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        def findall(loc, start, distance):
+            if start > distance:
+                return
+            adj = [c for c in coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
+            for s in adj:
+                mvlist.append(s)
+                findall(s, start+1, distance)
+        findall(loc, 1, 4) 
+        setlist = []
+        for l in mvlist:
+            if l not in setlist:
+                setlist.append(l)
+        return setlist
+        
+        
+        
+class Minotaur_Top(Summon):
+    def __init__(self, name, img, loc, owner, number, waiting = True):
+#         self.actions = {'attack':self.do_attack}
+        self.attack_used = False
+        self.str = 9
+        self.agl = 8
+        self.end = 9
+        self.dodge = 5
+        self.psyche = 7
+        self.spirit = 45
+        self.waiting = waiting
+        super().__init__(name, img, loc, owner, number, type = 'large')
+    # 'tall' ent, bigger than 100 pixels height, needs to be split into 2 images so the 'top' image is 'large' (raised above 'maptop', bottom part of ent is hidden behind 'maptop'
+class Minotaur(Summon):
+    def __init__(self, name, img, loc, owner, number, waiting = False):
+        self.actions = {'attack':self.do_attack}
+        self.attack_used = False
+        self.str = 9
+        self.agl = 8
+        self.end = 9
+        self.dodge = 5
+        self.psyche = 7
+        self.spirit = 45
+        self.waiting = waiting
+        super().__init__(name, img, loc, owner, number)#, type = 'large')
+        self.immovable = True
+        # create top half
+        img = ImageTk.PhotoImage(Image.open('animations/Minotaur_Top/0.png'))
+        app.ent_dict[self.number+'top'] = Minotaur_Top(name = 'Minotaur_Top', img = img, loc = [self.loc[0],self.loc[1]-1], owner = 'p2', number = self.number+'top')
+        
+    def large_undo(self):
+        pass
+        
+    def pass_priority(self, ents_list):
+        ents_list = ents_list[1:]
+        if ents_list == []:
+            app.end_turn()
+        else:
+            app.do_ai_loop(ents_list)
+        
+    #  Minotaur AI
+    # instead of calling bfs on each potential target, can i walk grid with bfs until any enemy is found?
+    def do_ai(self, ents_list):
+        if self.waiting == True: # PASSIVE / WAITING
+            self.pass_priority(ents_list)
+        else: # NO TARGET PRIORITY, ATTEMPT ATTACK FROM STARTLOC
+            atk_sqrs = self.legal_attacks()
+            atk_sqrs = [x for x in atk_sqrs if app.ent_dict[app.grid[x[0]][x[1]]].owner == 'p1']
+            if atk_sqrs != []:
+                any = atk_sqrs[0]
+                id = app.grid[any[0]][any[1]]
+                root.after(666, lambda id = id : app.get_focus(id))
+                root.after(1333, lambda el = ents_list, id = id : self.do_attack(el, id)) # ATTACK
+            else: # CANNOT ATTACK FROM START LOC, GET TARGET AND MOVE TOWARDS
+                enemy_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p1']
+                paths = []
+                coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+                for el in enemy_ent_locs:
+                # FIND PATH TO SQR WITHIN RANGE OF THIS ENT
+                    goals = [c for c in coords if dist(c, el) == 1 and app.grid[c[0]][c[1]] == '']
+                    path = bfs(self.loc[:], goals, app.grid[:])
+                    if path:
+                        paths.append(path)
+                smallpaths = [y for y in paths if len(y) == min(len(y) for y in paths)] # THE SHORTEST PATHS AMONG PATHS
+                if smallpaths != []: # IF ANY PATHS EXIST AT ALL
+                    apath = smallpaths[0]
+                    # FIND FURTHEST SQR ALONG PATH THAT CAN BE MOVED TO
+                    moves = self.legal_moves()
+                    endloc = None
+                    for sqr in apath[::-1]: # START WITH SQRS CLOSEST TO TARGET
+                        if sqr in moves:
+                            endloc = sqr[:] # AMONG SQRS POSSIBLE TO MOVE TO, THIS IS CLOSEST TO GOAL
+                            break
+                    if endloc != None:
+                        root.after(666, lambda sqr = endloc[:] : app.focus_square(sqr))
+                        root.after(1333, lambda el = ents_list, endloc = endloc : self.minotaur_move(el, endloc))
+                    else:
+                        ents_list = ents_list[1:]
+                        if ents_list == []:
+                            root.after(666, app.end_turn)
+                        else:
+                            root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
+                else: # NO PATHS TO TARGET, MAKE BEST EFFORT MINIMIZE DIST MOVE
+                    # change to 'remove friendly ents', find path, move along path as far as possible
+                    egrid = deepcopy(app.grid)
+                    friendly_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p2']
+                    for eloc in friendly_ent_locs:
+                        egrid[eloc[0]][eloc[1]] = '' # EGRID NOW EMPTIED OF FRIENDLY ENTS
+                    # NOW FIND PATH AND PASS TO MOVE
+                    coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+                    for el in enemy_ent_locs:
+                        goals = [c for c in coords if dist(c, el) == 1]
+                        path = bfs(self.loc[:], goals, egrid[:]) # BFS ON ALTERED GRID (FRIENDLY ENTS REMOVED)
+                        if path:
+                            paths.append(path)
+                    smallpaths = [y for y in paths if len(y) == min(len(y) for y in paths)]
+                    if smallpaths != []: # MOVE ALONG PATH AS FAR AS POSSIBLE, ATTEMPT ATTACK
+                        apath = smallpaths[0]
+                        # FIND FURTHEST SQR ALONG PATH THAT CAN BE MOVED TO
+                        moves = self.legal_moves()
+                        endloc = None
+                        for sqr in apath[::-1]: # START WITH SQRS CLOSEST TO TARGET
+                            if sqr in moves:
+                                endloc = sqr[:] # AMONG SQRS POSSIBLE TO MOVE TO, THIS IS CLOSEST TO GOAL
+                                break
+                        if endloc != None:
+                            # here need to 'trim path' to prevent moving to square 'through' friendly ents
+                            root.after(666, lambda sqr = endloc[:] : app.focus_square(sqr))
+                            root.after(1333, lambda el = ents_list, endloc = endloc : self.minotaur_move(el, endloc))
+                        else:
+                            ents_list = ents_list[1:]
+                            if ents_list == []:
+                                root.after(666, app.end_turn)
+                            else:
+                                root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
+                    else:
+                        ents_list = ents_list[1:]
+                        if ents_list == []:
+                            root.after(666, app.end_turn)
+                        else:
+                            root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
+            
+            
+    def minotaur_move(self, ents_list, endloc):
+        global selected
+        # FIND SQUARE FURTHEST ALONG PATH THAT IS WITHIN MOVE RANGE
+        id = self.number
+        x = self.loc[0]*100+50-app.moved_right
+        y = self.loc[1]*100+50-app.moved_down
+        endx = endloc[0]*100+50-app.moved_right
+        endy = endloc[1]*100+50-app.moved_down
+        start_sqr = self.loc[:]
+        end_sqr = endloc[:]
+        selected = [self.number,self.number+'top']
+        # MOVE LOOP
+        def move_loop(id, x, y, endx, endy, start_sqr, end_sqr):
+            if x % 25 == 0 or y % 25 == 0:
+                self.rotate_image()
+                app.ent_dict[id+'top'].rotate_image()
+                app.canvas.delete(id)
+                app.canvas.delete(id+'top')
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+                app.canvas.create_image(x, y-100, image = app.ent_dict[id+'top'].img, tags = (id+'top','large'))
+                app.canvas.tag_lower((self.tags), 'maptop')
+                try: app.canvas.tag_lower((self.tags), 'large')
+                except: pass
+            if x > endx:
+                x -= 10
+                app.canvas.move(id, -10, 0)
+                app.canvas.move(id+'top', -10, 0)
+            if x < endx: 
+                x += 10
+                app.canvas.move(id, 10, 0)
+                app.canvas.move(id+'top', 10, 0)
+            if y > endy: 
+                y -= 10
+                app.canvas.move(id, 0, -10)
+                app.canvas.move(id+'top', 0, -10)
+            if y < endy: 
+                y += 10
+                app.canvas.move(id, 0, 10)
+                app.canvas.move(id+'top', 0, 10)
+#             try: app.canvas.tag_raise('large', (self.tags))
+#             except: pass
+#             app.canvas.tag_raise('maptop')
+            app.canvas.tag_raise('cursor')
+            app.canvas.tag_lower((self.tags), 'maptop')
+            if x == endx and y == endy:
+                self.finish_move(id, end_sqr, start_sqr, ents_list) # EXIT
+            else: # CONTINUE LOOP
+                root.after(66, lambda id = id, x = x, y = y, e = endx, e2 = endy, s = start_sqr, s2 = end_sqr : move_loop(id, x, y, e, e2, s, s2))
+        move_loop(id, x, y, endx, endy, start_sqr, end_sqr)
+            
+            
+    # change to attack any within range, not ncsrly original target
+    # DONE MOVING, ATTEMPT ATTACK AND EXIT
+    def finish_move(self, id, end_sqr, start_sqr, ents_list):
+        global selected
+        selected = []
+        self.loc = end_sqr[:]
+        app.ent_dict[id+'top'].loc = [end_sqr[0],end_sqr[1]-1]
+#         self.origin = end_sqr[:]
+        app.grid[start_sqr[0]][start_sqr[1]] = ''
+        app.grid[end_sqr[0]][end_sqr[1]] = self.number
+        # MAKE ATTACK ON ANY ENEMY ENT WITHIN RANGE
+        atk_sqrs = self.legal_attacks()
+        ents_near = [e for e in atk_sqrs if app.grid[e[0]][e[1]] != '' and app.grid[e[0]][e[1]] != 'block']
+        enemy_ents = [e for e in ents_near if app.ent_dict[app.grid[e[0]][e[1]]].owner == 'p1']
+        if enemy_ents != []:
+            any = enemy_ents[0]
+            id = app.grid[any[0]][any[1]]
+            root.after(666, lambda t = id : app.get_focus(t))
+            root.after(1333, lambda el = ents_list, t = id : self.do_attack(el, t)) # EXIT THROUGH ATTACK
+        else:
+        # CANNOT ATTACK, EXIT FUNC
+            ents_list = ents_list[1:]
+            if ents_list == []:
+                app.end_turn()
+            else:
+                root.after(666, lambda e = ents_list : app.do_ai_loop(e))
+    
+    def do_attack(self, ents_list, id):
+        app.get_focus(id)
+#         self.init_attack_anims()
+        my_agl = self.get_attr('agl')
+        target_dodge = app.ent_dict[id].get_attr('dodge')
+        if to_hit(my_agl, target_dodge) == True:
+            # HIT, SHOW VIS, DO DAMAGE, EXIT
+            my_str = self.get_attr('str')
+            target_end = app.ent_dict[id].get_attr('end')
+            d = damage(my_str, target_end)
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Minotaur Attack Hit!\n' + str(d) + ' Spirit Damage', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+            app.ent_dict[id].set_attr('spirit', -d)
+            if app.ent_dict[id].spirit <= 0:
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+            root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id)) # EXIT THROUGH CLEANUP_ATTACK()
+        else:
+            # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Minotaur Attack Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
             root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id))
         
     def cleanup_attack(self, ents_list, id):
@@ -3253,7 +3519,7 @@ class Witch(Entity):
         except: pass
         try: app.canvas.delete('text')
         except: pass
-        selected = ''
+        selected = []
         selected_vis = ''
         
         
@@ -3334,7 +3600,7 @@ class Witch(Entity):
         app.vis_dict['Moonlight'] = Vis(name = 'Moonlight', loc = s)
         app.canvas.create_image(s[0]*100+50-app.moved_right, s[1]*100+70-app.moved_down, image = app.vis_dict['Moonlight'].img, tags = 'Moonlight')
         app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+65-app.moved_down, text = 'Moonlight\n+3 Spirit', font = ('Andale Mono', 16), fill = 'azure', tags = 'text')
-        selected_vis = 'Moonlight'
+        selected_vis = ['Moonlight']
         
         # needs to be moved upwards at the same rate, when rotating image also move up one tick
         def moonlight_loop(starty, endy, x):
@@ -3498,7 +3764,7 @@ class Witch(Entity):
         if not isinstance(app.ent_dict[id], Witch) and not isinstance(app.ent_dict[id], Summon):
              return
         # cannot target large
-        if app.ent_dict[id].type == 'large':
+        if app.ent_dict[id].type == 'large' or app.ent_dict[id].immovable == True:
             return
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -3558,7 +3824,7 @@ class Witch(Entity):
         endx = sqr[0]*100+50-app.moved_right
         endy = sqr[1]*100+50-app.moved_down
         if start_loc != sqr:
-            selected = id
+            selected = [id]
             selected_vis = 'Psionic_Push'
         def psi_move_loop(vis, ent, x, y, endx, endy, sqr, start_sqr):
             if x % 25 == 0 and y % 25 == 0:
@@ -4046,7 +4312,7 @@ class Witch(Entity):
         app.vis_dict['Dark_Sun'] = Vis(name = 'Dark_Sun', loc = sqr[:]) #[sqr[0],sqr[1]-1])
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Dark_Sun'].img, tags = 'Dark_Sun')
         app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+50-app.moved_down+40, text = 'Dark Sun', justify ='center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
-        selected_vis = 'Dark_Sun'
+        selected_vis = ['Dark_Sun']
         def dark_sun_loop(starty, endy, x):
             if starty > endy:
                 app.vis_dict['Dark_Sun'].rotate_image()
@@ -4414,13 +4680,13 @@ class App(tk.Frame):
                     return 'game over'
             self.map_triggers.append(self_death)
             ############## GODHAND
-#             def summon_trick():
-#                 all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
-#                 if 'Trickster' in all:
-#                     return 'victory'
-#                 else:
-#                     return None
-#             self.map_triggers.append(summon_trick)
+            def summon_trick():
+                all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
+                if 'Bard' in all:
+                    return 'victory'
+                else:
+                    return None
+            self.map_triggers.append(summon_trick)
             ################
             def kill_all_enemies():
                 all = [k for k,v in self.ent_dict.items() if v.owner == 'p2']
@@ -4435,13 +4701,13 @@ class App(tk.Frame):
     # SECOND LEVEL
         elif map_number == 1:
             self.map_triggers = []
-#             def summon_trick():
-#                 all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
-#                 if 'Trickster' in all:
-#                     return 'victory'
-#                 else:
-#                     return None
-#             self.map_triggers.append(summon_trick)
+            def summon_trick():
+                all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
+                if 'Bard' in all:
+                    return 'victory'
+                else:
+                    return None
+            self.map_triggers.append(summon_trick)
             def self_death():
                 if app.p1_witch not in app.ent_dict.keys():
                     return 'game over'
@@ -4465,7 +4731,7 @@ class App(tk.Frame):
             self.map_triggers.append(self_death)
             def summon_trick():
                 all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
-                if 'Trickster' in all:
+                if 'Bard' in all:
                     return 'stairway'
                 else:
                     return None
@@ -5171,6 +5437,8 @@ class App(tk.Frame):
                     self.ent_dict[ent].do_ai(ents)
                 elif self.ent_dict[ent].name == 'Ghost':
                     self.ent_dict[ent].do_ai(ents)
+                elif self.ent_dict[ent].name == 'Minotaur':
+                    self.ent_dict[ent].do_ai(ents)
                 elif self.ent_dict[ent].name == 'White_Dragon':
                     self.ent_dict[ent].do_ai(ents)
         
@@ -5322,7 +5590,7 @@ class App(tk.Frame):
     def animate(self):
         global selected, selected_vis
         for ent in self.ent_dict.keys():
-            if ent != selected:
+            if ent not in selected:
             
                 self.ent_dict[ent].rotate_image()
                 self.canvas.delete(ent)
@@ -5445,7 +5713,7 @@ class App(tk.Frame):
         # GLOBALS
         curs_pos = [2, 2]
         is_object_selected = False
-        selected = ''
+        selected = []
         selected_vis = ''
         map_pos = [0, 0]
         grid_pos = [2,2]
@@ -5627,7 +5895,7 @@ class App(tk.Frame):
 
     def move_map(self, direction):
         tmp = self.ent_dict.keys()
-        ents = [x for x in tmp if x != selected]
+        ents = [x for x in tmp if x not in selected]
         pers_vis = [y for y in self.vis_dict.keys() if y != selected_vis]
         if direction == 'Left':
             self.canvas.move('map', 100, 0)
