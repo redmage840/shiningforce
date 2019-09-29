@@ -3620,6 +3620,10 @@ class Witch(Entity):
         locx = s[0]*100+50-app.moved_right
         moonlight_loop(locy, locy-120, locx)
         
+        
+    def vengeance(self, event = None):
+        pass
+    
     # destroy a summon you own to deal dmg to adj ents
     def pain(self, event = None):
         app.depop_context(event = None)
@@ -3879,8 +3883,6 @@ class Witch(Entity):
             for ent in adj_ents:
                 if app.ent_dict[ent].attr_check('agl') == False:
                     d = damage(tar_str, app.ent_dict[ent].get_attr('end'))
-                    d = d//2
-                    if d == 0: d = 1
                     app.ent_dict[ent].set_attr('spirit', -d)
                     app.canvas.create_text(app.ent_dict[ent].loc[0]*100+50-app.moved_right, app.ent_dict[ent].loc[1]*100+70-app.moved_down, text = str(d) + ' Spirit\nDamage', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
                     if app.ent_dict[ent].spirit <= 0:
@@ -4823,20 +4825,20 @@ class App(tk.Frame):
                 loc = app.ent_dict[app.p1_witch].loc[:]
                 if loc == [27,15]:
                     app.unbind_all()
-                    self.book41 = tk.Button(root, text = 'Read Book', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.read_41_book)
-                    app.canvas.create_window(2700-app.moved_right, 1500-app.moved_down, window = self.book41)
-                    self.book41_cancel = tk.Button(root, text = 'Leave Alone', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.cancel_41_book)
-                    app.canvas.create_window(2700-app.moved_right+25, 1500-app.moved_down+33, window = self.book41_cancel)
+                    self.book121 = tk.Button(root, text = 'Read Book', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.read_121_book)
+                    app.canvas.create_window(2700-app.moved_right, 1500-app.moved_down, window = self.book121)
+                    self.book121_cancel = tk.Button(root, text = 'Leave Alone', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.cancel_121_book)
+                    app.canvas.create_window(2700-app.moved_right+25, 1500-app.moved_down+33, window = self.book121_cancel)
                     self.map_triggers.remove(read_book)
             self.map_triggers.append(read_book)
             def inspect_painting():
                 loc = app.ent_dict[app.p1_witch].loc[:]
                 if loc == [11,2]:
                     app.unbind_all()
-                    self.painting41 = tk.Button(root, text = 'Inspect Painting', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.inspect_41_painting)
-                    app.canvas.create_window(1100-app.moved_right, 200-app.moved_down, window = self.painting41)
-                    self.painting41_cancel = tk.Button(root, text = 'Leave Alone', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.cancel_41_painting)
-                    app.canvas.create_window(1100-app.moved_right+25, 200-app.moved_down+34, window = self.painting41_cancel)
+                    self.painting121 = tk.Button(root, text = 'Inspect Painting', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.inspect_121_painting)
+                    app.canvas.create_window(1100-app.moved_right, 200-app.moved_down, window = self.painting121)
+                    self.painting121_cancel = tk.Button(root, text = 'Leave Alone', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.cancel_121_painting)
+                    app.canvas.create_window(1100-app.moved_right+25, 200-app.moved_down+34, window = self.painting121_cancel)
                     self.map_triggers.remove(inspect_painting)
             self.map_triggers.append(inspect_painting)
             def self_death():
@@ -4913,6 +4915,11 @@ class App(tk.Frame):
                     self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_top, tags = ('map','maptop'))
                     app.canvas.tag_lower('mapbottom')
                     self.map_triggers.remove(area_nine)
+                    img = ImageTk.PhotoImage(Image.open('summon_imgs/Revenant.png'))
+                    app.ent_dict['b7'] = Revenant(name = 'Revenant', img = img, loc =[21,5], owner = 'p2', number = 'b7')
+                    app.grid[21][5] = 'b7'
+                    app.ent_dict['b8'] = Revenant(name = 'Revenant', img = img, loc =[20,6], owner = 'p2', number = 'b8')
+                    app.grid[20][6] = 'b8'
             self.map_triggers.append(area_nine)
             
             def area_eight():
@@ -4934,6 +4941,9 @@ class App(tk.Frame):
                     self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_top, tags = ('map','maptop'))
                     app.canvas.tag_lower('mapbottom')
                     self.map_triggers.remove(area_eight)
+                    img = ImageTk.PhotoImage(Image.open('summon_imgs/Revenant.png'))
+                    app.ent_dict['b5'] = Revenant(name = 'Revenant', img = img, loc =[9,8], owner = 'p2', number = 'b5')
+                    app.grid[9][8] = 'b5'
             self.map_triggers.append(area_eight)
             
             def area_seven():
@@ -4980,7 +4990,7 @@ class App(tk.Frame):
             
             def area_five():
                 if app.ent_dict[app.p1_witch].loc in [[1,17],[1,18]]:
-                    coords = [[2,18],[3,18],[4,18],[5,18],[6,18],[7,18],[8,18],[9,18],[10,18],[11,18],[12,18],[13,18],[14,18],[15,18],[16,18],[17,18]]
+                    coords = [[2,18],[3,18],[4,18],[5,18],[6,18],[7,18],[8,18],[9,18],[10,18],[11,18],[12,18],[13,18],[14,18],[15,18],[16,18]]
                     for c in coords:
                         app.grid[c[0]][c[1]] = ''
                     top = Image.open('1_player_map_fog/map21/5_top.png')
@@ -4997,6 +5007,20 @@ class App(tk.Frame):
                     self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_top, tags = ('map','maptop'))
                     app.canvas.tag_lower('mapbottom')
                     self.map_triggers.remove(area_five)
+                    img = ImageTk.PhotoImage(Image.open('summon_imgs/Revenant.png'))
+                    app.ent_dict['b6'] = Revenant(name = 'Revenant', img = img, loc =[16,8], owner = 'p2', number = 'b6')
+                    app.grid[16][8] = 'b6'
+                    # BOOK TRIGGER
+                    def read_book():
+                        loc = app.ent_dict[app.p1_witch].loc[:]
+                        if loc == [16,18]:
+                            app.unbind_all()
+                            self.book21 = tk.Button(root, text = 'Read Book', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.read_21_book)
+                            app.canvas.create_window(1600-app.moved_right, 1800-app.moved_down, window = self.book41)
+                            self.book21_cancel = tk.Button(root, text = 'Leave Alone', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.cancel_21_book)
+                            app.canvas.create_window(1600-app.moved_right+25, 1800-app.moved_down+33, window = self.book21_cancel)
+                            self.map_triggers.remove(read_book)
+                    self.map_triggers.append(read_book)
             self.map_triggers.append(area_five)
             
             def area_four():
@@ -5018,6 +5042,9 @@ class App(tk.Frame):
                     self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_top, tags = ('map','maptop'))
                     app.canvas.tag_lower('mapbottom')
                     self.map_triggers.remove(area_four)
+                    img = ImageTk.PhotoImage(Image.open('summon_imgs/Revenant.png'))
+                    app.ent_dict['b4'] = Revenant(name = 'Revenant', img = img, loc =[9,5], owner = 'p2', number = 'b4')
+                    app.grid[9][5] = 'b4'
             self.map_triggers.append(area_four)
             
             def area_three():
@@ -5090,9 +5117,9 @@ class App(tk.Frame):
                         if loc == [7,2]:
                             app.unbind_all()
                             self.chest21_1 = tk.Button(root, text = 'Open Chest', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.open_chest21_1)
-                            app.canvas.create_window(1100-app.moved_right, 200-app.moved_down, window = self.chest21_1)
+                            app.canvas.create_window(700-app.moved_right, 200-app.moved_down, window = self.chest21_1)
                             self.chest21_1_cancel = tk.Button(root, text = 'Leave Alone', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.cancel_chest1)
-                            app.canvas.create_window(1100-app.moved_right+25, 200-app.moved_down+34, window = self.chest21_1_cancel)
+                            app.canvas.create_window(700-app.moved_right+25, 200-app.moved_down+34, window = self.chest21_1_cancel)
                             self.map_triggers.remove(chest1)
                     self.map_triggers.append(chest1)
             self.map_triggers.append(area_one)
@@ -5116,6 +5143,9 @@ class App(tk.Frame):
                     self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_top, tags = ('map','maptop'))
                     app.canvas.tag_lower('mapbottom')
                     self.map_triggers.remove(area_zero)
+                    img = ImageTk.PhotoImage(Image.open('summon_imgs/Ghost.png'))
+                    app.ent_dict['b3'] = Ghost(name = 'Ghost', img = img, loc =[1,2], owner = 'p2', number = 'b3')
+                    app.grid[1][2] = 'b3'
             self.map_triggers.append(area_zero)
             
             self.load_intro_scene(map_number, protaganist_object = protaganist_object)
@@ -5124,32 +5154,44 @@ class App(tk.Frame):
             print('you are winner hahaha')
         
     # Move trigger funcs for organization
+    def read_21_book(self):
+        loc = app.ent_dict[app.p1_witch].loc[:]
+        app.ent_dict[app.p1_witch].arcane_dict['Vengeance'] = (app.ent_dict[app.p1_witch].vengeance, 11)
+        app.canvas.create_text(loc[0]*100-app.moved_right, loc[1]*100-app.moved_down+85, text = 'Arcane Spell\n-VENGEANCE-\nLearned', justify = 'center', font = ('Andale Mono', 16), fill = 'white', tags = 'text')
+        root.after(2999, lambda t = 'text' : app.canvas.delete(t))
+        root.after(2999, self.cancel_21_book)
+        
+    def cancel_21_book(self):
+        self.book21.destroy()
+        self.book21_cancel.destroy()
+        app.rebind_all()
+    
     def open_chest21_1(self):
         loc = app.ent_dict[app.p1_witch].loc[:]
         app.canvas.create_text(loc[0]*100-app.moved_right, loc[1]*100-app.moved_down+85, text = 'Amulet of Circe\nPermanent +2 Psyche', justify = 'center', font = ('Andale Mono', 16), fill = 'white', tags = 'text')
         app.ent_dict[app.p1_witch].psyche += 2
         app.ent_dict[app.p1_witch].base_psyche += 2
-        root.after(1999, lambda t = 'text' : app.canvas.delete(t))
-        root.after(1999, self.cancel_chest1)
+        root.after(2999, lambda t = 'text' : app.canvas.delete(t))
+        root.after(2999, self.cancel_chest1)
         
     def cancel_chest1(self):
         self.chest21_1.destroy()
         self.chest21_1_cancel.destroy()
         app.rebind_all()
     
-    def read_41_book(self):
+    def read_121_book(self):
         loc = app.ent_dict[app.p1_witch].loc[:]
         app.ent_dict[app.p1_witch].arcane_dict['Pain'] = (app.ent_dict[app.p1_witch].pain, 7)
         app.canvas.create_text(loc[0]*100-app.moved_right, loc[1]*100-app.moved_down+85, text = 'Arcane Spell\n-PAIN-\nLearned', justify = 'center', font = ('Andale Mono', 16), fill = 'white', tags = 'text')
-        root.after(1999, lambda t = 'text' : app.canvas.delete(t))
-        root.after(1999, self.cancel_41_book)
+        root.after(2999, lambda t = 'text' : app.canvas.delete(t))
+        root.after(2999, self.cancel_121_book)
         
-    def cancel_41_book(self):
-        self.book41.destroy()
-        self.book41_cancel.destroy()
+    def cancel_121_book(self):
+        self.book121.destroy()
+        self.book121_cancel.destroy()
         app.rebind_all()
         
-    def inspect_41_painting(self):
+    def inspect_121_painting(self):
         loc = app.ent_dict[app.p1_witch].loc[:]
         app.ent_dict[app.p1_witch].str += 1
         app.ent_dict[app.p1_witch].base_str += 1
@@ -5160,12 +5202,12 @@ class App(tk.Frame):
         app.ent_dict[app.p1_witch].psyche += 1
         app.ent_dict[app.p1_witch].base_psyche += 1
         app.canvas.create_text(loc[0]*100-app.moved_right, loc[1]*100-app.moved_down+85, text = 'Permanent +1\nAll Stats', justify = 'center', font = ('Andale Mono', 16), fill = 'white', tags = 'text')
-        root.after(1999, lambda t = 'text' : app.canvas.delete(t))
-        root.after(1999, self.cancel_41_painting)
+        root.after(2999, lambda t = 'text' : app.canvas.delete(t))
+        root.after(2999, self.cancel_121_painting)
         
-    def cancel_41_painting(self):
-        self.painting41.destroy()
-        self.painting41_cancel.destroy()
+    def cancel_121_painting(self):
+        self.painting121.destroy()
+        self.painting121_cancel.destroy()
         app.rebind_all()
         
         
