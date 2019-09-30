@@ -1,3 +1,17 @@
+# mouseclick for summons, still using 'cost'
+
+# track num of summons next to summon cap
+
+# forcefield too abusable with narrow hallways / doorways, forcefield should be 'attackable' or cause one spirit damage on destruction or cost 1 magick
+
+# labyrinth levels fix 'holes' in maptop portions
+
+# teleport visual moves for teleporting units
+
+# move_loops move along legal path
+
+# trigger to perm increase magick or spirit
+
 # level 41, should be able to occupy spawn square to prevent spawns?
 
 # make 'level' parameter for summons to increase stats and add abilities
@@ -121,15 +135,16 @@ map_pos = [0, 0]
 
 grid_pos = [0,0]
 
-# import pygame
-# freq = 44100     # audio CD quality
-# bitsize = -16    # unsigned 16 bit
-# channels = 1     # 1 is mono, 2 is stereo
-# buffer = 1024    # number of samples (experiment to get right sound)
-# pygame.mixer.init(freq, bitsize, channels, buffer)
-# pygame.mixer.music.set_volume(0.7) # optional volume 0 to 1.0
-# pygame.mixer.music.load('bloodMilkandSky.mp3')
-# pygame.mixer.music.play(-1, 0)
+import pygame
+freq = 44100     # audio CD quality
+bitsize = -16    # unsigned 16 bit
+channels = 1     # 1 is mono, 2 is stereo
+buffer = 1024    # number of samples (experiment to get right sound)
+# use this just for intro screen, ideally make it loop smoothly (no lull in sound)
+pygame.mixer.init(freq, bitsize, channels, buffer)
+pygame.mixer.music.set_volume(0.7) # optional volume 0 to 1.0
+pygame.mixer.music.load('Ove Melaa - Dead, Buried and Cold.ogg')
+pygame.mixer.music.play(-1, 0)
 
 class Dummy():
     def __init__(self):
@@ -3116,7 +3131,7 @@ class Minotaur(Summon):
             for s in adj:
                 mvlist.append(s)
                 findall(s, start+1, distance)
-        findall(loc, 1, 4) 
+        findall(loc, 1, 5) 
         setlist = []
         for l in mvlist:
             if l not in setlist:
@@ -3545,6 +3560,11 @@ class Witch(Entity):
             return
         if app.grid[sqr[0]][sqr[1]] != '':
             return
+        if self.spirit == 1:
+            return
+        self.spirit -= 1
+        app.canvas.create_text(self.loc[0]*100-app.moved_right+50, self.loc[1]*100-app.moved_down+90, text = '1 Spirit Lost', font = ('Andale Mono', 13), justify = 'center', fill = 'white', tags = 'text')
+        root.after(2666, lambda t = 'text' : app.canvas.delete(t))
         self.cantrip_used = True
         app.unbind_all()
         app.cleanup_squares()
@@ -3620,10 +3640,40 @@ class Witch(Entity):
         locx = s[0]*100+50-app.moved_right
         moonlight_loop(locy, locy-120, locx)
         
-        
+    # deal damage equal to spirit lost
     def vengeance(self, event = None):
-        pass
+        app.depop_context(event = None)
+        root.bind('<q>', lambda name = 'Vengeance' : self.cleanup_spell(name = name))
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [s for s in coords if dist(self.loc, s) <= 4]
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_vengeance(event = e, sqr = s, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Choose Target For Vengeance', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_vengeance(e, s, sqrs))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
     
+    def do_vengeance(self, event, sqr, sqrs):
+        if sqr not in sqrs:
+            return
+        id = app.grid[sqr[0]][sqr[1]]
+        if id == '' or id == 'block':
+            return
+        self.init_cast_anims()
+        self.magick -= self.arcane_dict['Vengeance'][1]
+        app.unbind_all()
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        self.arcane_used = True
+        d = self.base_spirit - self.spirit
+        app.ent_dict[id].set_attr('spirit', -d)
+        app.vis_dict['Vengeance'] = Vis(name = 'Vengeance', loc = sqr)
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Vengeance'].img, tags = 'Vengeance')
+        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Vengeance\n'+str(d)+' Spirit Damage', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+        if app.ent_dict[id].spirit <= 0:
+            app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+100-app.moved_down, text = app.ent_dict[id].name.replace('_',' ')+' Killed...', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+            root.after(2999, lambda id = id: app.kill(id))
+        root.after(2999, lambda  name = 'Vengeance' : self.cleanup_spell(name = name))
+
     # destroy a summon you own to deal dmg to adj ents
     def pain(self, event = None):
         app.depop_context(event = None)
@@ -3640,6 +3690,8 @@ class Witch(Entity):
         if sqr not in sqrs:
             return
         id = app.grid[sqr[0]][sqr[1]]
+        if id == '' or id == 'block':
+            return
         if app.ent_dict[id].owner != 'p1' and not isinstance(app.ent_dict[id], Summon):
             return
         app.kill(id)
@@ -3653,7 +3705,6 @@ class Witch(Entity):
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Pain'].img, tags = 'Pain')
         app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Pain', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
         root.after(1777, lambda  name = 'Pain' : self.cleanup_spell(name = name))
-        
         
         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         adj_sqrs = [s for s in coords if dist(sqr, s) == 1 and app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
@@ -4616,6 +4667,10 @@ class App(tk.Frame):
         # Herculanum 240
         # Papyrus 240
     def choose_num_players(self):
+        pygame.mixer.init(freq, bitsize, channels, buffer)
+        pygame.mixer.music.set_volume(0.7) # optional volume 0 to 1.0
+        pygame.mixer.music.load('Ove Melaa - Dead, Buried and Cold.ogg')
+        pygame.mixer.music.play(-1, 0)
         self.title_screen = ImageTk.PhotoImage(Image.open('titleScreen8.png').resize((root.winfo_screenwidth(),root.winfo_screenheight())))
         self.game_title = tk.Canvas(root, width = root.winfo_screenwidth(), bg = 'black', highlightthickness = 0, height = root.winfo_screenheight())
         self.game_title.create_image(0,0, image =self.title_screen, anchor = 'nw')
@@ -4671,7 +4726,10 @@ class App(tk.Frame):
             
     # make each branch load the intro scene for level, with 'continue' button when done reading/displaying to call create_map_curs_context
     def load_map_triggers(self, map_number, witch = None, protaganist_object = None):
+        pygame.mixer.music.stop()
         if map_number == 0: # FIRST AREA, NO 'CONTINUATION' OF BY PASSING PROTAG OBJECT
+            pygame.mixer.music.load('Heroic Demise.mp3')
+            pygame.mixer.music.play(-1, 0)
             # CLEANUP FROM CHOOSE_WITCH
             self.avatar_popup.destroy()
             del self.wrapped_funcs
@@ -4849,11 +4907,17 @@ class App(tk.Frame):
         # LABRYNTH 
         elif map_number == 21:
             self.map_triggers = []
+            def summon_trick():
+                all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
+                if 'Bard' in all:
+                    return 'victory'
+                else:
+                    return None
+            self.map_triggers.append(summon_trick)
             def self_death():
                 if app.p1_witch not in app.ent_dict.keys():
                     return 'game over'
             self.map_triggers.append(self_death)
-            
             def area_eleven():
                 if app.ent_dict[app.p1_witch].loc in [[20,18],[21,18],[22,18]]:
                     coords = [[24,18],[25,18],[26,18],[27,18],[28,18],[24,17],[25,17],[26,17],[24,16],[25,16],[26,16],[22,15],[23,15],[24,15],[25,15],[26,15],[27,15],[28,15],[22,14],[22,13],[22,12],[22,11],[22,10],[22,9],[23,14],[23,13],[23,12],[23,11],[23,10],[23,9],[20,9],[21,9],[20,10],[21,10],[25,14],[26,14],[27,14],[28,14],[25,13],[26,13],[25,12],[26,12],[28,13],[23,18]]
@@ -5016,7 +5080,7 @@ class App(tk.Frame):
                         if loc == [16,18]:
                             app.unbind_all()
                             self.book21 = tk.Button(root, text = 'Read Book', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.read_21_book)
-                            app.canvas.create_window(1600-app.moved_right, 1800-app.moved_down, window = self.book41)
+                            app.canvas.create_window(1600-app.moved_right, 1800-app.moved_down, window = self.book21)
                             self.book21_cancel = tk.Button(root, text = 'Leave Alone', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.cancel_21_book)
                             app.canvas.create_window(1600-app.moved_right+25, 1800-app.moved_down+33, window = self.book21_cancel)
                             self.map_triggers.remove(read_book)
@@ -5146,8 +5210,26 @@ class App(tk.Frame):
                     img = ImageTk.PhotoImage(Image.open('summon_imgs/Ghost.png'))
                     app.ent_dict['b3'] = Ghost(name = 'Ghost', img = img, loc =[1,2], owner = 'p2', number = 'b3')
                     app.grid[1][2] = 'b3'
+                    def ghost_death():
+                        if 'b3' not in [k for k in app.ent_dict.keys()]:
+                            return 'victory'
+                    self.map_triggers.append(ghost_death)
             self.map_triggers.append(area_zero)
             
+            self.load_intro_scene(map_number, protaganist_object = protaganist_object)
+        elif map_number == 22:
+            self.map_triggers = []
+#             def summon_trick():
+#                 all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
+#                 if 'Bard' in all:
+#                     return 'victory'
+#                 else:
+#                     return None
+#             self.map_triggers.append(summon_trick)
+            def self_death():
+                if app.p1_witch not in app.ent_dict.keys():
+                    return 'game over'
+            self.map_triggers.append(self_death)
             self.load_intro_scene(map_number, protaganist_object = protaganist_object)
     # END OF GAME
         else:
@@ -5327,10 +5409,12 @@ class App(tk.Frame):
 #                 app.canvas.create_image(0,0, image = img, anchor = 'nw', tags = ('fog'+str(i),'fog'))
         # CURSOR
         self.cursor_img = ImageTk.PhotoImage(Image.open("cursor.png").resize((100,100)))
-        self.vis_dict['cursor'] = Vis(name = 'cursor', loc = [2,2])
-        curs_pos = [2,2]
-        grid_pos = [2,2]
-        self.canvas.create_image(250, 250, image=self.cursor_img, tags='cursor')
+        self.vis_dict['cursor'] = Vis(name = 'cursor', loc = [0,0])
+        curs_pos = [0,0]
+        grid_pos = [0,0]
+        self.canvas.create_image(0, 0, image=self.cursor_img, tags='cursor')
+        # ORIENT MAP for start positions at bottom of map
+#         app.focus_square([1,1])
         # CHOOSE WITCH IF 2 PLAYER OR FIRST LEVEL
         if protaganist_object:
             self.load_witch(witch = protaganist_object.name, player_num = 1, protaganist_object = protaganist_object)
@@ -5408,6 +5492,9 @@ class App(tk.Frame):
         elif player_num == 2:
             self.p2_witch = witch
             loc = self.p2_start_loc
+            
+        # ORIENT MAP, need to move map based on start_loc
+        
 #             loc = [self.map_width//100-3, self.map_height//100-3]
         # if protaganist_object, instead load its data, RE-INIT IMAGES THAT CANNOT BE SERIALIZED BY PICKLE DUMP
         if protaganist_object:
@@ -5438,7 +5525,7 @@ class App(tk.Frame):
                 c1 += 1
                 if c1 == end:
                     break
-            self.start_turn()
+            root.after(1666, self.start_turn)
             self.animate()
             self.map_trigger_loop()
         # CHOOSE SECOND PLAYER WITCH
@@ -5751,12 +5838,26 @@ class App(tk.Frame):
                 elif result == 'game over':
                     self.reset()
                     break
+            else:
+                self.map_trigger_id = root.after(1666, self.map_trigger_loop)
         elif self.map_number == 21:
             for mt in self.map_triggers:
                 result = mt()
                 if result == 'victory':
                     app.unbind_all()
-                    self.end_level() # next map is 122 on this route
+                    self.end_level() # next map is 22 on this route
+                    break
+                elif result == 'game over':
+                    self.reset()
+                    break
+            else:
+                self.map_trigger_id = root.after(1666, self.map_trigger_loop)
+        elif self.map_number == 22:
+            for mt in self.map_triggers:
+                result = mt()
+                if result == 'victory':
+                    app.unbind_all()
+                    self.end_level() 
                     break
                 elif result == 'game over':
                     self.reset()
@@ -5785,7 +5886,7 @@ class App(tk.Frame):
         selected = []
         selected_vis = ''
         map_pos = [0, 0]
-        grid_pos = [2,2]
+        grid_pos = [0,0]
         
         self.ent_dict = {}
         self.sqr_dict = {}
@@ -5960,7 +6061,6 @@ class App(tk.Frame):
                 self.move_map('Up')
                 map_pos[1] += 1
                 grid_pos[1] += 1
-
 
     def move_map(self, direction):
         tmp = self.ent_dict.keys()
@@ -6198,9 +6298,9 @@ class App(tk.Frame):
 #         root.geometry('%sx%s' % (width, height))
 #         app.mainloop()
         
-    def debugger(self, event):
-        print(app.ent_dict['b2'].base_spirit)
-        print(app.ent_dict['b2'].waiting)
+#     def debugger(self, event):
+#         print(app.ent_dict['b2'].base_spirit)
+#         print(app.ent_dict['b2'].waiting)
 
 root = tk.Tk()
 app = App(master=root)
@@ -6213,7 +6313,7 @@ root.bind('<a>', app.populate_context)
 root.bind('<q>', app.depop_context)
 # root.bind('<Escape>', app.exit_fullscreen)
 #### DEBUG ####
-root.bind('<d>', app.debugger)
+# root.bind('<d>', app.debugger)
 
 
 root.configure(background = 'black')
