@@ -445,12 +445,12 @@ class Trickster(Summon):
         self.actions = {'Pyrotechnics':self.pyrotechnics, 'Simulacrum •3':self.simulacrum,'Gate•3':self.gate,'Move':self.move}
         self.attack_used = False
         self.str = 2
-        self.agl = 3
+        self.agl = 4
         self.end = 2
         self.dodge = 5
         self.psyche = 5
-        self.spirit = 10
-        self.magick = 24
+        self.spirit = 12
+        self.magick = 27
         super().__init__(name, img, loc, owner, number)
         
     def pyrotechnics(self, event):
@@ -723,11 +723,11 @@ class Shadow(Summon):
         self.actions = {'attack':self.shadow_attack, 'move':self.move}
         self.attack_used = False
         self.str = 3
-        self.agl = 4
+        self.agl = 6
         self.end = 3
-        self.dodge = 6
-        self.psyche = 5
-        self.spirit = 12
+        self.dodge = 5
+        self.psyche = 6
+        self.spirit = 15
         super().__init__(name, img, loc, owner, number)
         
         
@@ -818,7 +818,7 @@ class Plaguebearer(Summon):
         self.end = 5
         self.dodge = 2
         self.psyche = 4
-        self.spirit = 9
+        self.spirit = 15
         super().__init__(name, img, loc, owner, number)
         
     # Override superclass set_attr(self, attr, amount) to check for own death, if no death call superclass set_attr
@@ -840,7 +840,7 @@ class Plaguebearer(Summon):
                     n = 'Contagion' + str(app.effects_counter)
                     info = 'Contagion\n-2 Str -2 End for 3 turns'
                     def contagion_effect(stat):
-                        stat -= 2
+                        stat -= 3
                         if stat < 1:
                             return 1
                         else:
@@ -919,15 +919,15 @@ class Plaguebearer(Summon):
                     app.canvas.create_image(s[0]*100+50-app.moved_right, s[1]*100+50-app.moved_down, image = app.vis_dict[n2].img, tags = 'Pox')
                     n = 'Pox'+str(app.effects_counter)
                     # needs name, info, eot_func, undo, duration
-                    def take_2(tar):
+                    def take_3(tar):
                         app.get_focus(tar)
-                        app.ent_dict[tar].set_attr('spirit', -2)
-                        app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+60-app.moved_down, text = '2 Spirit\n Damage\nPox', justify ='center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+                        app.ent_dict[tar].set_attr('spirit', -3)
+                        app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+60-app.moved_down, text = '3 Spirit\nPox', justify ='center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
                         if app.ent_dict[tar].spirit <= 0:
                             app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+90-app.moved_down, text = app.ent_dict[tar].name.replace('_',' ') + '\nKilled...', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
                         return 'Not None'
                     # EOT
-                    eot = partial(take_2, ent)
+                    eot = partial(take_3, ent)
                     # UNDO
                     def un():
                         pass
@@ -979,11 +979,11 @@ class Bard(Summon):
         self.actions = {'Unholy Chant':self.unholy_chant, 'Discord' : self.discord, 'move':self.move}
         self.attack_used = False
         self.str = 2
-        self.agl = 4
+        self.agl = 3
         self.end = 2
         self.dodge = 5
-        self.psyche = 4
-        self.spirit = 11
+        self.psyche = 5
+        self.spirit = 15
         super().__init__(name, img, loc, owner, number)
         
         
@@ -1140,12 +1140,12 @@ class White_Dragon_Top(Summon):
     def __init__(self, name, img, loc, owner, number, waiting = True):
 #         self.actions = {'attack':self.do_attack}
         self.attack_used = False
-        self.str = 11
-        self.agl = 5
+        self.str = 10
+        self.agl = 7
         self.end = 8
         self.dodge = 5
-        self.psyche = 6
-        self.spirit = 127
+        self.psyche = 8
+        self.spirit = 157
         self.waiting = waiting
         super().__init__(name, img, loc, owner, number, type = 'large')
     # 'tall' ent, bigger than 100 pixels height, needs to be split into 2 images so the 'top' image is 'large' (raised above 'maptop', bottom part of ent is hidden behind 'maptop'
@@ -1154,12 +1154,13 @@ class White_Dragon(Summon):
         self.actions = {'attack':self.do_attack}
         self.attack_used = False
         self.str = 10
-        self.agl = 7
-        self.end = 8
+        self.agl = 9
+        self.end = 9
         self.dodge = 5
         self.psyche = 8
         self.spirit = 157
         self.waiting = waiting
+        self.retreated_once = False
         super().__init__(name, img, loc, owner, number)#, type = 'large')
         self.immovable = True
         # create top half
@@ -1168,6 +1169,7 @@ class White_Dragon(Summon):
         
     def large_undo(self):
         app.canvas.delete(self.number+'top')
+        del app.ent_dict[self.number+'top']
         
     def pass_priority(self, ents_list):
         ents_list = ents_list[1:]
@@ -1178,7 +1180,27 @@ class White_Dragon(Summon):
         
     #  White_Dragon AI
     def do_ai(self, ents_list):
-        # if spirit low, fly to dais, set waiting, summon orcs?
+        # if spirit low, fly to random spot can occupy, set waiting, summon orcs?
+        if self.spirit < 88 and self.retreated_once == False:
+            coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+            empty_locs = [c for c in coords if app.grid[c[0]][c[1]] == '' and dist(c, self.loc) >= 12]
+            endloc = choice(empty_locs)
+            self.white_dragon_move(el, endloc)
+#             root.after(1333, lambda el = ents_list, endloc = endloc : self.white_dragon_move(el, endloc))
+            self.waiting = True
+            self.retreated_once = True
+            
+            def awaken_dragon():
+                coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+                sqrs = [s for s in coords if dist(s, app.ent_dict['b1'].loc) <= 9]
+                ents = [app.grid[s[0]][s[1]] for s in sqrs if app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
+                for ent in ents:
+                    if app.ent_dict[ent].owner == 'p1':
+                        app.ent_dict['b1'].waiting = False
+                        app.map_triggers.remove(awaken_dragon)
+            app.map_triggers.append(awaken_dragon)
+            
+            # create orcs
         if self.waiting == True: # PASSIVE / WAITING
             self.pass_priority(ents_list)
         else: # NO TARGET PRIORITY, ATTEMPT ATTACK FROM STARTLOC
@@ -3202,7 +3224,7 @@ class Warrior(Summon):
         self.end = 5
         self.dodge = 2
         self.psyche = 2
-        self.spirit = 13
+        self.spirit = 14
         super().__init__(name, img, loc, owner, number)
         
         
@@ -3331,7 +3353,7 @@ class Witch(Entity):
             self.cantrip_dict['Dark_Sun'] = (self.dark_sun)
             self.cantrip_dict['Meditate'] = (self.meditate)
             self.arcane_dict['Horrid_Wilting'] = (self.horrid_wilting,5)
-            self.arcane_dict['Disintegrate'] = (self.disintegrate, 6)
+            self.arcane_dict['Disintegrate'] = (self.disintegrate, 5)
             self.arcane_dict['Mummify'] = (self.mummify, 6)
             self.arcane_dict['Immolate'] = (self.immolate, 9)
             self.arcane_dict['Command_of_Osiris'] = (self.command_of_osiris, 5)
@@ -4322,7 +4344,7 @@ class Witch(Entity):
             if to_hit(my_psyche, tar_psyche) == True:
                 tar_end = app.ent_dict[id].get_attr('end')
                 d = damage(my_psyche, tar_end)
-                app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+75-app.moved_down, text = str(d)+' Spirit Damage', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+                app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+75-app.moved_down, text = str(d)+' Spirit', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
                 app.ent_dict[id].set_attr('spirit', -d)
                 if app.ent_dict[id].spirit <= 0:
                     app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+100-app.moved_down, text = app.ent_dict[id].name.replace('_',' ') + '\nKilled...', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
