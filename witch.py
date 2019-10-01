@@ -1,3 +1,5 @@
+# fakir needs some damaging cantrip when runs out of magick and summons
+
 # stagger text objects when created simultaneously, esp horrid wilting
 # dark sun, bottom of anim 'blinks' text object
 
@@ -15,15 +17,11 @@
 
 # make sure reset works after compile
 
-# possible that fog of war was only causing problems because of map_trigger_loop 'else' bug with multiple triggers, maybe try fog of war again now that multiple triggers fixed
-
 # trickster and shadow movement (teleport) anims
 
 # make shortcut button that 'blinks' all summons, vis cue to raise them above objects and highlight
 
 # during move_loops, tag_lower under top is fine DURING movement BUT last image create doesnt tag_lower properly, causes flicker of moving image over 'top' tags
-
-# instead of covering with fog, do not create until trigger
 
 # add death of protag scenes
 
@@ -398,6 +396,7 @@ class Entity():
             if y < endy: 
                 y += 10
                 app.canvas.move(id, 0, 10)
+#             app.canvas.tag_lower((self.tags), 'maptop')
             try: app.canvas.tag_lower((self.tags), 'large')
             except: pass
 #             app.canvas.tag_raise('maptop')
@@ -1141,12 +1140,12 @@ class White_Dragon_Top(Summon):
     def __init__(self, name, img, loc, owner, number, waiting = True):
 #         self.actions = {'attack':self.do_attack}
         self.attack_used = False
-        self.str = 9
-        self.agl = 8
-        self.end = 9
+        self.str = 11
+        self.agl = 5
+        self.end = 8
         self.dodge = 5
-        self.psyche = 7
-        self.spirit = 45
+        self.psyche = 6
+        self.spirit = 127
         self.waiting = waiting
         super().__init__(name, img, loc, owner, number, type = 'large')
     # 'tall' ent, bigger than 100 pixels height, needs to be split into 2 images so the 'top' image is 'large' (raised above 'maptop', bottom part of ent is hidden behind 'maptop'
@@ -1154,12 +1153,12 @@ class White_Dragon(Summon):
     def __init__(self, name, img, loc, owner, number, waiting = False):
         self.actions = {'attack':self.do_attack}
         self.attack_used = False
-        self.str = 11
-        self.agl = 10
-        self.end = 11
+        self.str = 10
+        self.agl = 7
+        self.end = 8
         self.dodge = 5
-        self.psyche = 9
-        self.spirit = 133
+        self.psyche = 8
+        self.spirit = 157
         self.waiting = waiting
         super().__init__(name, img, loc, owner, number)#, type = 'large')
         self.immovable = True
@@ -1168,7 +1167,7 @@ class White_Dragon(Summon):
         app.ent_dict[self.number+'top'] = White_Dragon_Top(name = 'White_Dragon_Top', img = img, loc = [self.loc[0],self.loc[1]-1], owner = 'p2', number = self.number+'top')
         
     def large_undo(self):
-        pass
+        app.canvas.delete(self.number+'top')
         
     def pass_priority(self, ents_list):
         ents_list = ents_list[1:]
@@ -1178,8 +1177,8 @@ class White_Dragon(Summon):
             app.do_ai_loop(ents_list)
         
     #  White_Dragon AI
-    # instead of calling bfs on each potential target, can i walk grid with bfs until any enemy is found?
     def do_ai(self, ents_list):
+        # if spirit low, fly to dais, set waiting, summon orcs?
         if self.waiting == True: # PASSIVE / WAITING
             self.pass_priority(ents_list)
         else: # NO TARGET PRIORITY, ATTEMPT ATTACK FROM STARTLOC
@@ -1196,7 +1195,7 @@ class White_Dragon(Summon):
                 coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
                 for el in enemy_ent_locs:
                 # FIND PATH TO SQR WITHIN RANGE OF THIS ENT
-                    goals = [c for c in coords if dist(c, el) == 1 and app.grid[c[0]][c[1]] == '']
+                    goals = [c for c in coords if 0 < dist(c, el) <= 3 and app.grid[c[0]][c[1]] == '']
                     path = bfs(self.loc[:], goals, app.grid[:])
                     if path:
                         paths.append(path)
@@ -1228,7 +1227,7 @@ class White_Dragon(Summon):
                     # NOW FIND PATH AND PASS TO MOVE
                     coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
                     for el in enemy_ent_locs:
-                        goals = [c for c in coords if dist(c, el) == 1]
+                        goals = [c for c in coords if 0 < dist(c, el) <= 3]
                         path = bfs(self.loc[:], goals, egrid[:]) # BFS ON ALTERED GRID (FRIENDLY ENTS REMOVED)
                         if path:
                             paths.append(path)
@@ -1340,30 +1339,51 @@ class White_Dragon(Summon):
     
     def do_attack(self, ents_list, id):
         app.get_focus(id)
-        app.ent_dict[self.number+'top'].init_attack_anims()
-        my_agl = self.get_attr('agl')
-        target_dodge = app.ent_dict[id].get_attr('dodge')
-        if to_hit(my_agl, target_dodge) == True:
-            # HIT, SHOW VIS, DO DAMAGE, EXIT
-            my_str = self.get_attr('str')
-            target_end = app.ent_dict[id].get_attr('end')
-            d = damage(my_str, target_end)
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'White Dragon Attack Hit!\n' + str(d) + ' Spirit Damage', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-            app.ent_dict[id].set_attr('spirit', -d)
-            if app.ent_dict[id].spirit <= 0:
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-            root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id)) # EXIT THROUGH CLEANUP_ATTACK()
-        else:
-            # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'White Dragon Attack Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-            root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id))
+        # get adj ents
+        adj_coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height) if dist(app.ent_dict[id].loc, [x,y]) == 1]
+        ents = [app.grid[s[0]][s[1]] for s in adj_coords if app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
+        if 'b1' in ents:
+            ents.remove('b1')
+        ents.append(id)
+        for id in ents:
+            n = 'Iceblast' + str(app.effects_counter) # not an effect, just need unique int
+            app.effects_counter += 1 # that is why this is incr manually here, no Effect init
+            loc = app.ent_dict[id].loc[:]
+            app.vis_dict[n] = Vis(name = 'Iceblast', loc = loc)
+            def cleanup_vis(name):
+                app.canvas.delete(name)
+                del app.vis_dict[name]
+            root.after(3666, lambda n = n : cleanup_vis(n))
+            app.canvas.create_image(loc[0]*100+50-app.moved_right, loc[1]*100+50-app.moved_down, image = app.vis_dict[n].img, tags = n)
+            app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+50-app.moved_down-30, text = 'Iceblast', justify ='center', font = ('Andale Mono', 14), fill = 'black', tags = 'text')
         
-    def cleanup_attack(self, ents_list, id):
+#         app.ent_dict[self.number+'top'].init_attack_anims()
+            my_agl = self.get_attr('agl')
+            target_dodge = app.ent_dict[id].get_attr('dodge')
+            if to_hit(my_agl, target_dodge) == True:
+                # HIT, SHOW VIS, DO DAMAGE, EXIT
+                my_str = self.get_attr('str')
+                target_end = app.ent_dict[id].get_attr('end')
+                d = damage(my_str, target_end)
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Hit!\n' + str(d) + '\nSpirit', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+                app.ent_dict[id].set_attr('spirit', -d)
+                if app.ent_dict[id].spirit <= 0:
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+78, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+                root.after(3666, lambda i = id : self.cleanup_attack(i)) # EXIT THROUGH CLEANUP_ATTACK()
+            else:
+                # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Miss!', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+                root.after(3666, lambda i = id : self.cleanup_attack(i))
+        root.after(3999, lambda el = ents_list: self.finish_attack(el))
+        
+    def cleanup_attack(self, id):
         if app.ent_dict[id].spirit <= 0:
             app.kill(id)
-        app.ent_dict[self.number+'top'].init_normal_anims()
+#         app.ent_dict[self.number+'top'].init_normal_anims()
         try: app.canvas.delete('text')
         except: pass
+        
+    def finish_attack(self, ents_list):
         ents_list = ents_list[1:]
         if ents_list == []:
             app.end_turn()
@@ -1375,7 +1395,7 @@ class White_Dragon(Summon):
         sqrs = []
         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         for coord in coords:
-            if dist(coord, self.loc) == 1:
+            if dist(coord, self.loc) <= 3:
                 if app.grid[coord[0]][coord[1]] != '' and app.grid[coord[0]][coord[1]] != 'block':
                     sqrs.append(coord)
         return sqrs
@@ -1384,19 +1404,10 @@ class White_Dragon(Summon):
         loc = self.loc[:]
         mvlist = []
         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        def findall(loc, start, distance):
-            if start > distance:
-                return
-            adj = [c for c in coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
-            for s in adj:
-                mvlist.append(s)
-                findall(s, start+1, distance)
-        findall(loc, 1, 5) 
-        setlist = []
-        for l in mvlist:
-            if l not in setlist:
-                setlist.append(l)
-        return setlist
+        for c in coords:
+            if app.grid[c[0]][c[1]] == '':
+                mvlist.append(c)
+        return mvlist
         
         
 class Tortured_Soul(Summon):
@@ -2951,7 +2962,7 @@ class Minotaur(Summon):
         app.ent_dict[self.number+'top'] = Minotaur_Top(name = 'Minotaur_Top', img = img, loc = [self.loc[0],self.loc[1]-1], owner = 'p2', number = self.number+'top')
         
     def large_undo(self):
-        pass
+        app.canvas.delete(self.number+'top')
         
     def pass_priority(self, ents_list):
         ents_list = ents_list[1:]
@@ -4322,7 +4333,7 @@ class Witch(Entity):
         
         
     def boiling_blood(self, event = None):
-            # Caster takes spirit damage (own inverted psyche versus own end) and affects one 'warrior' summon within range 3, any attacks made by the affected target do +5 spirit damage if they would otherwise do any spirit damage, target's agl is increased to 5 if it is less than 5, end is reduced to 1, either value may be later modified but this modification takes precedence over previous effects, affected ent takes 1 spirit damage at the end of every owner's turn
+        ##
         app.depop_context(event = None)
         root.unbind('<a>')
         root.unbind('<q>')
@@ -4339,6 +4350,8 @@ class Witch(Entity):
         if sqr not in sqrs:
             return
         id = app.grid[sqr[0]][sqr[1]]
+        if id == '' or id == 'block':
+            return
         if not isinstance(app.ent_dict[id], Warrior):
             return
         effs = [v.name for k,v in app.ent_dict[id].effects_dict.items()]
@@ -5269,6 +5282,15 @@ class App(tk.Frame):
 #                 else:
 #                     return None
 #             self.map_triggers.append(summon_trick)
+            def awaken_dragon():
+                coords = [[x,y] for x in range(self.map_width//100) for y in range(self.map_height//100)]
+                sqrs = [s for s in coords if dist(s, app.ent_dict['b1'].loc) <= 9]
+                ents = [app.grid[s[0]][s[1]] for s in sqrs if app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
+                for ent in ents:
+                    if app.ent_dict[ent].owner == 'p1':
+                        app.ent_dict['b1'].waiting = False
+                        self.map_triggers.remove(awaken_dragon)
+            self.map_triggers.append(awaken_dragon)
             def self_death():
                 if app.p1_witch not in app.ent_dict.keys():
                     return 'game over'
