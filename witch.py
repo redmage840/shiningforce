@@ -2,10 +2,6 @@
 # extra padding on move_cursor on 'bottom' of screen not working properly
 # check that library level only shows small strip of walltop on bottom of screen
 
-# pain doesnt trigger contagion, pain balance higher damage
-
-# forcefield only cast on empty squares
-
 # check pathfinding when route blocked or partially blocked, esp for undead
 
 # map_triggers level 122
@@ -394,13 +390,21 @@ class Entity():
         start_sqr = self.loc[:]
         end_sqr = grid_pos[:]
         selected = [id]
-        x = start_sqr[0]*100+50-app.moved_right
-        y = start_sqr[1]*100+50-app.moved_down
-        endx = end_sqr[0]*100+50-app.moved_right
-        endy = end_sqr[1]*100+50-app.moved_down
+#         x = start_sqr[0]*100+50-app.moved_right
+#         y = start_sqr[1]*100+50-app.moved_down
+#         endx = end_sqr[0]*100+50-app.moved_right
+#         endy = end_sqr[1]*100+50-app.moved_down
         
-        # MOVE LOOP
-        def move_loop(id, x, y, endx, endy, start_sqr, end_sqr):
+        # get path and move_loop over each sqr until path consumed
+        path = bfs(start_sqr, [end_sqr], app.grid) # end_sqr must be in list
+        begin = path[0]
+        end = path[1]
+        x = begin[0]*100+50-app.moved_right
+        y = begin[1]*100+50-app.moved_down
+        endx = end[0]*100+50-app.moved_right
+        endy = end[1]*100+50-app.moved_down
+            
+        def move_loop(id, x, y, endx, endy, start_sqr, end_sqr, path):
             if x % 20 == 0 or y % 20 == 0:
                 self.rotate_image()
                 app.canvas.delete(id)
@@ -424,11 +428,21 @@ class Entity():
             except: pass
 #             app.canvas.tag_raise('maptop')
             app.canvas.tag_raise('cursor')
-            if x == endx and y == endy:
-                self.finish_move(id, end_sqr, start_sqr) # EXIT
+            if x == end_sqr[0]*100+50-app.moved_right and y == end_sqr[1]*100+50-app.moved_down: # END WHOLE MOVE
+                self.finish_move(id, end_sqr, start_sqr)
+            elif x == endx and y == endy: # END PORTION OF PATH
+                path = path[1:]
+                begin = path[0]
+                end = path[1]
+                x = begin[0]*100+50-app.moved_right
+                y = begin[1]*100+50-app.moved_down
+                endx = end[0]*100+50-app.moved_right
+                endy = end[1]*100+50-app.moved_down
+                move_loop(id, x, y, endx, endy, start_sqr, end_sqr, path)
+#                     self.finish_move(id, end_sqr, start_sqr)
             else: # CONTINUE LOOP
-                root.after(66, lambda id = id, x = x, y = y, e = endx, e2 = endy, s = start_sqr, s2 = end_sqr : move_loop(id, x, y, e, e2, s, s2))
-        move_loop(id, x, y, endx, endy, start_sqr, end_sqr)
+                root.after(66, lambda id = id, x = x, y = y, ex = endx, ey = endy, s = start_sqr, s2 = end_sqr, p = path : move_loop(id, x, y, ex, ey, s, s2, p))
+        move_loop(id, x, y, endx, endy, start_sqr, end_sqr, path)
             
     def finish_move(self, id, end, start):
         global selected
@@ -2162,24 +2176,27 @@ class Undead(Summon):
             
     def undead_move(self, ents_list, endloc):
         global selected
+        selected = [self.number]
         # FIND SQUARE FURTHEST ALONG PATH THAT IS WITHIN MOVE RANGE
         id = self.number
-        x = self.loc[0]*100+50-app.moved_right
-        y = self.loc[1]*100+50-app.moved_down
-        endx = endloc[0]*100+50-app.moved_right
-        endy = endloc[1]*100+50-app.moved_down
         start_sqr = self.loc[:]
         end_sqr = endloc[:]
-        selected = [self.number]
-        # MOVE LOOP
-        def move_loop(id, x, y, endx, endy, start_sqr, end_sqr):
-            if x % 25 == 0 or y % 25 == 0:
+        
+        path = bfs(start_sqr, [end_sqr], app.grid) # end_sqr must be in list
+        begin = path[0]
+        end = path[1]
+        x = begin[0]*100+50-app.moved_right
+        y = begin[1]*100+50-app.moved_down
+        endx = end[0]*100+50-app.moved_right
+        endy = end[1]*100+50-app.moved_down
+            
+        def move_loop(id, x, y, endx, endy, start_sqr, end_sqr, path):
+            if x % 20 == 0 or y % 20 == 0:
                 self.rotate_image()
                 app.canvas.delete(id)
                 app.canvas.create_image(x, y, image = self.img, tags = self.tags)
                 app.canvas.tag_lower((self.tags), 'maptop')
-                try: app.canvas.tag_lower((self.tags), 'large')
-                except: pass
+#                 app.canvas.tag_lower((self.tags), 'large')
             if x > endx:
                 x -= 10
                 app.canvas.move(id, -10, 0)
@@ -2192,20 +2209,68 @@ class Undead(Summon):
             if y < endy: 
                 y += 10
                 app.canvas.move(id, 0, 10)
-#             try: app.canvas.tag_raise('large', (self.tags))
-#             except: pass
+#             app.canvas.tag_lower((self.tags), 'maptop')
+            try: app.canvas.tag_lower((self.tags), 'large')
+            except: pass
 #             app.canvas.tag_raise('maptop')
             app.canvas.tag_raise('cursor')
-            if x == endx and y == endy:
-                self.finish_move(id, end_sqr, start_sqr, ents_list) # EXIT
+            if x == end_sqr[0]*100+50-app.moved_right and y == end_sqr[1]*100+50-app.moved_down: # END WHOLE MOVE
+                self.finish_move(end_sqr, start_sqr, ents_list)
+            elif x == endx and y == endy: # END PORTION OF PATH
+                path = path[1:]
+                begin = path[0]
+                end = path[1]
+                x = begin[0]*100+50-app.moved_right
+                y = begin[1]*100+50-app.moved_down
+                endx = end[0]*100+50-app.moved_right
+                endy = end[1]*100+50-app.moved_down
+                move_loop(id, x, y, endx, endy, start_sqr, end_sqr, path)
+#                     self.finish_move(id, end_sqr, start_sqr)
             else: # CONTINUE LOOP
-                root.after(66, lambda id = id, x = x, y = y, e = endx, e2 = endy, s = start_sqr, s2 = end_sqr : move_loop(id, x, y, e, e2, s, s2))
-        move_loop(id, x, y, endx, endy, start_sqr, end_sqr)
+                root.after(66, lambda id = id, x = x, y = y, ex = endx, ey = endy, s = start_sqr, s2 = end_sqr, p = path : move_loop(id, x, y, ex, ey, s, s2, p))
+        move_loop(id, x, y, endx, endy, start_sqr, end_sqr, path)
+#         x = self.loc[0]*100+50-app.moved_right
+#         y = self.loc[1]*100+50-app.moved_down
+#         endx = endloc[0]*100+50-app.moved_right
+#         endy = endloc[1]*100+50-app.moved_down
+#         start_sqr = self.loc[:]
+#         end_sqr = endloc[:]
+#         selected = [self.number]
+#         # MOVE LOOP
+#         def move_loop(id, x, y, endx, endy, start_sqr, end_sqr):
+#             if x % 25 == 0 or y % 25 == 0:
+#                 self.rotate_image()
+#                 app.canvas.delete(id)
+#                 app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+#                 app.canvas.tag_lower((self.tags), 'maptop')
+#                 try: app.canvas.tag_lower((self.tags), 'large')
+#                 except: pass
+#             if x > endx:
+#                 x -= 10
+#                 app.canvas.move(id, -10, 0)
+#             if x < endx: 
+#                 x += 10
+#                 app.canvas.move(id, 10, 0)
+#             if y > endy: 
+#                 y -= 10
+#                 app.canvas.move(id, 0, -10)
+#             if y < endy: 
+#                 y += 10
+#                 app.canvas.move(id, 0, 10)
+# #             try: app.canvas.tag_raise('large', (self.tags))
+# #             except: pass
+# #             app.canvas.tag_raise('maptop')
+#             app.canvas.tag_raise('cursor')
+#             if x == endx and y == endy:
+#                 self.finish_move(id, end_sqr, start_sqr, ents_list) # EXIT
+#             else: # CONTINUE LOOP
+#                 root.after(66, lambda id = id, x = x, y = y, e = endx, e2 = endy, s = start_sqr, s2 = end_sqr : move_loop(id, x, y, e, e2, s, s2))
+#         move_loop(id, x, y, endx, endy, start_sqr, end_sqr)
             
             
     # change to attack any within range, not ncsrly original target
     # DONE MOVING, ATTEMPT ATTACK AND EXIT
-    def finish_move(self, id, end_sqr, start_sqr, ents_list):
+    def finish_move(self, end_sqr, start_sqr, ents_list):
         global selected
         selected = []
         self.loc = end_sqr[:]
