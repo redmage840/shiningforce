@@ -1,3 +1,15 @@
+# attempt to recreate bug-
+# extra padding on move_cursor on 'bottom' of screen not working properly
+# check that library level only shows small strip of walltop on bottom of screen
+
+# pain doesnt trigger contagion, pain balance higher damage
+
+# forcefield only cast on empty squares
+
+# check pathfinding when route blocked or partially blocked, esp for undead
+
+# map_triggers level 122
+
 # move moonlight to bard? white dragon level (and any level with potential lulls between action) is imbalanced with only one witch having access to healing
 # balance plague/disintegrate
 # make for longer fights by having summons with higher spirit?
@@ -248,6 +260,9 @@ class Entity():
             self.anim_dict[i] = a
         # randomize animation 'seed' to stagger different ent animations
         self.anim_counter = randrange(0, len(anims))
+            
+    def death_trigger(self):
+        return None
             
     def rotate_image(self):
         total_imgs = len(self.anim_dict.keys())-1
@@ -829,57 +844,58 @@ class Plaguebearer(Summon):
         self.spirit = 15
         super().__init__(name, img, loc, owner, number)
         
-    # Override superclass set_attr(self, attr, amount) to check for own death, if no death call superclass set_attr
-    def set_attr(self, attr, amount):
+#     Override superclass set_attr(self, attr, amount) to check for own death, if no death call superclass set_attr
+#     def set_attr(self, attr, amount):
+    def death_trigger(self):
         # app.kill is handled by killer effect/attack, just do contagion
-        if attr == 'spirit' and self.spirit + amount < 1: # amount is passed int 'negative' for subtracting attrs
+#         if attr == 'spirit' and self.spirit + amount < 1: # amount is passed int 'negative' for subtracting attrs
             # DO CONTAGION
             # get Ents within AOE
-            coord_pairs = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-            sqrs = [c for c in coord_pairs if dist(self.loc, c) == 1]
-            ents = [app.grid[s[0]][s[1]] for s in sqrs if app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
-            for e in ents:
-                # cannot stack contagion
-                ef_names = [v.name for k,v in app.ent_dict[e].effects_dict.items() if v.name == 'Contagion']
-                if 'Contagion' in ef_names:
-                    continue
-                else:
-                    # create Effect, needs name, info, eot_func, undo, duration
-                    n = 'Contagion' + str(app.effects_counter)
-                    info = 'Contagion\n-2 Str -2 End for 3 turns'
-                    def contagion_effect(stat):
-                        stat -= 3
-                        if stat < 1:
-                            return 1
-                        else:
-                            return stat
-                    f = contagion_effect
-                    app.ent_dict[e].str_effects.append(f)
-                    app.ent_dict[e].end_effects.append(f)
-                    def un(id, func):# change to get name of effect, remove by name
+        coord_pairs = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [c for c in coord_pairs if dist(self.loc, c) == 1]
+        ents = [app.grid[s[0]][s[1]] for s in sqrs if app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
+        for e in ents:
+            # cannot stack contagion
+            ef_names = [v.name for k,v in app.ent_dict[e].effects_dict.items() if v.name == 'Contagion']
+            if 'Contagion' in ef_names:
+                continue
+            else:
+                # create Effect, needs name, info, eot_func, undo, duration
+                n = 'Contagion' + str(app.effects_counter)
+                info = 'Contagion\n-2 Str -2 End for 3 turns'
+                def contagion_effect(stat):
+                    stat -= 3
+                    if stat < 1:
+                        return 1
+                    else:
+                        return stat
+                f = contagion_effect
+                app.ent_dict[e].str_effects.append(f)
+                app.ent_dict[e].end_effects.append(f)
+                def un(id, func):# change to get name of effect, remove by name
 #                         name = 'contagion_effect'
-                        app.ent_dict[id].str_effects.remove(func)
-                        app.ent_dict[id].end_effects.remove(func)
-                    p = partial(un, e, f)
-                    def nothing():
-                        return None
-                    eot = nothing
-                    d = 3
-                    app.ent_dict[e].effects_dict[n] = Effect(name = 'Contagion', info = info, eot_func = eot , undo = p, duration = 3)
-                    # DO DAMAGE AND VIS
-                    n2 = 'Contagion' + str(app.effects_counter) # not an effect, just need unique int
-                    app.effects_counter += 1 # that is why this is incr manually here, no Effect init
-                    app.vis_dict[n2] = Vis(name = 'Contagion', loc = app.ent_dict[e].loc[:])
-                    rand_start_anim = randrange(1,7)
-                    for i in range(rand_start_anim):
-                        app.vis_dict[n2].rotate_image()
-                    app.canvas.create_text(app.ent_dict[e].loc[0]*100-app.moved_right+50, app.ent_dict[e].loc[1]*100-app.moved_down+90, text = 'CONTAGION', justify = 'center', fill = 'green2', font = ('Andale Mono', 16), tags = ('text','contagion_text'))# CALLED DURING A SET_ATTR, SO NEED A DIFFERENT TEXT TAG TO AVOID CLEANUP OF UNRELATED TEXT OBJECTS ON CANVAS
-                    app.canvas.create_image(app.ent_dict[e].loc[0]*100+50-app.moved_right, app.ent_dict[e].loc[1]*100+50-app.moved_down, image = app.vis_dict[n2].img, tags = n2)
-                    
-            root.after(3666, self.cleanup_contagion)
-            super(Plaguebearer, self).set_attr(attr, amount)
-        else:
-            super(Plaguebearer, self).set_attr(attr, amount)
+                    app.ent_dict[id].str_effects.remove(func)
+                    app.ent_dict[id].end_effects.remove(func)
+                p = partial(un, e, f)
+                def nothing():
+                    return None
+                eot = nothing
+                d = 3
+                app.ent_dict[e].effects_dict[n] = Effect(name = 'Contagion', info = info, eot_func = eot , undo = p, duration = 3)
+                # DO DAMAGE AND VIS
+                n2 = 'Contagion' + str(app.effects_counter) # not an effect, just need unique int
+                app.effects_counter += 1 # that is why this is incr manually here, no Effect init
+                app.vis_dict[n2] = Vis(name = 'Contagion', loc = app.ent_dict[e].loc[:])
+                rand_start_anim = randrange(1,7)
+                for i in range(rand_start_anim):
+                    app.vis_dict[n2].rotate_image()
+                app.canvas.create_text(app.ent_dict[e].loc[0]*100-app.moved_right+50, app.ent_dict[e].loc[1]*100-app.moved_down+90, text = 'CONTAGION', justify = 'center', fill = 'green2', font = ('Andale Mono', 16), tags = ('contagion_text'))# CALLED DURING A SET_ATTR, SO NEED A DIFFERENT TEXT TAG TO AVOID CLEANUP OF UNRELATED TEXT OBJECTS ON CANVAS
+                app.canvas.create_image(app.ent_dict[e].loc[0]*100+50-app.moved_right, app.ent_dict[e].loc[1]*100+50-app.moved_down, image = app.vis_dict[n2].img, tags = n2)
+                
+        root.after(3666, self.cleanup_contagion)
+#             super(Plaguebearer, self).set_attr(attr, amount)
+#         else:
+#             super(Plaguebearer, self).set_attr(attr, amount)
         
     def cleanup_contagion(self):
         try:
@@ -5157,13 +5173,13 @@ class App(tk.Frame):
 #             self.create_map_curs_context(map_number, protaganist_object = protaganist_object)
         elif map_number == 121:
             self.map_triggers = []
-            def summon_trick():
-                all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
-                if 'Bard' in all:
-                    return 'victory'
-                else:
-                    return None
-            self.map_triggers.append(summon_trick)
+#             def summon_trick():
+#                 all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
+#                 if 'Bard' in all:
+#                     return 'victory'
+#                 else:
+#                     return None
+#             self.map_triggers.append(summon_trick)
             # victory, kill ghost
             def kill_ghost():
                 if 'b2' not in [k for k in self.ent_dict.keys()]:
@@ -5860,10 +5876,6 @@ class App(tk.Frame):
         elif player_num == 2:
             self.p2_witch = witch
             loc = self.p2_start_loc
-            
-        # ORIENT MAP, need to move map based on start_loc
-        
-#             loc = [self.map_width//100-3, self.map_height//100-3]
         # if protaganist_object, instead load its data, RE-INIT IMAGES THAT CANNOT BE SERIALIZED BY PICKLE DUMP
         if protaganist_object:
             protaganist_object.loc = loc[:]
@@ -5893,7 +5905,8 @@ class App(tk.Frame):
                 c1 += 1
                 if c1 == end:
                     break
-            root.after(1666, self.start_turn)
+            root.after(999, self.start_turn)
+            root.after(999, self.rebind_all)
             self.animate()
             self.map_trigger_loop()
         # CHOOSE SECOND PLAYER WITCH
@@ -6589,6 +6602,7 @@ class App(tk.Frame):
     def kill(self, id):
         # DEBUG handle if killing witch
         # If witch is dead, show popup with victory/defeat
+        app.ent_dict[id].death_trigger()
         self.canvas.delete(id)
         # destroy surrounding squares of large Ents
         if app.ent_dict[id].type == 'large':
@@ -6693,6 +6707,7 @@ root.bind('<Up>', app.move_curs)
 root.bind('<Down>', app.move_curs)
 root.bind('<a>', app.populate_context)
 root.bind('<q>', app.depop_context)
+app.unbind_all()
 # root.bind('<Escape>', app.exit_fullscreen)
 #### DEBUG ####
 # root.bind('<d>', app.debugger)
