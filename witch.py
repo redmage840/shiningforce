@@ -1,4 +1,8 @@
-# fakir needs some damaging cantrip when runs out of magick and summons
+# make sure to_hit range has a min/max of 10 or 5 percent
+
+# remove 'damage' and other extraneous text
+
+# both need some damaging cantrip when runs out of magick and summons
 
 # stagger text objects when created simultaneously, esp horrid wilting
 # dark sun, bottom of anim 'blinks' text object
@@ -1153,12 +1157,12 @@ class White_Dragon(Summon):
     def __init__(self, name, img, loc, owner, number, waiting = False):
         self.actions = {'attack':self.do_attack}
         self.attack_used = False
-        self.str = 10
-        self.agl = 9
+        self.str = 9
+        self.agl = 8
         self.end = 9
         self.dodge = 5
         self.psyche = 8
-        self.spirit = 157
+        self.spirit = 88
         self.waiting = waiting
         self.retreated_once = False
         super().__init__(name, img, loc, owner, number)#, type = 'large')
@@ -1180,12 +1184,34 @@ class White_Dragon(Summon):
         
     #  White_Dragon AI
     def do_ai(self, ents_list):
+        if self.waiting == True: # PASSIVE / WAITING
+            self.pass_priority(ents_list)
         # if spirit low, fly to random spot can occupy, set waiting, summon orcs?
-        if self.spirit < 88 and self.retreated_once == False:
+        elif self.spirit < 88 and self.retreated_once == False:
             coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
             empty_locs = [c for c in coords if app.grid[c[0]][c[1]] == '' and dist(c, self.loc) >= 12]
             endloc = choice(empty_locs)
-            self.white_dragon_move(el, endloc)
+            # create orcs
+            orc_sqrs = [[15,1],[16,1],[17,1],[18,1],[15,2],[16,2],[17,2],[18,2],[15,3],[16,3],[17,3],[18,3],[15,4],[16,4],[17,4],[18,4]]
+            for s in orc_sqrs[:]:
+                if app.grid[s[0]][s[1]] != '':
+                    orc_sqrs.remove(s)
+            if endloc in orc_sqrs[:]:
+                orc_sqrs.remove(endloc)
+            loc1 = choice(orc_sqrs)
+            orc_sqrs.remove(loc1)
+            loc2 = choice(orc_sqrs)
+            orc_sqrs.remove(loc2)
+            loc3 = choice(orc_sqrs)
+            orc_sqrs.remove(loc3)
+            img = ImageTk.PhotoImage(Image.open('summon_imgs/Orc_axeman.png'))
+            app.ent_dict['b2'] = Orc_Axeman(name = 'Orc_Axeman', img = img, loc = loc1[:], owner = 'p2', number = 'b2')
+            app.ent_dict['b3'] = Orc_Axeman(name = 'Orc_Axeman', img = img, loc = loc2[:], owner = 'p2', number = 'b3')
+            app.ent_dict['b4'] = Orc_Axeman(name = 'Orc_Axeman', img = img, loc = loc3[:], owner = 'p2', number = 'b4')
+            app.grid[loc1[0]][loc1[1]] = 'b2'
+            app.grid[loc2[0]][loc2[1]] = 'b3'
+            app.grid[loc3[0]][loc3[1]] = 'b4'
+            self.white_dragon_move(ents_list, endloc)
 #             root.after(1333, lambda el = ents_list, endloc = endloc : self.white_dragon_move(el, endloc))
             self.waiting = True
             self.retreated_once = True
@@ -1198,11 +1224,8 @@ class White_Dragon(Summon):
                     if app.ent_dict[ent].owner == 'p1':
                         app.ent_dict['b1'].waiting = False
                         app.map_triggers.remove(awaken_dragon)
+                        break
             app.map_triggers.append(awaken_dragon)
-            
-            # create orcs
-        if self.waiting == True: # PASSIVE / WAITING
-            self.pass_priority(ents_list)
         else: # NO TARGET PRIORITY, ATTEMPT ATTACK FROM STARTLOC
             atk_sqrs = self.legal_attacks()
             atk_sqrs = [x for x in atk_sqrs if app.ent_dict[app.grid[x[0]][x[1]]].owner == 'p1']
@@ -1697,7 +1720,7 @@ class Ghost(Summon):
         self.end = 8
         self.dodge = 9
         self.psyche = 5
-        self.spirit = 65
+        self.spirit = 75
         self.waiting = waiting
         super().__init__(name, img, loc, owner, number)
         
@@ -2256,7 +2279,7 @@ class Undead_Knight(Summon):
         self.end = 6
         self.dodge = 8
         self.psyche = 6
-        self.spirit = 76
+        self.spirit = 86
         self.waiting = waiting
         super().__init__(name, img, loc, owner, number)
         
@@ -2719,6 +2742,264 @@ class Troll(Summon):
                 setlist.append(l)
         return setlist
         
+        
+class Warlock(Summon):
+    def __init__(self, name, img, loc, owner, number, waiting = False):
+        self.actions = {'attack':self.do_attack}
+        self.attack_used = False
+        self.str = 5
+        self.agl = 7
+        self.end = 7
+        self.dodge = 5
+        self.psyche = 11
+        self.spirit = 88
+        self.waiting = waiting
+        super().__init__(name, img, loc, owner, number)
+        
+    def pass_priority(self, ents_list):
+        ents_list = ents_list[1:]
+        if ents_list == []:
+            app.end_turn()
+        else:
+            app.do_ai_loop(ents_list)
+        
+    #  WARLOCK AI
+    # change to 'move away after attack' if able to attack from start location
+    # randomly cast spells, teleport away, summon demons
+    def do_ai(self, ents_list):
+        if self.waiting == True: # GIVEN PRIORITY OVER OTHER ENTS, ONLY TRY TO ATTACK THIS ENT
+            self.pass_priority(ents_list)
+        else: # NO TARGET PRIORITY, ATTEMPT ATTACK FROM STARTLOC
+            atk_sqrs = self.legal_attacks()
+            atk_sqrs = [x for x in atk_sqrs if app.ent_dict[app.grid[x[0]][x[1]]].owner == 'p1']
+            if atk_sqrs != []:
+                any = atk_sqrs[0]
+                id = app.grid[any[0]][any[1]]
+                root.after(666, lambda id = id : app.get_focus(id))
+                root.after(1333, lambda el = ents_list, id = id : self.do_attack(el, id)) # ATTACK
+            else: # CANNOT ATTACK FROM START LOC, GET TARGET AND MOVE TOWARDS
+                enemy_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p1']
+                paths = []
+                coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+                for el in enemy_ent_locs:
+                # FIND PATH TO SQR WITHIN RANGE OF THIS ENT
+                # Need paths 'through' objects
+                # cannot end move in 'block' or Ent
+                    goals = [c for c in coords if dist(c, el) <= 3 and app.grid[c[0]][c[1]] == '']
+                    egrid = [[''] * (app.map_height//100) for i in range(app.map_width//100)]
+                    path = bfs(self.loc[:], goals, egrid)
+                    if path:
+                        paths.append(path)
+                smallpaths = [y for y in paths if len(y) == min(len(y) for y in paths)] # THE SHORTEST PATHS AMONG PATHS
+                if smallpaths != []: # IF ANY PATHS EXIST AT ALL
+                    apath = smallpaths[0]
+                    # FIND FURTHEST SQR ALONG PATH THAT CAN BE MOVED TO
+                    moves = self.legal_moves()
+                    endloc = None
+                    for sqr in apath[::-1]: # START WITH SQRS CLOSEST TO TARGET
+                        if sqr in moves:
+                            endloc = sqr[:] # AMONG SQRS POSSIBLE TO MOVE TO, THIS IS CLOSEST TO GOAL
+                            break
+                    if endloc != None:
+                        root.after(666, lambda sqr = endloc[:] : app.focus_square(sqr))
+                        root.after(1333, lambda el = ents_list, endloc = endloc : self.warlock_move(el, endloc))
+                    else:
+                        ents_list = ents_list[1:]
+                        if ents_list == []:
+                            root.after(666, app.end_turn)
+                        else:
+                            root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
+                else: # NO PATHS TO TARGET, MAKE BEST EFFORT MINIMIZE DIST MOVE
+                # for warlock/revenant/teleporters, will always be paths, this section unused
+                    # change to 'remove friendly ents', find path, move along path as far as possible
+                    egrid = deepcopy(app.grid)
+                    friendly_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p2']
+                    for eloc in friendly_ent_locs:
+                        egrid[eloc[0]][eloc[1]] = '' # EGRID NOW EMPTIED OF FRIENDLY ENTS
+                    # NOW FIND PATH AND PASS TO MOVE
+                    coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+                    for el in enemy_ent_locs:
+                        goals = [c for c in coords if dist(c, el) <= 3]
+                        path = bfs(self.loc[:], goals, egrid[:]) # BFS ON ALTERED GRID (FRIENDLY ENTS REMOVED)
+                        if path:
+                            paths.append(path)
+                    smallpaths = [y for y in paths if len(y) == min(len(y) for y in paths)]
+                    if smallpaths != []: # MOVE ALONG PATH AS FAR AS POSSIBLE, ATTEMPT ATTACK
+                        apath = smallpaths[0]
+                        # FIND FURTHEST SQR ALONG PATH THAT CAN BE MOVED TO
+                        moves = self.legal_moves()
+                        endloc = None
+                        for sqr in apath[::-1]: # START WITH SQRS CLOSEST TO TARGET
+                            if sqr in moves:
+                                endloc = sqr[:] # AMONG SQRS POSSIBLE TO MOVE TO, THIS IS CLOSEST TO GOAL
+                                break
+                        if endloc != None:
+                            # here need to 'trim path' to prevent moving to square 'through' friendly ents
+                            root.after(666, lambda sqr = endloc[:] : app.focus_square(sqr))
+                            root.after(1333, lambda el = ents_list, endloc = endloc : self.warlock_move(el, endloc))
+                        else:
+                            ents_list = ents_list[1:]
+                            if ents_list == []:
+                                root.after(666, app.end_turn)
+                            else:
+                                root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
+                    else:
+                        ents_list = ents_list[1:]
+                        if ents_list == []:
+                            root.after(666, app.end_turn)
+                        else:
+                            root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
+            
+    
+    # change to 'teleport move'
+    def warlock_move(self, ents_list, endloc):
+        global selected
+        self.move_used = True
+        # FIND SQUARE FURTHEST ALONG PATH THAT IS WITHIN MOVE RANGE
+        id = self.number
+        x = self.loc[0]*100+50-app.moved_right
+        y = self.loc[1]*100+50-app.moved_down
+        endx = endloc[0]*100+50-app.moved_right
+        endy = endloc[1]*100+50-app.moved_down
+        start_sqr = self.loc[:]
+        end_sqr = endloc[:]
+        selected = [self.number]
+        # MOVE LOOP
+        def move_loop(id, x, y, endx, endy, start_sqr, end_sqr):
+            if x % 40 == 0 or y % 40 == 0:
+                self.rotate_image()
+                app.canvas.delete(id)
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+                app.canvas.tag_lower((self.tags), 'maptop')
+                try: app.canvas.tag_lower((self.tags), 'large')
+                except: pass
+            if x > endx:
+                x -= 10
+                app.canvas.move(id, -10, 0)
+            if x < endx: 
+                x += 10
+                app.canvas.move(id, 10, 0)
+            if y > endy: 
+                y -= 10
+                app.canvas.move(id, 0, -10)
+            if y < endy: 
+                y += 10
+                app.canvas.move(id, 0, 10)
+#             try: app.canvas.tag_raise('large', (self.tags))
+#             except: pass
+#             app.canvas.tag_raise('maptop')
+            app.canvas.tag_raise('cursor')
+            if x == endx and y == endy:
+                self.finish_move(id, end_sqr, start_sqr, ents_list) # EXIT
+            else: # CONTINUE LOOP
+                root.after(66, lambda id = id, x = x, y = y, e = endx, e2 = endy, s = start_sqr, s2 = end_sqr : move_loop(id, x, y, e, e2, s, s2))
+        move_loop(id, x, y, endx, endy, start_sqr, end_sqr)
+            
+            
+    # change to attack any within range, not ncsrly original target
+    # DONE MOVING, ATTEMPT ATTACK AND EXIT
+    def finish_move(self, id, end_sqr, start_sqr, ents_list):
+        global selected
+        selected = []
+        self.loc = end_sqr[:]
+        self.origin = end_sqr[:]
+        app.grid[start_sqr[0]][start_sqr[1]] = ''
+        app.grid[end_sqr[0]][end_sqr[1]] = self.number
+        # MAKE ATTACK ON ANY ENEMY ENT WITHIN RANGE
+        if self.attack_used == False:
+            atk_sqrs = self.legal_attacks()
+            ents_near = [e for e in atk_sqrs if app.grid[e[0]][e[1]] != '' and app.grid[e[0]][e[1]] != 'block']
+            enemy_ents = [e for e in ents_near if app.ent_dict[app.grid[e[0]][e[1]]].owner == 'p1']
+            if enemy_ents != []:
+                any = enemy_ents[0]
+                id = app.grid[any[0]][any[1]]
+                root.after(666, lambda t = id : app.get_focus(t))
+                root.after(1333, lambda el = ents_list, t = id : self.do_attack(el, t)) # EXIT THROUGH ATTACK
+            else: # END TURN
+                ents_list = ents_list[1:]
+                if ents_list == []:
+                    app.end_turn()
+                else:
+                    root.after(666, lambda e = ents_list : app.do_ai_loop(e))
+        else:
+        # CANNOT ATTACK, EXIT FUNC
+            ents_list = ents_list[1:]
+            if ents_list == []:
+                app.end_turn()
+            else:
+                root.after(666, lambda e = ents_list : app.do_ai_loop(e))
+    
+    def do_attack(self, ents_list, id):
+        app.get_focus(id)
+        self.attack_used = True
+#         self.init_attack_anims()
+        # make range atk vis
+        visloc = app.ent_dict[id].loc[:]
+        app.vis_dict['Duress'] = Vis(name = 'Duress', loc = visloc)
+        app.canvas.create_image(visloc[0]*100+50-app.moved_right, visloc[1]*100+50-app.moved_down, image = app.vis_dict['Duress'].img, tags = 'Duress')
+        app.canvas.create_text(visloc[0]*100+50-app.moved_right, visloc[1]*100+10-app.moved_down, text = 'Duress', font = ('Andale Mono', 16), fill = 'white', tags = 'text')
+        my_psyche = self.get_attr('psyche')
+        target_psyche = app.ent_dict[id].get_attr('psyche')
+        if to_hit(my_psyche, target_psyche) == True:
+            # HIT, SHOW VIS, DO DAMAGE, EXIT
+            d = damage(my_psyche, target_psyche)
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+80, text = 'Warlock Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
+            app.ent_dict[id].set_attr('spirit', -d)
+            if app.ent_dict[id].spirit <= 0:
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+100, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
+        else:
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+80, text = 'Warlock Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
+
+        root.after(3666, lambda  el = ents_list, id = id : self.cleanup_attack(el, id))
+        
+        
+    def cleanup_attack(self, ents_list, id):
+        if app.ent_dict[id].spirit <= 0:
+            app.kill(id)
+#         self.init_normal_anims()
+        app.canvas.delete('Duress')
+        del app.vis_dict['Duress']
+        try: app.canvas.delete('text')
+        except: pass
+        # if havent moved, attempt random move
+        if self.move_used == False:
+            sqrs = self.legal_moves()
+            if sqrs != []:
+                s =  choice(sqrs)
+                self.warlock_move(ents_list, s)
+            else:
+                ents_list = ents_list[1:]
+                if ents_list == []:
+                    app.end_turn()
+                else:
+                    root.after(666, lambda e = ents_list : app.do_ai_loop(e))
+        else:
+            ents_list = ents_list[1:]
+            if ents_list == []:
+                app.end_turn()
+            else:
+                root.after(666, lambda e = ents_list : app.do_ai_loop(e))
+        
+        
+    def legal_attacks(self):
+        sqrs = []
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        for coord in coords:
+            if dist(coord, self.loc) <= 3:
+                if app.grid[coord[0]][coord[1]] != '' and app.grid[coord[0]][coord[1]] != 'block':
+                    sqrs.append(coord)
+        return sqrs
+        
+    def legal_moves(self):
+        loc = self.loc[:]
+        mvlist = []
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        for c in coords:
+            if dist(loc, c) <= 5 and app.grid[c[0]][c[1]] == '':
+                mvlist.append(c)
+        return mvlist
+        
+        
 class Orc_Axeman(Summon):
     def __init__(self, name, img, loc, owner, number, waiting = False):
         self.actions = {'attack':self.do_attack}
@@ -2728,7 +3009,7 @@ class Orc_Axeman(Summon):
         self.end = 6
         self.dodge = 5
         self.psyche = 2
-        self.spirit = 27
+        self.spirit = 29
         self.waiting = waiting
         super().__init__(name, img, loc, owner, number)
         
@@ -2971,11 +3252,11 @@ class Minotaur(Summon):
         self.actions = {'attack':self.do_attack}
         self.attack_used = False
         self.str = 11
-        self.agl = 10
+        self.agl = 11
         self.end = 11
         self.dodge = 5
         self.psyche = 9
-        self.spirit = 133
+        self.spirit = 163
         self.waiting = waiting
         super().__init__(name, img, loc, owner, number)#, type = 'large')
         self.immovable = True
@@ -3353,7 +3634,7 @@ class Witch(Entity):
             self.cantrip_dict['Dark_Sun'] = (self.dark_sun)
             self.cantrip_dict['Meditate'] = (self.meditate)
             self.arcane_dict['Horrid_Wilting'] = (self.horrid_wilting,5)
-            self.arcane_dict['Disintegrate'] = (self.disintegrate, 5)
+            self.arcane_dict['Disintegrate'] = (self.disintegrate, 4)
             self.arcane_dict['Mummify'] = (self.mummify, 6)
             self.arcane_dict['Immolate'] = (self.immolate, 9)
             self.arcane_dict['Command_of_Osiris'] = (self.command_of_osiris, 5)
@@ -4467,7 +4748,7 @@ class Witch(Entity):
         app.depop_context(event = None)
         root.bind('<q>', self.cleanup_spell)
         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        sqrs = [s for s in coords if dist(self.loc, s) <= 2]
+        sqrs = [s for s in coords if dist(self.loc, s) <= 3]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_mummify(event = e, sqr = s, sqrs = sqrs))
         b = tk.Button(app.context_menu, text = 'Choose Target For Mummify', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_mummify(e, s, sqrs = sqrs))
@@ -4902,6 +5183,13 @@ class App(tk.Frame):
 #             self.create_map_curs_context(map_number, protaganist_object = protaganist_object)
         elif map_number == 121:
             self.map_triggers = []
+            def summon_trick():
+                all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
+                if 'Bard' in all:
+                    return 'victory'
+                else:
+                    return None
+            self.map_triggers.append(summon_trick)
             # victory, kill ghost
             def kill_ghost():
                 if 'b2' not in [k for k in self.ent_dict.keys()]:
@@ -5304,6 +5592,17 @@ class App(tk.Frame):
 #                 else:
 #                     return None
 #             self.map_triggers.append(summon_trick)
+            def awaken_orcs():
+                coords = [[x,y] for x in range(self.map_width//100) for y in range(self.map_height//100)]
+                sqrs = [s for s in coords if dist(s, app.ent_dict['b7'].loc) <= 7 or dist(s, app.ent_dict['b8'].loc) <= 7]
+                ents = [app.grid[s[0]][s[1]] for s in sqrs if app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
+                for ent in ents:
+                    if app.ent_dict[ent].owner == 'p1':
+                        app.ent_dict['b7'].waiting = False
+                        app.ent_dict['b8'].waiting = False
+                        self.map_triggers.remove(awaken_orcs)
+                        break
+            self.map_triggers.append(awaken_orcs)
             def awaken_dragon():
                 coords = [[x,y] for x in range(self.map_width//100) for y in range(self.map_height//100)]
                 sqrs = [s for s in coords if dist(s, app.ent_dict['b1'].loc) <= 9]
@@ -5312,7 +5611,15 @@ class App(tk.Frame):
                     if app.ent_dict[ent].owner == 'p1':
                         app.ent_dict['b1'].waiting = False
                         self.map_triggers.remove(awaken_dragon)
+                        break
             self.map_triggers.append(awaken_dragon)
+            def self_death():
+                if app.p1_witch not in app.ent_dict.keys():
+                    return 'game over'
+            self.map_triggers.append(self_death)
+            self.load_intro_scene(map_number, protaganist_object = protaganist_object)
+        elif map_number == 122:
+            self.map_triggers = []
             def self_death():
                 if app.p1_witch not in app.ent_dict.keys():
                     return 'game over'
@@ -5684,6 +5991,8 @@ class App(tk.Frame):
                     self.ent_dict[ent].do_ai(ents)
                 elif self.ent_dict[ent].name == 'White_Dragon':
                     self.ent_dict[ent].do_ai(ents)
+                elif self.ent_dict[ent].name == 'Warlock':
+                    self.ent_dict[ent].do_ai(ents)
         
         
         
@@ -5940,6 +6249,18 @@ class App(tk.Frame):
             else:
                 self.map_trigger_id = root.after(1666, self.map_trigger_loop)
         elif self.map_number == 22:
+            for mt in self.map_triggers:
+                result = mt()
+                if result == 'victory':
+                    app.unbind_all()
+                    self.end_level() 
+                    break
+                elif result == 'game over':
+                    self.reset()
+                    break
+            else:
+                self.map_trigger_id = root.after(1666, self.map_trigger_loop)
+        elif self.map_number == 122:
             for mt in self.map_triggers:
                 result = mt()
                 if result == 'victory':
