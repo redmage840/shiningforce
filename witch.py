@@ -1,3 +1,16 @@
+# Labyrinth level, make background black, to fix 'gaps' in inserts give them a tile colored 'edge'
+
+# probably use this to find any open channel for playing sound instead of set channels
+'''sound1 = pygame.mixer.Sound("sound.wav")
+pygame.mixer.find_channel().play(sound1)
+Note that by default, find_channel will return None if there are no free channels available. By passing it True, you can instead return the channel that's been playing audio the longest:
+
+sound1 = pygame.mixer.Sound("sound.wav")
+pygame.mixer.find_channel(True).play(sound1)
+You may also be interested in the set_num_channels function, which lets you set the maximum number of audio channels:
+
+pygame.mixer.set_num_channels(20)'''
+
 # bug with bfs-pathfinding - if there is no 'goal' square (sqr within moving Ents attack range of target) then no path will be returned by bfs, ie if Enemy Ent has attack range of 1 and all squares within range 1 of target are occupied, then no path exists
 
 # fix psi push tag raise/lower priority
@@ -164,9 +177,11 @@ channels = 1     # 1 is mono, 2 is stereo
 buffer = 1024    # number of samples (experiment to get right sound)
 # use this just for intro screen, ideally make it loop smoothly (no lull in sound)
 pygame.mixer.init(freq, bitsize, channels, buffer)
-pygame.mixer.music.set_volume(0.7) # optional volume 0 to 1.0
-pygame.mixer.music.load('Ove Melaa - Dead, Buried and Cold.ogg')
-pygame.mixer.music.play(-1, 0)
+background_music = pygame.mixer.Channel(0) # argument must be int
+sound_effects = pygame.mixer.Channel(1)
+# background_music.music.set_volume(0.7) # optional volume 0 to 1.0
+# background_music.music.load('Ove Melaa - Dead, Buried and Cold.ogg')
+# background_music.music.play(-1, 0)
 
 class Dummy():
     def __init__(self):
@@ -2227,6 +2242,8 @@ class Undead(Summon):
     def do_attack(self, ents_list, id):
         app.get_focus(id)
         self.init_attack_anims()
+        effect1 = pygame.mixer.Sound('Sound_Effects/Undead_attack.ogg')
+        sound_effects.play(effect1, 0)
         my_agl = self.get_attr('agl')
         target_agl = app.ent_dict[id].get_attr('agl')
         if to_hit(my_agl, target_agl) == True:
@@ -3762,6 +3779,10 @@ class Witch(Entity):
         if self.spirit == 1:
             return
         self.spirit -= 1
+        self.init_cast_anims()
+        effect1 = pygame.mixer.Sound('Sound_Effects/forcefield.ogg')
+        effect1.set_volume(.07)
+        sound_effects.play(effect1, 0)
         app.canvas.create_text(self.loc[0]*100-app.moved_right+50, self.loc[1]*100-app.moved_down+90, text = '1 Spirit Lost', font = ('Andale Mono', 13), justify = 'center', fill = 'white', tags = 'text')
         root.after(2666, lambda t = 'text' : app.canvas.delete(t))
         self.cantrip_used = True
@@ -3787,7 +3808,7 @@ class Witch(Entity):
         app.vis_dict[n] = Vis(name = 'Forcefield', loc = sqr[:])
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict[n].img, tags = n)
         app.global_effects_dict[n] = Effect(name = 'Forcefield', info = 'Block Square with a Forcefield', eot_func = eot, undo = p, duration = 2)
-        root.after(2666, lambda  name = 'Forcefield' : self.cleanup_spell(name = name))
+        root.after(1666, lambda  name = 'Forcefield' : self.cleanup_spell(name = name))
     
     
     def moonlight(self, event = None):
@@ -4065,6 +4086,9 @@ class Witch(Entity):
             return
         self.cantrip_used = True
         self.init_cast_anims()
+        effect1 = pygame.mixer.Sound('Sound_Effects/psionic_push.ogg')
+        effect1.set_volume(.07)
+        sound_effects.play(effect1, 0)
 #         self.magick -= self.cantrip_dict['Psionic_Push'][1]
         app.unbind_all()
         app.cleanup_squares()
@@ -4171,6 +4195,7 @@ class Witch(Entity):
         app.cleanup_squares()
         self.arcane_used = True
         self.magick -= self.arcane_dict['Pestilence'][1]
+        self.init_cast_anims()
         # get ent and all adj ents
         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         target = app.grid[sqr[0]][sqr[1]]
@@ -4868,10 +4893,10 @@ class App(tk.Frame):
         # Herculanum 240
         # Papyrus 240
     def choose_num_players(self):
-        pygame.mixer.init(freq, bitsize, channels, buffer)
-        pygame.mixer.music.set_volume(0.7) # optional volume 0 to 1.0
-        pygame.mixer.music.load('Ove Melaa - Dead, Buried and Cold.ogg')
-        pygame.mixer.music.play(-1, 0)
+#         background_music.music.load('Ove Melaa - Dead, Buried and Cold.ogg')
+        sound1 = pygame.mixer.Sound('Music/Ove Melaa - Dead, Buried and Cold.ogg')
+        background_music.play(sound1, -1)
+        sound1.set_volume(0.6)
         self.title_screen = ImageTk.PhotoImage(Image.open('titleScreen8.png').resize((root.winfo_screenwidth(),root.winfo_screenheight())))
         self.game_title = tk.Canvas(root, width = root.winfo_screenwidth(), bg = 'black', highlightthickness = 0, height = root.winfo_screenheight())
         self.game_title.create_image(0,0, image =self.title_screen, anchor = 'nw')
@@ -4927,10 +4952,11 @@ class App(tk.Frame):
             
     # make each branch load the intro scene for level, with 'continue' button when done reading/displaying to call create_map_curs_context
     def load_map_triggers(self, map_number, witch = None, protaganist_object = None):
-        pygame.mixer.music.stop()
+        background_music.stop()
         if map_number == 0: # FIRST AREA, NO 'CONTINUATION' OF BY PASSING PROTAG OBJECT
-            pygame.mixer.music.load('Heroic Demise.mp3')
-            pygame.mixer.music.play(-1, 0)
+            sound1 = pygame.mixer.Sound('Music/heroic_demise.ogg')
+            background_music.play(sound1, -1)
+            sound1.set_volume(0.3)
             # CLEANUP FROM CHOOSE_WITCH
             self.avatar_popup.destroy()
             del self.wrapped_funcs
@@ -4962,6 +4988,8 @@ class App(tk.Frame):
     # SECOND LEVEL
         elif map_number == 1:
             self.map_triggers = []
+            sound1 = pygame.mixer.Sound('Music/Caves of sorrow.ogg')
+            background_music.play(sound1, -1)
 #             def summon_trick():
 #                 all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
 #                 if 'Bard' in all:
@@ -5024,6 +5052,8 @@ class App(tk.Frame):
             self.load_intro_scene(map_number, protaganist_object = protaganist_object)
 #             self.create_map_curs_context(map_number, protaganist_object = protaganist_object)
         elif map_number == 121:
+            sound1 = pygame.mixer.Sound('Music/field_of_dreams.ogg')
+            background_music.play(sound1, -1)
             self.map_triggers = []
 #             def summon_trick():
 #                 all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
@@ -5114,6 +5144,8 @@ class App(tk.Frame):
             self.load_intro_scene(map_number, protaganist_object = protaganist_object)
         # LABRYNTH 
         elif map_number == 21:
+            sound1 = pygame.mixer.Sound('Music/Blackmoor_Colossus.ogg')
+            background_music.play(sound1, -1)
             self.map_triggers = []
 #             def summon_trick():
 #                 all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
@@ -5426,6 +5458,8 @@ class App(tk.Frame):
             
             self.load_intro_scene(map_number, protaganist_object = protaganist_object)
         elif map_number == 22:
+            sound1 = pygame.mixer.Sound('Music/Dark_Amulet.ogg')
+            background_music.play(sound1, -1)
             self.map_triggers = []
 #             def summon_trick():
 #                 all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
@@ -5461,6 +5495,8 @@ class App(tk.Frame):
             self.map_triggers.append(self_death)
             self.load_intro_scene(map_number, protaganist_object = protaganist_object)
         elif map_number == 122:
+            sound1 = pygame.mixer.Sound('Music/Dark_Descent.ogg')
+            background_music.play(sound1, -1)
             self.map_triggers = []
             def self_death():
                 if app.p1_witch not in app.ent_dict.keys():
