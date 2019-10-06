@@ -3,11 +3,7 @@
 # first take_focus in effects loop doesnt happen soon enough, not enough time to read first effect
 
 # is focus_square and take_focus in ai_moves moving the map properly?
-# psi push anim, do not reshrink
 # trickster teleport faster
-# shadow move, make smoke slightly larger than shadow, make smoke appear in destination square before entity
-
-# Labyrinth level, make background black, to fix 'gaps' in inserts give them a tile colored 'edge'
 
 # probably use this to find any open channel for playing sound instead of set channels
 '''sound1 = pygame.mixer.Sound("sound.wav")
@@ -22,11 +18,7 @@ pygame.mixer.set_num_channels(20)'''
 
 # bug with bfs-pathfinding - if there is no 'goal' square (sqr within moving Ents attack range of target) then no path will be returned by bfs, ie if Enemy Ent has attack range of 1 and all squares within range 1 of target are occupied, then no path exists
 
-# fix psi push tag raise/lower priority
-
 # get_focus and focus_square calls in conjunction with other 'afters' most likely potential causes for race conditions
-
-# disintegrate text color
 
 # widen teleport vis
 
@@ -39,15 +31,7 @@ pygame.mixer.set_num_channels(20)'''
 
 # check pathfinding when route blocked or partially blocked, esp for undead
 
-# map_triggers level 122
-
-# move moonlight to bard? white dragon level (and any level with potential lulls between action) is imbalanced with only one witch having access to healing
-# balance plague/disintegrate
-# make for longer fights by having summons with higher spirit?
-
 # make sure to_hit range has a min/max of 10 or 5 percent
-
-# remove 'damage' and other extraneous text
 
 # both need some damaging cantrip when runs out of magick and summons
 
@@ -58,13 +42,7 @@ pygame.mixer.set_num_channels(20)'''
 
 # track num of summons next to summon cap
 
-# teleport visual moves for teleporting units
-
-# move_loops move along legal path
-
 # level 41, should be able to occupy spawn square to prevent spawns?
-
-# make 'level' parameter for summons to increase stats and add abilities
 
 # make shortcut button that 'blinks' all summons, vis cue to raise them above objects and highlight
 
@@ -80,25 +58,13 @@ pygame.mixer.set_num_channels(20)'''
 
 # for pathing, when attempting reroute on egrid after finding no direct path, if the egrid path is much greater than dist(self.loc, goal) than do not move along it at all (probably better to wait for things to move in that case) 'much greater' can be defined simply as 3-6 greater int value when comparing egrid path length and dist from location
 
-# prevent damage or effect text from covering 'killed' text
-
 # victory condition happens too fast, need to freeze screen and show 'confirm' or 'notice'
-
-# contagion Vis will last longer than it takes to get to next action, either make faster cleanup or wait for cleanup or extend time between AI loop
 
 # death anims, at least delay before something like contagion
 
-# check tag raise/lower priority, some redundancy,  i think its the general Ent do_move or loop
-
-# consider removing 'smoke' from agnes casting anims?
-
 # is origin still used without old movement setup?
 
-# doublecast / quick
-
 # place summon could have animations (gradual appearance)
-
-# maybe make dragon attack further 'down' since he doesn't 'see' from his lower square, maybe make range longer, do attack anims
 
 # would it be possible to 'pause' in the middle of a move_loop or to keep text object on screen
 
@@ -3446,6 +3412,11 @@ class Warrior(Summon):
         app.depop_context(event = None)
         app.unbind_all()
         id = app.current_pos()
+
+        visloc = app.ent_dict[id].loc[:]
+        app.vis_dict['Warrior_Slash'] = Vis(name = 'Warrior_Slash', loc = visloc)
+        app.canvas.create_image(visloc[0]*100+50-app.moved_right, visloc[1]*100+50-app.moved_down, image = app.vis_dict['Warrior_Slash'].img, tags = 'Warrior_Slash')
+
         my_agl = self.get_attr('agl')
         target_agl = app.ent_dict[id].get_attr('agl')
         if to_hit(my_agl, target_agl) == True:
@@ -3453,10 +3424,10 @@ class Warrior(Summon):
             target_end = app.ent_dict[id].get_attr('end')
             d = damage(my_str, target_end)
             app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Warrior Attack Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-            root.after(1666, lambda id = id, d = d : self.do_attack(id, d))
+            root.after(2666, lambda id = id, d = d : self.do_attack(id, d))
         else:
             app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Warrior Attack Misses!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-            root.after(1666, lambda e = None : self.cancel_attack(event = e))
+            root.after(2666, lambda e = None : self.cancel_attack(event = e))
         
     def do_attack(self, id, dmg):
         app.ent_dict[id].set_attr('spirit', -dmg)
@@ -3471,6 +3442,9 @@ class Warrior(Summon):
         self.init_normal_anims()
         app.rebind_all()
         app.canvas.delete('text')
+        app.canvas.delete('Warrior_Slash')
+        try: del app.vis_dict['Warrior_Slash']
+        except: pass
         app.depop_context(event = None)
         app.cleanup_squares()
     
@@ -4368,13 +4342,13 @@ class Witch(Entity):
                     app.canvas.create_text(app.ent_dict[ent].loc[0]*100+50-app.moved_right, app.ent_dict[ent].loc[1]*100+70-app.moved_down, text = str(d) + ' Spirit', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
                     if app.ent_dict[ent].spirit <= 0:
                         app.canvas.create_text(app.ent_dict[ent].loc[0]*100+50-app.moved_right, app.ent_dict[ent].loc[1]*100+100-app.moved_down, text = app.ent_dict[ent].name + '\nKilled...', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
-                        root.after(666, app.kill(ent))
+                        root.after(1333, app.kill(ent))
                 # MISS
                 else:
                     app.canvas.create_text(app.ent_dict[ent].loc[0]*100+50-app.moved_right, app.ent_dict[ent].loc[1]*100+70-app.moved_down, text = 'Agility\nSave',justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
-            root.after(3666, lambda s = 'Psionic_Push' : self.cleanup_spell(name = s))
+            root.after(2666, lambda s = 'Psionic_Push' : self.cleanup_spell(name = s))
         else:
-            self.cleanup_spell(name = 'Psionic_Push')
+            root.after(2666, lambda s = 'Psionic_Push' : self.cleanup_spell(name = s))
         
         
     def pestilence(self, event = None):
