@@ -3952,6 +3952,9 @@ class Witch(Entity):
         if id == '' or id == 'block':
             return
         self.init_cast_anims()
+        effect1 = pygame.mixer.Sound('Sound_Effects/scrye.ogg')
+        effect1.set_volume(.08)
+        sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -3996,6 +3999,11 @@ class Witch(Entity):
         if id == '' or id == 'block':
             return
         self.init_cast_anims()
+
+        effect1 = pygame.mixer.Sound('Sound_Effects/vengeance.ogg')
+        effect1.set_volume(.08)
+        sound_effects.play(effect1, 0)
+
         self.magick -= self.arcane_dict['Vengeance'][1]
         app.unbind_all()
         app.depop_context(event = None)
@@ -4034,6 +4042,11 @@ class Witch(Entity):
         if id == '' or id == 'block':
             return
         self.init_cast_anims()
+        
+        effect1 = pygame.mixer.Sound('Sound_Effects/torment.ogg')
+        effect1.set_volume(.07)
+        sound_effects.play(effect1, 0)
+        
         self.magick -= self.arcane_dict['Torment'][1]
         app.unbind_all()
         app.depop_context(event = None)
@@ -4092,6 +4105,11 @@ class Witch(Entity):
             return
         if app.ent_dict[id].owner != 'p1' or not isinstance(app.ent_dict[id], Summon):
             return
+            
+        effect1 = pygame.mixer.Sound('Sound_Effects/pain.ogg')
+        effect1.set_volume(.07)
+        sound_effects.play(effect1, 0)
+            
         app.kill(id)
         self.init_cast_anims()
         self.magick -= self.arcane_dict['Pain'][1]
@@ -4126,6 +4144,7 @@ class Witch(Entity):
             my_psyche = self.get_attr('psyche')
             tar_agl = app.ent_dict[id].get_attr('agl')
             d = damage(my_psyche, tar_agl)
+            d += 9
             app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+75-app.moved_down, text = str(d)+' Spirit', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
             app.ent_dict[id].set_attr('spirit', -d)
             if app.ent_dict[id].spirit <= 0:
@@ -4162,6 +4181,11 @@ class Witch(Entity):
         if 'Plague' in app.ent_dict[id].effects_dict.keys():
             return
         self.init_cast_anims()
+        
+        effect1 = pygame.mixer.Sound('Sound_Effects/plague.ogg')
+        effect1.set_volume(2)
+        sound_effects.play(effect1, 0)
+        
         self.magick -= self.arcane_dict['Plague'][1]
         app.unbind_all()
         app.depop_context(event = None)
@@ -4265,7 +4289,7 @@ class Witch(Entity):
         self.cantrip_used = True
         self.init_cast_anims()
         effect1 = pygame.mixer.Sound('Sound_Effects/psionic_push.ogg')
-        effect1.set_volume(.08)
+        effect1.set_volume(.7)
         sound_effects.play(effect1, 0)
 #         self.magick -= self.cantrip_dict['Psionic_Push'][1]
         app.unbind_all()
@@ -4374,6 +4398,11 @@ class Witch(Entity):
         app.depop_context(event = None)
         app.unbind_all()
         app.cleanup_squares()
+        
+        effect1 = pygame.mixer.Sound('Sound_Effects/pestilence.ogg')
+        effect1.set_volume(1.3)
+        sound_effects.play(effect1, 0)
+        
         self.arcane_used = True
         self.magick -= self.arcane_dict['Pestilence'][1]
         self.init_cast_anims()
@@ -4456,6 +4485,11 @@ class Witch(Entity):
         if not isinstance(app.ent_dict[id], Witch) and not isinstance(app.ent_dict[id], Summon):
              return
         self.magick -= self.arcane_dict['Curse_of_Oriax'][1]
+        
+        effect1 = pygame.mixer.Sound('Sound_Effects/curse_of_oriax.ogg')
+        effect1.set_volume(.9)
+        sound_effects.play(effect1, 0)
+        
         self.init_cast_anims()
         app.unbind_all()
         app.depop_context(event = None)
@@ -4521,6 +4555,11 @@ class Witch(Entity):
         if not isinstance(app.ent_dict[id], Witch) and not isinstance(app.ent_dict[id], Summon):
              return
         self.magick -= self.arcane_dict['Gravity'][1]
+        
+        effect1 = pygame.mixer.Sound('Sound_Effects/gravity.ogg')
+        effect1.set_volume(.9)
+        sound_effects.play(effect1, 0)
+        
         self.init_cast_anims()
         app.unbind_all()
         app.depop_context(event = None)
