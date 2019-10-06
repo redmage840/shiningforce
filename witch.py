@@ -1,3 +1,7 @@
+# make sure all kill checks handle either name or number (witch or summon)
+
+# replace 'coords' calculations with one calc on map generate
+
 # warlock pathfinding, is searching empty grid? removing 'block'?
 
 # first take_focus in effects loop doesnt happen soon enough, not enough time to read first effect
@@ -923,6 +927,7 @@ class Shadow(Summon):
         if app.current_pos() == '' or app.current_pos() == 'block':
             return
         app.depop_context(event = None)
+        app.cleanup_squares()
         id = app.current_pos()
         app.unbind_all()
         my_agl = self.get_attr('agl')
@@ -3411,6 +3416,7 @@ class Warrior(Summon):
         self.init_attack_anims()
         app.depop_context(event = None)
         app.unbind_all()
+        app.cleanup_squares()
         id = app.current_pos()
 
         visloc = app.ent_dict[id].loc[:]
@@ -4021,7 +4027,40 @@ class Witch(Entity):
       
     # lose 3 spirit, all summons within range 2 may act again?
     def hatred(self, event = None):
-        pass
+        app.depop_context(event = None)
+        root.bind('<q>', lambda name = 'Hatred' : self.cleanup_spell(name = name))
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        root.bind('<a>', self.do_torment)
+        b = tk.Button(app.context_menu, text = 'Confirm Hatred', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = self.do_torment)
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+        
+    def do_hatred(self, event = None):
+        self.init_cast_anims()
+        effect1 = pygame.mixer.Sound('Sound_Effects/hatred.ogg')
+        effect1.set_volume(.07)
+        sound_effects.play(effect1, 0)
+        
+        self.magick -= self.arcane_dict['Hatred'][1]
+        app.unbind_all()
+        app.depop_context(event = None)
+        self.arcane_used = True
+        ents = [k for k,v in app.ent_dict.items() if v.owner == 'p1']
+        
+        for id in ents:
+            sqr = app.ent_dict[id].loc[:]
+            uniq_name = 'Hatred'+str(app.effects_counter)
+            app.effects_counter += 1
+            app.ent_dict[id].attack_used = False
+            def clean_hatred(name):
+                del app.vis_dict[name]
+            root.after(3666, lambda name = uniq_name : clean_hatred(name))
+            app.vis_dict[uniq_name] = Vis(name = 'Hatred', loc = sqr)
+            app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict[uniq_name].img, tags = 'Hatred')
+            app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Hatred', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+
+        root.after(3666, lambda  name = 'Hatred' : self.cleanup_spell(name = name))
+        
         
     # target gets -2 psyche for 4 turns (does not stack), takes psyche versus end damage on cast
     def torment(self, event = None):
@@ -4594,11 +4633,76 @@ class Witch(Entity):
         n = 'Gravity' + str(app.effects_counter)
         app.ent_dict[id].effects_dict[n] = Effect(name = 'Gravity', info = 'Gravity\nCannot move and agl and dodge reduced by 2 for 2 turns', eot_func = eot, undo = p, duration = 2)
         root.after(3666, lambda  name = 'Gravity' : self.cleanup_spell(name = name))
-        print('gravity')
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    # self cannot move (lasts 2 turns, cannot use if moved this turn), adj ents take 9 spirit, self gets +3 psyche, +3 end (2 turns) 
     def beleths_command(self, event = None):
-        pass
-        print('beleths_command')
+        app.depop_context(event = None)
+        root.bind('<q>', self.cleanup_spell)
+        root.bind('<a>', self.do_beleths_command)
+        b = tk.Button(app.context_menu, text = "Confirm Beleth's Command", wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = self.do_beleths_command)
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+        
+    def do_beleths_command(self, event = None):
+        if self.move_used == True:
+            return
+        id = self.name
+        sqr = self.loc[:]
+        self.magick -= self.arcane_dict["Beleth's_Command"][1]
+        
+#         effect1 = pygame.mixer.Sound('Sound_Effects/beleths_command.ogg')
+#         effect1.set_volume(.9)
+#         sound_effects.play(effect1, 0)
+        
+        self.init_cast_anims()
+        app.unbind_all()
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        self.arcane_used = True
+        app.vis_dict["Beleth's_Command"] = Vis(name = "Beleth's_Command", loc = sqr)
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict["Beleth's_Command"].img, tags = "Beleth's_Command")
+        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = "Beleth's_Command", justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+        # Adj ents take 9 spirit
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [s for s in coords if dist(sqr, s) == 1]
+        ents = [app.grid[s[0]][s[1]] for s in sqrs if app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
+        for e in ents:
+            s = app.ent_dict[e].loc[:]
+            app.ent_dict[e].set_attr('spirit', -9)
+            name = app.ent_dict[e].name
+            uniq_name = 'Immolate'+str(app.effects_counter)
+            app.effects_counter += 1
+            app.vis_dict[uniq_name] = Vis(name = 'Immolate', loc = s) # using Immolate animations
+            app.canvas.create_image(s[0]*100+50-app.moved_right, s[1]*100+50-app.moved_down, image = app.vis_dict[uniq_name].img, tags = "Beleth's_Command")
+            app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+80-app.moved_down, text = "9 Spirit", justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+            if app.ent_dict[e].spirit <= 0:
+                app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+95-app.moved_down, text = name+' Killed...', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+                root.after(2666, lambda id = e : app.kill(id))
+            def clean_beleths_command(n):
+                del app.vis_dict[n]
+            root.after(3666, lambda n = uniq_name : clean_beleths_command(n))
+        # DO Beleth's Command EFFECTS
+        def beleths_command_effect(stat):
+            stat += 3
+            return stat
+        f = beleths_command_effect
+        app.ent_dict[id].end_effects.append(f)
+        app.ent_dict[id].psyche_effects.append(f)
+        def beleth():# REPLACE CLASS MOVEMENT WITH NOTHING
+            return []
+        app.ent_dict[id].legal_moves = beleth
+        def un(i):
+            app.ent_dict[i].end_effects.remove(beleths_command_effect)
+            app.ent_dict[i].psyche_effects.remove(beleths_command_effect)
+            p = partial(app.ent_dict[i].__class__.legal_moves, app.ent_dict[i]) #   PUT BACK CLASS METHOD MOVEMENT
+            app.ent_dict[i].legal_moves = p
+        p = partial(un, id)
+        # EOT FUNC
+        def nothing():
+            return None
+        eot = nothing
+        app.ent_dict[id].effects_dict["Beleth's_Command"] = Effect(name = "Beleth's_Command", info = 'Cannot move, +3 psyche and end', eot_func = eot, undo = p, duration = 2)
+        root.after(3666, lambda  name = "Beleth's_Command" : self.cleanup_spell(name = name))
         
         
 # FAKIR ALI SPELLS
@@ -5016,9 +5120,8 @@ class Witch(Entity):
         
         
         
-        
+    # all friendly ents within range 3 get +1 all attrs, all enemy ents get -1 all attrs, lasts 3 turns, does not stack
     def command_of_osiris(self, event = None):
-            # Caster is affected by 'command' effect, normal 'command' rules apply as above, Caster cannot move, can still be moved by spell/attack effects, at end of caster's turn any adjacent ents take spirit damage (caster's psyche versus ent's end), all spirit damage done to caster is reduced to 1, lasts until caster has 3 turns end
         print('command_of_osiris')
         
 # MORGAN SPELLS
