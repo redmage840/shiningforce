@@ -26,8 +26,6 @@ pygame.mixer.set_num_channels(20)'''
 
 # get_focus and focus_square calls in conjunction with other 'afters' most likely potential causes for race conditions
 
-# minotaur can be permanently kited between walls by one trickster or shadow, make minotaur target witch or target random ent
-
 # disintegrate text color
 
 # widen teleport vis
@@ -2209,7 +2207,7 @@ class Undead(Summon):
     def __init__(self, name, img, loc, owner, number, waiting = False):
         self.actions = {'attack':self.do_attack}
         self.attack_used = False
-        self.str = 4
+        self.str = 5
         self.agl = 3
         self.end = 4
         self.dodge = 2
@@ -3129,7 +3127,7 @@ class Minotaur(Summon):
         self.immovable = True
         # create top half
         img = ImageTk.PhotoImage(Image.open('animations/Minotaur_Top/0.png'))
-        app.ent_dict[self.number+'top'] = Minotaur_Top(name = 'Minotaur_Top', img = img, loc = [self.loc[0],self.loc[1]-1], owner = 'p2', number = self.number+'top')
+        app.ent_dict[self.number+'top'] = Minotaur_Top(name = 'Minotaur_Top', img = img, loc = [self.loc[0],self.loc[1]], owner = 'p2', number = self.number+'top')
         
     def large_undo(self):
         app.canvas.delete(self.number+'top')
@@ -3281,11 +3279,11 @@ class Minotaur(Summon):
         endy = end[1]*100+50-app.moved_down
         def move_loop(id, x, y, endx, endy, start_sqr, end_sqr, path):
             if x % 20 == 0 or y % 20 == 0:
-                self.rotate_image()
+                app.ent_dict[id+'top'].rotate_image()
                 app.canvas.delete(id)
                 app.canvas.create_image(x, y, image = self.img, tags = self.tags)
                 app.canvas.delete(id+'top')
-                app.canvas.create_image(x, y-100, image = app.ent_dict[id+'top'].img, tags = (id+'top','large'))
+                app.canvas.create_image(x, y, image = app.ent_dict[id+'top'].img, tags = (id+'top','large'))
             if x > endx:
                 x -= 10
                 app.canvas.move(id, -10, 0)
@@ -3328,7 +3326,7 @@ class Minotaur(Summon):
         self.origin = end_sqr[:]
         app.grid[start_sqr[0]][start_sqr[1]] = ''
         app.grid[end_sqr[0]][end_sqr[1]] = self.number
-        app.ent_dict[self.number+'top'].loc = [end_sqr[0],end_sqr[1]-1]
+        app.ent_dict[self.number+'top'].loc = [end_sqr[0],end_sqr[1]]
         # MAKE ATTACK ON ANY ENEMY ENT WITHIN RANGE
         atk_sqrs = self.legal_attacks()
         ents_near = [e for e in atk_sqrs if app.grid[e[0]][e[1]] != '' and app.grid[e[0]][e[1]] != 'block']
@@ -4076,7 +4074,7 @@ class Witch(Entity):
         app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Torment\n'+str(d)+' Spirit', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
         if app.ent_dict[id].spirit <= 0:
             app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+100-app.moved_down, text = app.ent_dict[id].name.replace('_',' ')+' Killed...', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
-            root.after(2999, lambda id = id: app.kill(id))
+            root.after(3666, lambda id = id: app.kill(id))
         effs = [v.name for k,v in app.ent_dict[id].effects_dict.items()]
         if 'Torment' not in effs:
             def torment_effect(stat):
@@ -4096,7 +4094,7 @@ class Witch(Entity):
             eot = nothing
             n = 'Torment' + str(app.effects_counter)
             app.ent_dict[id].effects_dict[n] = Effect(name = 'Torment', info = 'Torment, -2 psyche 4 turns', eot_func = eot, undo = p, duration = 4)
-        root.after(2999, lambda  name = 'Torment' : self.cleanup_spell(name = name))
+        root.after(3666, lambda  name = 'Torment' : self.cleanup_spell(name = name))
 
 
 
@@ -4293,7 +4291,7 @@ class Witch(Entity):
         self.cantrip_used = True
         self.init_cast_anims()
         effect1 = pygame.mixer.Sound('Sound_Effects/psionic_push.ogg')
-        effect1.set_volume(.07)
+        effect1.set_volume(.08)
         sound_effects.play(effect1, 0)
 #         self.magick -= self.cantrip_dict['Psionic_Push'][1]
         app.unbind_all()
@@ -4335,7 +4333,9 @@ class Witch(Entity):
                 app.canvas.move(vis, 0, 10)
                 app.canvas.move(ent, 0, 10)
             app.canvas.tag_raise(vis)
-#             app.canvas.tag_lower(
+            try: app.canvas.tag_lower(app.ent_dict[ent].tags, 'large')
+            except: pass
+            app.canvas.tag_lower(app.ent_dict[ent].tags, 'maptop')
             if x == endx and y == endy:
                 root.after(666, lambda e = ent, s = sqr, ss = start_sqr : self.finish_psionic_push(e, s, ss))
             else:
@@ -4942,7 +4942,7 @@ class Witch(Entity):
         self.arcane_used = True
         app.vis_dict['Disintegrate'] = Vis(name = 'Disintegrate', loc = sqr[:])
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Disintegrate'].img, tags = 'Disintegrate')
-        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Disintegrate', justify = 'center', font = ('Andale Mono', 14), fill = 'darkgoldenrod', tags = 'text')
+        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Disintegrate', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
         # DO Disintegrate EFFECTS
         def disintegrate_effect(stat):
             stat -= 1
@@ -5225,13 +5225,13 @@ class App(tk.Frame):
                 if app.p1_witch not in app.ent_dict.keys():
                     return 'game over'
             self.map_triggers.append(self_death)
-#             def summon_trick():
-#                 all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
-#                 if 'Bard' in all:
-#                     return 'stairway'
-#                 else:
-#                     return None
-#             self.map_triggers.append(summon_trick)
+            def summon_trick():
+                all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
+                if 'Bard' in all:
+                    return 'stairway'
+                else:
+                    return None
+            self.map_triggers.append(summon_trick)
 #             depending on which is killed, load certain level
 #             knight near stairway is b7, knight near doorway is b8
             def kill_stair_knight():
