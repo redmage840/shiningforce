@@ -1,8 +1,6 @@
+# make sure gravity stacking resolves/undo properly
+
 # minotaur attack friendly if they block path
-
-# beleths command shouldnt stack
-
-# beleths command, flashing still
 
 # revenant pathfinding blocked by friendly ents
 
@@ -905,11 +903,11 @@ class Shadow(Summon):
         self.actions = {'Attack':self.shadow_attack, 'Shadow Move':self.teleport_move}
         self.attack_used = False
         self.str = 3
-        self.agl = 6
-        self.end = 3
-        self.dodge = 5
+        self.agl = 4
+        self.end = 2
+        self.dodge = 6
         self.psyche = 6
-        self.spirit = 15
+        self.spirit = 13
         super().__init__(name, img, loc, owner, number)
         
         
@@ -922,11 +920,7 @@ class Shadow(Summon):
         sqrs = []
         coord_pairs = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         for coord in coord_pairs:
-            if abs(coord[0] - self.loc[0]) == 1 and abs(coord[1] - self.loc[1]) == 1:
-                sqrs.append(coord)
-            elif abs(coord[0] - self.loc[0]) == 2 and abs(coord[1] - self.loc[1]) == 2:
-                sqrs.append(coord)
-            elif abs(coord[0] - self.loc[0]) == 3 and abs(coord[1] - self.loc[1]) == 3:
+            if dist(coord, self.loc) <= 4:
                 sqrs.append(coord)
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, sqrs = sqrs : self.check_hit(e, sqrs))
@@ -944,15 +938,13 @@ class Shadow(Summon):
         app.cleanup_squares()
         id = app.current_pos()
         app.unbind_all()
-        my_agl = self.get_attr('agl')
+        my_psyche = self.get_attr('psyche')
         target_dodge = app.ent_dict[id].get_attr('dodge')
-        if to_hit(my_agl, target_dodge) == True:
+        if to_hit(my_psyche, target_dodge) == True:
             # VISUAL TO HIT, go ahead and show dmg here also
             my_psyche = self.get_attr('psyche')
             target_end = app.ent_dict[id].get_attr('end')
             d = damage(my_psyche, target_end)
-            d //= 2
-            if d == 0: d = 1
             app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Shadow Attack Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
             if isinstance(app.ent_dict[id], Witch):
                 app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = str(d) + ' Magick', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
@@ -1409,7 +1401,7 @@ class White_Dragon(Summon):
         self.end = 9
         self.dodge = 5
         self.psyche = 8
-        self.spirit = 88
+        self.spirit = 157
         self.waiting = waiting
         self.retreated_once = False
         super().__init__(name, img, loc, owner, number)#, type = 'large')
@@ -3166,7 +3158,8 @@ class Minotaur(Summon):
                         if endloc != None:
                             root.after(666, lambda sqr = endloc[:] : app.focus_square(sqr))
                             root.after(1333, lambda el = ents_list, endloc = endloc : self.minotaur_move(el, endloc))
-                        else:
+                        else: #####
+                            print('exit here')
                             ents_list = ents_list[1:]
                             if ents_list == []:
                                 root.after(666, app.end_turn)
@@ -3204,13 +3197,22 @@ class Minotaur(Summon):
                                 # here need to 'trim path' to prevent moving to square 'through' friendly ents
                                 root.after(666, lambda sqr = endloc[:] : app.focus_square(sqr))
                                 root.after(1333, lambda el = ents_list, endloc = endloc : self.minotaur_move(el, endloc))
-                            else:
-                                ents_list = ents_list[1:]
-                                if ents_list == []:
-                                    root.after(666, app.end_turn)
+                            else:# POSSIBLE TO BE BLOCKED BY FRIENDLY UNIT, ATTEMPT ATTACK ON ANY HERE
+                                atk_sqrs = self.legal_attacks()
+                                ents_near = [e for e in atk_sqrs if app.grid[e[0]][e[1]] != '' and app.grid[e[0]][e[1]] != 'block']
+                                if ents_near != []:
+                                    any = ents_near[0]
+                                    id = app.grid[any[0]][any[1]]
+                                    root.after(666, lambda t = id : app.get_focus(t))
+                                    root.after(1333, lambda el = ents_list, t = id : self.do_attack(el, t)) # EXIT 
                                 else:
-                                    root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
-                    else:
+                                    ents_list = ents_list[1:]
+                                    if ents_list == []:
+                                        root.after(666, app.end_turn)
+                                    else:
+                                        root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
+                    else: # SHOULD NOT GET HERE ON LABYRINTH LEVEL, GETTING HERE MEANS THAT NO PATH EXISTS TO ANY PLAYER ENT EVEN AFTER REMOVING FRIENDLY ENTS
+                        print('got to blocked minotaur AI area')
                         ents_list = ents_list[1:]
                         if ents_list == []:
                             root.after(666, app.end_turn)
@@ -3321,9 +3323,9 @@ class Minotaur(Summon):
         # MAKE ATTACK ON ANY ENEMY ENT WITHIN RANGE
         atk_sqrs = self.legal_attacks()
         ents_near = [e for e in atk_sqrs if app.grid[e[0]][e[1]] != '' and app.grid[e[0]][e[1]] != 'block']
-        enemy_ents = [e for e in ents_near if app.ent_dict[app.grid[e[0]][e[1]]].owner == 'p1']
-        if enemy_ents != []:
-            any = enemy_ents[0]
+#         enemy_ents = [e for e in ents_near if app.ent_dict[app.grid[e[0]][e[1]]].owner == 'p1']
+        if ents_near != []:
+            any = ents_near[0]
             id = app.grid[any[0]][any[1]]
             root.after(666, lambda t = id : app.get_focus(t))
             root.after(1333, lambda el = ents_list, t = id : self.do_attack(el, t)) # EXIT THROUGH ATTACK
@@ -4561,7 +4563,7 @@ class Witch(Entity):
         self.arcane_used = True
         app.vis_dict['Curse_of_Oriax'] = Vis(name = 'Curse_of_Oriax', loc = sqr)
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Curse_of_Oriax'].img, tags = 'Curse_of_Oriax')
-        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Curse\nof\nOriax', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+100-app.moved_down, text = 'Curse\nof\nOriax', justify = 'center', font = ('Andale Mono', 12), fill = 'white', tags = 'text')
         # DO Curse_of_Oriax EFFECTS
         def curse_of_oriax_effect(stat):
             stat -= 1
@@ -4719,26 +4721,28 @@ class Witch(Entity):
                 del app.vis_dict[n]
             root.after(3666, lambda n = uniq_name : clean_beleths_command(n))
         # DO Beleth's Command EFFECTS
-        def beleths_command_effect(stat):
-            stat += 2
-            return stat
-        f = beleths_command_effect
-        app.ent_dict[id].end_effects.append(f)
-        app.ent_dict[id].psyche_effects.append(f)
-        def beleth():# REPLACE CLASS MOVEMENT WITH NOTHING
-            return []
-        app.ent_dict[id].legal_moves = beleth
-        def un(i):
-            app.ent_dict[i].end_effects.remove(beleths_command_effect)
-            app.ent_dict[i].psyche_effects.remove(beleths_command_effect)
-            p = partial(app.ent_dict[i].__class__.legal_moves, app.ent_dict[i]) #   PUT BACK CLASS METHOD MOVEMENT
-            app.ent_dict[i].legal_moves = p
-        p = partial(un, id)
-        # EOT FUNC
-        def nothing():
-            return None
-        eot = nothing
-        app.ent_dict[id].effects_dict["Beleth's_Command"] = Effect(name = "Beleth's_Command", info = 'Cannot move, +3 psyche and end', eot_func = eot, undo = p, duration = 2)
+        effs = [v.name for k,v in app.ent_dict[id].effects_dict.items()]
+        if "Beleth's_Command" not in effs:
+            def beleths_command_effect(stat):
+                stat += 2
+                return stat
+            f = beleths_command_effect
+            app.ent_dict[id].end_effects.append(f)
+            app.ent_dict[id].psyche_effects.append(f)
+            def beleth():# REPLACE CLASS MOVEMENT WITH NOTHING
+                return []
+            app.ent_dict[id].legal_moves = beleth
+            def un(i):
+                app.ent_dict[i].end_effects.remove(beleths_command_effect)
+                app.ent_dict[i].psyche_effects.remove(beleths_command_effect)
+                p = partial(app.ent_dict[i].__class__.legal_moves, app.ent_dict[i]) #   PUT BACK CLASS METHOD MOVEMENT
+                app.ent_dict[i].legal_moves = p
+            p = partial(un, id)
+            # EOT FUNC
+            def nothing():
+                return None
+            eot = nothing
+            app.ent_dict[id].effects_dict["Beleth's_Command"] = Effect(name = "Beleth's_Command", info = 'Cannot move, +3 psyche and end', eot_func = eot, undo = p, duration = 2)
         root.after(3666, lambda  name = "Beleth's_Command" : self.cleanup_spell(name = name))
         
         
@@ -5215,11 +5219,21 @@ class Witch(Entity):
             app.ent_dict[id].dodge_effects.append(f)
             app.ent_dict[id].psyche_effects.append(f)
             def un(i):
-                app.ent_dict[i].str_effects.remove(osiris_effect)
-                app.ent_dict[i].end_effects.remove(osiris_effect)
-                app.ent_dict[i].agl_effects.remove(osiris_effect)
-                app.ent_dict[i].dodge_effects.remove(osiris_effect)
-                app.ent_dict[i].psyche_effects.remove(osiris_effect)
+                for ef in app.ent_dict[i].str_effects[:]:
+                        if ef.__name__ == 'osiris_effect':
+                            app.ent_dict[i].str_effects.remove(ef)
+                for ef in app.ent_dict[i].end_effects[:]:
+                        if ef.__name__ == 'osiris_effect':
+                            app.ent_dict[i].end_effects.remove(ef)
+                for ef in app.ent_dict[i].agl_effects[:]:
+                        if ef.__name__ == 'osiris_effect':
+                            app.ent_dict[i].agl_effects.remove(ef)
+                for ef in app.ent_dict[i].dodge_effects[:]:
+                        if ef.__name__ == 'osiris_effect':
+                            app.ent_dict[i].dodge_effects.remove(ef)
+                for ef in app.ent_dict[i].psyche_effects[:]:
+                        if ef.__name__ == 'osiris_effect':
+                            app.ent_dict[i].psyche_effects.remove(ef)
             p = partial(un, id)
             # EOT FUNC
             def nothing():
@@ -5237,7 +5251,7 @@ class Witch(Entity):
             app.effects_counter += 1
             app.vis_dict[uniq_name] = Vis(name = 'Command_of_Osiris', loc = sqr)
             app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict[uniq_name].img, tags = 'Command_of_Osiris')
-            app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = '+1 Stats\n+1 Spirit', justify = 'center', font = ('Andale Mono', 12), fill = 'white', tags = 'text')
+            app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = '-1 Stats\n-1 Spirit', justify = 'center', font = ('Andale Mono', 12), fill = 'white', tags = 'text')
             # CLEANUP UNIQUE VIS
             def cleanup_osiris(n):
                 del app.vis_dict[n]
@@ -5261,11 +5275,21 @@ class Witch(Entity):
             app.ent_dict[id].dodge_effects.append(f)
             app.ent_dict[id].psyche_effects.append(f)
             def un(i):
-                app.ent_dict[i].str_effects.remove(osiris_effect)
-                app.ent_dict[i].end_effects.remove(osiris_effect)
-                app.ent_dict[i].agl_effects.remove(osiris_effect)
-                app.ent_dict[i].dodge_effects.remove(osiris_effect)
-                app.ent_dict[i].psyche_effects.remove(osiris_effect)
+                for ef in app.ent_dict[i].str_effects[:]:
+                        if ef.__name__ == 'osiris_effect':
+                            app.ent_dict[i].str_effects.remove(ef)
+                for ef in app.ent_dict[i].end_effects[:]:
+                        if ef.__name__ == 'osiris_effect':
+                            app.ent_dict[i].end_effects.remove(ef)
+                for ef in app.ent_dict[i].agl_effects[:]:
+                        if ef.__name__ == 'osiris_effect':
+                            app.ent_dict[i].agl_effects.remove(ef)
+                for ef in app.ent_dict[i].dodge_effects[:]:
+                        if ef.__name__ == 'osiris_effect':
+                            app.ent_dict[i].dodge_effects.remove(ef)
+                for ef in app.ent_dict[i].psyche_effects[:]:
+                        if ef.__name__ == 'osiris_effect':
+                            app.ent_dict[i].psyche_effects.remove(ef)
             p = partial(un, id)
             # EOT FUNC
             def nothing():
@@ -6015,7 +6039,7 @@ class App(tk.Frame):
     
     def read_21_book(self):
         loc = app.ent_dict[app.p1_witch].loc[:]
-        app.ent_dict[app.p1_witch].arcane_dict['Vengeance'] = (app.ent_dict[app.p1_witch].vengeance, 11)
+        app.ent_dict[app.p1_witch].arcane_dict['Vengeance'] = (app.ent_dict[app.p1_witch].vengeance, 13)
         app.canvas.create_text(loc[0]*100-app.moved_right, loc[1]*100-app.moved_down+85, text = 'Arcane Spell\n-VENGEANCE-\nLearned', justify = 'center', font = ('Andale Mono', 16), fill = 'white', tags = 'text')
         root.after(2999, lambda t = 'text' : app.canvas.delete(t))
         root.after(2999, self.cancel_21_book)
@@ -6338,41 +6362,48 @@ class App(tk.Frame):
                 root.after(1999, lambda t = 'text' : self.canvas.delete(t))
             root.after(1999, self.end_turn)
         else:
-            ent = ents[0]
-            if self.ent_dict[ent].waiting == True: # IS THIS ENT WAITING
-                waiting_status = [v.waiting for k,v in self.ent_dict.items() if v.owner == 'p2']
-                if False not in waiting_status: # ARE ALL ENTS WAITING
-                    self.canvas.create_text(grid_pos[0]*100+50-self.moved_right, grid_pos[1]*100+50-self.moved_down, text = 'No Enemies to Act...', font = ('Andale Mono', 16), fill = 'white', tags = 'text')
-                    root.after(1999, lambda t = 'text' : self.canvas.delete(t))
-                    root.after(1999, self.end_turn)
-                else: # CONTINUE WITH ENTS NOT WAITING
-                    ents = ents[1:]
-    #                 if ents == []:
-    #                     self.end_turn()
-    #                 else:
-                    self.do_ai_loop(ents)
+        # CHECK FOR ENTS THAT DIED DURING AN AI ENT TURN
+            for e in ents[:]:
+                if e not in app.ent_dict.keys():
+                    ents.remove(e)
+            if ents == []:
+                self.end_turn()
             else:
-                self.get_focus(ent)
-                if self.ent_dict[ent].name == 'Undead':
-                    self.ent_dict[ent].do_ai(ents)
-                elif self.ent_dict[ent].name == 'Orc_Axeman':
-                    self.ent_dict[ent].do_ai(ents)
-                elif self.ent_dict[ent].name == 'Tortured_Soul':
-                    self.ent_dict[ent].do_ai(ents)
-                elif self.ent_dict[ent].name == 'Troll':
-                    self.ent_dict[ent].do_ai(ents)
-                elif self.ent_dict[ent].name == 'Undead_Knight':
-                    self.ent_dict[ent].do_ai(ents)
-                elif self.ent_dict[ent].name == 'Revenant':
-                    self.ent_dict[ent].do_ai(ents)
-                elif self.ent_dict[ent].name == 'Ghost':
-                    self.ent_dict[ent].do_ai(ents)
-                elif self.ent_dict[ent].name == 'Minotaur':
-                    self.ent_dict[ent].do_ai(ents)
-                elif self.ent_dict[ent].name == 'White_Dragon':
-                    self.ent_dict[ent].do_ai(ents)
-                elif self.ent_dict[ent].name == 'Warlock':
-                    self.ent_dict[ent].do_ai(ents)
+                ent = ents[0]
+                if self.ent_dict[ent].waiting == True: # IS THIS ENT WAITING
+                    waiting_status = [v.waiting for k,v in self.ent_dict.items() if v.owner == 'p2']
+                    if False not in waiting_status: # ARE ALL ENTS WAITING
+                        self.canvas.create_text(grid_pos[0]*100+50-self.moved_right, grid_pos[1]*100+50-self.moved_down, text = 'No Enemies to Act...', font = ('Andale Mono', 16), fill = 'white', tags = 'text')
+                        root.after(1999, lambda t = 'text' : self.canvas.delete(t))
+                        root.after(1999, self.end_turn)
+                    else: # CONTINUE WITH ENTS NOT WAITING
+                        ents = ents[1:]
+        #                 if ents == []:
+        #                     self.end_turn()
+        #                 else:
+                        self.do_ai_loop(ents)
+                else:
+                    self.get_focus(ent)
+                    if self.ent_dict[ent].name == 'Undead':
+                        self.ent_dict[ent].do_ai(ents)
+                    elif self.ent_dict[ent].name == 'Orc_Axeman':
+                        self.ent_dict[ent].do_ai(ents)
+                    elif self.ent_dict[ent].name == 'Tortured_Soul':
+                        self.ent_dict[ent].do_ai(ents)
+                    elif self.ent_dict[ent].name == 'Troll':
+                        self.ent_dict[ent].do_ai(ents)
+                    elif self.ent_dict[ent].name == 'Undead_Knight':
+                        self.ent_dict[ent].do_ai(ents)
+                    elif self.ent_dict[ent].name == 'Revenant':
+                        self.ent_dict[ent].do_ai(ents)
+                    elif self.ent_dict[ent].name == 'Ghost':
+                        self.ent_dict[ent].do_ai(ents)
+                    elif self.ent_dict[ent].name == 'Minotaur':
+                        self.ent_dict[ent].do_ai(ents)
+                    elif self.ent_dict[ent].name == 'White_Dragon':
+                        self.ent_dict[ent].do_ai(ents)
+                    elif self.ent_dict[ent].name == 'Warlock':
+                        self.ent_dict[ent].do_ai(ents)
         
         
         
