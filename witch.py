@@ -1,3 +1,15 @@
+# minotaur attack friendly if they block path
+
+# beleths command shouldnt stack
+
+# beleths command, flashing still
+
+# revenant pathfinding blocked by friendly ents
+
+# menu options to adjust music, sound effects volume
+
+# fix teleport move (trickster, shadow, warlock) last image create doesnt tag_lower
+
 # make sure ownership checks also work  for 2player mode
 
 # make sure all kill checks handle either name or number (witch or summon)
@@ -1162,6 +1174,8 @@ class Bard(Summon):
         
         
     def moonlight(self, event = None):
+        if self.attack_used == True:
+            return
         app.depop_context(event = None)
         root.bind('<q>', self.cleanup_moonlight)
         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
@@ -1951,7 +1965,7 @@ class Revenant(Summon):
         self.agl = 4
         self.end = 5
         self.dodge = 4
-        self.psyche = 6
+        self.psyche = 7
         self.spirit = 29
         self.waiting = waiting
         super().__init__(name, img, loc, owner, number)
@@ -2687,7 +2701,7 @@ class Warlock(Summon):
         self.end = 7
         self.dodge = 5
         self.psyche = 11
-        self.spirit = 88
+        self.spirit = 89
         self.waiting = waiting
         super().__init__(name, img, loc, owner, number)
         
@@ -2754,6 +2768,7 @@ class Warlock(Summon):
             # Need paths 'through' objects
             # cannot end move in 'block' or Ent
                 goals = [c for c in coords if dist(c, el) <= 3 and app.grid[c[0]][c[1]] == '']
+                # this can cause 'path-shortening', finds path which is then obstructed on real grid resulting in 'short move'
                 egrid = [[''] * (app.map_height//100) for i in range(app.map_width//100)]
                 path = bfs(self.loc[:], goals, egrid)
                 if path:
@@ -2868,9 +2883,11 @@ class Warlock(Summon):
         except: pass
         # if havent moved, attempt random move
         if self.move_used == False:
-            sqrs = self.legal_moves()
-            if sqrs != []:
-                s =  choice(sqrs)
+            # change to move to random square at least 9 away
+            coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+            empty_sqrs = [s for s in coords if app.grid[s[0]][s[1]] == '' and dist(self.loc, s) > 9]
+            if empty_sqrs != []:
+                s =  choice(empty_sqrs)
                 self.warlock_move(ents_list, s)
             else:
                 ents_list = ents_list[1:]
@@ -3205,8 +3222,9 @@ class Minotaur(Summon):
     # assumes that no Ents were within immediate attack/move-attack range
     def move_to_witch(self, ents_list):
         egrid = deepcopy(app.grid)
-        friendly_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p2']
-        for eloc in friendly_ent_locs:
+        # change to remove all non-witch ents
+        nonwitch_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].name != app.p1_witch]
+        for eloc in nonwitch_ent_locs:
             egrid[eloc[0]][eloc[1]] = '' # EGRID NOW EMPTIED OF FRIENDLY ENTS
         # NOW FIND PATH AND PASS TO MOVE
         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
@@ -3528,10 +3546,10 @@ class Witch(Entity):
             self.cantrip_dict['Scrye'] = (self.scrye)
             self.cantrip_dict['Energize'] = (self.energize)
             self.arcane_dict['Plague'] = (self.plague, 6)
-            self.arcane_dict['Pestilence'] = (self.pestilence, 9)
+            self.arcane_dict['Pestilence'] = (self.pestilence, 8)
             self.arcane_dict['Curse_of_Oriax'] = (self.curse_of_oriax, 3)
             self.arcane_dict['Gravity'] = (self.gravity, 5)
-            self.arcane_dict["Beleth's_Command"] = (self.beleths_command, 8)
+            self.arcane_dict["Beleth's_Command"] = (self.beleths_command, 6)
             self.str = 4
             self.agl = 3
             self.end = 4
@@ -3959,6 +3977,8 @@ class Witch(Entity):
         id = app.grid[sqr[0]][sqr[1]]
         if id == '' or id == 'block':
             return
+        if isinstance(app.ent_dict[id], Witch):
+            return
         self.init_cast_anims()
         effect1 = pygame.mixer.Sound('Sound_Effects/scrye.ogg')
         effect1.set_volume(.08)
@@ -4330,7 +4350,7 @@ class Witch(Entity):
         self.cantrip_used = True
         self.init_cast_anims()
         effect1 = pygame.mixer.Sound('Sound_Effects/psionic_push.ogg')
-        effect1.set_volume(.7)
+        effect1.set_volume(.3)
         sound_effects.play(effect1, 0)
 #         self.magick -= self.cantrip_dict['Psionic_Push'][1]
         app.unbind_all()
@@ -4523,6 +4543,9 @@ class Witch(Entity):
         if sqr not in sqrs:
             return
         id = app.current_pos()
+        effs = [v.name for k,v in app.ent_dict[id].effects_dict.items()]
+        if 'Curse_of_Oriax' in effs:
+            return
         if not isinstance(app.ent_dict[id], Witch) and not isinstance(app.ent_dict[id], Summon):
              return
         self.magick -= self.arcane_dict['Curse_of_Oriax'][1]
@@ -4609,9 +4632,9 @@ class Witch(Entity):
         app.vis_dict['Gravity'] = Vis(name = 'Gravity', loc = sqr)
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Gravity'].img, tags = 'Gravity')
         app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Gravity', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
-        # DO Curse_of_Oriax EFFECTS
+        # DO gravity EFFECTS
         def gravity_effect(stat):
-            stat -= 2
+            stat -= 1
             if stat < 1:
                 return 1
             else:
@@ -4633,7 +4656,7 @@ class Witch(Entity):
             return None
         eot = nothing
         n = 'Gravity' + str(app.effects_counter)
-        app.ent_dict[id].effects_dict[n] = Effect(name = 'Gravity', info = 'Gravity\nCannot move and agl and dodge reduced by 2 for 2 turns', eot_func = eot, undo = p, duration = 2)
+        app.ent_dict[id].effects_dict[n] = Effect(name = 'Gravity', info = 'Gravity\nCannot move and agl and dodge reduced by 1 for 2 turns', eot_func = eot, undo = p, duration = 2)
         root.after(3666, lambda  name = 'Gravity' : self.cleanup_spell(name = name))
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     # self cannot move (lasts 2 turns, cannot use if moved this turn), adj ents take 9 spirit, self gets +3 psyche, +3 end (2 turns) 
@@ -4651,11 +4674,10 @@ class Witch(Entity):
         id = self.name
         sqr = self.loc[:]
         self.magick -= self.arcane_dict["Beleth's_Command"][1]
-        
+        # SOUND
         effect1 = pygame.mixer.Sound('Sound_Effects/beleths_command.ogg')
         effect1.set_volume(.7)
         sound_effects.play(effect1, 0)
-        
         self.init_cast_anims()
         app.unbind_all()
         app.depop_context(event = None)
@@ -4698,7 +4720,7 @@ class Witch(Entity):
             root.after(3666, lambda n = uniq_name : clean_beleths_command(n))
         # DO Beleth's Command EFFECTS
         def beleths_command_effect(stat):
-            stat += 3
+            stat += 2
             return stat
         f = beleths_command_effect
         app.ent_dict[id].end_effects.append(f)
@@ -5411,7 +5433,7 @@ class App(tk.Frame):
         if map_number == 0: # FIRST AREA, NO 'CONTINUATION' OF BY PASSING PROTAG OBJECT
             sound1 = pygame.mixer.Sound('Music/heroic_demise.ogg')
             background_music.play(sound1, -1)
-            sound1.set_volume(0.3)
+            sound1.set_volume(0.2)
             # CLEANUP FROM CHOOSE_WITCH
             self.avatar_popup.destroy()
             del self.wrapped_funcs
@@ -5602,7 +5624,7 @@ class App(tk.Frame):
         elif map_number == 21:
             sound1 = pygame.mixer.Sound('Music/Blackmoor_Colossus.ogg')
             background_music.play(sound1, -1)
-            sound1.set_volume(0.6)
+            sound1.set_volume(0.3)
             self.map_triggers = []
 #             def summon_trick():
 #                 all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
@@ -5917,7 +5939,7 @@ class App(tk.Frame):
         elif map_number == 22:
             sound1 = pygame.mixer.Sound('Music/Dark_Amulet.ogg')
             background_music.play(sound1, -1)
-            sound1.set_volume(0.6)
+            sound1.set_volume(0.4)
             self.map_triggers = []
 #             def summon_trick():
 #                 all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
