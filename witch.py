@@ -1,3 +1,5 @@
+# make sure ownership checks also work  for 2player mode
+
 # make sure all kill checks handle either name or number (witch or summon)
 
 # replace 'coords' calculations with one calc on map generate
@@ -4650,9 +4652,9 @@ class Witch(Entity):
         sqr = self.loc[:]
         self.magick -= self.arcane_dict["Beleth's_Command"][1]
         
-#         effect1 = pygame.mixer.Sound('Sound_Effects/beleths_command.ogg')
-#         effect1.set_volume(.9)
-#         sound_effects.play(effect1, 0)
+        effect1 = pygame.mixer.Sound('Sound_Effects/beleths_command.ogg')
+        effect1.set_volume(.7)
+        sound_effects.play(effect1, 0)
         
         self.init_cast_anims()
         app.unbind_all()
@@ -4662,6 +4664,19 @@ class Witch(Entity):
         app.vis_dict["Beleth's_Command"] = Vis(name = "Beleth's_Command", loc = sqr)
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict["Beleth's_Command"].img, tags = "Beleth's_Command")
         app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = "Beleth's_Command", justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+        # BURN AT STAKE LOOP
+        selected_vis = "Beleth's_Command"
+        x = sqr[0]*100+50-app.moved_right
+        y = sqr[1]*100+50-app.moved_down
+        def beleths_loop(timeout):
+            if timeout > 0:
+                app.vis_dict["Beleth's_Command"].rotate_image()
+                app.canvas.delete("Beleth's_Command")
+                app.canvas.create_image(x, y, image = app.vis_dict["Beleth's_Command"].img, tags = "Beleth's_Command")
+                app.canvas.tag_lower("Beleth's_Command", self.tags)
+                timeout -= 1
+                root.after(99, lambda t = timeout : beleths_loop(t))
+        beleths_loop(36)
         # Adj ents take 9 spirit
         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         sqrs = [s for s in coords if dist(sqr, s) == 1]
@@ -5120,8 +5135,125 @@ class Witch(Entity):
         
         
         
-    # all friendly ents within range 3 get +1 all attrs, all enemy ents get -1 all attrs, lasts 3 turns, does not stack
+    # all friendly ents within range 3 get +1 all attrs and heals 1 spirit, all enemy ents get -1 all attrs and loses 1 spirit, lasts 3 turns, does not stack
     def command_of_osiris(self, event = None):
+        app.depop_context(event = None)
+        root.bind('<q>', self.cleanup_spell)
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [s for s in coords if dist(self.loc, s) <= 4]
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e, sqrs = sqrs : self.do_command_of_osiris(event = e, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Confirm Command of Osiris', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, sqrs = sqrs : self.do_command_of_osiris(e, sqrs = sqrs))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+        
+    def do_command_of_osiris(self, event, sqrs):
+        self.magick -= self.arcane_dict['Disintegrate'][1]
+#         self.init_cast_anims()
+        app.unbind_all()
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        self.arcane_used = True
+        ents = [app.grid[s[0]][s[1]] for s in sqrs if app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
+        friendly_ents = [e for e in ents if app.ent_dict[e].owner == self.owner]
+        enemy_ents = [e for e in ents if app.ent_dict[e].owner != self.owner]
+        # SUN VIS
+        app.vis_dict['Osiris_Sun'] = Vis(name = 'Osiris_Sun', loc = [self.loc[0],self.loc[1]-4])
+        app.canvas.create_image(self.loc[0]*100+50-app.moved_right, (self.loc[1]-4)*100+50-app.moved_down, image = app.vis_dict['Osiris_Sun'].img, tags = 'Command_of_Osiris')
+        app.canvas.create_text(self.loc[0]*100+50-app.moved_right, (self.loc[1]-3)*100+95-app.moved_down, text = 'Command of Osiris', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+        def cleanup_sun():
+            del app.vis_dict['Osiris_Sun']
+        root.after(3666, cleanup_sun)
+        # FRIENDLY ENTS
+        for id in friendly_ents:
+            effs = [v.name for k,v in app.ent_dict[id].effects_dict.items()]
+            if 'Command_of_Osiris' in effs:
+                continue
+            sqr = app.ent_dict[id].loc[:]
+            uniq_name = 'Command_of_Osiris' + str(app.effects_counter)
+            app.effects_counter += 1
+            app.vis_dict[uniq_name] = Vis(name = 'Command_of_Osiris', loc = sqr)
+            app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict[uniq_name].img, tags = 'Command_of_Osiris')
+            app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = '+1 Stats\n+1 Spirit', justify = 'center', font = ('Andale Mono', 12), fill = 'white', tags = 'text')
+            # CLEANUP UNIQUE VIS
+            def cleanup_osiris(n):
+                del app.vis_dict[n]
+            root.after(3666, lambda n = uniq_name : cleanup_osiris(n))
+            # SPIRIT
+            if app.ent_dict[id].spirit < app.ent_dict[id].base_spirit:
+                app.ent_dict[id].set_attr('spirit', 1)
+            # DO Command of Osiris EFFECTS
+            def osiris_effect(stat):
+                stat += 1
+                return stat
+            f = osiris_effect
+            app.ent_dict[id].str_effects.append(f)
+            app.ent_dict[id].end_effects.append(f)
+            app.ent_dict[id].agl_effects.append(f)
+            app.ent_dict[id].dodge_effects.append(f)
+            app.ent_dict[id].psyche_effects.append(f)
+            def un(i):
+                app.ent_dict[i].str_effects.remove(osiris_effect)
+                app.ent_dict[i].end_effects.remove(osiris_effect)
+                app.ent_dict[i].agl_effects.remove(osiris_effect)
+                app.ent_dict[i].dodge_effects.remove(osiris_effect)
+                app.ent_dict[i].psyche_effects.remove(osiris_effect)
+            p = partial(un, id)
+            # EOT FUNC
+            def nothing():
+                return None
+            eot = nothing
+            n = 'Command_of_Osiris' + str(app.effects_counter)
+            app.ent_dict[id].effects_dict[n] = Effect(name = 'Command_of_Osiris', info = '+1 attrs, spirit friendly ents, -1 attrs, spirit enemy ents', eot_func = eot, undo = p, duration = 3)
+        #  ENEMY ENTS
+        for id in enemy_ents:
+            effs = [v.name for k,v in app.ent_dict[id].effects_dict.items()]
+            if 'Command_of_Osiris' in effs:
+                continue
+            sqr = app.ent_dict[id].loc[:]
+            uniq_name = 'Command_of_Osiris' + str(app.effects_counter)
+            app.effects_counter += 1
+            app.vis_dict[uniq_name] = Vis(name = 'Command_of_Osiris', loc = sqr)
+            app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict[uniq_name].img, tags = 'Command_of_Osiris')
+            app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = '+1 Stats\n+1 Spirit', justify = 'center', font = ('Andale Mono', 12), fill = 'white', tags = 'text')
+            # CLEANUP UNIQUE VIS
+            def cleanup_osiris(n):
+                del app.vis_dict[n]
+            root.after(3666, lambda n = uniq_name : cleanup_osiris(n))
+            # SPIRIT
+            app.ent_dict[id].set_attr('spirit', -1)
+            if app.ent_dict[id].spirit <= 0:
+                app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+100-app.moved_down, text = app.ent_dict[id].name+' Killed...', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+                root.after(2666, lambda id = id : app.kill(id))
+            # DO Command of Osiris EFFECTS
+            def osiris_effect(stat):
+                stat -= 1
+                if stat < 1:
+                    return 1
+                else:
+                    return stat
+            f = osiris_effect
+            app.ent_dict[id].str_effects.append(f)
+            app.ent_dict[id].end_effects.append(f)
+            app.ent_dict[id].agl_effects.append(f)
+            app.ent_dict[id].dodge_effects.append(f)
+            app.ent_dict[id].psyche_effects.append(f)
+            def un(i):
+                app.ent_dict[i].str_effects.remove(osiris_effect)
+                app.ent_dict[i].end_effects.remove(osiris_effect)
+                app.ent_dict[i].agl_effects.remove(osiris_effect)
+                app.ent_dict[i].dodge_effects.remove(osiris_effect)
+                app.ent_dict[i].psyche_effects.remove(osiris_effect)
+            p = partial(un, id)
+            # EOT FUNC
+            def nothing():
+                return None
+            eot = nothing
+            n = 'Command_of_Osiris' + str(app.effects_counter)
+            app.ent_dict[id].effects_dict[n] = Effect(name = 'Command_of_Osiris', info = '+1 attrs, spirit friendly ents, -1 attrs, spirit enemy ents', eot_func = eot, undo = p, duration = 3)
+            
+            
+        root.after(3666, lambda  name = 'Command_of_Osiris' : self.cleanup_spell(name = name))
         print('command_of_osiris')
         
 # MORGAN SPELLS
