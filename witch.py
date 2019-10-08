@@ -1,44 +1,28 @@
-# make sure gravity stacking resolves/undo properly
+# line of sight for shadow attacks, pyrotechnics, spells, gate?
 
-# minotaur attack friendly if they block path
+# trickster teleport faster, all teleport/shadow move
 
-# revenant pathfinding blocked by friendly ents
+# add 'sparkle' visual clue for some triggers
+
+# in 'do_save' if a player saves and then hits cmd/ctrl+q or otherwise exits manually, the object/save may not be pickled properly resulting in zero byte file. This is because programmatic logic 'stays' in 'do_save' until 'next_area' button hit, resulting in not closing the file opened/created during pickling. Using 'with' already to auto-close file, but probably existing vars block out automatic close. To solve this, call some other function from 'do_save' (probably a dummy/empty/close-dialog), probably do not call next_area so as to skip on-screen text
+
+# spells, decoy, place 'husk' in loc and teleport
+# trade loc with a summon, trade two 'movable' ents locs
+
+# revenant pathfinding, move along regular grid when egrid path results in all paths end in block
+# warlock pathfinding, is searching empty grid? removing 'block'?
 
 # menu options to adjust music, sound effects volume
 
-# fix teleport move (trickster, shadow, warlock) last image create doesnt tag_lower
-
 # make sure ownership checks also work  for 2player mode
 
-# make sure all kill checks handle either name or number (witch or summon)
-
-# replace 'coords' calculations with one calc on map generate
-
-# warlock pathfinding, is searching empty grid? removing 'block'?
-
-# first take_focus in effects loop doesnt happen soon enough, not enough time to read first effect
-
-# is focus_square and take_focus in ai_moves moving the map properly?
-# trickster teleport faster
-
-# probably use this to find any open channel for playing sound instead of set channels
-'''sound1 = pygame.mixer.Sound("sound.wav")
-pygame.mixer.find_channel().play(sound1)
-Note that by default, find_channel will return None if there are no free channels available. By passing it True, you can instead return the channel that's been playing audio the longest:
-
-sound1 = pygame.mixer.Sound("sound.wav")
-pygame.mixer.find_channel(True).play(sound1)
-You may also be interested in the set_num_channels function, which lets you set the maximum number of audio channels:
-
-pygame.mixer.set_num_channels(20)'''
-
-# bug with bfs-pathfinding - if there is no 'goal' square (sqr within moving Ents attack range of target) then no path will be returned by bfs, ie if Enemy Ent has attack range of 1 and all squares within range 1 of target are occupied, then no path exists
+# bug with bfs-pathfinding - if there is no 'goal' square (sqr within moving Ents attack range of target) then no path will be returned by bfs, ie if Enemy Ent has attack range of 1 and all squares within range 1 of target are occupied, then no path exists, this will be solved by egrid removing friendly ents UNLESS ent is set to target a specific ent blockaded by its own friendly ents OR if a map contains a square surrounded by 'block' on all squares within range of the pathfinding ent, CURRENTLY no square exists like this on any maps (0-122/22) and only Minotaur pathfinds for specific ents, minotaur mostly handles blockades by removing ALL ents on egrid (except for target)
 
 # get_focus and focus_square calls in conjunction with other 'afters' most likely potential causes for race conditions
 
 # widen teleport vis
 
-# when plaguebearer killed same time as adj ents, contagion 'happens' for ents that are killed 'programmatically after' causes no true errors but visually looks incorrect and gamelogic-wise is 'incorrect'
+# when plaguebearer killed same time as adj ents, contagion 'happens' for ents that are killed 'programmatically after' causes no true errors but visually looks incorrect and gamelogic-wise is 'incorrect', text moves,  vis moves but is immediately replaced by correct location vis by animate()
 
 # attempt to recreate bug- this happens on labyrinth also (probably any level)
 # map does not 'move' down all the way after some progress in level (works at begin)
@@ -60,10 +44,6 @@ pygame.mixer.set_num_channels(20)'''
 
 # level 41, should be able to occupy spawn square to prevent spawns?
 
-# make shortcut button that 'blinks' all summons, vis cue to raise them above objects and highlight
-
-# during move_loops, tag_lower under top is fine DURING movement BUT last image create doesnt tag_lower properly, causes flicker of moving image over 'top' tags
-
 # add death of protag scenes
 
 # 2 player mode needs some sort of terrain objective, reasons to engage or hold areas, when and where
@@ -71,8 +51,6 @@ pygame.mixer.set_num_channels(20)'''
 # what to do about deaths, need some kind of visual cue
 
 # make popups into fullscreen toplevels
-
-# for pathing, when attempting reroute on egrid after finding no direct path, if the egrid path is much greater than dist(self.loc, goal) than do not move along it at all (probably better to wait for things to move in that case) 'much greater' can be defined simply as 3-6 greater int value when comparing egrid path length and dist from location
 
 # victory condition happens too fast, need to freeze screen and show 'confirm' or 'notice'
 
@@ -115,7 +93,7 @@ def dist(loc1, loc2):
 # 'row' holds strings ('', 'EntityID', or 'block')
 # returns path from start to goal (list of coords)
 def bfs(start, goal, grid):
-    coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)] # get list of coords from gridsize
+#     coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
     path = []
     q = [[start]]
     visited = [start]
@@ -125,7 +103,7 @@ def bfs(start, goal, grid):
         last = path[-1]
         if last in goal:
             return path
-        adj = [c for c in coords if dist(c, last) == 1 and grid[c[0]][c[1]] == '']
+        adj = [c for c in app.coords if dist(c, last) == 1 and grid[c[0]][c[1]] == '']
         for s in adj:
             if s not in visited:
                 q.append(path + [s])
@@ -512,6 +490,8 @@ class Entity():
         try: del app.vis_dict['Shadow_Move']
         except: pass
         app.canvas.create_image(endloc[0]*100+50-app.moved_right, endloc[1]*100+50-app.moved_down, image = self.img, tags = self.tags)
+        try: app.canvas.tag_lower(self.tags, 'large')
+        except: pass
         app.canvas.tag_lower(self.tags, 'maptop')
         app.depop_context(event = None)
         app.unbind_all()
@@ -640,8 +620,8 @@ class Trickster(Summon):
             return
         app.depop_context(event = None)
         root.bind('<q>', self.cleanup_pyrotechnics)
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        sqrs = [s for s in coords if dist(self.loc, s) <= 3]
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [s for s in app.coords if dist(self.loc, s) <= 3]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_pyrotechnics(event = e, sqr = s, sqrs = sqrs))
         b = tk.Button(app.context_menu, text = 'Choose Target For Pyrotechnics', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_pyrotechnics(e, s, sqrs))
@@ -680,8 +660,8 @@ class Trickster(Summon):
             return
         app.depop_context(event = None)
         root.bind('<q>', self.cleanup_simulacrum)
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        sqrs = [s for s in coords if dist(self.loc, s) <= 4]
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [s for s in app.coords if dist(self.loc, s) <= 4]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_simulacrum(event = e, sqr = s, sqrs = sqrs))
         b = tk.Button(app.context_menu, text = 'Choose Target For Simulacrum', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_simulacrum(e, s, sqrs))
@@ -862,6 +842,9 @@ class Trickster(Summon):
         app.canvas.delete('Gate')
         del app.vis_dict['Gate']
         app.canvas.create_image(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+50-app.moved_down, image = app.ent_dict[id].img, tags = app.ent_dict[id].tags)
+        try: app.canvas.tag_lower((app.ent_dict[id].tags), 'large')
+        except: pass
+        app.canvas.tag_lower((app.ent_dict[id].tags), 'maptop')
         root.after(666, self.cleanup_gate)
     
     def doorway_squares(self, distance):
@@ -903,10 +886,10 @@ class Shadow(Summon):
         self.actions = {'Attack':self.shadow_attack, 'Shadow Move':self.teleport_move}
         self.attack_used = False
         self.str = 3
-        self.agl = 4
+        self.agl = 3
         self.end = 2
         self.dodge = 6
-        self.psyche = 6
+        self.psyche = 5
         self.spirit = 13
         super().__init__(name, img, loc, owner, number)
         
@@ -934,6 +917,9 @@ class Shadow(Summon):
             return
         if app.current_pos() == '' or app.current_pos() == 'block':
             return
+        effect1 = pygame.mixer.Sound('Sound_Effects/shadow_attack.ogg')
+        effect1.set_volume(1)
+        sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
         id = app.current_pos()
@@ -1067,8 +1053,8 @@ class Plaguebearer(Summon):
         root.unbind('<a>')
         root.unbind('<q>')
         root.bind('<q>', self.finish_pox)
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        sqrs = [c for c in coords if dist(self.loc, c) == 1]
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [c for c in app.coords if dist(self.loc, c) == 1]
         app.animate_squares(sqrs)
         app.depop_context(event = None)
         root.bind('<a>', lambda e, s = sqrs : self.do_pox(event = e, sqrs = s)) 
@@ -1133,11 +1119,11 @@ class Plaguebearer(Summon):
     def legal_moves(self):
         loc = self.loc
         mvlist = []
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         def findall(loc, start, dist):
             if start > dist:
                 return
-            adj = [c for c in coords if abs(c[0] - loc[0]) + abs(c[1] - loc[1]) == 1 and app.grid[c[0]][c[1]] == '']
+            adj = [c for c in app.coords if abs(c[0] - loc[0]) + abs(c[1] - loc[1]) == 1 and app.grid[c[0]][c[1]] == '']
             for s in adj:
                 mvlist.append(s)
                 findall(s, start+1, dist)
@@ -1170,8 +1156,8 @@ class Bard(Summon):
             return
         app.depop_context(event = None)
         root.bind('<q>', self.cleanup_moonlight)
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        sqrs = [s for s in coords if dist(self.loc, s) <= 2]
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [s for s in app.coords if dist(self.loc, s) <= 2]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_moonlight(event = e, s = s, sqrs = sqrs))
         b = tk.Button(app.context_menu, text = 'Choose Target For Moonlight', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_moonlight(e, s, sqrs))
@@ -1237,8 +1223,8 @@ class Bard(Summon):
         root.unbind('<a>')
         root.unbind('<q>')
         root.bind('<q>', self.finish_unholy_chant)
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        sqrs = [c for c in coords if dist(self.loc, c) <= 2]
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [c for c in app.coords if dist(self.loc, c) <= 2]
         app.animate_squares(sqrs)
         app.depop_context(event = None)
         root.bind('<a>', lambda e, s = sqrs : self.do_unholy_chant(event = e, sqrs = s)) 
@@ -1315,8 +1301,8 @@ class Bard(Summon):
         root.unbind('<a>')
         root.unbind('<q>')
         root.bind('<q>', self.finish_discord)
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        sqrs = [c for c in coords if dist(self.loc, c) <= 3]
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [c for c in app.coords if dist(self.loc, c) <= 3]
         app.animate_squares(sqrs)
         app.depop_context(event = None)
         root.bind('<a>', lambda e, s = sqrs : self.do_discord(event = e, sqrs = s))
@@ -1363,11 +1349,11 @@ class Bard(Summon):
     def legal_moves(self):
         loc = self.loc
         mvlist = []
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         def findall(loc, start, dist):
             if start > dist:
                 return
-            adj = [c for c in coords if abs(c[0] - loc[0]) + abs(c[1] - loc[1]) == 1 and app.grid[c[0]][c[1]] == '']
+            adj = [c for c in app.coords if abs(c[0] - loc[0]) + abs(c[1] - loc[1]) == 1 and app.grid[c[0]][c[1]] == '']
             for s in adj:
                 mvlist.append(s)
                 findall(s, start+1, dist)
@@ -1427,8 +1413,8 @@ class White_Dragon(Summon):
             self.pass_priority(ents_list)
         # if spirit low, fly to random spot can occupy, set waiting, summon orcs?
         elif self.spirit < 88 and self.retreated_once == False:
-            coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-            empty_locs = [c for c in coords if app.grid[c[0]][c[1]] == '' and dist(c, self.loc) >= 12]
+#             coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+            empty_locs = [c for c in app.coords if app.grid[c[0]][c[1]] == '' and dist(c, self.loc) >= 12]
             endloc = choice(empty_locs)
             # create orcs
             orc_sqrs = [[15,1],[16,1],[17,1],[18,1],[15,2],[16,2],[17,2],[18,2],[15,3],[16,3],[17,3],[18,3],[15,4],[16,4],[17,4],[18,4]]
@@ -1456,8 +1442,8 @@ class White_Dragon(Summon):
             self.retreated_once = True
             
             def awaken_dragon():
-                coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-                sqrs = [s for s in coords if dist(s, app.ent_dict['b1'].loc) <= 9]
+#                 coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+                sqrs = [s for s in app.coords if dist(s, app.ent_dict['b1'].loc) <= 9]
                 ents = [app.grid[s[0]][s[1]] for s in sqrs if app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
                 for ent in ents:
                     if app.ent_dict[ent].owner == 'p1':
@@ -1476,10 +1462,10 @@ class White_Dragon(Summon):
             else: # CANNOT ATTACK FROM START LOC, GET TARGET AND MOVE TOWARDS
                 enemy_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p1']
                 paths = []
-                coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+#                 coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
                 for el in enemy_ent_locs:
                 # FIND PATH TO SQR WITHIN RANGE OF THIS ENT
-                    goals = [c for c in coords if 0 < dist(c, el) <= 3 and app.grid[c[0]][c[1]] == '']
+                    goals = [c for c in app.coords if 0 < dist(c, el) <= 3 and app.grid[c[0]][c[1]] == '']
                     path = bfs(self.loc[:], goals, app.grid[:])
                     if path:
                         paths.append(path)
@@ -1509,9 +1495,9 @@ class White_Dragon(Summon):
                     for eloc in friendly_ent_locs:
                         egrid[eloc[0]][eloc[1]] = '' # EGRID NOW EMPTIED OF FRIENDLY ENTS
                     # NOW FIND PATH AND PASS TO MOVE
-                    coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+#                     coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
                     for el in enemy_ent_locs:
-                        goals = [c for c in coords if 0 < dist(c, el) <= 3]
+                        goals = [c for c in app.coords if 0 < dist(c, el) <= 3]
                         path = bfs(self.loc[:], goals, egrid[:]) # BFS ON ALTERED GRID (FRIENDLY ENTS REMOVED)
                         if path:
                             paths.append(path)
@@ -1580,7 +1566,8 @@ class White_Dragon(Summon):
                 app.canvas.move(id, 0, 10)
                 app.canvas.move(id+'top', 0, 10)
             app.canvas.tag_raise('cursor')
-            app.canvas.tag_lower((self.tags), 'large')
+            try: app.canvas.tag_lower((self.tags), 'large')
+            except: pass
             app.canvas.tag_lower((self.tags), 'maptop')
             if x == endx and y == endy:
                 self.finish_move(id, end_sqr, start_sqr, ents_list) # EXIT
@@ -1672,8 +1659,8 @@ class White_Dragon(Summon):
         
     def legal_attacks(self):
         sqrs = []
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        for coord in coords:
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        for coord in app.coords:
             if dist(coord, self.loc) <= 3:
                 if app.grid[coord[0]][coord[1]] != '' and app.grid[coord[0]][coord[1]] != 'block':
                     sqrs.append(coord)
@@ -1682,8 +1669,8 @@ class White_Dragon(Summon):
     def legal_moves(self):
         loc = self.loc[:]
         mvlist = []
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        for c in coords:
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        for c in app.coords:
             if app.grid[c[0]][c[1]] == '':
                 mvlist.append(c)
         return mvlist
@@ -1694,11 +1681,11 @@ class Tortured_Soul(Summon):
         self.actions = {'attack':self.do_attack}
         self.attack_used = False
         self.str = 7
-        self.agl = 5
+        self.agl = 6
         self.end = 7
         self.dodge = 4
         self.psyche = 2
-        self.spirit = 23
+        self.spirit = 25
         self.waiting = waiting
         super().__init__(name, img, loc, owner, number)
         
@@ -1724,10 +1711,10 @@ class Tortured_Soul(Summon):
             else: # CANNOT ATTACK FROM START LOC, GET TARGET AND MOVE TOWARDS
                 enemy_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p1']
                 paths = []
-                coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+#                 coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
                 for el in enemy_ent_locs:
                 # FIND PATH TO SQR WITHIN RANGE OF THIS ENT
-                    goals = [c for c in coords if dist(c, el) <= 3 and app.grid[c[0]][c[1]] == '']
+                    goals = [c for c in app.coords if dist(c, el) <= 3 and app.grid[c[0]][c[1]] == '']
                     path = bfs(self.loc[:], goals, app.grid[:])
                     if path:
                         paths.append(path)
@@ -1757,9 +1744,9 @@ class Tortured_Soul(Summon):
                     for eloc in friendly_ent_locs:
                         egrid[eloc[0]][eloc[1]] = '' # EGRID NOW EMPTIED OF FRIENDLY ENTS
                     # NOW FIND PATH AND PASS TO MOVE
-                    coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+#                     coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
                     for el in enemy_ent_locs:
-                        goals = [c for c in coords if dist(c, el) <= 3]
+                        goals = [c for c in app.coords if dist(c, el) <= 3]
                         path = bfs(self.loc[:], goals, egrid[:]) # BFS ON ALTERED GRID (FRIENDLY ENTS REMOVED)
                         if path:
                             paths.append(path)
@@ -1794,6 +1781,9 @@ class Tortured_Soul(Summon):
     def do_attack(self, ents_list, id):
         app.get_focus(id)
         self.init_attack_anims()
+        effect1 = pygame.mixer.Sound('Sound_Effects/tortured_soul_agony.ogg')
+        effect1.set_volume(1)
+        sound_effects.play(effect1, 0)
         # make range atk vis
         visloc = app.ent_dict[id].loc[:]
         app.vis_dict['Tortured_Soul_Agony'] = Vis(name = 'Tortured_Soul_Agony', loc = visloc)
@@ -1833,8 +1823,8 @@ class Tortured_Soul(Summon):
         
     def legal_attacks(self):
         sqrs = []
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        for coord in coords:
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        for coord in app.coords:
             if dist(coord, self.loc) <= 3:
                 if app.grid[coord[0]][coord[1]] != '' and app.grid[coord[0]][coord[1]] != 'block':
                     sqrs.append(coord)
@@ -1843,11 +1833,11 @@ class Tortured_Soul(Summon):
     def legal_moves(self):
         loc = self.loc[:]
         mvlist = []
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         def findall(loc, start, distance):
             if start > distance:
                 return
-            adj = [c for c in coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
+            adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
             for s in adj:
                 mvlist.append(s)
                 findall(s, start+1, distance)
@@ -1902,6 +1892,9 @@ class Ghost(Summon):
             
     def do_attack(self, ents_list, id):
         app.get_focus(id)
+        effect1 = pygame.mixer.Sound('Sound_Effects/ghost_attack.ogg')
+        effect1.set_volume(1)
+        sound_effects.play(effect1, 0)
 #         self.init_attack_anims()
         # make range atk vis
 #         visloc = app.ent_dict[id].loc[:]
@@ -1940,8 +1933,8 @@ class Ghost(Summon):
         
     def legal_attacks(self):
         sqrs = []
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        for coord in coords:
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        for coord in app.coords:
             if dist(coord, self.loc) <= 3:
                 if app.grid[coord[0]][coord[1]] != '' and app.grid[coord[0]][coord[1]] != 'block':
                     sqrs.append(coord)
@@ -1984,12 +1977,12 @@ class Revenant(Summon):
             else: # CANNOT ATTACK FROM START LOC, GET TARGET AND MOVE TOWARDS
                 enemy_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p1']
                 paths = []
-                coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+#                 coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
                 for el in enemy_ent_locs:
                 # FIND PATH TO SQR WITHIN RANGE OF THIS ENT
                 # Need paths 'through' objects
                 # cannot end move in 'block' or Ent
-                    goals = [c for c in coords if dist(c, el) <= 2 and app.grid[c[0]][c[1]] == '']
+                    goals = [c for c in app.coords if dist(c, el) <= 2 and app.grid[c[0]][c[1]] == '']
                     egrid = [[''] * (app.map_height//100) for i in range(app.map_width//100)]
                     path = bfs(self.loc[:], goals, egrid)
                     if path:
@@ -2021,9 +2014,9 @@ class Revenant(Summon):
                     for eloc in friendly_ent_locs:
                         egrid[eloc[0]][eloc[1]] = '' # EGRID NOW EMPTIED OF FRIENDLY ENTS
                     # NOW FIND PATH AND PASS TO MOVE
-                    coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+#                     coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
                     for el in enemy_ent_locs:
-                        goals = [c for c in coords if dist(c, el) <= 3]
+                        goals = [c for c in app.coords if dist(c, el) <= 3]
                         path = bfs(self.loc[:], goals, egrid[:]) # BFS ON ALTERED GRID (FRIENDLY ENTS REMOVED)
                         if path:
                             paths.append(path)
@@ -2057,6 +2050,9 @@ class Revenant(Summon):
     # change to 'teleport move'
     def revenant_move(self, ents_list, endloc):
         global selected
+        effect1 = pygame.mixer.Sound('Sound_Effects/revenant_move.ogg')
+        effect1.set_volume(1)
+        sound_effects.play(effect1, 0)
         # FIND SQUARE FURTHEST ALONG PATH THAT IS WITHIN MOVE RANGE
         id = self.number
         x = self.loc[0]*100+50-app.moved_right
@@ -2127,6 +2123,9 @@ class Revenant(Summon):
     def do_attack(self, ents_list, id):
         app.get_focus(id)
 #         self.init_attack_anims()
+        effect1 = pygame.mixer.Sound('Sound_Effects/revenant_terror.ogg')
+        effect1.set_volume(1)
+        sound_effects.play(effect1, 0)
         # make range atk vis
         visloc = app.ent_dict[id].loc[:]
         app.vis_dict['Revenant_Terror'] = Vis(name = 'Revenant_Terror', loc = visloc)
@@ -2165,8 +2164,8 @@ class Revenant(Summon):
         
     def legal_attacks(self):
         sqrs = []
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        for coord in coords:
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        for coord in app.coords:
             if dist(coord, self.loc) <= 2:
                 if app.grid[coord[0]][coord[1]] != '' and app.grid[coord[0]][coord[1]] != 'block':
                     sqrs.append(coord)
@@ -2175,8 +2174,8 @@ class Revenant(Summon):
     def legal_moves(self):
         loc = self.loc[:]
         mvlist = []
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        for c in coords:
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        for c in app.coords:
             if dist(loc, c) <= 5 and app.grid[c[0]][c[1]] == '':
                 mvlist.append(c)
         return mvlist
@@ -2219,10 +2218,10 @@ class Undead(Summon):
             else: # CANNOT ATTACK FROM START LOC, GET TARGET AND MOVE TOWARDS
                 enemy_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p1']
                 paths = []
-                coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+#                 coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
                 for el in enemy_ent_locs:
                 # FIND PATH TO SQR WITHIN RANGE OF THIS ENT
-                    goals = [c for c in coords if dist(c, el) == 1 and app.grid[c[0]][c[1]] == '']
+                    goals = [c for c in app.coords if dist(c, el) == 1 and app.grid[c[0]][c[1]] == '']
                     path = bfs(self.loc[:], goals, app.grid[:])
                     if path:
                         paths.append(path)
@@ -2252,9 +2251,9 @@ class Undead(Summon):
                     for eloc in friendly_ent_locs:
                         egrid[eloc[0]][eloc[1]] = '' # EGRID NOW EMPTIED OF FRIENDLY ENTS
                     # NOW FIND PATH AND PASS TO MOVE
-                    coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+#                     coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
                     for el in enemy_ent_locs:
-                        goals = [c for c in coords if dist(c, el) == 1]
+                        goals = [c for c in app.coords if dist(c, el) == 1]
                         path = bfs(self.loc[:], goals, egrid[:]) # BFS ON ALTERED GRID (FRIENDLY ENTS REMOVED)
                         if path:
                             paths.append(path)
@@ -2324,8 +2323,8 @@ class Undead(Summon):
         
     def legal_attacks(self):
         sqrs = []
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        for coord in coords:
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        for coord in app.coords:
             if dist(coord, self.loc) == 1:
                 if app.grid[coord[0]][coord[1]] != '' and app.grid[coord[0]][coord[1]] != 'block':
                     sqrs.append(coord)
@@ -2334,11 +2333,11 @@ class Undead(Summon):
     def legal_moves(self):
         loc = self.loc[:]
         mvlist = []
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         def findall(loc, start, distance):
             if start > distance:
                 return
-            adj = [c for c in coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
+            adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
             for s in adj:
                 mvlist.append(s)
                 findall(s, start+1, distance)
@@ -2387,10 +2386,10 @@ class Undead_Knight(Summon):
             else: # CANNOT ATTACK FROM START LOC, GET TARGET AND MOVE TOWARDS
                 enemy_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p1']
                 paths = []
-                coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+#                 coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
                 for el in enemy_ent_locs:
                 # FIND PATH TO SQR WITHIN RANGE OF THIS ENT
-                    goals = [c for c in coords if dist(c, el) == 1 and app.grid[c[0]][c[1]] == '']
+                    goals = [c for c in app.coords if dist(c, el) == 1 and app.grid[c[0]][c[1]] == '']
                     path = bfs(self.loc[:], goals, app.grid[:])
                     if path:
                         paths.append(path)
@@ -2420,9 +2419,9 @@ class Undead_Knight(Summon):
                     for eloc in friendly_ent_locs:
                         egrid[eloc[0]][eloc[1]] = '' # EGRID NOW EMPTIED OF FRIENDLY ENTS
                     # NOW FIND PATH AND PASS TO MOVE
-                    coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+#                     coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
                     for el in enemy_ent_locs:
-                        goals = [c for c in coords if dist(c, el) == 1]
+                        goals = [c for c in app.coords if dist(c, el) == 1]
                         path = bfs(self.loc[:], goals, egrid[:]) # BFS ON ALTERED GRID (FRIENDLY ENTS REMOVED)
                         if path:
                             paths.append(path)
@@ -2456,6 +2455,9 @@ class Undead_Knight(Summon):
     def do_attack(self, ents_list, id):
         app.get_focus(id)
 #         self.init_attack_anims()
+        effect1 = pygame.mixer.Sound('Sound_Effects/undead_knight_attack.ogg')
+        effect1.set_volume(1)
+        sound_effects.play(effect1, 0)
         my_agl = self.get_attr('agl')
         target_agl = app.ent_dict[id].get_attr('agl')
         if to_hit(my_agl, target_agl) == True:
@@ -2488,8 +2490,8 @@ class Undead_Knight(Summon):
         
     def legal_attacks(self):
         sqrs = []
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        for coord in coords:
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        for coord in app.coords:
             if dist(coord, self.loc) == 1:
                 if app.grid[coord[0]][coord[1]] != '' and app.grid[coord[0]][coord[1]] != 'block':
                     sqrs.append(coord)
@@ -2498,11 +2500,11 @@ class Undead_Knight(Summon):
     def legal_moves(self):
         loc = self.loc[:]
         mvlist = []
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         def findall(loc, start, distance):
             if start > distance:
                 return
-            adj = [c for c in coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
+            adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
             for s in adj:
                 mvlist.append(s)
                 findall(s, start+1, distance)
@@ -2556,10 +2558,10 @@ class Troll(Summon):
             else: # CANNOT ATTACK FROM START LOC, GET TARGET AND MOVE TOWARDS
                 enemy_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p1']
                 paths = []
-                coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+#                 coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
                 for el in enemy_ent_locs:
                 # FIND PATH TO SQR WITHIN RANGE OF THIS ENT
-                    goals = [c for c in coords if dist(c, el) == 1 and app.grid[c[0]][c[1]] == '']
+                    goals = [c for c in app.coords if dist(c, el) == 1 and app.grid[c[0]][c[1]] == '']
                     path = bfs(self.loc[:], goals, app.grid[:])
                     if path:
                         paths.append(path)
@@ -2589,9 +2591,9 @@ class Troll(Summon):
                     for eloc in friendly_ent_locs:
                         egrid[eloc[0]][eloc[1]] = '' # EGRID NOW EMPTIED OF FRIENDLY ENTS
                     # NOW FIND PATH AND PASS TO MOVE
-                    coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+#                     coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
                     for el in enemy_ent_locs:
-                        goals = [c for c in coords if dist(c, el) == 1]
+                        goals = [c for c in app.coords if dist(c, el) == 1]
                         path = bfs(self.loc[:], goals, egrid[:]) # BFS ON ALTERED GRID (FRIENDLY ENTS REMOVED)
                         if path:
                             paths.append(path)
@@ -2626,6 +2628,9 @@ class Troll(Summon):
     def do_attack(self, ents_list, id):
         app.get_focus(id)
 #         self.init_attack_anims()
+        effect1 = pygame.mixer.Sound('Sound_Effects/troll_attack.ogg')
+        effect1.set_volume(.07)
+        sound_effects.play(effect1, 0)
         my_agl = self.get_attr('agl')
         target_dodge = app.ent_dict[id].get_attr('dodge')
         if to_hit(my_agl, target_dodge) == True:
@@ -2658,8 +2663,8 @@ class Troll(Summon):
         
     def legal_attacks(self):
         sqrs = []
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        for coord in coords:
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        for coord in app.coords:
             if dist(coord, self.loc) == 1:
                 if app.grid[coord[0]][coord[1]] != '' and app.grid[coord[0]][coord[1]] != 'block':
                     sqrs.append(coord)
@@ -2668,15 +2673,15 @@ class Troll(Summon):
     def legal_moves(self):
         loc = self.loc[:]
         mvlist = []
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         def findall(loc, start, distance):
             if start > distance:
                 return
-            adj = [c for c in coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
+            adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
             for s in adj:
                 mvlist.append(s)
                 findall(s, start+1, distance)
-        findall(loc, 1, 7) 
+        findall(loc, 1, 9) 
         setlist = []
         for l in mvlist:
             if l not in setlist:
@@ -2717,29 +2722,31 @@ class Warlock(Summon):
             root.after(1333, lambda el = ents_list : self.warlock_summon(el))
             
     def warlock_summon(self, ents_list):
-        # give visual cue, timing, alternate turns
-        if app.turn_counter % 2 == 0:
-            app.effects_counter += 3 # skip existing ent ids
-            uniq_num = app.effects_counter
-            app.effects_counter += 1
-            # get random empty location
-            coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100) if dist([x,y], self.loc) <= 6]
-            empty = [c for c in coords if app.grid[c[0]][c[1]] == '']
-            if empty != []:
-                undead_loc = choice(empty)
-                app.focus_square(undead_loc)
-                app.vis_dict['Summon_Undead'] = Vis(name = 'Summon_Undead', loc = undead_loc[:])
-                app.canvas.create_image(undead_loc[0]*100+50-app.moved_right, undead_loc[1]*100+50-app.moved_down, image = app.vis_dict['Summon_Undead'].img, tags = 'Summon_Undead')
-                def cleanup_vis(name):
-                    app.canvas.delete(name)
-                    del app.vis_dict[name]
-                root.after(2333, lambda name = 'Summon_Undead' : cleanup_vis(name))
-                app.canvas.create_text(undead_loc[0]*100+50-app.moved_right, undead_loc[1]*100+90-app.moved_down, text = 'Summon Undead', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
-                img = ImageTk.PhotoImage(Image.open('summon_imgs/Undead.png'))
-                app.ent_dict['b'+str(uniq_num)] = Undead(name = 'Undead', img = img, loc = undead_loc[:], owner = 'p2', number = 'b'+str(uniq_num))
-                app.grid[undead_loc[0]][undead_loc[1]] = 'b'+str(uniq_num)
-                app.canvas.create_image(undead_loc[0]*100+50-app.moved_right, undead_loc[1]*100+50-app.moved_down, image = img, tags = 'b'+str(uniq_num))
-                root.after(2333, lambda t = 'text' : app.canvas.delete(t))
+        # give visual cue, timing, alternate turns?
+        effect1 = pygame.mixer.Sound('Sound_Effects/warlock_summon.ogg')
+        effect1.set_volume(1)
+        sound_effects.play(effect1, 0)
+        app.effects_counter += 3 # skip existing ent ids
+        uniq_num = app.effects_counter
+        app.effects_counter += 1
+        # get random empty location
+        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100) if dist([x,y], self.loc) <= 6]
+        empty = [c for c in coords if app.grid[c[0]][c[1]] == '']
+        if empty != []:
+            undead_loc = choice(empty)
+            app.focus_square(undead_loc)
+            app.vis_dict['Summon_Undead'] = Vis(name = 'Summon_Undead', loc = undead_loc[:])
+            app.canvas.create_image(undead_loc[0]*100+50-app.moved_right, undead_loc[1]*100+50-app.moved_down, image = app.vis_dict['Summon_Undead'].img, tags = 'Summon_Undead')
+            def cleanup_vis(name):
+                app.canvas.delete(name)
+                del app.vis_dict[name]
+            root.after(2333, lambda name = 'Summon_Undead' : cleanup_vis(name))
+            app.canvas.create_text(undead_loc[0]*100+50-app.moved_right, undead_loc[1]*100+90-app.moved_down, text = 'Summon Undead', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+            img = ImageTk.PhotoImage(Image.open('summon_imgs/Undead.png'))
+            app.ent_dict['b'+str(uniq_num)] = Undead(name = 'Undead', img = img, loc = undead_loc[:], owner = 'p2', number = 'b'+str(uniq_num))
+            app.grid[undead_loc[0]][undead_loc[1]] = 'b'+str(uniq_num)
+            app.canvas.create_image(undead_loc[0]*100+50-app.moved_right, undead_loc[1]*100+50-app.moved_down, image = img, tags = 'b'+str(uniq_num))
+            root.after(2333, lambda t = 'text' : app.canvas.delete(t))
         root.after(2333, lambda ents_list = ents_list : self.continue_ai(ents_list))
         # End Summon Undead, ATTEMPT ATTACK
             
@@ -2754,12 +2761,12 @@ class Warlock(Summon):
         else: # CANNOT ATTACK FROM START LOC, GET TARGET AND MOVE TOWARDS
             enemy_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p1']
             paths = []
-            coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+#             coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
             for el in enemy_ent_locs:
             # FIND PATH TO SQR WITHIN RANGE OF THIS ENT
             # Need paths 'through' objects
             # cannot end move in 'block' or Ent
-                goals = [c for c in coords if dist(c, el) <= 3 and app.grid[c[0]][c[1]] == '']
+                goals = [c for c in app.coords if dist(c, el) <= 3 and app.grid[c[0]][c[1]] == '']
                 # this can cause 'path-shortening', finds path which is then obstructed on real grid resulting in 'short move'
                 egrid = [[''] * (app.map_height//100) for i in range(app.map_width//100)]
                 path = bfs(self.loc[:], goals, egrid)
@@ -2814,6 +2821,9 @@ class Warlock(Summon):
         app.canvas.delete('Teleport')
         del app.vis_dict['Teleport']
         app.canvas.create_image(endloc[0]*100+50-app.moved_right, endloc[1]*100+50-app.moved_down, image = self.img, tags = self.tags)
+        try: app.canvas.tag_lower(self.tags, 'large')
+        except: pass
+        app.canvas.tag_lower(self.tags, 'maptop')
         root.after(666, lambda ents_list = ents_list : self.finish_turn(ents_list))
         
         
@@ -2845,6 +2855,9 @@ class Warlock(Summon):
         app.get_focus(id)
         self.attack_used = True
 #         self.init_attack_anims()
+        effect1 = pygame.mixer.Sound('Sound_Effects/warlock_duress.ogg')
+        effect1.set_volume(.7)
+        sound_effects.play(effect1, 0)
         # make range atk vis
         visloc = app.ent_dict[id].loc[:]
         app.vis_dict['Duress'] = Vis(name = 'Duress', loc = visloc)
@@ -2876,10 +2889,13 @@ class Warlock(Summon):
         # if havent moved, attempt random move
         if self.move_used == False:
             # change to move to random square at least 9 away
-            coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-            empty_sqrs = [s for s in coords if app.grid[s[0]][s[1]] == '' and dist(self.loc, s) > 9]
+#             coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+            empty_sqrs = [s for s in app.coords if app.grid[s[0]][s[1]] == '' and dist(self.loc, s) > 9]
             if empty_sqrs != []:
                 s =  choice(empty_sqrs)
+                effect1 = pygame.mixer.Sound('Sound_Effects/warlock_teleport_away.ogg')
+                effect1.set_volume(1)
+                sound_effects.play(effect1, 0)
                 self.warlock_move(ents_list, s)
             else:
                 ents_list = ents_list[1:]
@@ -2897,8 +2913,8 @@ class Warlock(Summon):
         
     def legal_attacks(self):
         sqrs = []
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        for coord in coords:
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        for coord in app.coords:
             if dist(coord, self.loc) <= 3:
                 if app.grid[coord[0]][coord[1]] != '' and app.grid[coord[0]][coord[1]] != 'block':
                     sqrs.append(coord)
@@ -2907,8 +2923,8 @@ class Warlock(Summon):
     def legal_moves(self):
         loc = self.loc[:]
         mvlist = []
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        for c in coords:
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        for c in app.coords:
             if dist(loc, c) <= 5 and app.grid[c[0]][c[1]] == '':
                 mvlist.append(c)
         return mvlist
@@ -2921,7 +2937,7 @@ class Orc_Axeman(Summon):
         self.str = 6
         self.agl = 5
         self.end = 6
-        self.dodge = 5
+        self.dodge = 7
         self.psyche = 2
         self.spirit = 29
         self.waiting = waiting
@@ -2950,10 +2966,10 @@ class Orc_Axeman(Summon):
             else: # CANNOT ATTACK FROM START LOC, GET TARGET AND MOVE TOWARDS
                 enemy_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p1']
                 paths = []
-                coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+#                 coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
                 for el in enemy_ent_locs:
                 # FIND PATH TO SQR WITHIN RANGE OF THIS ENT
-                    goals = [c for c in coords if dist(c, el) == 1 and app.grid[c[0]][c[1]] == '']
+                    goals = [c for c in app.coords if dist(c, el) == 1 and app.grid[c[0]][c[1]] == '']
                     path = bfs(self.loc[:], goals, app.grid[:])
                     if path:
                         paths.append(path)
@@ -2983,9 +2999,9 @@ class Orc_Axeman(Summon):
                     for eloc in friendly_ent_locs:
                         egrid[eloc[0]][eloc[1]] = '' # EGRID NOW EMPTIED OF FRIENDLY ENTS
                     # NOW FIND PATH AND PASS TO MOVE
-                    coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+#                     coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
                     for el in enemy_ent_locs:
-                        goals = [c for c in coords if dist(c, el) == 1]
+                        goals = [c for c in app.coords if dist(c, el) == 1]
                         path = bfs(self.loc[:], goals, egrid[:]) # BFS ON ALTERED GRID (FRIENDLY ENTS REMOVED)
                         if path:
                             paths.append(path)
@@ -3020,6 +3036,9 @@ class Orc_Axeman(Summon):
     def do_attack(self, ents_list, id):
         app.get_focus(id)
 #         self.init_attack_anims()
+        effect1 = pygame.mixer.Sound('Sound_Effects/orc_axeman_attack.ogg')
+        effect1.set_volume(1)
+        sound_effects.play(effect1, 0)
         my_agl = self.get_attr('agl')
         target_dodge = app.ent_dict[id].get_attr('dodge')
         if to_hit(my_agl, target_dodge) == True:
@@ -3052,8 +3071,8 @@ class Orc_Axeman(Summon):
         
     def legal_attacks(self):
         sqrs = []
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        for coord in coords:
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        for coord in app.coords:
             if dist(coord, self.loc) == 1:
                 if app.grid[coord[0]][coord[1]] != '' and app.grid[coord[0]][coord[1]] != 'block':
                     sqrs.append(coord)
@@ -3062,11 +3081,11 @@ class Orc_Axeman(Summon):
     def legal_moves(self):
         loc = self.loc[:]
         mvlist = []
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         def findall(loc, start, distance):
             if start > distance:
                 return
-            adj = [c for c in coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
+            adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
             for s in adj:
                 mvlist.append(s)
                 findall(s, start+1, distance)
@@ -3136,10 +3155,10 @@ class Minotaur(Summon):
             else: # CANNOT ATTACK FROM START LOC, GET TARGET AND MOVE TOWARDS
                 enemy_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p1']
                 paths = []
-                coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+#                 coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
                 for el in enemy_ent_locs:
                 # FIND PATH TO SQR WITHIN RANGE OF THIS ENT
-                    goals = [c for c in coords if dist(c, el) == 1 and app.grid[c[0]][c[1]] == '']
+                    goals = [c for c in app.coords if dist(c, el) == 1 and app.grid[c[0]][c[1]] == '']
                     path = bfs(self.loc[:], goals, app.grid[:])
                     if path:
                         paths.append(path)
@@ -3174,9 +3193,9 @@ class Minotaur(Summon):
                     for eloc in friendly_ent_locs:
                         egrid[eloc[0]][eloc[1]] = '' # EGRID NOW EMPTIED OF FRIENDLY ENTS
                     # NOW FIND PATH AND PASS TO MOVE
-                    coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+#                     coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
                     for el in enemy_ent_locs:
-                        goals = [c for c in coords if dist(c, el) == 1]
+                        goals = [c for c in app.coords if dist(c, el) == 1]
                         path = bfs(self.loc[:], goals, egrid[:]) # BFS ON ALTERED GRID (FRIENDLY ENTS REMOVED)
                         if path:
                             paths.append(path)
@@ -3229,8 +3248,8 @@ class Minotaur(Summon):
         for eloc in nonwitch_ent_locs:
             egrid[eloc[0]][eloc[1]] = '' # EGRID NOW EMPTIED OF FRIENDLY ENTS
         # NOW FIND PATH AND PASS TO MOVE
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        goals = [c for c in coords if dist(c, app.ent_dict[app.p1_witch].loc) == 1]
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        goals = [c for c in app.coords if dist(c, app.ent_dict[app.p1_witch].loc) == 1]
         path = bfs(self.loc[:], goals, egrid[:]) # BFS ON ALTERED GRID (FRIENDLY ENTS REMOVED)
         if path: # MOVE ALONG PATH AS FAR AS POSSIBLE, ATTEMPT ATTACK
             # FIND FURTHEST SQR ALONG PATH THAT CAN BE MOVED TO
@@ -3372,8 +3391,8 @@ class Minotaur(Summon):
         
     def legal_attacks(self):
         sqrs = []
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        for coord in coords:
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        for coord in app.coords:
             if dist(coord, self.loc) == 1:
                 if app.grid[coord[0]][coord[1]] != '' and app.grid[coord[0]][coord[1]] != 'block':
                     sqrs.append(coord)
@@ -3382,11 +3401,11 @@ class Minotaur(Summon):
     def legal_moves(self):
         loc = self.loc[:]
         mvlist = []
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         def findall(loc, start, distance):
             if start > distance:
                 return
-            adj = [c for c in coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
+            adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
             for s in adj:
                 mvlist.append(s)
                 findall(s, start+1, distance)
@@ -3436,6 +3455,9 @@ class Warrior(Summon):
             return
         self.attack_used = True
         self.init_attack_anims()
+        effect1 = pygame.mixer.Sound('Sound_Effects/warrior_attack.ogg')
+        effect1.set_volume(1)
+        sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.unbind_all()
         app.cleanup_squares()
@@ -3660,8 +3682,8 @@ class Witch(Entity):
             root.unbind(str(x))
         root.bind('<q>', self.cancel_placement)
         app.depop_context(event = None)
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        sqrs = [c for c in coords if abs(c[0]-self.loc[0]) + abs(c[1]-self.loc[1]) == 1 and app.grid[c[0]][c[1]] == '']
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [c for c in app.coords if abs(c[0]-self.loc[0]) + abs(c[1]-self.loc[1]) == 1 and app.grid[c[0]][c[1]] == '']
         app.animate_squares(sqrs)
         if type == 'Warrior':
             cls = Warrior
@@ -3731,11 +3753,11 @@ class Witch(Entity):
     def legal_moves(self):
         loc = self.loc
         mvlist = []
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         def findall(loc, start, dist):
             if start > dist:
                 return
-            adj = [c for c in coords if abs(c[0] - loc[0]) + abs(c[1] - loc[1]) == 1 and app.grid[c[0]][c[1]] == '']
+            adj = [c for c in app.coords if abs(c[0] - loc[0]) + abs(c[1] - loc[1]) == 1 and app.grid[c[0]][c[1]] == '']
             for s in adj:
                 mvlist.append(s)
                 findall(s, start+1, dist)
@@ -3935,8 +3957,8 @@ class Witch(Entity):
     def energize(self, event = None):
         app.depop_context(event = None)
         root.bind('<q>', lambda name = 'Energize' : self.cleanup_spell(name = name))
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        sqrs = [s for s in coords if dist(self.loc, s) <= 4]
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [s for s in app.coords if dist(self.loc, s) <= 4]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_energize(event = e, sqr = s, sqrs = sqrs))
         b = tk.Button(app.context_menu, text = 'Choose Target For Energize', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_energize(e, s, sqrs))
@@ -3965,8 +3987,8 @@ class Witch(Entity):
     def scrye(self, event = None):
         app.depop_context(event = None)
         root.bind('<q>', lambda name = 'Scrye' : self.cleanup_spell(name = name))
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        sqrs = [s for s in coords if dist(self.loc, s) <= 2]
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [s for s in app.coords if dist(self.loc, s) <= 2]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_scrye(event = e, sqr = s, sqrs = sqrs))
         b = tk.Button(app.context_menu, text = 'Choose Target For Scrye', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_scrye(e, s, sqrs))
@@ -4014,8 +4036,8 @@ class Witch(Entity):
     def vengeance(self, event = None):
         app.depop_context(event = None)
         root.bind('<q>', lambda name = 'Vengeance' : self.cleanup_spell(name = name))
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        sqrs = [s for s in coords if dist(self.loc, s) <= 4]
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [s for s in app.coords if dist(self.loc, s) <= 4]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_vengeance(event = e, sqr = s, sqrs = sqrs))
         b = tk.Button(app.context_menu, text = 'Choose Target For Vengeance', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_vengeance(e, s, sqrs))
@@ -4028,7 +4050,7 @@ class Witch(Entity):
         id = app.grid[sqr[0]][sqr[1]]
         if id == '' or id == 'block':
             return
-        self.init_cast_anims()
+#         self.init_cast_anims()
 
         effect1 = pygame.mixer.Sound('Sound_Effects/vengeance.ogg')
         effect1.set_volume(.08)
@@ -4053,24 +4075,22 @@ class Witch(Entity):
     def hatred(self, event = None):
         app.depop_context(event = None)
         root.bind('<q>', lambda name = 'Hatred' : self.cleanup_spell(name = name))
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        root.bind('<a>', self.do_torment)
-        b = tk.Button(app.context_menu, text = 'Confirm Hatred', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = self.do_torment)
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        root.bind('<a>', self.do_hatred)
+        b = tk.Button(app.context_menu, text = 'Confirm Hatred', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = self.do_hatred)
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
         
     def do_hatred(self, event = None):
-        self.init_cast_anims()
-        effect1 = pygame.mixer.Sound('Sound_Effects/hatred.ogg')
-        effect1.set_volume(.07)
-        sound_effects.play(effect1, 0)
-        
+#         self.init_cast_anims()
+#         effect1 = pygame.mixer.Sound('Sound_Effects/hatred.ogg')
+#         effect1.set_volume(.07)
+#         sound_effects.play(effect1, 0)
         self.magick -= self.arcane_dict['Hatred'][1]
         app.unbind_all()
         app.depop_context(event = None)
         self.arcane_used = True
         ents = [k for k,v in app.ent_dict.items() if v.owner == 'p1']
-        
         for id in ents:
             sqr = app.ent_dict[id].loc[:]
             uniq_name = 'Hatred'+str(app.effects_counter)
@@ -4090,8 +4110,8 @@ class Witch(Entity):
     def torment(self, event = None):
         app.depop_context(event = None)
         root.bind('<q>', lambda name = 'Torment' : self.cleanup_spell(name = name))
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        sqrs = [s for s in coords if dist(self.loc, s) <= 4]
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [s for s in app.coords if dist(self.loc, s) <= 4]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_torment(event = e, sqr = s, sqrs = sqrs))
         b = tk.Button(app.context_menu, text = 'Choose Target For Torment', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_torment(e, s, sqrs))
@@ -4104,7 +4124,7 @@ class Witch(Entity):
         id = app.grid[sqr[0]][sqr[1]]
         if id == '' or id == 'block':
             return
-        self.init_cast_anims()
+#         self.init_cast_anims()
         
         effect1 = pygame.mixer.Sound('Sound_Effects/torment.ogg')
         effect1.set_volume(.07)
@@ -4152,8 +4172,8 @@ class Witch(Entity):
     def pain(self, event = None):
         app.depop_context(event = None)
         root.bind('<q>', lambda name = 'Pain' : self.cleanup_spell(name = name))
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        sqrs = [s for s in coords if dist(self.loc, s) <= 4]
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [s for s in app.coords if dist(self.loc, s) <= 4]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_pain(event = e, sqr = s, sqrs = sqrs))
         b = tk.Button(app.context_menu, text = 'Choose Target For Pain', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_pain(e, s, sqrs))
@@ -4174,7 +4194,7 @@ class Witch(Entity):
         sound_effects.play(effect1, 0)
             
         app.kill(id)
-        self.init_cast_anims()
+#         self.init_cast_anims()
         self.magick -= self.arcane_dict['Pain'][1]
         app.unbind_all()
         app.depop_context(event = None)
@@ -4185,8 +4205,8 @@ class Witch(Entity):
         app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Pain', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
         root.after(1777, lambda  name = 'Pain' : self.cleanup_spell(name = name))
         
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        adj_sqrs = [s for s in coords if dist(sqr, s) == 1 and app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        adj_sqrs = [s for s in app.coords if dist(sqr, s) == 1 and app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
         adj_ents = [app.grid[s[0]][s[1]] for s in adj_sqrs] #if app.ent_dict[app.grid[s[0]][s[1]]].owner != self.owner] 
         all_targets = adj_ents
         for id in all_targets:
@@ -4223,8 +4243,8 @@ class Witch(Entity):
             # attrs reduced to by 3 to a minimum of 1 (str, agl, end, dodge, psyche) lasting until 3 opp turns have passed
         app.depop_context(event = None)
         root.bind('<q>', lambda name = 'Plague' : self.cleanup_spell(name = name))
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        sqrs = [s for s in coords if dist(self.loc, s) <= 4]
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [s for s in app.coords if dist(self.loc, s) <= 4]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_plague(event = e, sqr = s, sqrs = sqrs))
         b = tk.Button(app.context_menu, text = 'Choose Target For Plague', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_plague(e, s, sqrs))
@@ -4286,8 +4306,8 @@ class Witch(Entity):
     def psionic_push(self, event = None):
         app.depop_context(event = None)
         root.bind('<q>', lambda name = 'Psionic_Push' : self.cleanup_spell(name = name))
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        sqrs = [s for s in coords if dist(self.loc, s) <= 4]
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [s for s in app.coords if dist(self.loc, s) <= 4]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_psionic_push(event = e, sqr = s, sqrs = sqrs))
         b = tk.Button(app.context_menu, text = 'Choose Target For Psionic Push', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_psionic_push(e, s, sqrs))
@@ -4310,33 +4330,33 @@ class Witch(Entity):
         app.cleanup_squares()
         loc = app.ent_dict[id].loc[:]
         ps = []
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         # make recursive for variable distance
 #         def sqrs_until_obs(start, next, dist):
         ps.append(loc)
-        for c in coords:
+        for c in app.coords:
             if c[0] == (loc[0] + 1) and c[1] == loc[1] and app.grid[c[0]][c[1]] == '':
                 ps.append(c)
                 n = [loc[0]+2, loc[1]]
-                if n in coords:
+                if n in app.coords:
                     if n[0] == (loc[0] + 2) and n[1] == loc[1] and app.grid[n[0]][n[1]] == '':
                         ps.append(n)
             elif c[0] == (loc[0] - 1) and c[1] == loc[1] and app.grid[c[0]][c[1]] == '':
                 n = [loc[0]-2, loc[1]]
                 ps.append(c)
-                if n in coords:
+                if n in app.coords:
                     if n[0] == (loc[0] - 2) and n[1] == loc[1] and app.grid[n[0]][n[1]] == '':
                         ps.append(n)
             elif c[0] == loc[0] and c[1] == (loc[1] + 1) and app.grid[c[0]][c[1]] == '':
                 n = [loc[0], loc[1]+2]
                 ps.append(c)
-                if n in coords:
+                if n in app.coords:
                     if n[0] == loc[0] and n[1] == (loc[1] + 2) and app.grid[n[0]][n[1]] == '':
                         ps.append(n)
             elif c[0] == loc[0] and c[1] == (loc[1] - 1) and app.grid[c[0]][c[1]] == '':
                 n = [loc[0], loc[1]-2]
                 ps.append(c)
-                if n in coords:
+                if n in app.coords:
                     if n[0] == loc[0] and n[1] == (loc[1] - 2) and app.grid[n[0]][n[1]] == '':
                         ps.append(n)
         app.animate_squares(ps)
@@ -4412,8 +4432,8 @@ class Witch(Entity):
         app.ent_dict[tar].origin = end_loc[:]
         app.grid[start_loc[0]][start_loc[1]] = ''
         app.grid[end_loc[0]][end_loc[1]] = tar
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        adj_sqrs = [c for c in coords if dist(c, end_loc) == 1]
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        adj_sqrs = [c for c in app.coords if dist(c, end_loc) == 1]
         adj_ents = []
         for s in adj_sqrs:
             if app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block':
@@ -4442,8 +4462,8 @@ class Witch(Entity):
         # AOE damage in straight line
         app.depop_context(event = None)
         root.bind('<q>', self.cleanup_spell)
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        sqrs = [s for s in coords if dist(self.loc, s) <= 3]
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [s for s in app.coords if dist(self.loc, s) <= 3]
         for s in sqrs[:]:
             if abs(s[0]-self.loc[0]) == 1 and abs(s[1]-self.loc[1]) == 1:
                 sqrs.remove(s)
@@ -4470,7 +4490,7 @@ class Witch(Entity):
         self.magick -= self.arcane_dict['Pestilence'][1]
         self.init_cast_anims()
         # get ent and all adj ents
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         target = app.grid[sqr[0]][sqr[1]]
         all_targets = [target]
         all_squares = []
@@ -4478,21 +4498,21 @@ class Witch(Entity):
         if abs(sqr[0]-self.loc[0]) > abs(sqr[1]-self.loc[1]):# direction is left/right
             if sqr[0] > self.loc[0]:# sign is pos
                 # get ents in this direction
-                for c in coords:
+                for c in app.coords:
                     if sqr[0] < c[0] <= sqr[0]+4 and c[1] == sqr[1]:
                         all_squares.append(c)
             else:#sign is neg
-                for c in coords:
+                for c in app.coords:
                     if sqr[0] > c[0] >= sqr[0]-4 and c[1] == sqr[1]:
                         all_squares.append(c)
         else:#direction is up/down
             if sqr[1] > self.loc[1]:# sign is pos
                 # get ents in this direction
-                for c in coords:
+                for c in app.coords:
                     if sqr[1] < c[1] <= sqr[1]+4 and c[0] == sqr[0]:
                         all_squares.append(c)
             else:#sign is neg
-                for c in coords:
+                for c in app.coords:
                     if sqr[1] > c[1] >= sqr[1]-4 and c[0] == sqr[0]:
                         all_squares.append(c)
         all_targets += [app.grid[s[0]][s[1]] for s in all_squares if app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
@@ -4531,8 +4551,8 @@ class Witch(Entity):
             # Any target is inflicted with 'curse', while cursed takes 2 spirit damage at end of every owner's turn and minus 1 to every stat (not spirit, magick, movement)
         app.depop_context(event = None)
         root.bind('<q>', self.cleanup_spell)
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        sqrs = [s for s in coords if dist(self.loc, s) <= 3]
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [s for s in app.coords if dist(self.loc, s) <= 3]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_curse_of_oriax(event = e, sqr = s, sqrs = sqrs))
         b = tk.Button(app.context_menu, text = 'Choose Target For Curse of Oriax', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_curse_of_oriax(e, s, sqrs = sqrs))
@@ -4604,8 +4624,8 @@ class Witch(Entity):
         # undo removes the overwrite
         app.depop_context(event = None)
         root.bind('<q>', self.cleanup_spell)
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        sqrs = [s for s in coords if dist(self.loc, s) <= 4]
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [s for s in app.coords if dist(self.loc, s) <= 4]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_gravity(event = e, sqr = s, sqrs = sqrs))
         b = tk.Button(app.context_menu, text = 'Choose Target For Gravity', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_gravity(e, s, sqrs = sqrs))
@@ -4617,9 +4637,10 @@ class Witch(Entity):
             return
         if sqr not in sqrs:
             return
-        id = app.current_pos()
-        if not isinstance(app.ent_dict[id], Witch) and not isinstance(app.ent_dict[id], Summon):
-             return
+        id = app.grid[sqr[0]][sqr[1]]
+        effs = [v.name for k,v in app.ent_dict[id].effects_dict.items()]
+        if 'Gravity' in effs:
+            return
         self.magick -= self.arcane_dict['Gravity'][1]
         
         effect1 = pygame.mixer.Sound('Sound_Effects/gravity.ogg')
@@ -4702,8 +4723,8 @@ class Witch(Entity):
                 root.after(99, lambda t = timeout : beleths_loop(t))
         beleths_loop(36)
         # Adj ents take 9 spirit
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        sqrs = [s for s in coords if dist(sqr, s) == 1]
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [s for s in app.coords if dist(sqr, s) == 1]
         ents = [app.grid[s[0]][s[1]] for s in sqrs if app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
         for e in ents:
             s = app.ent_dict[e].loc[:]
@@ -4779,11 +4800,11 @@ class Witch(Entity):
         def meditate_move():# REPLACE CLASS MOVEMENT
             loc = self.loc
             mvlist = []
-            coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+#             coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
             def findall(loc, start, dist):
                 if start > dist:
                     return
-                adj = [c for c in coords if abs(c[0] - loc[0]) + abs(c[1] - loc[1]) == 1 and app.grid[c[0]][c[1]] == '']
+                adj = [c for c in app.coords if abs(c[0] - loc[0]) + abs(c[1] - loc[1]) == 1 and app.grid[c[0]][c[1]] == '']
                 for s in adj:
                     mvlist.append(s)
                     findall(s, start+1, dist)
@@ -4814,8 +4835,8 @@ class Witch(Entity):
         # make attack (psyche versus str) spirit damage, on any target within range 4 and all adjacent enemy units
         app.depop_context(event = None)
         root.bind('<q>', lambda name = 'Horrid_Wilting' : self.cleanup_spell(name = name))
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        sqrs = [s for s in coords if dist(self.loc, s) <= 4]
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [s for s in app.coords if dist(self.loc, s) <= 4]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_horrid_wilting(event = e, sqr = s, sqrs = sqrs))
         b = tk.Button(app.context_menu, text = 'Choose Target For Horrid Wilting', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_horrid_wilting(e, s, sqrs))
@@ -4833,8 +4854,8 @@ class Witch(Entity):
         self.arcane_used = True
         self.magick -= self.arcane_dict['Horrid_Wilting'][1]
         # get ent and all adj ents
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        adj_sqrs = [s for s in coords if dist(sqr, s) == 1 and app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        adj_sqrs = [s for s in app.coords if dist(sqr, s) == 1 and app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
         adj_ents = [app.grid[s[0]][s[1]] for s in adj_sqrs] #if app.ent_dict[app.grid[s[0]][s[1]]].owner != self.owner] 
         all_targets = adj_ents + [app.grid[sqr[0]][sqr[1]]]
         for id in all_targets:
@@ -4850,20 +4871,16 @@ class Witch(Entity):
             for i in range(rand_start_anim):
                 app.vis_dict[n].rotate_image()
             app.canvas.create_image(loc[0]*100+50-app.moved_right, loc[1]*100+50-app.moved_down, image = app.vis_dict[n].img, tags = n)
-            app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+50-app.moved_down-30, text = 'Horrid Wilting', justify ='center', font = ('Andale Mono', 14), fill = 'wheat2', tags = 'text')
-            # HIT OR MISS
+            app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+50-app.moved_down-30, text = 'Horrid Wilting', justify ='center', font = ('Andale Mono', 13), fill = 'wheat2', tags = 'text')
+            # DAMAGE
             my_psyche = self.get_attr('psyche')
-            tar_psyche = app.ent_dict[id].get_attr('psyche')
-            if to_hit(my_psyche, tar_psyche) == True:
-                tar_end = app.ent_dict[id].get_attr('end')
-                d = damage(my_psyche, tar_end)
-                app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+75-app.moved_down, text = str(d)+' Spirit', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
-                app.ent_dict[id].set_attr('spirit', -d)
-                if app.ent_dict[id].spirit <= 0:
-                    app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+100-app.moved_down, text = app.ent_dict[id].name.replace('_',' ') + '\nKilled...', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
-                    root.after(3666, lambda id = id : app.kill(id))
-            else:
-                app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+70-app.moved_down, text = 'Miss', justify ='center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+            tar_end = app.ent_dict[id].get_attr('end')
+            d = damage(my_psyche, tar_end)
+            app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+75-app.moved_down, text = str(d)+' Spirit', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+            app.ent_dict[id].set_attr('spirit', -d)
+            if app.ent_dict[id].spirit <= 0:
+                app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+100-app.moved_down, text = app.ent_dict[id].name.replace('_',' ') + '\nKilled...', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+                root.after(3666, lambda id = id : app.kill(id))
         root.after(3666, lambda  name = 'Horrid_Wilting' : self.cleanup_spell(name = name))
         
         
@@ -4873,8 +4890,8 @@ class Witch(Entity):
         root.unbind('<a>')
         root.unbind('<q>')
         root.bind('<q>', lambda name = 'Boiling_Blood' : self.cleanup_spell(name = name))
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        sqrs = [s for s in coords if dist(self.loc, s) == 1]
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [s for s in app.coords if dist(self.loc, s) == 1]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_boiling_blood(event = e, sqr = s, sqrs = sqrs))
         b = tk.Button(app.context_menu, text = 'Choose Target For Boiling Blood', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_boiling_blood(e, s, sqrs))
@@ -4922,7 +4939,7 @@ class Witch(Entity):
             
         eot = partial(take_1, id)
         n = 'Boiling_Blood' + str(app.effects_counter)
-        app.ent_dict[id].effects_dict[n] = Effect(name = 'Boiling_Blood', info = 'Boiling_Blood\n+5 Str, End reduced to 1\n1 Spirit damage per turn', eot_func = eot, undo = p, duration = 5)
+        app.ent_dict[id].effects_dict[n] = Effect(name = 'Boiling_Blood', info = 'Boiling_Blood\n+5 Str, End reduced to 1\n1 Spirit damage per turn', eot_func = eot, undo = p, duration = 4)
         root.after(3666, lambda  name = 'Boiling_Blood' : self.cleanup_spell(name = name))
         
     
@@ -4933,8 +4950,8 @@ class Witch(Entity):
         root.unbind('<a>')
         root.unbind('<q>')
         root.bind('<q>', lambda name = 'Dark_Sun' : self.cleanup_spell(name = name))
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        sqrs = [s for s in coords if dist(self.loc, s) <= 2]
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [s for s in app.coords if dist(self.loc, s) <= 2]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_dark_sun(event = e, sqr = s, sqrs = sqrs))
         b = tk.Button(app.context_menu, text = 'Choose Target For Dark Sun', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_dark_sun(e, s, sqrs))
@@ -4979,8 +4996,8 @@ class Witch(Entity):
         # +9 to endurance and target cannot move any target 3 turns
         app.depop_context(event = None)
         root.bind('<q>', self.cleanup_spell)
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        sqrs = [s for s in coords if dist(self.loc, s) <= 3]
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [s for s in app.coords if dist(self.loc, s) <= 3]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_mummify(event = e, sqr = s, sqrs = sqrs))
         b = tk.Button(app.context_menu, text = 'Choose Target For Mummify', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_mummify(e, s, sqrs = sqrs))
@@ -5035,8 +5052,8 @@ class Witch(Entity):
         # high psyche damage one target
         app.depop_context(event = None)
         root.bind('<q>', self.cleanup_spell)
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        sqrs = [s for s in coords if dist(self.loc, s) <= 2]
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [s for s in app.coords if dist(self.loc, s) <= 2]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_immolate(event = e, sqr = s, sqrs = sqrs))
         b = tk.Button(app.context_menu, text = 'Choose Target For Immolate', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_immolate(e, s, sqrs = sqrs))
@@ -5075,8 +5092,8 @@ class Witch(Entity):
         # target gets -1 to all stats every turn (cumulative) and must make end save to avoid psyche versus psyche damage
         app.depop_context(event = None)
         root.bind('<q>', self.cleanup_spell)
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        sqrs = [s for s in coords if dist(self.loc, s) <= 4]
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [s for s in app.coords if dist(self.loc, s) <= 4]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_disintegrate(event = e, sqr = s, sqrs = sqrs))
         b = tk.Button(app.context_menu, text = 'Choose Target For Disintegrate', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_disintegrate(e, s, sqrs = sqrs))
@@ -5165,8 +5182,8 @@ class Witch(Entity):
     def command_of_osiris(self, event = None):
         app.depop_context(event = None)
         root.bind('<q>', self.cleanup_spell)
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        sqrs = [s for s in coords if dist(self.loc, s) <= 4]
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [s for s in app.coords if dist(self.loc, s) <= 4]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, sqrs = sqrs : self.do_command_of_osiris(event = e, sqrs = sqrs))
         b = tk.Button(app.context_menu, text = 'Confirm Command of Osiris', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, sqrs = sqrs : self.do_command_of_osiris(e, sqrs = sqrs))
@@ -5514,6 +5531,9 @@ class App(tk.Frame):
 #             self.create_map_curs_context(map_number, protaganist_object = protaganist_object)
     # THRID LEVEL 
         elif map_number == 2:
+            sound1 = pygame.mixer.Sound('Music/arabesque.ogg')
+            background_music.play(sound1, -1)
+            sound1.set_volume(0.3)
             self.map_triggers = []
             def self_death():
                 if app.p1_witch not in app.ent_dict.keys():
@@ -5576,8 +5596,8 @@ class App(tk.Frame):
             def ghost_teleport1():
                 if app.ent_dict['b2'].spirit < 50:
                     if app.grid[7][2] != '':
-                        coords = [[x,y] for x in range(self.map_width//100) for y in range(self.map_height//100)]
-                        empt_coords = [c for c in coords if app.grid[c[0]][c[1]] == '']
+#                         coords = [[x,y] for x in range(self.map_width//100) for y in range(self.map_height//100)]
+                        empt_coords = [c for c in app.coords if app.grid[c[0]][c[1]] == '']
                         sqr = choice(empt_coords)
                     else:
                         sqr = [7,2]
@@ -5592,8 +5612,8 @@ class App(tk.Frame):
             def ghost_teleport2():
                 if app.ent_dict['b2'].spirit < 30:
                     if app.grid[26][17] != '':
-                        coords = [[x,y] for x in range(self.map_width//100) for y in range(self.map_height//100)]
-                        empt_coords = [c for c in coords if app.grid[c[0]][c[1]] == '']
+#                         coords = [[x,y] for x in range(self.map_width//100) for y in range(self.map_height//100)]
+                        empt_coords = [c for c in app.coords if app.grid[c[0]][c[1]] == '']
                         sqr = choice(empt_coords)
                     else:
                         sqr = [26,17]
@@ -5965,6 +5985,16 @@ class App(tk.Frame):
             background_music.play(sound1, -1)
             sound1.set_volume(0.4)
             self.map_triggers = []
+            def inspect_column():
+                loc = app.ent_dict[app.p1_witch].loc[:]
+                if loc == [22,9]:
+                    app.unbind_all()
+                    self.column22 = tk.Button(root, text = 'Inspect Column', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.inspect_22_column)
+                    app.canvas.create_window(2200-app.moved_right, 900-app.moved_down, window = self.column22)
+                    self.column22_cancel = tk.Button(root, text = 'Leave Alone', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.cancel_22_column)
+                    app.canvas.create_window(2200-app.moved_right+25, 900-app.moved_down+33, window = self.column22_cancel)
+                    self.map_triggers.remove(inspect_column)
+            self.map_triggers.append(inspect_column)
 #             def summon_trick():
 #                 all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
 #                 if 'Bard' in all:
@@ -5973,8 +6003,8 @@ class App(tk.Frame):
 #                     return None
 #             self.map_triggers.append(summon_trick)
             def awaken_orcs():
-                coords = [[x,y] for x in range(self.map_width//100) for y in range(self.map_height//100)]
-                sqrs = [s for s in coords if dist(s, app.ent_dict['b7'].loc) <= 7 or dist(s, app.ent_dict['b8'].loc) <= 7]
+#                 coords = [[x,y] for x in range(self.map_width//100) for y in range(self.map_height//100)]
+                sqrs = [s for s in app.coords if dist(s, app.ent_dict['b7'].loc) <= 7 or dist(s, app.ent_dict['b8'].loc) <= 7]
                 ents = [app.grid[s[0]][s[1]] for s in sqrs if app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
                 for ent in ents:
                     if app.ent_dict[ent].owner == 'p1':
@@ -5984,8 +6014,8 @@ class App(tk.Frame):
                         break
             self.map_triggers.append(awaken_orcs)
             def awaken_dragon():
-                coords = [[x,y] for x in range(self.map_width//100) for y in range(self.map_height//100)]
-                sqrs = [s for s in coords if dist(s, app.ent_dict['b1'].loc) <= 9]
+#                 coords = [[x,y] for x in range(self.map_width//100) for y in range(self.map_height//100)]
+                sqrs = [s for s in app.coords if dist(s, app.ent_dict['b1'].loc) <= 9]
                 ents = [app.grid[s[0]][s[1]] for s in sqrs if app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
                 for ent in ents:
                     if app.ent_dict[ent].owner == 'p1':
@@ -6001,7 +6031,7 @@ class App(tk.Frame):
         elif map_number == 122:
             sound1 = pygame.mixer.Sound('Music/Dark_Descent.ogg')
             background_music.play(sound1, -1)
-            sound1.set_volume(0.4)
+            sound1.set_volume(0.3)
             self.map_triggers = []
                     # BOOK TRIGGER
             def read_book():
@@ -6025,6 +6055,19 @@ class App(tk.Frame):
             print('you are winner hahaha')
         
     # Move trigger funcs for organization
+    def inspect_22_column(self):
+        loc = app.ent_dict[app.p1_witch].loc[:]
+        app.ent_dict[app.p1_witch].arcane_dict['Hatred'] = (app.ent_dict[app.p1_witch].hatred, 9)
+        app.canvas.create_text(loc[0]*100-app.moved_right, loc[1]*100-app.moved_down+85, text = 'Arcane Spell\n-HATRED-\nLearned', justify = 'center', font = ('Andale Mono', 16), fill = 'white', tags = 'text')
+        root.after(2999, lambda t = 'text' : app.canvas.delete(t))
+        root.after(2999, self.cancel_22_column)
+        
+    def cancel_22_column(self):
+        self.column22.destroy()
+        self.column22_cancel.destroy()
+        app.rebind_all()
+    
+    
     def read_122_book(self):
         loc = app.ent_dict[app.p1_witch].loc[:]
         app.ent_dict[app.p1_witch].arcane_dict['Torment'] = (app.ent_dict[app.p1_witch].torment, 7)
@@ -6158,6 +6201,7 @@ class App(tk.Frame):
         col = self.map_width//100
         row = self.map_height//100
         self.grid = [[''] * row for i in range(col)]
+        self.coords = [[x,y] for x in range(self.map_width//100) for y in range(self.map_height//100)]
         # START LOC
         if self.num_players == 1:
             self.start_loc = eval(self.map_info[2])
@@ -6367,7 +6411,7 @@ class App(tk.Frame):
                 if e not in app.ent_dict.keys():
                     ents.remove(e)
             if ents == []:
-                self.end_turn()
+                root.after(1666, self.end_turn)
             else:
                 ent = ents[0]
                 if self.ent_dict[ent].waiting == True: # IS THIS ENT WAITING
