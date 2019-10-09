@@ -887,7 +887,7 @@ class Shadow(Summon):
         self.agl = 3
         self.end = 2
         self.dodge = 6
-        self.psyche = 5
+        self.psyche = 4
         self.spirit = 13
         super().__init__(name, img, loc, owner, number)
         
@@ -6073,13 +6073,13 @@ class App(tk.Frame):
             background_music.play(sound1, -1)
             sound1.set_volume(0.3)
             self.map_triggers = []
-            def summon_trick():
-                all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
-                if 'Bard' in all:
-                    return 'victory'
-                else:
-                    return None
-            self.map_triggers.append(summon_trick)
+#             def summon_trick():
+#                 all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
+#                 if 'Bard' in all:
+#                     return 'victory'
+#                 else:
+#                     return None
+#             self.map_triggers.append(summon_trick)
             # SPARKLE
             def create_sparkle1():
                 app.vis_dict['Sparkle1'] = Vis(name = 'Sparkle', loc = [7,2])
