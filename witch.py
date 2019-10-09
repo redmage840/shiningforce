@@ -2,8 +2,6 @@
 
 # trickster teleport faster, all teleport/shadow move
 
-# add 'sparkle' visual clue for some triggers
-
 # in 'do_save' if a player saves and then hits cmd/ctrl+q or otherwise exits manually, the object/save may not be pickled properly resulting in zero byte file. This is because programmatic logic 'stays' in 'do_save' until 'next_area' button hit, resulting in not closing the file opened/created during pickling. Using 'with' already to auto-close file, but probably existing vars block out automatic close. To solve this, call some other function from 'do_save' (probably a dummy/empty/close-dialog), probably do not call next_area so as to skip on-screen text
 
 # spells, decoy, place 'husk' in loc and teleport
@@ -5539,13 +5537,13 @@ class App(tk.Frame):
                 if app.p1_witch not in app.ent_dict.keys():
                     return 'game over'
             self.map_triggers.append(self_death)
-            def summon_trick():
-                all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
-                if 'Bard' in all:
-                    return 'stairway'
-                else:
-                    return None
-            self.map_triggers.append(summon_trick)
+#             def summon_trick():
+#                 all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
+#                 if 'Bard' in all:
+#                     return 'stairway'
+#                 else:
+#                     return None
+#             self.map_triggers.append(summon_trick)
 #             depending on which is killed, load certain level
 #             knight near stairway is b7, knight near doorway is b8
             def kill_stair_knight():
@@ -5577,6 +5575,15 @@ class App(tk.Frame):
             background_music.play(sound1, -1)
             sound1.set_volume(.08)
             self.map_triggers = []
+            #   CREATE SPARKLES
+            def create_sparkles():
+                app.vis_dict['Sparkle1'] = Vis(name = 'Sparkle', loc = [27,15])
+                app.canvas.create_image(2700+50-app.moved_right, 1500+50-app.moved_down, image = app.vis_dict['Sparkle1'].img, tags = 'Sparkle1')
+                ##
+                app.vis_dict['Sparkle2'] = Vis(name = 'Sparkle', loc = [11,2])
+                app.canvas.create_image(1100+50-app.moved_right, 200+50-app.moved_down, image = app.vis_dict['Sparkle2'].img, tags = 'Sparkle2')
+                self.map_triggers.remove(create_sparkles)
+            self.map_triggers.append(create_sparkles)
 #             def summon_trick():
 #                 all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
 #                 if 'Bard' in all:
@@ -5642,6 +5649,8 @@ class App(tk.Frame):
             def read_book():
                 loc = app.ent_dict[app.p1_witch].loc[:]
                 if loc == [27,15]:
+                    app.canvas.delete('Sparkle1')
+                    del app.vis_dict['Sparkle1']
                     app.unbind_all()
                     self.book121 = tk.Button(root, text = 'Read Book', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.read_121_book)
                     app.canvas.create_window(2700-app.moved_right, 1500-app.moved_down, window = self.book121)
@@ -5652,6 +5661,8 @@ class App(tk.Frame):
             def inspect_painting():
                 loc = app.ent_dict[app.p1_witch].loc[:]
                 if loc == [11,2]:
+                    app.canvas.delete('Sparkle2')
+                    del app.vis_dict['Sparkle2']
                     app.unbind_all()
                     self.painting121 = tk.Button(root, text = 'Inspect Painting', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.inspect_121_painting)
                     app.canvas.create_window(1100-app.moved_right, 200-app.moved_down, window = self.painting121)
@@ -5837,10 +5848,18 @@ class App(tk.Frame):
                     img = ImageTk.PhotoImage(Image.open('summon_imgs/Revenant.png'))
                     app.ent_dict['b6'] = Revenant(name = 'Revenant', img = img, loc =[16,8], owner = 'p2', number = 'b6')
                     app.grid[16][8] = 'b6'
+                    # SPARKLE
+                    def create_sparkle2():
+                        app.vis_dict['Sparkle2'] = Vis(name = 'Sparkle', loc = [16,18])
+                        app.canvas.create_image(1600+50-app.moved_right, 1800+50-app.moved_down, image = app.vis_dict['Sparkle2'].img, tags = 'Sparkle2')
+                        self.map_triggers.remove(create_sparkle2)
+                    self.map_triggers.append(create_sparkle2)
                     # BOOK TRIGGER
                     def read_book():
                         loc = app.ent_dict[app.p1_witch].loc[:]
                         if loc == [16,18]:
+                            app.canvas.delete('Sparkle2')
+                            del app.vis_dict['Sparkle2']
                             app.unbind_all()
                             self.book21 = tk.Button(root, text = 'Read Book', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.read_21_book)
                             app.canvas.create_window(1600-app.moved_right, 1800-app.moved_down, window = self.book21)
@@ -5939,9 +5958,18 @@ class App(tk.Frame):
                     img = ImageTk.PhotoImage(Image.open('summon_imgs/Revenant.png'))
                     app.ent_dict['b2'] = Revenant(name = 'Revenant', img = img, loc =[7,2], owner = 'p2', number = 'b2')
                     app.grid[7][2] = 'b2'
+                    # SPARKLE
+                    def create_sparkle1():
+                        app.vis_dict['Sparkle1'] = Vis(name = 'Sparkle', loc = [7,2])
+                        app.canvas.create_image(700+50-app.moved_right, 200+50-app.moved_down, image = app.vis_dict['Sparkle1'].img, tags = 'Sparkle1')
+                        self.map_triggers.remove(create_sparkle1)
+                    self.map_triggers.append(create_sparkle1)
+                    # CHEST
                     def chest1():
                         loc = app.ent_dict[app.p1_witch].loc[:]
                         if loc == [7,2]:
+                            app.canvas.delete('Sparkle1')
+                            del app.vis_dict['Sparkle1']
                             app.unbind_all()
                             self.chest21_1 = tk.Button(root, text = 'Open Chest', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.open_chest21_1)
                             app.canvas.create_window(700-app.moved_right, 200-app.moved_down, window = self.chest21_1)
@@ -5985,9 +6013,17 @@ class App(tk.Frame):
             background_music.play(sound1, -1)
             sound1.set_volume(0.4)
             self.map_triggers = []
+            # SPARKLE
+            def create_sparkle1():
+                app.vis_dict['Sparkle1'] = Vis(name = 'Sparkle', loc = [22,9])
+                app.canvas.create_image(2200+50-app.moved_right, 900+50-app.moved_down, image = app.vis_dict['Sparkle1'].img, tags = 'Sparkle1')
+                self.map_triggers.remove(create_sparkle1)
+            self.map_triggers.append(create_sparkle1)
             def inspect_column():
                 loc = app.ent_dict[app.p1_witch].loc[:]
                 if loc == [22,9]:
+                    app.canvas.delete('Sparkle1')
+                    del app.vis_dict['Sparkle1']
                     app.unbind_all()
                     self.column22 = tk.Button(root, text = 'Inspect Column', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.inspect_22_column)
                     app.canvas.create_window(2200-app.moved_right, 900-app.moved_down, window = self.column22)
@@ -5995,13 +6031,13 @@ class App(tk.Frame):
                     app.canvas.create_window(2200-app.moved_right+25, 900-app.moved_down+33, window = self.column22_cancel)
                     self.map_triggers.remove(inspect_column)
             self.map_triggers.append(inspect_column)
-#             def summon_trick():
-#                 all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
-#                 if 'Bard' in all:
-#                     return 'victory'
-#                 else:
-#                     return None
-#             self.map_triggers.append(summon_trick)
+            def summon_trick():
+                all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
+                if 'Bard' in all:
+                    return 'victory'
+                else:
+                    return None
+            self.map_triggers.append(summon_trick)
             def awaken_orcs():
 #                 coords = [[x,y] for x in range(self.map_width//100) for y in range(self.map_height//100)]
                 sqrs = [s for s in app.coords if dist(s, app.ent_dict['b7'].loc) <= 7 or dist(s, app.ent_dict['b8'].loc) <= 7]
@@ -6027,16 +6063,35 @@ class App(tk.Frame):
                 if app.p1_witch not in app.ent_dict.keys():
                     return 'game over'
             self.map_triggers.append(self_death)
+            def kill_dragon():
+                if 'b1' not in app.ent_dict.keys():
+                    return 'victory'
+            self.map_triggers.append(kill_dragon)
             self.load_intro_scene(map_number, protaganist_object = protaganist_object)
         elif map_number == 122:
             sound1 = pygame.mixer.Sound('Music/Dark_Descent.ogg')
             background_music.play(sound1, -1)
             sound1.set_volume(0.3)
             self.map_triggers = []
-                    # BOOK TRIGGER
+            def summon_trick():
+                all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
+                if 'Bard' in all:
+                    return 'victory'
+                else:
+                    return None
+            self.map_triggers.append(summon_trick)
+            # SPARKLE
+            def create_sparkle1():
+                app.vis_dict['Sparkle1'] = Vis(name = 'Sparkle', loc = [7,2])
+                app.canvas.create_image(700+50-app.moved_right, 200+50-app.moved_down, image = app.vis_dict['Sparkle1'].img, tags = 'Sparkle1')
+                self.map_triggers.remove(create_sparkle1)
+            self.map_triggers.append(create_sparkle1)
+            # BOOK TRIGGER
             def read_book():
                 loc = app.ent_dict[app.p1_witch].loc[:]
                 if loc == [7,2]:
+                    app.canvas.delete('Sparkle1')
+                    del app.vis_dict['Sparkle1']
                     app.unbind_all()
                     self.book122 = tk.Button(root, text = 'Read Book', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.read_122_book)
                     app.canvas.create_window(700-app.moved_right, 200-app.moved_down, window = self.book122)
@@ -6044,7 +6099,20 @@ class App(tk.Frame):
                     app.canvas.create_window(700-app.moved_right+25, 200-app.moved_down+33, window = self.book122_cancel)
                     self.map_triggers.remove(read_book)
             self.map_triggers.append(read_book)
-            
+            def self_death():
+                if app.p1_witch not in app.ent_dict.keys():
+                    return 'game over'
+            self.map_triggers.append(self_death)
+            def kill_warlock():
+                if 'b1' not in app.ent_dict.keys():
+                    return 'victory'
+            self.map_triggers.append(kill_warlock)
+            self.load_intro_scene(map_number, protaganist_object = protaganist_object)
+        elif map_number == 3:
+#             sound1 = pygame.mixer.Sound('Music/Dark_Descent.ogg')
+#             background_music.play(sound1, -1)
+#             sound1.set_volume(0.3)
+            self.map_triggers = []
             def self_death():
                 if app.p1_witch not in app.ent_dict.keys():
                     return 'game over'
@@ -6708,7 +6776,7 @@ class App(tk.Frame):
                 result = mt()
                 if result == 'victory':
                     app.unbind_all()
-                    self.end_level() 
+                    self.end_level(alt_route = 3) 
                     break
                 elif result == 'game over':
                     self.reset()
@@ -6720,7 +6788,19 @@ class App(tk.Frame):
                 result = mt()
                 if result == 'victory':
                     app.unbind_all()
-                    self.end_level() 
+                    self.end_level(alt_route = 3) 
+                    break
+                elif result == 'game over':
+                    self.reset()
+                    break
+            else:
+                self.map_trigger_id = root.after(1666, self.map_trigger_loop)
+        elif self.map_number == 3:
+            for mt in self.map_triggers:
+                result = mt()
+                if result == 'victory':
+                    app.unbind_all()
+                    self.end_level() # next map is 122 on this route
                     break
                 elif result == 'game over':
                     self.reset()
