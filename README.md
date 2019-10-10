@@ -1,2 +1,4 @@
 Witch
-A strategy game to make your children worship satan
+Partially completed game made by a famous murderer.
+Society made me this way.
+Fuck Everything.
