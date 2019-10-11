@@ -764,8 +764,8 @@ class Trickster(Summon):
         root.bind('<q>', self.cleanup_gate)
         root.unbind('<a>')
         sqrs = []
-        coord_pairs = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        for c in coord_pairs:
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        for c in app.coords:
             if dist(c, self.loc) <= 2:
                 sqrs.append(c)
         app.animate_squares(sqrs)
@@ -2185,14 +2185,28 @@ class Kensai(Summon):
     def __init__(self, name, img, loc, owner, number, waiting = False):
         self.actions = {'attack':self.do_attack}
         self.attack_used = False
-        self.str = 5
-        self.agl = 3
-        self.end = 4
-        self.dodge = 2
-        self.psyche = 2
-        self.spirit = 9
+        self.str = 4
+        self.agl = 8
+        self.end = 5
+        self.dodge = 9
+        self.psyche = 8
+        self.spirit = 59
+        self.times_attacked = 0
+        self.attacked_ids = []
         self.waiting = waiting
         super().__init__(name, img, loc, owner, number)
+        
+    def get_attr(self, attr):
+        if attr == 'str':
+            return self.base_str
+        elif attr == 'end':
+            return self.base_end
+        elif attr == 'agl':
+            return self.base_agl
+        elif attr == 'dodge':
+            return self.base_dodge
+        elif attr == 'psyche':
+            return self.base_psyche
         
     
     def pass_priority(self, ents_list):
@@ -2203,20 +2217,21 @@ class Kensai(Summon):
             app.do_ai_loop(ents_list)
         
     #  KENSAI AI
-    # instead of calling bfs on each potential target, can i walk grid with bfs until any enemy is found?
     def do_ai(self, ents_list):
-        if self.waiting == True: # GIVEN PRIORITY OVER OTHER ENTS, ONLY TRY TO ATTACK THIS ENT
+        if self.waiting == True: # WAITING, PASSIVE, PASS PRIORITY
             self.pass_priority(ents_list)
         else: # NO TARGET PRIORITY, ATTEMPT ATTACK FROM STARTLOC
             atk_sqrs = self.legal_attacks()
             atk_sqrs = [x for x in atk_sqrs if app.ent_dict[app.grid[x[0]][x[1]]].owner == 'p1']
+            atk_sqrs = [x for x in atk_sqrs if app.grid[x[0]][x[1]] not in self.attacked_ids]
+            print(self.attacked_ids)
             if atk_sqrs != []:
                 any = atk_sqrs[0]
                 id = app.grid[any[0]][any[1]]
                 root.after(666, lambda id = id : app.get_focus(id))
                 root.after(1333, lambda el = ents_list, id = id : self.do_attack(el, id)) # ATTACK
             else: # CANNOT ATTACK FROM START LOC, GET TARGET AND MOVE TOWARDS
-                enemy_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p1']
+                enemy_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p1' and x not in self.attacked_ids]
                 paths = []
 #                 coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
                 for el in enemy_ent_locs:
@@ -2288,7 +2303,6 @@ class Kensai(Summon):
     
     def do_attack(self, ents_list, id):
         app.get_focus(id)
-
         self.init_attack_anims()
 #         effect1 = pygame.mixer.Sound('Sound_Effects/kensai_cut.ogg')
 #         effect1.set_volume(1)
@@ -2305,22 +2319,41 @@ class Kensai(Summon):
             my_str = self.get_attr('str')
             target_end = app.ent_dict[id].get_attr('end')
             d = damage(my_str, target_end)
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Undead Attack Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Kensai Attack Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
             app.ent_dict[id].set_attr('spirit', -d)
             if app.ent_dict[id].spirit <= 0:
                 app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
             root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id)) # EXIT THROUGH CLEANUP_ATTACK()
         else:
             # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Undead Attack Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Kensai Attack Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
             root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id))
         
     def cleanup_attack(self, ents_list, id):
         if app.ent_dict[id].spirit <= 0:
             app.kill(id)
         self.init_normal_anims()
+        try: del app.vis_dict['Kensai_Cut']
+        except: pass
         try: app.canvas.delete('text')
         except: pass
+        self.attacked_ids.append(id)
+        if self.times_attacked < 4:
+            near_sqrs = [s for s in app.coords if dist(s, self.loc) <= 3]
+            near_ents = [app.grid[s[0]][s[1]] for s in near_sqrs if app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
+            pot_targets = [e for e in near_ents if app.ent_dict[e].owner == 'p1' and e not in self.attacked_ids]
+            if pot_targets != []:
+                id = choice(pot_targets)
+                self.times_attacked += 1
+                self.do_ai(ents_list)
+            else:
+                self.end_attack(ents_list)
+        else:
+            self.end_attack(ents_list)
+                
+    def end_attack(self, ents_list):
+        self.times_attacked = 0
+        self.attacked_ids = []
         ents_list = ents_list[1:]
         if ents_list == []:
             app.end_turn()
@@ -3110,10 +3143,10 @@ class Sorceress(Summon):
         self.actions = {'attack':self.do_attack}
         self.attack_used = False
         self.str = 5
-        self.agl = 7
-        self.end = 7
-        self.dodge = 5
-        self.psyche = 11
+        self.agl = 6
+        self.end = 6
+        self.dodge = 6
+        self.psyche = 9
         self.spirit = 89
         self.waiting = waiting
         super().__init__(name, img, loc, owner, number)
@@ -3125,46 +3158,59 @@ class Sorceress(Summon):
         else:
             app.do_ai_loop(ents_list)
         
+    # attempt to teleport barbarian, take away summon undead, do not teleport away instead teleport towards barbarian
     #  SORCERESS AI
-    # change to 'move away after attack' if able to attack from start location
-    # randomly cast spells, teleport away, summon undead
-    
-    # make casting anims
     def do_ai(self, ents_list):
         if self.waiting == True: # GIVEN PRIORITY OVER OTHER ENTS, ONLY TRY TO ATTACK THIS ENT
             self.pass_priority(ents_list)
         else: # NO TARGET PRIORITY, ATTEMPT ATTACK FROM STARTLOC
+            self.teleport_barbarian(ents_list)
+#             root.after(2333, lambda ents_list = ents_list : self.continue_ai(ents_list))
             # Summon Undead
-            root.after(1333, lambda el = ents_list : self.warlock_summon(el))
-            
-    def warlock_summon(self, ents_list):
-        # give visual cue, timing, alternate turns?
-        effect1 = pygame.mixer.Sound('Sound_Effects/warlock_summon.ogg')
-        effect1.set_volume(1)
-        sound_effects.play(effect1, 0)
-        app.effects_counter += 3 # skip existing ent ids
-        uniq_num = app.effects_counter
-        app.effects_counter += 1
-        # get random empty location
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100) if dist([x,y], self.loc) <= 6]
-        empty = [c for c in coords if app.grid[c[0]][c[1]] == '']
-        if empty != []:
-            undead_loc = choice(empty)
-            app.focus_square(undead_loc)
-            app.vis_dict['Summon_Undead'] = Vis(name = 'Summon_Undead', loc = undead_loc[:])
-            app.canvas.create_image(undead_loc[0]*100+50-app.moved_right, undead_loc[1]*100+50-app.moved_down, image = app.vis_dict['Summon_Undead'].img, tags = 'Summon_Undead')
-            def cleanup_vis(name):
-                app.canvas.delete(name)
-                del app.vis_dict[name]
-            root.after(2333, lambda name = 'Summon_Undead' : cleanup_vis(name))
-            app.canvas.create_text(undead_loc[0]*100+50-app.moved_right, undead_loc[1]*100+90-app.moved_down, text = 'Summon Undead', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
-            img = ImageTk.PhotoImage(Image.open('summon_imgs/Undead.png'))
-            app.ent_dict['b'+str(uniq_num)] = Undead(name = 'Undead', img = img, loc = undead_loc[:], owner = 'p2', number = 'b'+str(uniq_num))
-            app.grid[undead_loc[0]][undead_loc[1]] = 'b'+str(uniq_num)
-            app.canvas.create_image(undead_loc[0]*100+50-app.moved_right, undead_loc[1]*100+50-app.moved_down, image = img, tags = 'b'+str(uniq_num))
-            root.after(2333, lambda t = 'text' : app.canvas.delete(t))
+#             root.after(1333, lambda el = ents_list : self.warlock_summon(el))
+    # b2
+    def teleport_barbarian(self, ents_list):
+        # if b2 within 4 sqrs teleport it to the nearest enemy ent
+        sqrs = [s for s in app.coords if dist(s, self.loc) <= 4]
+        ents = [app.grid[s[0]][s[1]] for s in sqrs if app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
+        if 'b2' in ents:
+            # find nearest enemy ent
+            enemy_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p1']
+            loc = enemy_ent_locs[0] # will always exist
+            min_dist = dist(self.loc, loc)
+            enemy_ent_locs = enemy_ent_locs[1:]
+            if enemy_ent_locs != []:
+                for s in enemy_ent_locs:
+                    if dist(s, self.loc) < min_dist:
+                        min_dist = dist(s, self.loc)
+                        loc = s
+            # find the closest empty sqr that is within teleport range
+            empty_sqrs = [s for s in app.coords if app.grid[s[0]][s[1]] == '' and dist(s, self.loc) < 4]
+            closest_sqr = empty_sqrs[0] # should always exist (DEBUG later, sqrs could be all occupied)
+            min_dist = dist(closest_sqr, loc)
+            for s in empty_sqrs:
+                if dist(s, loc) < min_dist:
+                    closest_sqr = s
+                    min_dist = dist(s, loc)
+            # teleport b2 to closest_sqr
+            oldloc = app.ent_dict['b2'].loc[:]
+            app.vis_dict['Teleport'] = Vis(name = 'Teleport', loc = oldloc)
+            vis = app.vis_dict['Teleport']
+            app.canvas.create_image(oldloc[0]*100+50-app.moved_right, oldloc[1]*100+50-app.moved_down, image = vis.img, tags = 'Teleport')
+        root.after(2333, lambda ents_list = ents_list, oldloc = oldloc, newloc = closest_sqr : self.cleanup_bar_teleport(ents_list, oldloc, newloc))
+        
+    def cleanup_bar_teleport(self, ents_list, oldloc, newloc):
+        app.canvas.delete('Teleport')
+        del app.vis_dict['Teleport']
+        app.grid[oldloc[0]][oldloc[1]] = ''
+        app.grid[newloc[0]][newloc[1]] = 'b2'
+        app.ent_dict['b2'].loc = newloc[:]
+        app.vis_dict['Teleport'] = Vis(name = 'Teleport', loc = newloc[:])
+        vis = app.vis_dict['Teleport']
+        app.canvas.create_image(newloc[0]*100+50-app.moved_right, newloc[1]*100+50-app.moved_down, image = vis.img, tags = 'Teleport')
+        app.canvas.create_image(newloc[0]*100+50-app.moved_right, newloc[1]*100+50-app.moved_down, image = app.ent_dict['b2'].img, tags = app.ent_dict['b2'].tags)
         root.after(2333, lambda ents_list = ents_list : self.continue_ai(ents_list))
-        # End Summon Undead, ATTEMPT ATTACK
+        
             
     def continue_ai(self, ents_list):
         atk_sqrs = self.legal_attacks()
@@ -3456,8 +3502,8 @@ class Orc_Axeman(Summon):
         effect1.set_volume(1)
         sound_effects.play(effect1, 0)
         my_agl = self.get_attr('agl')
-        target_dodge = app.ent_dict[id].get_attr('dodge')
-        if to_hit(my_agl, target_dodge) == True:
+        target_agl = app.ent_dict[id].get_attr('agl')
+        if to_hit(my_agl, target_agl) == True:
             # HIT, SHOW VIS, DO DAMAGE, EXIT
             my_str = self.get_attr('str')
             target_end = app.ent_dict[id].get_attr('end')
@@ -3518,12 +3564,12 @@ class Barbarian(Summon):
     def __init__(self, name, img, loc, owner, number, waiting = False):
         self.actions = {'attack':self.do_attack}
         self.attack_used = False
-        self.str = 6
-        self.agl = 5
-        self.end = 6
-        self.dodge = 7
-        self.psyche = 2
-        self.spirit = 29
+        self.str = 10
+        self.agl = 8
+        self.end = 8
+        self.dodge = 5
+        self.psyche = 3
+        self.spirit = 79
         self.waiting = waiting
         super().__init__(name, img, loc, owner, number)
         
@@ -3620,24 +3666,24 @@ class Barbarian(Summon):
     def do_attack(self, ents_list, id):
         app.get_focus(id)
 #         self.init_attack_anims()
-        effect1 = pygame.mixer.Sound('Sound_Effects/orc_axeman_attack.ogg')
-        effect1.set_volume(1)
-        sound_effects.play(effect1, 0)
+#         effect1 = pygame.mixer.Sound('Sound_Effects/orc_axeman_attack.ogg')
+#         effect1.set_volume(1)
+#         sound_effects.play(effect1, 0)
         my_agl = self.get_attr('agl')
-        target_dodge = app.ent_dict[id].get_attr('dodge')
-        if to_hit(my_agl, target_dodge) == True:
+        target_agl = app.ent_dict[id].get_attr('agl')
+        if to_hit(my_agl, target_agl) == True:
             # HIT, SHOW VIS, DO DAMAGE, EXIT
             my_str = self.get_attr('str')
             target_end = app.ent_dict[id].get_attr('end')
             d = damage(my_str, target_end)
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Orc Axeman Attack Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Barbarian Attack Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
             app.ent_dict[id].set_attr('spirit', -d)
             if app.ent_dict[id].spirit <= 0:
                 app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
             root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id)) # EXIT THROUGH CLEANUP_ATTACK()
         else:
             # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Orc Axeman Attack Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Barbarian Attack Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
             root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id))
         
     def cleanup_attack(self, ents_list, id):
@@ -3673,7 +3719,7 @@ class Barbarian(Summon):
             for s in adj:
                 mvlist.append(s)
                 findall(s, start+1, distance)
-        findall(loc, 1, 4) 
+        findall(loc, 1, 3) 
         setlist = []
         for l in mvlist:
             if l not in setlist:
@@ -7109,6 +7155,12 @@ class App(tk.Frame):
                     elif self.ent_dict[ent].name == 'White_Dragon':
                         self.ent_dict[ent].do_ai(ents)
                     elif self.ent_dict[ent].name == 'Warlock':
+                        self.ent_dict[ent].do_ai(ents)
+                    elif self.ent_dict[ent].name == 'Kensai':
+                        self.ent_dict[ent].do_ai(ents)
+                    elif self.ent_dict[ent].name == 'Barbarian':
+                        self.ent_dict[ent].do_ai(ents)
+                    elif self.ent_dict[ent].name == 'Sorceress':
                         self.ent_dict[ent].do_ai(ents)
         
         
