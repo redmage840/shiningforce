@@ -342,7 +342,7 @@ class Entity():
         if a <= 0:
             a = 0
         else:
-            a = (a*2)*10
+            a *= 10
         rand = randrange(-1, 102)
         if a > rand:
             return True
@@ -2352,8 +2352,8 @@ class Kensai(Summon):
             self.end_attack(ents_list)
                 
     def end_attack(self, ents_list):
-        self.times_attacked = 0
-        self.attacked_ids = []
+#         self.times_attacked = 0
+#         self.attacked_ids = []
         ents_list = ents_list[1:]
         if ents_list == []:
             app.end_turn()
@@ -3146,7 +3146,7 @@ class Sorceress(Summon):
         self.agl = 6
         self.end = 6
         self.dodge = 6
-        self.psyche = 9
+        self.psyche = 7
         self.spirit = 89
         self.waiting = waiting
         super().__init__(name, img, loc, owner, number)
@@ -3186,18 +3186,23 @@ class Sorceress(Summon):
                         loc = s
             # find the closest empty sqr that is within teleport range
             empty_sqrs = [s for s in app.coords if app.grid[s[0]][s[1]] == '' and dist(s, self.loc) < 4]
-            closest_sqr = empty_sqrs[0] # should always exist (DEBUG later, sqrs could be all occupied)
-            min_dist = dist(closest_sqr, loc)
-            for s in empty_sqrs:
-                if dist(s, loc) < min_dist:
-                    closest_sqr = s
-                    min_dist = dist(s, loc)
-            # teleport b2 to closest_sqr
-            oldloc = app.ent_dict['b2'].loc[:]
-            app.vis_dict['Teleport'] = Vis(name = 'Teleport', loc = oldloc)
-            vis = app.vis_dict['Teleport']
-            app.canvas.create_image(oldloc[0]*100+50-app.moved_right, oldloc[1]*100+50-app.moved_down, image = vis.img, tags = 'Teleport')
-        root.after(2333, lambda ents_list = ents_list, oldloc = oldloc, newloc = closest_sqr : self.cleanup_bar_teleport(ents_list, oldloc, newloc))
+            closest_sqr = empty_sqrs[0] # should always exist
+            if closest_sqr != []:
+                min_dist = dist(closest_sqr, loc)
+                for s in empty_sqrs:
+                    if dist(s, loc) < min_dist:
+                        closest_sqr = s
+                        min_dist = dist(s, loc)
+                # teleport b2 to closest_sqr
+                oldloc = app.ent_dict['b2'].loc[:]
+                app.vis_dict['Teleport'] = Vis(name = 'Teleport', loc = oldloc)
+                vis = app.vis_dict['Teleport']
+                app.canvas.create_image(oldloc[0]*100+50-app.moved_right, oldloc[1]*100+50-app.moved_down, image = vis.img, tags = 'Teleport')
+                root.after(2333, lambda ents_list = ents_list, oldloc = oldloc, newloc = closest_sqr : self.cleanup_bar_teleport(ents_list, oldloc, newloc))
+            else:
+                self.continue_ai(ents_list)
+        else:
+            self.continue_ai(ents_list)
         
     def cleanup_bar_teleport(self, ents_list, oldloc, newloc):
         app.canvas.delete('Teleport')
@@ -3228,7 +3233,7 @@ class Sorceress(Summon):
             # FIND PATH TO SQR WITHIN RANGE OF THIS ENT
             # Need paths 'through' objects
             # cannot end move in 'block' or Ent
-                goals = [c for c in app.coords if dist(c, el) <= 3 and app.grid[c[0]][c[1]] == '']
+                goals = [c for c in app.coords if dist(c, el) <= 4 and app.grid[c[0]][c[1]] == '']
                 # this can cause 'path-shortening', finds path which is then obstructed on real grid resulting in 'short move'
                 egrid = [[''] * (app.map_height//100) for i in range(app.map_width//100)]
                 path = bfs(self.loc[:], goals, egrid)
@@ -3246,7 +3251,7 @@ class Sorceress(Summon):
                         break
                 if endloc != None:
                     root.after(666, lambda sqr = endloc[:] : app.focus_square(sqr))
-                    root.after(1333, lambda el = ents_list, endloc = endloc : self.warlock_move(el, endloc))
+                    root.after(1333, lambda el = ents_list, endloc = endloc : self.sorceress_move(el, endloc))
                 else:
                     ents_list = ents_list[1:]
                     if ents_list == []:
@@ -3255,11 +3260,10 @@ class Sorceress(Summon):
                         root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
             
     # change to 'teleport move'
-    def warlock_move(self, ents_list, endloc):
+    def sorceress_move(self, ents_list, endloc):
         global selected
         self.move_used = True
         oldloc = self.loc[:]
-        
         app.vis_dict['Teleport'] = Vis(name = 'Teleport', loc = oldloc[:])
         vis = app.vis_dict['Teleport']
         app.canvas.create_image(oldloc[0]*100+50-app.moved_right, oldloc[1]*100+50-app.moved_down, image = vis.img, tags = 'Teleport')
@@ -3313,6 +3317,7 @@ class Sorceress(Summon):
             else:
                 root.after(666, lambda e = ents_list : app.do_ai_loop(e))
     
+    # change to fireblast
     def do_attack(self, ents_list, id):
         app.get_focus(id)
         self.attack_used = True
@@ -3350,9 +3355,8 @@ class Sorceress(Summon):
         except: pass
         # if havent moved, attempt random move
         if self.move_used == False:
-            # change to move to random square at least 9 away
-#             coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-            empty_sqrs = [s for s in app.coords if app.grid[s[0]][s[1]] == '' and dist(self.loc, s) > 9]
+            # change to teleport near b2
+            empty_sqrs = [s for s in app.coords if app.grid[s[0]][s[1]] == '' and dist(app.ent_dict['b2'].loc, s) < 5]
             if empty_sqrs != []:
                 s =  choice(empty_sqrs)
                 effect1 = pygame.mixer.Sound('Sound_Effects/warlock_teleport_away.ogg')
@@ -3377,7 +3381,7 @@ class Sorceress(Summon):
         sqrs = []
 #         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         for coord in app.coords:
-            if dist(coord, self.loc) <= 3:
+            if dist(coord, self.loc) <= 4:
                 if app.grid[coord[0]][coord[1]] != '' and app.grid[coord[0]][coord[1]] != 'block':
                     sqrs.append(coord)
         return sqrs
@@ -3719,7 +3723,7 @@ class Barbarian(Summon):
             for s in adj:
                 mvlist.append(s)
                 findall(s, start+1, distance)
-        findall(loc, 1, 3) 
+        findall(loc, 1, 2) 
         setlist = []
         for l in mvlist:
             if l not in setlist:
@@ -6205,13 +6209,30 @@ class App(tk.Frame):
             background_music.play(sound1, -1)
             sound1.set_volume(.08)
             self.map_triggers = []
+            # add generate revenants to global effects
+            def generate_revenants():
+                if self.turn_counter % 4 == 0:
+                    # get empty sqr near
+#                     empty_sqrs = [s for s in app.coords if app.grid[s[0]][s[1]] == '' and dist([24,4], s) <= 3]
+#                     if empty_sqrs != []:
+#                         loc = choice(empty_sqrs)
+                    if app.grid[24][4] == '':
+                        img = ImageTk.PhotoImage(Image.open('summon_imgs/Revenant.png'))
+#                         enemy_ents = [k for k,v in app.ent_dict.items() if v.owner == 'p2']
+                        # needs to be unique number
+                        counter = self.effects_counter+3 # seed with 3 to prevent collision existing Ents
+                        self.effects_counter += 1
+                        id = 'b' + str(counter)
+                        app.grid[24][4] = id
+                        app.ent_dict[id] = Revenant(name = 'Revenant', img = img, loc = [24,4], owner = 'p2', number = id)
+            self.map_triggers.append(generate_revenants)
             #   CREATE SPARKLES
             def create_sparkles():
-                app.vis_dict['Sparkle1'] = Vis(name = 'Sparkle', loc = [27,15])
-                app.canvas.create_image(2700+50-app.moved_right, 1500+50-app.moved_down, image = app.vis_dict['Sparkle1'].img, tags = 'Sparkle1')
+                app.vis_dict['Sparkle1'] = Vis(name = 'Sparkle', loc = [28,15])
+                app.canvas.create_image(2800+50-app.moved_right, 1500+50-app.moved_down, image = app.vis_dict['Sparkle1'].img, tags = 'Sparkle1')
                 ##
-                app.vis_dict['Sparkle2'] = Vis(name = 'Sparkle', loc = [11,2])
-                app.canvas.create_image(1100+50-app.moved_right, 200+50-app.moved_down, image = app.vis_dict['Sparkle2'].img, tags = 'Sparkle2')
+                app.vis_dict['Sparkle2'] = Vis(name = 'Sparkle', loc = [11,1])
+                app.canvas.create_image(1100+50-app.moved_right, 100+50-app.moved_down, image = app.vis_dict['Sparkle2'].img, tags = 'Sparkle2')
                 self.map_triggers.remove(create_sparkles)
             self.map_triggers.append(create_sparkles)
 #             def summon_trick():
@@ -6262,20 +6283,7 @@ class App(tk.Frame):
                     app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.ent_dict['b2'].img, tags = 'b2')
                     self.map_triggers.remove(ghost_teleport2)
             self.map_triggers.append(ghost_teleport2)
-            # make so revenant/ghost production increases over time, kill 'boss' in library before they overwhelm
-            def generate_revenants():
-                if self.turn_counter % 4 == 0:
-                    if app.grid[24][4] == '':
-                        img = ImageTk.PhotoImage(Image.open('summon_imgs/Revenant.png'))
-#                         enemy_ents = [k for k,v in app.ent_dict.items() if v.owner == 'p2']
-                        # needs to be unique number
-                        counter = self.effects_counter+3 # seed with 3 to prevent collision existing Ents
-                        self.effects_counter += 1
-                        id = 'b' + str(counter)
-                        app.grid[24][4] = id
-                        app.ent_dict[id] = Revenant(name = 'Revenant', img = img, loc =[24,4], owner = 'p2', number = id)
-                        
-            self.map_triggers.append(generate_revenants)
+            # READ BOOK
             def read_book():
                 loc = app.ent_dict[app.p1_witch].loc[:]
                 if loc == [27,15]:
@@ -6480,8 +6488,8 @@ class App(tk.Frame):
                     app.grid[16][8] = 'b6'
                     # SPARKLE
                     def create_sparkle2():
-                        app.vis_dict['Sparkle2'] = Vis(name = 'Sparkle', loc = [16,18])
-                        app.canvas.create_image(1600+50-app.moved_right, 1800+50-app.moved_down, image = app.vis_dict['Sparkle2'].img, tags = 'Sparkle2')
+                        app.vis_dict['Sparkle2'] = Vis(name = 'Sparkle', loc = [17,18])
+                        app.canvas.create_image(1700+50-app.moved_right, 1800+50-app.moved_down, image = app.vis_dict['Sparkle2'].img, tags = 'Sparkle2')
                         self.map_triggers.remove(create_sparkle2)
                     self.map_triggers.append(create_sparkle2)
                     # BOOK TRIGGER
@@ -6590,8 +6598,8 @@ class App(tk.Frame):
                     app.grid[7][2] = 'b2'
                     # SPARKLE
                     def create_sparkle1():
-                        app.vis_dict['Sparkle1'] = Vis(name = 'Sparkle', loc = [7,2])
-                        app.canvas.create_image(700+50-app.moved_right, 200+50-app.moved_down, image = app.vis_dict['Sparkle1'].img, tags = 'Sparkle1')
+                        app.vis_dict['Sparkle1'] = Vis(name = 'Sparkle', loc = [6,2])
+                        app.canvas.create_image(600+50-app.moved_right, 200+50-app.moved_down, image = app.vis_dict['Sparkle1'].img, tags = 'Sparkle1')
                         self.map_triggers.remove(create_sparkle1)
                     self.map_triggers.append(create_sparkle1)
                     # CHEST
@@ -6645,8 +6653,8 @@ class App(tk.Frame):
             self.map_triggers = []
             # SPARKLE
             def create_sparkle1():
-                app.vis_dict['Sparkle1'] = Vis(name = 'Sparkle', loc = [22,9])
-                app.canvas.create_image(2200+50-app.moved_right, 900+50-app.moved_down, image = app.vis_dict['Sparkle1'].img, tags = 'Sparkle1')
+                app.vis_dict['Sparkle1'] = Vis(name = 'Sparkle', loc = [22,8])
+                app.canvas.create_image(2200+50-app.moved_right, 800+50-app.moved_down, image = app.vis_dict['Sparkle1'].img, tags = 'Sparkle1')
                 self.map_triggers.remove(create_sparkle1)
             self.map_triggers.append(create_sparkle1)
             def inspect_column():
@@ -6712,8 +6720,8 @@ class App(tk.Frame):
 #             self.map_triggers.append(summon_trick)
             # SPARKLE
             def create_sparkle1():
-                app.vis_dict['Sparkle1'] = Vis(name = 'Sparkle', loc = [7,2])
-                app.canvas.create_image(700+50-app.moved_right, 200+50-app.moved_down, image = app.vis_dict['Sparkle1'].img, tags = 'Sparkle1')
+                app.vis_dict['Sparkle1'] = Vis(name = 'Sparkle', loc = [7,1])
+                app.canvas.create_image(700+50-app.moved_right, 100+50-app.moved_down, image = app.vis_dict['Sparkle1'].img, tags = 'Sparkle1')
                 self.map_triggers.remove(create_sparkle1)
             self.map_triggers.append(create_sparkle1)
             # BOOK TRIGGER
@@ -6739,20 +6747,96 @@ class App(tk.Frame):
             self.map_triggers.append(kill_warlock)
             self.load_intro_scene(map_number, protaganist_object = protaganist_object)
         elif map_number == 3:
-#             sound1 = pygame.mixer.Sound('Music/Dark_Descent.ogg')
-#             background_music.play(sound1, -1)
-#             sound1.set_volume(0.3)
+            sound1 = pygame.mixer.Sound('Music/radakan - old crypt.ogg')
+            background_music.play(sound1, -1)
+            sound1.set_volume(0.8)
             self.map_triggers = []
-            def awaken_orcs():
-                sqrs = [s for s in app.coords if dist(s, app.ent_dict['b3'].loc) <= 3 or dist(s, app.ent_dict['b4'].loc) <= 3]
-                ents = [app.grid[s[0]][s[1]] for s in sqrs if app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
-                for ent in ents:
-                    if app.ent_dict[ent].owner == 'p1':
-                        app.ent_dict['b3'].waiting = False
-                        app.ent_dict['b4'].waiting = False
-                        self.map_triggers.remove(awaken_orcs)
+            # BOOK AND SPARKLE 1
+            def create_sparkle1():
+                app.vis_dict['Sparkle1'] = Vis(name = 'Sparkle', loc = [1,29])
+                app.canvas.create_image(100+50-app.moved_right, 2900+50-app.moved_down, image = app.vis_dict['Sparkle1'].img, tags = 'Sparkle1')
+                self.map_triggers.remove(create_sparkle1)
+            self.map_triggers.append(create_sparkle1)
+            def read_book1():
+                loc = app.ent_dict[app.p1_witch].loc[:]
+                if loc == [2,29]:
+                    app.canvas.delete('Sparkle1')
+                    del app.vis_dict['Sparkle1']
+                    app.unbind_all()
+                    self.book3_1 = tk.Button(root, text = 'Read Book', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.read_3_1_book)
+                    app.canvas.create_window(100-app.moved_right, 2900-app.moved_down, window = self.book3_1)
+                    self.book3_1_cancel = tk.Button(root, text = 'Leave Alone', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.cancel_3_1_book)
+                    app.canvas.create_window(100-app.moved_right+25, 2900-app.moved_down+33, window = self.book3_1_cancel)
+                    self.map_triggers.remove(read_book1)
+            self.map_triggers.append(read_book1)
+            # BOOK AND SPARKLE 2
+            def create_sparkle2():
+                app.vis_dict['Sparkle2'] = Vis(name = 'Sparkle', loc = [18,29])
+                app.canvas.create_image(1800+50-app.moved_right, 2900+50-app.moved_down, image = app.vis_dict['Sparkle2'].img, tags = 'Sparkle2')
+                self.map_triggers.remove(create_sparkle2)
+            self.map_triggers.append(create_sparkle2)
+            def read_book2():
+                loc = app.ent_dict[app.p1_witch].loc[:]
+                if loc == [17,29]:
+                    app.canvas.delete('Sparkle2')
+                    del app.vis_dict['Sparkle2']
+                    app.unbind_all()
+                    self.book3_2 = tk.Button(root, text = 'Read Book', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.read_3_2_book)
+                    app.canvas.create_window(1800-app.moved_right, 2900-app.moved_down, window = self.book3_2)
+                    self.book3_2_cancel = tk.Button(root, text = 'Leave Alone', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.cancel_3_2_book)
+                    app.canvas.create_window(1800-app.moved_right+25, 2900-app.moved_down+33, window = self.book3_2_cancel)
+                    self.map_triggers.remove(read_book2)
+            self.map_triggers.append(read_book2)
+            # BOOK AND SPARKLE 3
+            def create_sparkle3():
+                app.vis_dict['Sparkle3'] = Vis(name = 'Sparkle', loc = [1,19])
+                app.canvas.create_image(100+50-app.moved_right, 1900+50-app.moved_down, image = app.vis_dict['Sparkle3'].img, tags = 'Sparkle3')
+                self.map_triggers.remove(create_sparkle3)
+            self.map_triggers.append(create_sparkle3)
+            def read_book3():
+                loc = app.ent_dict[app.p1_witch].loc[:]
+                if loc == [2,19]:
+                    app.canvas.delete('Sparkle3')
+                    del app.vis_dict['Sparkle3']
+                    app.unbind_all()
+                    self.book3_3 = tk.Button(root, text = 'Read Book', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.read_3_3_book)
+                    app.canvas.create_window(100-app.moved_right, 1900-app.moved_down, window = self.book3_3)
+                    self.book3_3_cancel = tk.Button(root, text = 'Leave Alone', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.cancel_3_3_book)
+                    app.canvas.create_window(100-app.moved_right+25, 1900-app.moved_down+33, window = self.book3_3_cancel)
+                    self.map_triggers.remove(read_book3)
+            self.map_triggers.append(read_book3)
+            # BOOK AND SPARKLE 4
+            def create_sparkle4():
+                app.vis_dict['Sparkle4'] = Vis(name = 'Sparkle', loc = [18,19])
+                app.canvas.create_image(1800+50-app.moved_right, 1900+50-app.moved_down, image = app.vis_dict['Sparkle4'].img, tags = 'Sparkle4')
+                self.map_triggers.remove(create_sparkle4)
+            self.map_triggers.append(create_sparkle4)
+            def read_book4():
+                loc = app.ent_dict[app.p1_witch].loc[:]
+                if loc == [17,19]:
+                    app.canvas.delete('Sparkle4')
+                    del app.vis_dict['Sparkle4']
+                    app.unbind_all()
+                    self.book3_4 = tk.Button(root, text = 'Read Book', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.read_3_4_book)
+                    app.canvas.create_window(1800-app.moved_right, 1900-app.moved_down, window = self.book3_4)
+                    self.book3_4_cancel = tk.Button(root, text = 'Leave Alone', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.cancel_3_4_book)
+                    app.canvas.create_window(1800-app.moved_right+25, 1900-app.moved_down+33, window = self.book3_4_cancel)
+                    self.map_triggers.remove(read_book4)
+            self.map_triggers.append(read_book4)
+            
+            def awaken_group_2(): 
+                friendly_ent_locs = [v.loc for k,v in app.ent_dict.items() if v.owner == 'p1']
+                for loc in friendly_ent_locs:
+                    if loc[1] < 19:
+                        app.ent_dict['b1'].waiting = False
+                        app.ent_dict['b2'].waiting = False
+                        app.ent_dict['b7'].waiting = False
+                        app.ent_dict['b8'].waiting = False
+                        app.ent_dict['b9'].waiting = False
+                        app.ent_dict['b10'].waiting = False
+                        self.map_triggers.remove(awaken_group_2)
                         break
-            self.map_triggers.append(awaken_orcs)
+            self.map_triggers.append(awaken_group_2)
             def self_death():
                 if app.p1_witch not in app.ent_dict.keys():
                     return 'game over'
@@ -6762,7 +6846,24 @@ class App(tk.Frame):
         else:
             print('you are winner hahaha')
         
-    # Move trigger funcs for organization
+    # Move trigger funcs for organization?
+    def read_3_1_book(self):
+        pass
+    def cancel_3_1_book(self):
+        pass
+    def read_3_2_book(self):
+        pass
+    def cancel_3_2_book(self):
+        pass
+    def read_3_3_book(self):
+        pass
+    def cancel_3_3_book(self):
+        pass
+    def read_3_4_book(self):
+        pass
+    def cancel_3_4_book(self):
+        pass
+    
     def inspect_22_column(self):
         loc = app.ent_dict[app.p1_witch].loc[:]
         app.ent_dict[app.p1_witch].arcane_dict['Hatred'] = (app.ent_dict[app.p1_witch].hatred, 9)
@@ -7157,6 +7258,8 @@ class App(tk.Frame):
                     elif self.ent_dict[ent].name == 'Warlock':
                         self.ent_dict[ent].do_ai(ents)
                     elif self.ent_dict[ent].name == 'Kensai':
+                        self.ent_dict[ent].times_attacked = 0
+                        self.ent_dict[ent].attacked_ids = []
                         self.ent_dict[ent].do_ai(ents)
                     elif self.ent_dict[ent].name == 'Barbarian':
                         self.ent_dict[ent].do_ai(ents)
