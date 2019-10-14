@@ -1,3 +1,23 @@
+# make warlock 'ungroundable' always replace legal_moves begin turn
+
+# eliminate own sqr from shadow attack
+
+# sorceress attack to fireblast
+
+# minotaur regen? minotaur kill trigger? kill both undead knight trigger?
+
+# teleport or psi pushing on to sqr with trigger (sparkle), pressing button before cleanup of spell happens will cause spell cleanup to destroy text object if button clicked quickly, no logical problems only visual destroying of text object early
+
+# ideally text objects would have 'context stroke' to appear equally well over light or dark backgrounds
+
+# dragon own shadow flickers over 'bottom' right 'arm'
+
+# when dragon 'flies' make bottom portion 'large'
+
+# make shadow movement less annoying, range cannot hit close
+
+# save game during level 
+
 # line of sight for shadow attacks, pyrotechnics, spells, gate?
 
 # trickster teleport faster, all teleport/shadow move
@@ -585,6 +605,8 @@ class Summon(Entity):
         atk_sqrs = self.legal_attacks()
         ents_near = [e for e in atk_sqrs if app.grid[e[0]][e[1]] != '' and app.grid[e[0]][e[1]] != 'block']
         enemy_ents = [e for e in ents_near if app.ent_dict[app.grid[e[0]][e[1]]].owner == 'p1']
+        if isinstance(self, Kensai):
+            enemy_ents = [e for e in enemy_ents if app.grid[e[0]][e[1]] not in self.attacked_ids]
         if enemy_ents != []:
             any = enemy_ents[0]
             id = app.grid[any[0]][any[1]]
@@ -1388,7 +1410,7 @@ class White_Dragon(Summon):
         self.spirit = 157
         self.waiting = waiting
         self.retreated_once = False
-        super().__init__(name, img, loc, owner, number)#, type = 'large')
+        super().__init__(name, img, loc, owner, number, type = 'large_bottom')
         self.immovable = True
         # create top half
         img = ImageTk.PhotoImage(Image.open('animations/White_Dragon_Top/0.png'))
@@ -1434,21 +1456,10 @@ class White_Dragon(Summon):
             app.grid[loc1[0]][loc1[1]] = 'b2'
             app.grid[loc2[0]][loc2[1]] = 'b3'
             app.grid[loc3[0]][loc3[1]] = 'b4'
-            self.white_dragon_move(ents_list, endloc)
-#             root.after(1333, lambda el = ents_list, endloc = endloc : self.white_dragon_move(el, endloc))
             self.waiting = True
             self.retreated_once = True
-            
-            def awaken_dragon():
-#                 coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-                sqrs = [s for s in app.coords if dist(s, app.ent_dict['b1'].loc) <= 9]
-                ents = [app.grid[s[0]][s[1]] for s in sqrs if app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
-                for ent in ents:
-                    if app.ent_dict[ent].owner == 'p1':
-                        app.ent_dict['b1'].waiting = False
-                        app.map_triggers.remove(awaken_dragon)
-                        break
-            app.map_triggers.append(awaken_dragon)
+#             root.after(1333, lambda el = ents_list, endloc = endloc : self.white_dragon_move(el, endloc))
+            self.white_dragon_move(ents_list, endloc, go_to_sleep = True)
         else: # NO TARGET PRIORITY, ATTEMPT ATTACK FROM STARTLOC
             atk_sqrs = self.legal_attacks()
             atk_sqrs = [x for x in atk_sqrs if app.ent_dict[app.grid[x[0]][x[1]]].owner == 'p1']
@@ -1527,7 +1538,7 @@ class White_Dragon(Summon):
                             root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
             
             
-    def white_dragon_move(self, ents_list, endloc):
+    def white_dragon_move(self, ents_list, endloc, go_to_sleep = None):
         global selected
         # FIND SQUARE FURTHEST ALONG PATH THAT IS WITHIN MOVE RANGE
         id = self.number
@@ -1568,6 +1579,17 @@ class White_Dragon(Summon):
             except: pass
             app.canvas.tag_lower((self.tags), 'maptop')
             if x == endx and y == endy:
+                if go_to_sleep == True:
+                    def awaken_dragon():
+        #                 coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+                        sqrs = [s for s in app.coords if dist(s, app.ent_dict['b1'].loc) <= 9]
+                        ents = [app.grid[s[0]][s[1]] for s in sqrs if app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
+                        for ent in ents:
+                            if app.ent_dict[ent].owner == 'p1':
+                                app.ent_dict['b1'].waiting = False
+                                app.map_triggers.remove(awaken_dragon)
+                                break
+                    root.after(1666, lambda f = awaken_dragon : app.map_triggers.append(awaken_dragon))
                 self.finish_move(id, end_sqr, start_sqr, ents_list) # EXIT
             else: # CONTINUE LOOP
                 root.after(66, lambda id = id, x = x, y = y, e = endx, e2 = endy, s = start_sqr, s2 = end_sqr : move_loop(id, x, y, e, e2, s, s2))
@@ -2223,8 +2245,10 @@ class Kensai(Summon):
         else: # NO TARGET PRIORITY, ATTEMPT ATTACK FROM STARTLOC
             atk_sqrs = self.legal_attacks()
             atk_sqrs = [x for x in atk_sqrs if app.ent_dict[app.grid[x[0]][x[1]]].owner == 'p1']
+            print(atk_sqrs)
             atk_sqrs = [x for x in atk_sqrs if app.grid[x[0]][x[1]] not in self.attacked_ids]
-            print(self.attacked_ids)
+            print('atk_sqrs ', atk_sqrs)
+            print('attacked_ids ', self.attacked_ids)
             if atk_sqrs != []:
                 any = atk_sqrs[0]
                 id = app.grid[any[0]][any[1]]
@@ -2923,6 +2947,8 @@ class Warlock(Summon):
     
     # make casting anims
     def do_ai(self, ents_list):
+        p = partial(self.__class__.legal_moves, self) #   PUT BACK CLASS METHOD MOVEMENT
+        self.legal_moves = p
         if self.waiting == True: # GIVEN PRIORITY OVER OTHER ENTS, ONLY TRY TO ATTACK THIS ENT
             self.pass_priority(ents_list)
         else: # NO TARGET PRIORITY, ATTEMPT ATTACK FROM STARTLOC
@@ -3756,7 +3782,7 @@ class Minotaur(Summon):
         self.psyche = 9
         self.spirit = 163
         self.waiting = waiting
-        super().__init__(name, img, loc, owner, number)#, type = 'large')
+        super().__init__(name, img, loc, owner, number, type = 'large_bottom')
         self.immovable = True
         # create top half
         img = ImageTk.PhotoImage(Image.open('animations/Minotaur_Top/0.png'))
@@ -3764,6 +3790,7 @@ class Minotaur(Summon):
         
     def large_undo(self):
         app.canvas.delete(self.number+'top')
+        del app.ent_dict[self.number+'top']
         
     def pass_priority(self, ents_list):
         ents_list = ents_list[1:]
@@ -6651,6 +6678,10 @@ class App(tk.Frame):
             background_music.play(sound1, -1)
             sound1.set_volume(0.4)
             self.map_triggers = []
+            def self_death():
+                if app.p1_witch not in app.ent_dict.keys():
+                    return 'game over'
+            self.map_triggers.append(self_death)
             # SPARKLE
             def create_sparkle1():
                 app.vis_dict['Sparkle1'] = Vis(name = 'Sparkle', loc = [22,8])
@@ -6669,26 +6700,26 @@ class App(tk.Frame):
                     app.canvas.create_window(2200-app.moved_right+25, 900-app.moved_down+33, window = self.column22_cancel)
                     self.map_triggers.remove(inspect_column)
             self.map_triggers.append(inspect_column)
-            def summon_trick():
-                all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
-                if 'Bard' in all:
-                    return 'victory'
-                else:
-                    return None
-            self.map_triggers.append(summon_trick)
+#             def summon_trick():
+#                 all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
+#                 if 'Bard' in all:
+#                     return 'victory'
+#                 else:
+#                     return None
+#             self.map_triggers.append(summon_trick)
             def awaken_orcs():
-#                 coords = [[x,y] for x in range(self.map_width//100) for y in range(self.map_height//100)]
-                sqrs = [s for s in app.coords if dist(s, app.ent_dict['b7'].loc) <= 7 or dist(s, app.ent_dict['b8'].loc) <= 7]
-                ents = [app.grid[s[0]][s[1]] for s in sqrs if app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
-                for ent in ents:
-                    if app.ent_dict[ent].owner == 'p1':
-                        app.ent_dict['b7'].waiting = False
-                        app.ent_dict['b8'].waiting = False
-                        self.map_triggers.remove(awaken_orcs)
-                        break
+                sqrs_near = [s for s in app.coords if dist(app.ent_dict['b7'].loc,s) <= 7 or dist(app.ent_dict['b8'].loc,s) <= 7]
+                player_ent_locs = [v.loc for k,v in app.ent_dict.items() if v.owner == 'p1']
+                sentinel = False
+                for loc in player_ent_locs:
+                    if loc in sqrs_near:
+                        sentinel = True
+                if app.ent_dict['b1'].spirit < 127 or sentinel == True:
+                    app.ent_dict['b7'].waiting = False
+                    app.ent_dict['b8'].waiting = False
+                    self.map_triggers.remove(awaken_orcs)
             self.map_triggers.append(awaken_orcs)
             def awaken_dragon():
-#                 coords = [[x,y] for x in range(self.map_width//100) for y in range(self.map_height//100)]
                 sqrs = [s for s in app.coords if dist(s, app.ent_dict['b1'].loc) <= 9]
                 ents = [app.grid[s[0]][s[1]] for s in sqrs if app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
                 for ent in ents:
@@ -6751,6 +6782,10 @@ class App(tk.Frame):
             background_music.play(sound1, -1)
             sound1.set_volume(0.8)
             self.map_triggers = []
+            def self_death():
+                if app.p1_witch not in app.ent_dict.keys():
+                    return 'game over'
+            self.map_triggers.append(self_death)
             # BOOK AND SPARKLE 1
             def create_sparkle1():
                 app.vis_dict['Sparkle1'] = Vis(name = 'Sparkle', loc = [1,29])
@@ -6848,21 +6883,50 @@ class App(tk.Frame):
         
     # Move trigger funcs for organization?
     def read_3_1_book(self):
-        pass
+        loc = app.ent_dict[app.p1_witch].loc[:]
+        app.canvas.create_text(loc[0]*100-app.moved_right, loc[1]*100-app.moved_down+85, text = 'Permanent +20 Magick', justify = 'center', font = ('Andale Mono', 16), fill = 'white', tags = 'text')
+        app.ent_dict[app.p1_witch].base_magick += 20
+        app.ent_dict[app.p1_witch].magick += 20
+        root.after(2999, lambda t = 'text' : app.canvas.delete(t))
+        root.after(2999, self.cancel_3_1_book)
     def cancel_3_1_book(self):
-        pass
+        self.book3_1.destroy()
+        self.book3_1_cancel.destroy()
+        app.rebind_all()
+        
     def read_3_2_book(self):
-        pass
+        loc = app.ent_dict[app.p1_witch].loc[:]
+        app.canvas.create_text(loc[0]*100-app.moved_right, loc[1]*100-app.moved_down+85, text = 'Permanent +10 Spirit', justify = 'center', font = ('Andale Mono', 16), fill = 'white', tags = 'text')
+        app.ent_dict[app.p1_witch].base_spirit += 10
+        app.ent_dict[app.p1_witch].spirit += 10
+        root.after(2999, lambda t = 'text' : app.canvas.delete(t))
+        root.after(2999, self.cancel_3_2_book)
     def cancel_3_2_book(self):
-        pass
+        self.book3_2.destroy()
+        self.book3_2_cancel.destroy()
+        app.rebind_all()
+        
     def read_3_3_book(self):
-        pass
+        loc = app.ent_dict[app.p1_witch].loc[:]
+        app.canvas.create_text(loc[0]*100-app.moved_right, loc[1]*100-app.moved_down+85, text = 'Summon Cap +1', justify = 'center', font = ('Andale Mono', 16), fill = 'white', tags = 'text')
+        app.ent_dict[app.p1_witch].summon_cap += 1
+        root.after(2999, lambda t = 'text' : app.canvas.delete(t))
+        root.after(2999, self.cancel_3_3_book)
     def cancel_3_3_book(self):
-        pass
+        self.book3_3.destroy()
+        self.book3_3_cancel.destroy()
+        app.rebind_all()
+        
     def read_3_4_book(self):
-        pass
+        loc = app.ent_dict[app.p1_witch].loc[:]
+        app.canvas.create_text(loc[0]*100-app.moved_right, loc[1]*100-app.moved_down+85, text = 'Endurance +2', justify = 'center', font = ('Andale Mono', 16), fill = 'white', tags = 'text')
+        app.ent_dict[app.p1_witch].base_end += 2
+        root.after(2999, lambda t = 'text' : app.canvas.delete(t))
+        root.after(2999, self.cancel_3_4_book)
     def cancel_3_4_book(self):
-        pass
+        self.book3_4.destroy()
+        self.book3_4_cancel.destroy()
+        app.rebind_all()
     
     def inspect_22_column(self):
         loc = app.ent_dict[app.p1_witch].loc[:]
@@ -7893,7 +7957,7 @@ class App(tk.Frame):
         app.ent_dict[id].death_trigger()
         self.canvas.delete(id)
         # destroy surrounding squares of large Ents
-        if app.ent_dict[id].type == 'large':
+        if app.ent_dict[id].type == 'large_bottom':
             app.ent_dict[id].large_undo()
         self.grid[self.ent_dict[id].loc[0]][self.ent_dict[id].loc[1]] = ''
         del self.ent_dict[id]
