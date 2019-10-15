@@ -1,4 +1,10 @@
-# make warlock 'ungroundable' always replace legal_moves begin turn
+# finish entomb vis, remove from spell dict, put in book trigger on sanctum entryway level
+
+# entomb handle 'all sqrs occupied'
+
+# boiling blood make sound 1 sec longer
+
+# update help menu, begin game help screen, spell/attr/action descriptions
 
 # eliminate own sqr from shadow attack
 
@@ -459,7 +465,7 @@ class Entity():
             text = 'Confirm Shadow Move'
         else:
             text = 'Confirm Teleport Square'
-        b = tk.Button(app.context_menu, text = text, wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = sqrs : self.do_move(e, s))
+        b = tk.Button(app.context_menu, text = text, wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = sqrs : self.do_teleport(e, s))
         b.pack(side = 'top', pady = 3)
         app.context_buttons.append(b)
         root.bind('<a>', lambda e, s = sqrs : self.do_teleport(e, s))
@@ -620,6 +626,19 @@ class Summon(Entity):
             else:
                 root.after(666, lambda e = ents_list : app.do_ai_loop(e))
         
+        
+class Tomb(Summon):
+    def __init__(self, name, img, loc, owner, number):
+        self.actions = {}
+        self.attack_used = False
+        self.str = 1
+        self.agl = 1
+        self.end = 5
+        self.dodge = 1
+        self.psyche = 5
+        self.spirit = 20
+        super().__init__(name, img, loc, owner, number)
+        
 ## needs something to do when run out of magick
 ## show cost for spells
 class Trickster(Summon):
@@ -632,7 +651,6 @@ class Trickster(Summon):
         self.dodge = 5
         self.psyche = 5
         self.spirit = 12
-#         self.magick = 27
         super().__init__(name, img, loc, owner, number)
         
     def pyrotechnics(self, event):
@@ -3173,7 +3191,7 @@ class Sorceress(Summon):
         self.end = 6
         self.dodge = 6
         self.psyche = 7
-        self.spirit = 89
+        self.spirit = 59
         self.waiting = waiting
         super().__init__(name, img, loc, owner, number)
         
@@ -3407,7 +3425,7 @@ class Sorceress(Summon):
         sqrs = []
 #         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         for coord in app.coords:
-            if dist(coord, self.loc) <= 4:
+            if dist(coord, self.loc) <= 3:
                 if app.grid[coord[0]][coord[1]] != '' and app.grid[coord[0]][coord[1]] != 'block':
                     sqrs.append(coord)
         return sqrs
@@ -4229,10 +4247,11 @@ class Witch(Entity):
             self.cantrip_dict['Scrye'] = (self.scrye)
             self.cantrip_dict['Energize'] = (self.energize)
             self.arcane_dict['Plague'] = (self.plague, 6)
-            self.arcane_dict['Pestilence'] = (self.pestilence, 8)
+            self.arcane_dict['Pestilence'] = (self.pestilence, 6)
             self.arcane_dict['Curse_of_Oriax'] = (self.curse_of_oriax, 3)
             self.arcane_dict['Gravity'] = (self.gravity, 5)
             self.arcane_dict["Beleth's_Command"] = (self.beleths_command, 6)
+            self.arcane_dict['Entomb'] = (self.entomb, 6)
             self.str = 4
             self.agl = 3
             self.end = 4
@@ -4306,13 +4325,13 @@ class Witch(Entity):
         b2 = tk.Button(app.context_menu, text = '2:Trickster', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, cls = 'Trickster' : self.place_summon(e, cls))
         b2.pack(side = 'top', pady = 2)
         app.context_buttons.append(b2)
-        b3 = tk.Button(app.context_menu, text = '3:Shadow', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, cls = 'Shadow' : self.place_summon(e, cls, cost))
+        b3 = tk.Button(app.context_menu, text = '3:Shadow', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, cls = 'Shadow' : self.place_summon(e, cls))
         b3.pack(side = 'top', pady = 2)
         app.context_buttons.append(b3)
-        b4 = tk.Button(app.context_menu, text = '4:Bard', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, cls = 'Bard' : self.place_summon(e, cls, cost))
+        b4 = tk.Button(app.context_menu, text = '4:Bard', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, cls = 'Bard' : self.place_summon(e, cls))
         b4.pack(side = 'top', pady = 2)
         app.context_buttons.append(b4)
-        b5 = tk.Button(app.context_menu, text = '5:Plaguebearer', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, cls = 'Plaguebearer' : self.place_summon(e, cls, cost))
+        b5 = tk.Button(app.context_menu, text = '5:Plaguebearer', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, cls = 'Plaguebearer' : self.place_summon(e, cls))
         b5.pack(side = 'top', pady = 2)
         app.context_buttons.append(b5)
         b6 = tk.Button(app.context_menu, text = 'Cancel', font = ('chalkduster', 24), highlightbackground = 'tan3', fg='tan3', command = self.cancel_placement)
@@ -4633,6 +4652,9 @@ class Witch(Entity):
         if not isinstance(app.ent_dict[id], Summon):
             return
         self.init_cast_anims()
+        effect1 = pygame.mixer.Sound('Sound_Effects/energize.ogg')
+        effect1.set_volume(1)
+        sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -4691,6 +4713,57 @@ class Witch(Entity):
         app.ent_dict[id].effects_dict[n] = Effect(name = 'Scrye', info = '+2 Agl, +2 Psyche, 1 turn', eot_func = eot, undo = p, duration = 1)
         root.after(2999, lambda  name = 'Scrye' : self.cleanup_spell(name = name))
 
+    # create 'tomb' in current location, tomb is summon entity with 1 for all stats with no movement or attacks that doesnt count towards summon cap, teleport self to new location
+    def entomb(self, event = None):
+        app.depop_context(event = None)
+        root.bind('<q>', lambda name = 'Entomb' : self.cleanup_spell(name = name))
+        sqrs = [s for s in app.coords if dist(self.loc, s) <= 7]
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_entomb(event = e, sqr = s, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Choose Location', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_entomb(e, s, sqrs))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+        
+    def do_entomb(self, event, sqr, sqrs):
+        if sqr not in sqrs:
+            return
+        loc = app.grid[sqr[0]][sqr[1]]
+        if loc != '':
+            return
+#         self.init_cast_anims()
+#         effect1 = pygame.mixer.Sound('Sound_Effects/entomb.ogg')
+#         effect1.set_volume(.08)
+#         sound_effects.play(effect1, 0)
+        self.magick -= self.arcane_dict['Entomb'][1]
+        app.unbind_all()
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        self.arcane_used = True
+        app.canvas.delete(self.tags)
+        oldloc = self.loc[:]
+        # CREATE TOMB ENTITY
+        self.summon_ids += 1
+        if self.owner == 'p1':
+            prefix = 'a'
+        else:
+            prefix = 'b'
+        id = prefix + str(self.summon_ids)
+        img = ImageTk.PhotoImage(Image.open('summon_imgs/Tomb.png'))
+        app.ent_dict[id] = Tomb(name = 'Tomb', img = img, loc = oldloc[:], owner = self.owner, number = id)
+        app.grid[oldloc[0]][oldloc[1]] = id
+        newloc = sqr[:]
+#         app.vis_dict['Entomb'] = Vis(name = 'Entomb', loc = oldloc)
+#         app.canvas.create_image(oldloc[0]*100+50-app.moved_right, oldloc[1]*100+50-app.moved_down, image = app.vis_dict['Entomb'].img, tags = 'Entomb')
+        app.canvas.create_text(oldloc[0]*100+50-app.moved_right, oldloc[1]*100+75-app.moved_down, text = 'Entomb', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+        root.after(2666, lambda loc = newloc : self.finish_entomb(loc))
+        
+    def finish_entomb(self, loc):
+        self.loc = loc[:]
+        app.grid[loc[0]][loc[1]] = self.tags
+        app.canvas.create_image(loc[0]*100+50-app.moved_right, loc[1]*100+50-app.moved_down, image = self.img, tags = self.tags)
+        root.after(2999, lambda  name = 'Entomb' : self.cleanup_spell(name = name))
+        
+
     # deal damage equal to spirit lost
     def vengeance(self, event = None):
         app.depop_context(event = None)
@@ -4742,9 +4815,9 @@ class Witch(Entity):
         
     def do_hatred(self, event = None):
 #         self.init_cast_anims()
-#         effect1 = pygame.mixer.Sound('Sound_Effects/hatred.ogg')
-#         effect1.set_volume(.07)
-#         sound_effects.play(effect1, 0)
+        effect1 = pygame.mixer.Sound('Sound_Effects/hatred.ogg')
+        effect1.set_volume(.07)
+        sound_effects.play(effect1, 0)
         self.magick -= self.arcane_dict['Hatred'][1]
         app.unbind_all()
         app.depop_context(event = None)
@@ -5441,6 +5514,9 @@ class Witch(Entity):
         
     def do_meditate(self, event):
 #         self.init_cast_anims()
+        effect1 = pygame.mixer.Sound('Sound_Effects/meditate.ogg')
+        effect1.set_volume(1)
+        sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
         self.cantrip_used = True
@@ -5507,6 +5583,9 @@ class Witch(Entity):
             return
         if app.grid[sqr[0]][sqr[1]] == '' or app.grid[sqr[0]][sqr[1]] == 'block':
             return
+        effect1 = pygame.mixer.Sound('Sound_Effects/horrid_wilting.ogg')
+        effect1.set_volume(1)
+        sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.unbind_all()
         app.cleanup_squares()
@@ -5568,6 +5647,9 @@ class Witch(Entity):
         effs = [v.name for k,v in app.ent_dict[id].effects_dict.items()]
         if 'Boiling_Blood' in effs:
             return
+        effect1 = pygame.mixer.Sound('Sound_Effects/boiling_blood.ogg')
+        effect1.set_volume(1)
+        sound_effects.play(effect1, 0)
         self.cantrip_used = True
         app.depop_context(event = None)
         app.unbind_all()
@@ -5624,6 +5706,9 @@ class Witch(Entity):
         id = app.grid[sqr[0]][sqr[1]]
         if not isinstance(app.ent_dict[id], Shadow):
             return
+        effect1 = pygame.mixer.Sound('Sound_Effects/dark_sun.ogg')
+        effect1.set_volume(1)
+        sound_effects.play(effect1, 0)
         self.cantrip_used = True
         app.depop_context(event = None)
         app.unbind_all()
@@ -5672,6 +5757,9 @@ class Witch(Entity):
         effs = [v.name for k,v in app.ent_dict[id].effects_dict.items()]
         if 'Mummify' in effs:
             return
+        effect1 = pygame.mixer.Sound('Sound_Effects/mummify.ogg')
+        effect1.set_volume(1)
+        sound_effects.play(effect1, 0)
         self.magick -= self.arcane_dict['Mummify'][1]
 #         self.init_cast_anims()
         app.unbind_all()
@@ -5724,6 +5812,9 @@ class Witch(Entity):
             return
         if sqr not in sqrs:
             return
+        effect1 = pygame.mixer.Sound('Sound_Effects/immolate.ogg')
+        effect1.set_volume(1)
+        sound_effects.play(effect1, 0)
         id = app.grid[sqr[0]][sqr[1]]
         self.magick -= self.arcane_dict['Immolate'][1]
 #         self.init_cast_anims()
@@ -5737,7 +5828,7 @@ class Witch(Entity):
         my_psyche = self.get_attr('psyche')
         tar_psyche = app.ent_dict[id].get_attr('psyche')
         d = damage(my_psyche, tar_psyche)
-        d += 3
+        d += 5
         app.ent_dict[id].set_attr('spirit', -d)
         app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+80-app.moved_down, text = str(d)+' Spirit', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
         if app.ent_dict[id].spirit <= 0:
@@ -5748,7 +5839,7 @@ class Witch(Entity):
         
         
     def disintegrate(self, event = None):
-        # target gets -1 to all stats every turn (cumulative) and must make end save to avoid psyche versus psyche damage
+        # target gets -1 to all stats every turn (cumulative) and takes 1 spirit per turn
         app.depop_context(event = None)
         root.bind('<q>', self.cleanup_spell)
 #         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
@@ -5769,6 +5860,9 @@ class Witch(Entity):
         if 'Disintegrate' in effs:
             return
         self.magick -= self.arcane_dict['Disintegrate'][1]
+        effect1 = pygame.mixer.Sound('Sound_Effects/disintegrate.ogg')
+        effect1.set_volume(1)
+        sound_effects.play(effect1, 0)
 #         self.init_cast_anims()
         app.unbind_all()
         app.depop_context(event = None)
@@ -6919,8 +7013,9 @@ class App(tk.Frame):
         
     def read_3_4_book(self):
         loc = app.ent_dict[app.p1_witch].loc[:]
-        app.canvas.create_text(loc[0]*100-app.moved_right, loc[1]*100-app.moved_down+85, text = 'Endurance +2', justify = 'center', font = ('Andale Mono', 16), fill = 'white', tags = 'text')
+        app.canvas.create_text(loc[0]*100-app.moved_right, loc[1]*100-app.moved_down+85, text = 'Permanent Endurance +2', justify = 'center', font = ('Andale Mono', 16), fill = 'white', tags = 'text')
         app.ent_dict[app.p1_witch].base_end += 2
+        app.ent_dict[app.p1_witch].end += 2
         root.after(2999, lambda t = 'text' : app.canvas.delete(t))
         root.after(2999, self.cancel_3_4_book)
     def cancel_3_4_book(self):
