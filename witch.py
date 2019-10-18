@@ -1,6 +1,6 @@
-# finish entomb vis, remove from spell dict, put in book trigger on sanctum entryway level
+# summon_dict may not be needed
 
-# entomb handle 'all sqrs occupied'
+# entomb handle 'all sqrs occupied' edge case
 
 # boiling blood make sound 1 sec longer
 
@@ -637,6 +637,7 @@ class Tomb(Summon):
         self.dodge = 1
         self.psyche = 5
         self.spirit = 20
+        self.move_type = 'immobile'
         super().__init__(name, img, loc, owner, number)
         
 ## needs something to do when run out of magick
@@ -651,6 +652,7 @@ class Trickster(Summon):
         self.dodge = 5
         self.psyche = 5
         self.spirit = 12
+        self.move_type = 'teleport'
         super().__init__(name, img, loc, owner, number)
         
     def pyrotechnics(self, event):
@@ -929,6 +931,7 @@ class Shadow(Summon):
         self.dodge = 6
         self.psyche = 4
         self.spirit = 13
+        self.move_type = 'teleport'
         super().__init__(name, img, loc, owner, number)
         
         
@@ -1016,6 +1019,7 @@ class Plaguebearer(Summon):
         self.dodge = 2
         self.psyche = 4
         self.spirit = 15
+        self.move_type = 'normal'
         super().__init__(name, img, loc, owner, number)
         
 #     Override superclass set_attr(self, attr, amount) to check for own death, if no death call superclass set_attr
@@ -1186,6 +1190,7 @@ class Bard(Summon):
         self.dodge = 5
         self.psyche = 6
         self.spirit = 15
+        self.move_type = 'normal'
         super().__init__(name, img, loc, owner, number)
         
         
@@ -1428,6 +1433,7 @@ class White_Dragon(Summon):
         self.spirit = 157
         self.waiting = waiting
         self.retreated_once = False
+        self.move_type = 'flying'
         super().__init__(name, img, loc, owner, number, type = 'large_bottom')
         self.immovable = True
         # create top half
@@ -1725,6 +1731,7 @@ class Tortured_Soul(Summon):
         self.psyche = 2
         self.spirit = 25
         self.waiting = waiting
+        self.move_type = 'normal'
         super().__init__(name, img, loc, owner, number)
         
     def pass_priority(self, ents_list):
@@ -1898,6 +1905,7 @@ class Ghost(Summon):
         self.psyche = 7
         self.spirit = 75
         self.waiting = waiting
+        self.move_type = 'ethereal'
         super().__init__(name, img, loc, owner, number)
         
     def pass_priority(self, ents_list):
@@ -1991,6 +1999,7 @@ class Revenant(Summon):
         self.psyche = 7
         self.spirit = 29
         self.waiting = waiting
+        self.move_type = 'ethereal'
         super().__init__(name, img, loc, owner, number)
         
     def pass_priority(self, ents_list):
@@ -2234,6 +2243,7 @@ class Kensai(Summon):
         self.times_attacked = 0
         self.attacked_ids = []
         self.waiting = waiting
+        self.move_type = 'normal'
         super().__init__(name, img, loc, owner, number)
         
     def get_attr(self, attr):
@@ -2442,6 +2452,7 @@ class Undead(Summon):
         self.psyche = 2
         self.spirit = 9
         self.waiting = waiting
+        self.move_type = 'normal'
         super().__init__(name, img, loc, owner, number)
         
     
@@ -2610,6 +2621,7 @@ class Undead_Knight(Summon):
         self.psyche = 6
         self.spirit = 86
         self.waiting = waiting
+        self.move_type = 'normal'
         super().__init__(name, img, loc, owner, number)
         
     
@@ -2776,6 +2788,7 @@ class Troll(Summon):
         self.psyche = 2
         self.spirit = 35
         self.waiting = waiting
+        self.move_type = 'normal'
         super().__init__(name, img, loc, owner, number)
         
     def pass_priority(self, ents_list):
@@ -2950,6 +2963,7 @@ class Warlock(Summon):
         self.psyche = 11
         self.spirit = 89
         self.waiting = waiting
+        self.move_type = 'teleport'
         super().__init__(name, img, loc, owner, number)
         
     def pass_priority(self, ents_list):
@@ -3193,6 +3207,7 @@ class Sorceress(Summon):
         self.psyche = 7
         self.spirit = 59
         self.waiting = waiting
+        self.move_type = 'teleport'
         super().__init__(name, img, loc, owner, number)
         
     def pass_priority(self, ents_list):
@@ -3451,6 +3466,7 @@ class Orc_Axeman(Summon):
         self.psyche = 2
         self.spirit = 29
         self.waiting = waiting
+        self.move_type = 'normal'
         super().__init__(name, img, loc, owner, number)
         
     def pass_priority(self, ents_list):
@@ -3619,6 +3635,7 @@ class Barbarian(Summon):
         self.psyche = 3
         self.spirit = 79
         self.waiting = waiting
+        self.move_type = 'normal'
         super().__init__(name, img, loc, owner, number)
         
     def pass_priority(self, ents_list):
@@ -3800,6 +3817,7 @@ class Minotaur(Summon):
         self.psyche = 9
         self.spirit = 163
         self.waiting = waiting
+        self.move_type = 'normal'
         super().__init__(name, img, loc, owner, number, type = 'large_bottom')
         self.immovable = True
         # create top half
@@ -4104,6 +4122,7 @@ class Warrior(Summon):
         self.dodge = 2
         self.psyche = 2
         self.spirit = 15
+        self.move_type = 'charge'
         super().__init__(name, img, loc, owner, number)
         
         
@@ -4228,6 +4247,212 @@ class Warrior(Summon):
         return mvlist
                     
                     
+    # ensure only one at a time, on death witch loses spirit, flight for movement (not blocked by obstacles)
+    # casts poison sting, darkness, 
+    # darkness, global effect that affects sqrs within distance 3, any movement originating in one of these sqrs is reduced to distance 2, only affects ents that use 'normal' movement (non-teleport)
+    # poison sting, agl versus dodge to hit check, on success target gets 'poison' effect, -1 str 2 dmg for 3 turns, stackable, range 2
+class Familiar_Imp(Summon):
+    def __init__(self, name, img, loc, owner, number):
+        self.actions = {'Poison Sting':self.poison_sting, 'Darkness':self.darkness, 'move':self.move}
+        self.attack_used = False
+        self.str = 2
+        self.agl = 6
+        self.end = 3
+        self.dodge = 7
+        self.psyche = 6
+        self.spirit = 9
+        self.move_type = 'flying'
+        super().__init__(name, img, loc, owner, number)
+        
+        
+    def darkness(self, event = None):
+        if self.attack_used == True:
+            return
+        root.unbind('<a>')
+        root.unbind('<q>')
+        root.bind('<q>', self.cancel_attack)
+        sqrs = []
+        for c in app.coords:
+            if dist(self.loc, c) <= 3:
+                sqrs.append(c)
+        app.animate_squares(sqrs)
+        app.depop_context(event = None)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_darkness(event = e, sqr = s, sqrs = sqrs)) 
+        b = tk.Button(app.context_menu, text = 'Confirm Darkness', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_darkness(event = e, sqr = s, sqrs = sqrs))
+        b.pack(side = 'top')
+        app.context_buttons.append(b)
+        
+    def do_darkness(self, event = None, sqr = None, sqrs = None):
+        if sqr not in sqrs:
+            return
+        self.attack_used = True
+        # create vis on every sqr within distance 3 from sqr
+        affected_sqrs = []
+        for c in app.coords:
+            if dist(sqr, c) <= 2:
+                affected_sqrs.append(c)
+        darkness_group = 'Darkness' + str(app.effects_counter)
+        app.effects_counter += 1
+        uniq_names = []
+        for s in affected_sqrs:
+            num = app.effects_counter
+            app.effects_counter += 1
+            uniq_name = 'Darkness' + str(num)
+            uniq_names.append(uniq_name)
+            app.vis_dict[uniq_name] = Vis(name = 'Darkness', loc = s)
+            rand_num = randrange(1,6)
+            for x in range(rand_num):
+                app.vis_dict[uniq_name].rotate_image()
+            app.canvas.create_image(s[0]*100+50-app.moved_right, s[1]*100+50-app.moved_down, image = app.vis_dict[uniq_name].img, tags = uniq_name)
+            
+        def darkness_effect(sqrs):
+            print(sqrs)
+            # find all ents with locs in sqrs
+            ents = [k for k,v in app.ent_dict.items() if v.loc in sqrs]
+            # blind effect
+            for id in ents:
+                effs = [v.name for k,v in app.ent_dict[id].effects_dict.items()]
+                if 'Blind' in effs:
+                    continue
+                else:
+                    def blind_effect():
+                        pass
+                    def blind(i):# REPLACE CLASS MOVEMENT WITH MOVE dist 2 if movement type == normal
+                        mvlist = []
+                        for c in app.coords:
+                            if dist(c, app.ent_dict[i].loc) <= 2:
+                                mvlist.append(c)
+                        return mvlist
+                    if app.ent_dict[id].move_type == 'normal':
+                        blind_p = partial(blind, id)
+                        app.ent_dict[id].legal_moves = blind_p
+                        print(app.ent_dict[id].legal_moves)
+                    def un(i):
+                        p = partial(app.ent_dict[i].__class__.legal_moves, app.ent_dict[i]) #   PUT BACK CLASS MOVES
+                        app.ent_dict[i].legal_moves = p
+                    p = partial(un, id)
+                    # EOT FUNC
+                    def nothing():
+                        return None
+                    eot = nothing
+                    n = 'Blind' + str(app.effects_counter)
+                    app.ent_dict[id].effects_dict[n] = Effect(name = 'Blind', info = 'Blind\nNormal movement reduced to 2', eot_func = eot, undo = p, duration = 2)
+            return None
+            
+        def un(uniq_names):
+            for name in uniq_names:
+                app.canvas.delete(name)
+                del app.vis_dict[name]
+        eot_p = partial(darkness_effect, affected_sqrs)
+        p = partial(un, uniq_names)
+        app.global_effects_dict[darkness_group] = Effect(name = 'Darkness', info = 'darkness limits movement', eot_func = eot_p, undo = p, duration = 3)
+        self.cleanup_darkness()
+            
+    def cleanup_darkness(self, event = None):
+        app.unbind_all()
+        app.rebind_all()
+        app.cleanup_squares()
+        app.depop_context(event = None)
+        try: app.canvas.delete('text')
+        except: pass
+        
+    def death_trigger(self):
+        if self.owner == 'p1':
+            witch = app.p1_witch
+        else:
+            witch = app.p2_witch
+        loc = app.ent_dict[witch].loc[:]
+        app.ent_dict[witch].set_attr('spirit', -3)
+        app.take_focus(witch)
+        app.create_text(loc[0]*100+50, loc[1]*100+75, text = '3 Spirit, Familiar Death', tags = 'text')
+        if app.ent_dict[witch].spirit <= 0:
+            app.create_text(loc[0]*100+50, loc[1]*100+95, text = app.ent_dict[witch].name.replace('_', ' ')+' Killed...', tags = 'text')
+            root.after(1666, lambda id = app.ent_dict[witch].name : app.kill(id))
+        
+    def poison_sting(self, event = None):
+        if self.attack_used == True:
+            return
+        root.unbind('<a>')
+        root.unbind('<q>')
+        root.bind('<q>', self.cancel_attack)
+        sqrs = []
+        for c in app.coords:
+            if dist(self.loc, c) <= 2:
+                sqrs.append(c)
+        app.animate_squares(sqrs)
+        app.depop_context(event = None)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.check_hit(event = e, sqr = s, sqrs = sqrs)) 
+        b = tk.Button(app.context_menu, text = 'Confirm Poison Sting', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos[:], sqrs = sqrs : self.check_hit(event = e, sqr = s, sqrs = sqrs))
+        b.pack(side = 'top')
+        app.context_buttons.append(b)
+        
+    def check_hit(self, event = None, sqr = None, sqrs = None):
+        if sqr not in sqrs:
+            return
+        if app.grid[sqr[0]][sqr[1]] == '' or app.grid[sqr[0]][sqr[1]] == 'block':
+            return
+        self.attack_used = True
+#         self.init_attack_anims()
+#         effect1 = pygame.mixer.Sound('Sound_Effects/poison_sting.ogg')
+#         effect1.set_volume(1)
+#         sound_effects.play(effect1, 0)
+        app.depop_context(event = None)
+        app.unbind_all()
+        app.cleanup_squares()
+        id = app.grid[sqr[0]][sqr[1]]
+        visloc = app.ent_dict[id].loc[:]
+#         app.vis_dict['Poison_Sting'] = Vis(name = 'Poison_Sting', loc = visloc)
+#         app.canvas.create_image(visloc[0]*100+50-app.moved_right, visloc[1]*100+50-app.moved_down, image = app.vis_dict['Poison_Sting'].img, tags = 'Poison_Sting')
+        my_agl = self.get_attr('agl')
+        target_dodge = app.ent_dict[id].get_attr('dodge')
+        if to_hit(my_agl, target_dodge) == True:
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+50-app.moved_down, text = 'Poison Sting Hit', justify ='center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+            # poison str effect
+            def poison_sting_effect(stat):
+                stat -= 1
+                if stat < 1:
+                    return 1
+                else:
+                    return stat
+            f = poison_sting_effect
+            app.ent_dict[id].str_effects.append(f)
+            def un(i):
+                app.ent_dict[i].str_effects.remove(curse_of_oriax_effect)
+            p = partial(un, id)
+            # EOT FUNC
+            def take_2(tar):
+                app.get_focus(tar)
+                app.ent_dict[tar].set_attr('spirit', -2)
+                app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+50-app.moved_down, text = '2 Spirit\nPoison', justify ='center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+                if app.ent_dict[tar].spirit <= 0:
+                    app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+90-app.moved_down, text = app.ent_dict[tar].name.replace('_',' ') + '\nKilled...', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+                return 'Not None'
+            eot = partial(take_2, id)
+            n = 'Poison_Sting' + str(app.effects_counter)
+            app.ent_dict[id].effects_dict[n] = Effect(name = 'Poison_Sting', info = 'Poison Sting\n Str reduced by 1 for 3 turns\n2 Spirit damage per turn', eot_func = eot, undo = p, duration = 3)
+        else:
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+50-app.moved_down, text = 'Poison Sting Missed', justify ='center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+        root.after(2666, lambda e = None : self.cancel_attack(event = e))
+        
+    def cancel_attack(self, event):
+        self.init_normal_anims()
+        app.rebind_all()
+        app.canvas.delete('text')
+        app.canvas.delete('Poison_Sting')
+        try: del app.vis_dict['Poison_Sting']
+        except: pass
+        app.depop_context(event = None)
+        app.cleanup_squares()
+    
+    def legal_moves(self):
+        loc = self.loc
+        mvlist = []
+        for c in app.coords:
+            if dist(c, loc) <= 4:
+                mvlist.append(c)
+        mvlist.remove(loc)
+        return mvlist
+                    
 class Witch(Entity):
     def __init__(self, name, img, loc, owner):
         self.actions = {'spell':self.spell, 'summon':self.summon, 'move':self.move}
@@ -4241,17 +4466,18 @@ class Witch(Entity):
         self.cantrip_dict = {}
         self.summon_dict = {}
         self.summon_ids = 0
+        self.move_type = 'normal'
         
         if name == 'Agnes_Sampson':
             self.cantrip_dict['Psionic_Push'] = (self.psionic_push)
             self.cantrip_dict['Scrye'] = (self.scrye)
             self.cantrip_dict['Energize'] = (self.energize)
+            self.cantrip_dict['Foul_Familiar'] = (self.foul_familiar)
             self.arcane_dict['Plague'] = (self.plague, 6)
             self.arcane_dict['Pestilence'] = (self.pestilence, 6)
             self.arcane_dict['Curse_of_Oriax'] = (self.curse_of_oriax, 3)
             self.arcane_dict['Gravity'] = (self.gravity, 5)
             self.arcane_dict["Beleth's_Command"] = (self.beleths_command, 6)
-            self.arcane_dict['Entomb'] = (self.entomb, 6)
             self.str = 4
             self.agl = 3
             self.end = 4
@@ -4713,7 +4939,65 @@ class Witch(Entity):
         app.ent_dict[id].effects_dict[n] = Effect(name = 'Scrye', info = '+2 Agl, +2 Psyche, 1 turn', eot_func = eot, undo = p, duration = 1)
         root.after(2999, lambda  name = 'Scrye' : self.cleanup_spell(name = name))
 
-    # create 'tomb' in current location, tomb is summon entity with 1 for all stats with no movement or attacks that doesnt count towards summon cap, teleport self to new location
+    # drain_life cantrip, deal 2 to any enemy target, heal 2 spirit?
+    # exchange positions of friendly summon and enemy summon, or any two summons?
+    # cantrip boost stats of a summon for multiple turns, non-stacking?
+    # transform a certain type of summon to a 'new' type, or combine 2 summons to produce unique type
+    
+    # transform self into 'familiar' or summon/collect familiar
+    # 
+    def foul_familiar(self, event = None):
+        names = [v.name for k,v in app.ent_dict.items() if v.owner == self.owner]
+        if 'Familiar_Imp' in names or 'Familiar_Homonculus' in names or 'Familiar_Pseudodragon' in names:
+            return
+        app.depop_context(event = None)
+        root.bind('<q>', lambda name = 'Foul_Familiar' : self.cleanup_spell(name = name))
+#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        sqrs = [s for s in app.coords if dist(self.loc, s) <= 2]
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_foul_familiar(event = e, sqr = s, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Choose Location', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_foul_familiar(e, s, sqrs))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+    
+    def do_foul_familiar(self, event, sqr, sqrs):
+        if sqr not in sqrs:
+            return
+        loc = app.grid[sqr[0]][sqr[1]]
+        if loc != '':
+            return
+#         self.init_cast_anims()
+#         effect1 = pygame.mixer.Sound('Sound_Effects/foul_familiar.ogg')
+#         effect1.set_volume(.08)
+#         sound_effects.play(effect1, 0)
+        app.unbind_all()
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        self.cantrip_used = True
+        app.vis_dict['Foul_Familiar'] = Vis(name = 'Foul_Familiar', loc = sqr)
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Foul_Familiar'].img, tags = 'Foul_Familiar')
+        # summon familiar based on witch
+        num = self.summon_ids
+        self.summon_ids += 1
+        if self.owner == 'p1':
+            prefix = 'a'
+        else:
+            prefix = 'b'
+        id = prefix + str(num)
+        if self.name == 'Agnes_Sampson':
+            img = ImageTk.PhotoImage(Image.open('summon_imgs/Familiar_Imp.png'))
+#             app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = img, tags = id)
+            app.ent_dict[id] = Familiar_Imp(name = 'Familiar_Imp', img = img, loc = sqr[:], owner = self.owner, number = id)
+            app.grid[sqr[0]][sqr[1]] = id
+        elif self.name == 'Fakir_Ali':
+            img = ImageTk.PhotoImage(Image.open('summon_imgs/Familiar_Imp.png'))
+            app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = img, tags = id)
+            app.ent_dict[id] = Familiar_Imp(name = 'Familiar_Imp', img = img, loc = sqr[:], owner = self.owner, number = id)
+            app.grid[sqr[0]][sqr[1]] = id
+        
+        root.after(2999, lambda  name = 'Foul_Familiar' : self.cleanup_spell(name = name))
+    
+    # create 'tomb' in current location, tomb is summon entity with no movement or attacks that doesnt count towards summon cap, teleport self to new location, only 1 tomb can exist at a time
     def entomb(self, event = None):
         app.depop_context(event = None)
         root.bind('<q>', lambda name = 'Entomb' : self.cleanup_spell(name = name))
@@ -4725,6 +5009,10 @@ class Witch(Entity):
         app.context_buttons.append(b)
         
     def do_entomb(self, event, sqr, sqrs):
+        global selected
+        names = [v.name for k,v in app.ent_dict.items() if v.name == 'Tomb' and v.owner == self.owner]
+        if names != []:
+            return
         if sqr not in sqrs:
             return
         loc = app.grid[sqr[0]][sqr[1]]
@@ -4739,8 +5027,12 @@ class Witch(Entity):
         app.depop_context(event = None)
         app.cleanup_squares()
         self.arcane_used = True
+        selected = [self.tags]
         app.canvas.delete(self.tags)
         oldloc = self.loc[:]
+        # ENTOMB VIS
+        app.vis_dict['Entomb'] = Vis(name = 'Entomb', loc = oldloc[:])
+        app.canvas.create_image(oldloc[0]*100+50-app.moved_right, oldloc[1]*100+50-app.moved_down, image = app.vis_dict['Entomb'].img, tags = 'Entomb')
         # CREATE TOMB ENTITY
         self.summon_ids += 1
         if self.owner == 'p1':
@@ -4758,9 +5050,15 @@ class Witch(Entity):
         root.after(2666, lambda loc = newloc : self.finish_entomb(loc))
         
     def finish_entomb(self, loc):
+        del app.vis_dict['Entomb']
+        app.canvas.delete('Entomb')
+        app.vis_dict['Entomb'] = Vis(name = 'Entomb', loc = loc[:])
+        app.canvas.create_image(loc[0]*100+50-app.moved_right, loc[1]*100+50-app.moved_down, image = app.vis_dict['Entomb'].img, tags = 'Entomb')
+        selected = []
         self.loc = loc[:]
         app.grid[loc[0]][loc[1]] = self.tags
-        app.canvas.create_image(loc[0]*100+50-app.moved_right, loc[1]*100+50-app.moved_down, image = self.img, tags = self.tags)
+        root.after(1333, lambda x = loc[0]*100+50-app.moved_right, y = loc[1]*100+50-app.moved_down, i = self.img, t = self.tags : app.canvas.create_image(x, y, image = i, tags = t))
+#         app.canvas.create_image(loc[0]*100+50-app.moved_right, loc[1]*100+50-app.moved_down, image = self.img, tags = self.tags)
         root.after(2999, lambda  name = 'Entomb' : self.cleanup_spell(name = name))
         
 
@@ -6871,11 +7169,17 @@ class App(tk.Frame):
                     return 'victory'
             self.map_triggers.append(kill_warlock)
             self.load_intro_scene(map_number, protaganist_object = protaganist_object)
+        # LEVEL 3 SANCTUM ENTRYWAY
         elif map_number == 3:
             sound1 = pygame.mixer.Sound('Music/radakan - old crypt.ogg')
             background_music.play(sound1, -1)
             sound1.set_volume(0.8)
             self.map_triggers = []
+            def kill_all():
+                ents = app.ent_dict.keys()
+                if 'b0' not in ents and 'b1' not in ents and 'b2' not in ents:
+                    return 'victory'
+            self.map_triggers.append(kill_ents)
             def self_death():
                 if app.p1_witch not in app.ent_dict.keys():
                     return 'game over'
@@ -6952,6 +7256,41 @@ class App(tk.Frame):
                     app.canvas.create_window(1800-app.moved_right+25, 1900-app.moved_down+33, window = self.book3_4_cancel)
                     self.map_triggers.remove(read_book4)
             self.map_triggers.append(read_book4)
+            # BOOK AND SPARKLE 5
+            def create_sparkle5():
+                app.vis_dict['Sparkle5'] = Vis(name = 'Sparkle', loc = [18,9])
+                app.canvas.create_image(1800+50-app.moved_right, 900+50-app.moved_down, image = app.vis_dict['Sparkle5'].img, tags = 'Sparkle5')
+                self.map_triggers.remove(create_sparkle5)
+            self.map_triggers.append(create_sparkle5)
+            def read_book5():
+                loc = app.ent_dict[app.p1_witch].loc[:]
+                if loc == [17,9]:
+                    app.canvas.delete('Sparkle5')
+                    del app.vis_dict['Sparkle5']
+                    app.unbind_all()
+                    self.book3_5 = tk.Button(root, text = 'Read Book', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.read_3_5_book)
+                    app.canvas.create_window(1800-app.moved_right, 900-app.moved_down, window = self.book3_5)
+                    self.book3_5_cancel = tk.Button(root, text = 'Leave Alone', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.cancel_3_5_book)
+                    app.canvas.create_window(1800-app.moved_right+25, 900-app.moved_down+33, window = self.book3_5_cancel)
+                    self.map_triggers.remove(read_book5)
+            # BOOK AND SPARKLE 6
+            def create_sparkle6():
+                app.vis_dict['Sparkle6'] = Vis(name = 'Sparkle', loc = [1,9])
+                app.canvas.create_image(100+50-app.moved_right, 900+50-app.moved_down, image = app.vis_dict['Sparkle6'].img, tags = 'Sparkle6')
+                self.map_triggers.remove(create_sparkle6)
+            self.map_triggers.append(create_sparkle6)
+            def read_book6():
+                loc = app.ent_dict[app.p1_witch].loc[:]
+                if loc == [2,9]:
+                    app.canvas.delete('Sparkle6')
+                    del app.vis_dict['Sparkle6']
+                    app.unbind_all()
+                    self.book3_6 = tk.Button(root, text = 'Read Book', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.read_3_6_book)
+                    app.canvas.create_window(200-app.moved_right, 900-app.moved_down, window = self.book3_6)
+                    self.book3_6_cancel = tk.Button(root, text = 'Leave Alone', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.cancel_3_6_book)
+                    app.canvas.create_window(200-app.moved_right+25, 900-app.moved_down+33, window = self.book3_6_cancel)
+                    self.map_triggers.remove(read_book6)
+            self.map_triggers.append(read_book6)
             
             def awaken_group_2(): 
                 friendly_ent_locs = [v.loc for k,v in app.ent_dict.items() if v.owner == 'p1']
@@ -6966,10 +7305,6 @@ class App(tk.Frame):
                         self.map_triggers.remove(awaken_group_2)
                         break
             self.map_triggers.append(awaken_group_2)
-            def self_death():
-                if app.p1_witch not in app.ent_dict.keys():
-                    return 'game over'
-            self.map_triggers.append(self_death)
             self.load_intro_scene(map_number, protaganist_object = protaganist_object)
     # END OF GAME
         else:
@@ -7022,6 +7357,29 @@ class App(tk.Frame):
         self.book3_4.destroy()
         self.book3_4_cancel.destroy()
         app.rebind_all()
+        
+    def read_3_5_book(self):
+        loc = app.ent_dict[app.p1_witch].loc[:]
+        app.ent_dict[app.p1_witch].arcane_dict['Entomb'] = (app.ent_dict[app.p1_witch].entomb, 4)
+        app.canvas.create_text(loc[0]*100-app.moved_right, loc[1]*100-app.moved_down+85, text = 'Arcane Spell\n-ENTOMB-\nLearned', justify = 'center', font = ('Andale Mono', 16), fill = 'white', tags = 'text')
+        root.after(2999, lambda t = 'text' : app.canvas.delete(t))
+        root.after(2999, self.cancel_3_5_book)
+    def cancel_3_5_book(self):
+        self.book3_5.destroy()
+        self.book3_5_cancel.destroy()
+        app.rebind_all()
+        
+    def read_3_6_book(self):
+        loc = app.ent_dict[app.p1_witch].loc[:]
+#         app.ent_dict[app.p1_witch].arcane_dict['Entomb'] = (app.ent_dict[app.p1_witch].entomb, 4)
+        app.canvas.create_text(loc[0]*100-app.moved_right, loc[1]*100-app.moved_down+85, text = 'Arcane Spell\n- -\nLearned', justify = 'center', font = ('Andale Mono', 16), fill = 'white', tags = 'text')
+        root.after(2999, lambda t = 'text' : app.canvas.delete(t))
+        root.after(2999, self.cancel_3_6_book)
+    def cancel_3_6_book(self):
+        self.book3_6.destroy()
+        self.book3_6_cancel.destroy()
+        app.rebind_all()
+        
     
     def inspect_22_column(self):
         loc = app.ent_dict[app.p1_witch].loc[:]
