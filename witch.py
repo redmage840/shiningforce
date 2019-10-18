@@ -4266,6 +4266,9 @@ class Familiar_Imp(Summon):
         
         
     def darkness(self, event = None):
+        g_effects = [v.name for k,v in app.global_effects_dict.items()]
+        if 'Darkness' in g_effects:
+            return
         if self.attack_used == True:
             return
         root.unbind('<a>')
@@ -4286,6 +4289,7 @@ class Familiar_Imp(Summon):
         if sqr not in sqrs:
             return
         self.attack_used = True
+        app.create_text(self.loc[0]*100+50, self.loc[1]*100+75, text = 'Darkness', font = ('Andale Mono', 14), tags = 'text')
         # create vis on every sqr within distance 3 from sqr
         affected_sqrs = []
         for c in app.coords:
@@ -4306,7 +4310,6 @@ class Familiar_Imp(Summon):
             app.canvas.create_image(s[0]*100+50-app.moved_right, s[1]*100+50-app.moved_down, image = app.vis_dict[uniq_name].img, tags = uniq_name)
             
         def darkness_effect(sqrs):
-            print(sqrs)
             # find all ents with locs in sqrs
             ents = [k for k,v in app.ent_dict.items() if v.loc in sqrs]
             # blind effect
@@ -4326,9 +4329,8 @@ class Familiar_Imp(Summon):
                     if app.ent_dict[id].move_type == 'normal':
                         blind_p = partial(blind, id)
                         app.ent_dict[id].legal_moves = blind_p
-                        print(app.ent_dict[id].legal_moves)
                     def un(i):
-                        p = partial(app.ent_dict[i].__class__.legal_moves, app.ent_dict[i]) #   PUT BACK CLASS MOVES
+                        p = partial(app.ent_dict[i].__class__.legal_moves, app.ent_dict[i]) # PUT BACK CLASS MOVES
                         app.ent_dict[i].legal_moves = p
                     p = partial(un, id)
                     # EOT FUNC
@@ -4336,16 +4338,15 @@ class Familiar_Imp(Summon):
                         return None
                     eot = nothing
                     n = 'Blind' + str(app.effects_counter)
-                    app.ent_dict[id].effects_dict[n] = Effect(name = 'Blind', info = 'Blind\nNormal movement reduced to 2', eot_func = eot, undo = p, duration = 2)
+                    app.ent_dict[id].effects_dict[n] = Effect(name = 'Blind', info = 'Blind\nNormal movement reduced to 2', eot_func = eot, undo = p, duration = 1)
             return None
-            
         def un(uniq_names):
             for name in uniq_names:
                 app.canvas.delete(name)
                 del app.vis_dict[name]
         eot_p = partial(darkness_effect, affected_sqrs)
         p = partial(un, uniq_names)
-        app.global_effects_dict[darkness_group] = Effect(name = 'Darkness', info = 'darkness limits movement', eot_func = eot_p, undo = p, duration = 3)
+        app.global_effects_dict[darkness_group] = Effect(name = 'Darkness', info = 'darkness limits movement', eot_func = eot_p, undo = p, duration = 5)
         self.cleanup_darkness()
             
     def cleanup_darkness(self, event = None):
@@ -4364,9 +4365,9 @@ class Familiar_Imp(Summon):
         loc = app.ent_dict[witch].loc[:]
         app.ent_dict[witch].set_attr('spirit', -3)
         app.take_focus(witch)
-        app.create_text(loc[0]*100+50, loc[1]*100+75, text = '3 Spirit, Familiar Death', tags = 'text')
+        app.create_text(loc[0]*100+50, loc[1]*100+75, text = '3 Spirit, Familiar Death', font = ('Andale Mono', 14), tags = 'text')
         if app.ent_dict[witch].spirit <= 0:
-            app.create_text(loc[0]*100+50, loc[1]*100+95, text = app.ent_dict[witch].name.replace('_', ' ')+' Killed...', tags = 'text')
+            app.create_text(loc[0]*100+50, loc[1]*100+95, text = app.ent_dict[witch].name.replace('_', ' ')+' Killed...', font = ('Andale Mono', 14), tags = 'text')
             root.after(1666, lambda id = app.ent_dict[witch].name : app.kill(id))
         
     def poison_sting(self, event = None):
@@ -4377,7 +4378,7 @@ class Familiar_Imp(Summon):
         root.bind('<q>', self.cancel_attack)
         sqrs = []
         for c in app.coords:
-            if dist(self.loc, c) <= 2:
+            if dist(self.loc, c) <= 3:
                 sqrs.append(c)
         app.animate_squares(sqrs)
         app.depop_context(event = None)
@@ -4417,7 +4418,7 @@ class Familiar_Imp(Summon):
             f = poison_sting_effect
             app.ent_dict[id].str_effects.append(f)
             def un(i):
-                app.ent_dict[i].str_effects.remove(curse_of_oriax_effect)
+                app.ent_dict[i].str_effects.remove(poison_sting_effect)
             p = partial(un, id)
             # EOT FUNC
             def take_2(tar):
@@ -4448,9 +4449,8 @@ class Familiar_Imp(Summon):
         loc = self.loc
         mvlist = []
         for c in app.coords:
-            if dist(c, loc) <= 4:
+            if dist(c, loc) <= 5 and app.grid[c[0]][c[1]] == '':
                 mvlist.append(c)
-        mvlist.remove(loc)
         return mvlist
                     
 class Witch(Entity):
@@ -4995,7 +4995,7 @@ class Witch(Entity):
             app.ent_dict[id] = Familiar_Imp(name = 'Familiar_Imp', img = img, loc = sqr[:], owner = self.owner, number = id)
             app.grid[sqr[0]][sqr[1]] = id
         
-        root.after(2999, lambda  name = 'Foul_Familiar' : self.cleanup_spell(name = name))
+        root.after(666, lambda  name = 'Foul_Familiar' : self.cleanup_spell(name = name))
     
     # create 'tomb' in current location, tomb is summon entity with no movement or attacks that doesnt count towards summon cap, teleport self to new location, only 1 tomb can exist at a time
     def entomb(self, event = None):
