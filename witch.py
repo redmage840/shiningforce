@@ -179,8 +179,9 @@ class Dummy():
         pass
 
 class Effect():
-    def __init__(self, name, info, eot_func, undo, duration):
+    def __init__(self, name, info, eot_func, undo, duration, sot_func = None):
         self.name = name
+        self.sot_func = sot_func
         self.eot_func = eot_func
         self.info = info
         self.undo = undo
@@ -371,9 +372,9 @@ class Entity():
             a *= 10
         rand = randrange(-1, 102)
         if a > rand:
-            return True
+            return True # pass
         else:
-            return False
+            return False # fail
             
     # Move for user controlled Ents that cannot move through obstacles
     def move(self, event = None):
@@ -2562,7 +2563,7 @@ class Undead(Summon):
             app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Undead Attack Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
             app.ent_dict[id].set_attr('spirit', -d)
             if app.ent_dict[id].spirit <= 0:
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
             root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id)) # EXIT THROUGH CLEANUP_ATTACK()
         else:
             # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
@@ -4247,6 +4248,119 @@ class Warrior(Summon):
         return mvlist
                     
                     
+    # confuse, target must make psyche check before attack
+    # explosive trap, all targets within range 2 of a sqr make agl save or take 5 dmg
+class Familiar_Homonculus(Summon):
+    def __init__(self, name, img, loc, owner, number):
+        self.actions = {'confuse':self.confuse, 'move':self.move}
+        self.attack_used = False
+        self.str = 2
+        self.agl = 5
+        self.end = 5
+        self.dodge = 6
+        self.psyche = 5
+        self.spirit = 11
+        self.move_type = 'normal'
+        super().__init__(name, img, loc, owner, number)
+                    
+                    
+    def confuse(self, event = None):
+        if self.attack_used == True:
+            return
+        root.unbind('<a>')
+        root.unbind('<q>')
+        root.bind('<q>', self.cancel_confuse)
+        sqrs = []
+        for c in app.coords:
+            if dist(self.loc, c) <= 3:
+                sqrs.append(c)
+        app.animate_squares(sqrs)
+        app.depop_context(event = None)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_confuse(event = e, sqr = s, sqrs = sqrs)) 
+        b = tk.Button(app.context_menu, text = 'Confirm Confuse', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_confuse(event = e, sqr = s, sqrs = sqrs))
+        b.pack(side = 'top')
+        app.context_buttons.append(b)
+        
+    def do_confuse(self, event, sqr, sqrs):
+        if sqr not in sqrs:
+            return
+        id = app.grid[sqr[0]][sqr[1]]
+        if id == '' or id == 'block':
+            return
+        effs = [k for k in app.ent_dict[id].effects_dict.keys()]
+        if 'Confuse' in effs:
+            return
+#         effect1 = pygame.mixer.Sound('Sound_Effects/confuse.ogg')
+#         effect1.set_volume(1)
+#         sound_effects.play(effect1, 0)
+        app.unbind_all()
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        self.attack_used = True
+        # add confuse effect, at start of turn unit makes psyche check, on fail unit gets attack_used set to True and takes 5 dmg
+        def confuse_effect():
+            pass
+        def un():
+            pass
+        def nothing():
+            return None
+        eot = nothing
+        # SOT FUNC
+        def confused(tar):
+            app.get_focus(tar)
+            # make psyche check
+            if app.ent_dict[tar].attr_check('psyche') == False:
+                app.ent_dict[tar].attack_used = True
+                app.ent_dict[tar].set_attr('spirit', -5)
+                app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+50-app.moved_down, text = '5 Spirit to self', justify ='center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+                if app.ent_dict[tar].spirit <= 0:
+                    app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+90-app.moved_down, text = app.ent_dict[tar].name.replace('_',' ') + '\nKilled...', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+            return 'Not None'
+            
+        sot = partial(confused, id)
+        app.ent_dict[id].effects_dict['Confuse'] = Effect(sot_func = sot, name = 'Confuse', info = 'Confuse\nMay attack self', eot_func = eot, undo = un, duration = 2)
+        
+        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Confuse', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+        app.vis_dict['Confuse'] = Vis(name = 'Confuse', loc = sqr)
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Confuse'].img, tags = 'Confuse')
+        root.after(2999, self.cancel_confuse)
+        
+        
+    def cancel_confuse(self, event = None):
+        app.unbind_all()
+        app.rebind_all()
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        app.canvas.delete('text')
+        try: del app.vis_dict['Confuse']
+        except: pass
+        try: app.canvas.delete('Confuse')
+        except: pass
+                    
+                    
+    def death_trigger(self):
+        if self.owner == 'p1':
+            witch = app.p1_witch
+        else:
+            witch = app.p2_witch
+        loc = app.ent_dict[witch].loc[:]
+        app.ent_dict[witch].set_attr('spirit', -3)
+        app.get_focus(witch)
+        app.canvas.create_text(loc[0]*100+50, loc[1]*100+75, text = '3 Spirit, Familiar Death', font = ('Andale Mono', 14), tags = 'familiar_death')
+        root.after(2333, lambda t = 'familiar_death' : app.canvas.delete(t))
+        if app.ent_dict[witch].spirit <= 0:
+            app.canvas.create_text(loc[0]*100+50, loc[1]*100+95, text = app.ent_dict[witch].name.replace('_', ' ')+' Killed...', font = ('Andale Mono', 14), tags = 'text')
+            root.after(1666, lambda id = app.ent_dict[witch].name : app.kill(id))
+
+    def legal_moves(self):
+        loc = self.loc
+        mvlist = []
+        for c in app.coords:
+            if dist(c, loc) <= 5 and app.grid[c[0]][c[1]] == '':
+                mvlist.append(c)
+        return mvlist
+
+
     # ensure only one at a time, on death witch loses spirit, flight for movement (not blocked by obstacles)
     # casts poison sting, darkness, 
     # darkness, global effect that affects sqrs within distance 3, any movement originating in one of these sqrs is reduced to distance 2, only affects ents that use 'normal' movement (non-teleport)
@@ -4364,10 +4478,11 @@ class Familiar_Imp(Summon):
             witch = app.p2_witch
         loc = app.ent_dict[witch].loc[:]
         app.ent_dict[witch].set_attr('spirit', -3)
-        app.take_focus(witch)
-        app.create_text(loc[0]*100+50, loc[1]*100+75, text = '3 Spirit, Familiar Death', font = ('Andale Mono', 14), tags = 'text')
+        app.get_focus(witch)
+        app.canvas.create_text(loc[0]*100+50, loc[1]*100+75, text = '3 Spirit, Familiar Death', font = ('Andale Mono', 14), tags = 'familiar_death')
+        root.after(2333, lambda t = 'familiar_death' : app.canvas.delete(t))
         if app.ent_dict[witch].spirit <= 0:
-            app.create_text(loc[0]*100+50, loc[1]*100+95, text = app.ent_dict[witch].name.replace('_', ' ')+' Killed...', font = ('Andale Mono', 14), tags = 'text')
+            app.canvas.create_text(loc[0]*100+50, loc[1]*100+95, text = app.ent_dict[witch].name.replace('_', ' ')+' Killed...', font = ('Andale Mono', 14), tags = 'text')
             root.after(1666, lambda id = app.ent_dict[witch].name : app.kill(id))
         
     def poison_sting(self, event = None):
@@ -4464,7 +4579,7 @@ class Witch(Entity):
         self.summon_used = False
         self.arcane_dict = {}
         self.cantrip_dict = {}
-        self.summon_dict = {}
+#         self.summon_dict = {}
         self.summon_ids = 0
         self.move_type = 'normal'
         
@@ -4489,6 +4604,7 @@ class Witch(Entity):
             self.cantrip_dict['Boiling_Blood'] = (self.boiling_blood)
             self.cantrip_dict['Dark_Sun'] = (self.dark_sun)
             self.cantrip_dict['Meditate'] = (self.meditate)
+            self.cantrip_dict['Foul_Familiar'] = (self.foul_familiar)
             self.arcane_dict['Horrid_Wilting'] = (self.horrid_wilting,5)
             self.arcane_dict['Disintegrate'] = (self.disintegrate, 4)
             self.arcane_dict['Mummify'] = (self.mummify, 5)
@@ -4518,7 +4634,7 @@ class Witch(Entity):
         super().__init__(name, img, loc, owner, type = 'normal')
         
     def reset_transient_vars(self):
-        self.summon_dict = {}
+#         self.summon_dict = {}
         self.summon_ids = 0
 #         self.spell_used = False
         self.cantrip_used = False
@@ -4645,7 +4761,7 @@ class Witch(Entity):
             img = ImageTk.PhotoImage(Image.open('summon_imgs/Plaguebearer.png'))
         s = summon(name = name, img = img, loc = grid_pos[:], owner = app.active_player, number = number)
         app.ent_dict[number] = s
-        self.summon_dict[number] = s
+#         self.summon_dict[number] = s
         app.canvas.create_image(grid_pos[0]*100+50-app.moved_right, grid_pos[1]*100+50-app.moved_down, image = img, tags = s.tags)
         app.grid[grid_pos[0]][grid_pos[1]] = number
         app.cleanup_squares()
@@ -4990,9 +5106,9 @@ class Witch(Entity):
             app.ent_dict[id] = Familiar_Imp(name = 'Familiar_Imp', img = img, loc = sqr[:], owner = self.owner, number = id)
             app.grid[sqr[0]][sqr[1]] = id
         elif self.name == 'Fakir_Ali':
-            img = ImageTk.PhotoImage(Image.open('summon_imgs/Familiar_Imp.png'))
+            img = ImageTk.PhotoImage(Image.open('summon_imgs/Familiar_Homonculus.png'))
             app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = img, tags = id)
-            app.ent_dict[id] = Familiar_Imp(name = 'Familiar_Imp', img = img, loc = sqr[:], owner = self.owner, number = id)
+            app.ent_dict[id] = Familiar_Homonculus(name = 'Familiar_Homonculus', img = img, loc = sqr[:], owner = self.owner, number = id)
             app.grid[sqr[0]][sqr[1]] = id
         
         root.after(666, lambda  name = 'Foul_Familiar' : self.cleanup_spell(name = name))
@@ -7708,6 +7824,79 @@ class App(tk.Frame):
             
     def start_turn(self):
         p = self.active_player
+        ents_list = [v for k,v in app.ent_dict.items() if v.owner == p]
+        ent = ents_list[0]
+        self.sot_loop(ent, ents_list)
+        
+    def sot_loop(self, ent, ents_list):
+        ef_list = [v for k,v in ent.effects_dict.items()]
+        if ef_list != []:
+            ef = ef_list[0]
+            self.sot_effects_loop(ef, ef_list, ent, ents_list)
+        else: # NO EFFECTS FOR ENT, POP ENT_LIST, CHECK IF EMPTY, CONTINUE OR FINISH_START_TURN
+            ents_list = ents_list[1:]
+            if ents_list != []:
+                ent = ents_list[0]
+                self.sot_loop(ent, ents_list)
+            else: # ENTS_LIST EMPTY, FINISH_START_TURN
+                self.finish_start_turn()
+            
+    def sot_effects_loop(self, ef, ef_list, ent, ents_list):
+        k = [k for k,v in self.ent_dict.items() if v == ent]
+        if ef.sot_func() != None:
+            self.get_focus(k[0])
+            if ent.spirit <= 0: # ENT KILLED, DO NOT EXEC ANY MORE OF ITS EFFECTS, POP ENTS LIST OR EXIT
+                root.after(1333, lambda e = k[0] : self.kill(e))
+                ents_list = ents_list[1:]
+                if ents_list != []:
+                    root.after(1111, lambda t = 'text' : app.canvas.delete(t))
+                    root.after(1333, lambda e = ents_list[0], el = ents_list : self.sot_eot_loop(e, el))
+                else: # NO MORE ENTS, FINISH_START_TURN
+                    root.after(1333, self.finish_start_turn)
+            else:# CONTINUE PROCESSING THIS EFFECT 
+                # CHECK IF EFFECT DURATION ENDS AND CALL UNDO IF SO, no durating for sot_effects
+#                 ef.duration -= 1
+#                 if ef.duration <= 0:
+#                     ef.undo()
+#                     key = [k for k,v in ent.effects_dict.items() if v == ef]
+#                     del ent.effects_dict[key[0]]
+                # MORE EFFECTS?
+                ef_list = ef_list[1:]
+                if ef_list != []: # MORE EFFECTS FOR THIS ENT
+                    root.after(1111, lambda t = 'text' : self.canvas.delete(t))
+                    root.after(1333, lambda ef = ef_list[0], efl = ef_list, en = ent, enl = ents_list : self.sot_effects_loop(ef, efl, en, enl))
+                else: # NO MORE FOR THIS ENT, CHECK IF MORE ENTS
+                    ents_list = ents_list[1:]
+                    if ents_list != []: # MORE ENTS TO PROCESS EFFECTS FOR
+                        root.after(1111, lambda t = 'text' : app.canvas.delete(t))
+                        root.after(1333, lambda e = ents_list[0], el = ents_list : self.sot_loop(e, el))
+                    else: # NO MORE ENTS, FINISH_END_TURN
+                        root.after(1333, self.finish_start_turn)
+        else:
+            # CHECK IF EFFECT DURATION ENDS AND CALL UNDO IF SO, no durating for sot_effects
+#             ef.duration -= 1
+#             if ef.duration <= 0:
+#                 ef.undo()
+#                 key = [k for k,v in ent.effects_dict.items() if v == ef]
+#                 del ent.effects_dict[key[0]]
+            # MORE EFFECTS?
+            ef_list = ef_list[1:]
+            if ef_list != []: # MORE EFFECTS FOR THIS ENT
+#                 root.after(999, lambda t = 'text' : self.canvas.delete(t))
+#                 root.after(1333, lambda ef = ef_list[0], efl = ef_list, en = ent, enl = ents_list : 
+                self.sot_effects_loop(ef_list[0], ef_list, ent, ents_list)
+            else: # NO MORE FOR THIS ENT, CHECK IF MORE ENTS
+                ents_list = ents_list[1:]
+                if ents_list != []: # MORE ENTS TO PROCESS EFFECTS FOR
+#                     root.after(999, lambda e = ents_list[0], el = ents_list : 
+                    self.sot_loop(ents_list[0], ents_list)
+                else: # NO MORE ENTS, FINISH_END_TURN
+#                     root.after(999, 
+                    self.finish_start_turn()
+        
+        
+    def finish_start_turn(self):
+        p = self.active_player
         if self.num_players == 1 and p == 'p1':
             self.rebind_all()
             self.get_focus(self.p1_witch)
@@ -7716,9 +7905,7 @@ class App(tk.Frame):
             w = self.p1_witch if p == 'p1' else self.p2_witch
             self.get_focus(w)
         elif self.num_players == 1 and p == 'p2':
-            # DEBUG BOT STUFF HERE
             to_act = [x for x in self.ent_dict.keys() if self.ent_dict[x].owner == 'p2']
-#             self.get_focus(to_act[0])
             root.after(1666, lambda ents = to_act : self.do_ai_loop(ents))
         
         
@@ -8415,11 +8602,11 @@ class App(tk.Frame):
         self.grid[self.ent_dict[id].loc[0]][self.ent_dict[id].loc[1]] = ''
         del self.ent_dict[id]
         # if id begins with 'a' belongs to protag_witch, else belongs to antag_witch
-        if id[0] == 'a':
-            del self.ent_dict[self.p1_witch].summon_dict[id]
-        elif id[0] == 'b':
-            if self.num_players == 2:
-                del self.ent_dict[self.p2_witch].summon_dict[id]
+#         if id[0] == 'a':
+#             del self.ent_dict[self.p1_witch].summon_dict[id]
+#         elif id[0] == 'b':
+#             if self.num_players == 2:
+#                 del self.ent_dict[self.p2_witch].summon_dict[id]
             
     def unbind_all(self):
         for x in range(10):
