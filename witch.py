@@ -736,6 +736,7 @@ class Trickster(Summon):
         def un(i):
             app.ent_dict[i].agl_effects.remove(simulacrum_effect)
             app.ent_dict[i].dodge_effects.remove(simulacrum_effect)
+            return None
         p = partial(un, id)
         def nothing():
             return None
@@ -1059,6 +1060,7 @@ class Plaguebearer(Summon):
                     app.ent_dict[id].end_effects.remove(func)
                     app.ent_dict[id].agl_effects.remove(func)
                     app.ent_dict[id].dodge_effects.remove(func)
+                    return None
                 p = partial(un, e, f)
                 def nothing():
                     return None
@@ -1137,7 +1139,7 @@ class Plaguebearer(Summon):
                     eot = partial(take_3, ent)
                     # UNDO
                     def un():
-                        pass
+                        return None
                     u = un
                     # POX VIS
                     app.ent_dict[ent].effects_dict[n] = Effect(name = 'Pox', info = 'Pox\n2 Spirit damage EOT\n-1 to Entities with normal movement', eot_func = eot , undo = u, duration = 4)
@@ -1313,6 +1315,7 @@ class Bard(Summon):
                             app.ent_dict[i].agl_effects.remove(func)
                             app.ent_dict[i].dodge_effects.remove(func)
                             app.ent_dict[i].psyche_effects.remove(func)
+                            return None
                         p = partial(un, ent, f)
                         # EOT FUNC
                         def nothing():
@@ -4249,10 +4252,10 @@ class Warrior(Summon):
                     
                     
     # confuse, target must make psyche check before attack
-    # explosive trap, all targets within range 2 of a sqr make agl save or take 5 dmg
+    # fuse trap, set global effect on sqr, when effect ends all ents within range 2 take 5 dmg 
 class Familiar_Homonculus(Summon):
     def __init__(self, name, img, loc, owner, number):
-        self.actions = {'confuse':self.confuse, 'move':self.move}
+        self.actions = {'Mesmerize':self.mesmerize, 'Fuse Trap':self.fuse_trap, 'move':self.move}
         self.attack_used = False
         self.str = 2
         self.agl = 5
@@ -4264,31 +4267,117 @@ class Familiar_Homonculus(Summon):
         super().__init__(name, img, loc, owner, number)
                     
                     
-    def confuse(self, event = None):
+    def fuse_trap(self, event = None):
+        if self.attack_used == True:
+            return
+        app.depop_context(event = None)
+        root.unbind('<q>')
+        root.unbind('<a>')
+        root.bind('<q>', self.cleanup_fuse_trap)
+        sqrs = [s for s in app.coords if dist(self.loc, s) <= 5]
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_fuse_trap(event = e, sqr = s, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Choose Square For Fuse Trap', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_fuse_trap(e, s, sqrs))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+        
+    # place in unoccupied sqr?
+    def do_fuse_trap(self, event, sqr, sqrs):
+        if sqr not in sqrs:
+            return
+        if app.grid[sqr[0]][sqr[1]] != '':
+            return
+        visuals = [v.name for k,v in app.vis_dict.items() if v.loc == sqr]
+        if 'Fuse_Trap' in visuals:
+            return
+#         effect1 = pygame.mixer.Sound('Sound_Effects/forcefield.ogg')
+#         effect1.set_volume(.07)
+#         sound_effects.play(effect1, 0)
+        self.attack_used = True
+        app.unbind_all()
+        app.cleanup_squares()
+        app.depop_context(event = None)
+        uniq_name = 'Fuse_Trap' + str(app.effects_counter)
+        app.effects_counter += 1
+        app.vis_dict[uniq_name] = Vis(name = 'Fuse_Trap', loc = sqr[:])
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict[uniq_name].img, tags = uniq_name)
+        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Fuse Trap', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+        # DO Fuse trap EFFECTS
+        def fuse_trap_effect():
+            return None
+        # on undo, dmg within range 2
+        # show explosion on all sqrs
+        def un(sqrs, name):
+            ents = [k for k,v in app.ent_dict.items() if v.loc in sqrs]
+            for sqr in sqrs:
+                uniq_name = 'Fuse_Explosion' + str(app.effects_counter)
+                app.effects_counter += 1
+                app.vis_dict[uniq_name] = Vis(name = 'Fuse_Explosion', loc = sqr[:])
+                app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict[uniq_name].img, tags = uniq_name)
+                def clean_explosion(u_name):
+                    del app.vis_dict[u_name]
+                    app.canvas.delete(u_name)
+                    app.canvas.delete('text')
+                root.after(2666, lambda n = uniq_name : clean_explosion(n))
+            for id in ents:
+                sqr = app.ent_dict[id].loc[:]
+#                 uniq_name = 'Fuse_Explosion' + str(app.effects_counter)
+#                 app.effects_counter += 1
+#                 app.vis_dict[uniq_name] = Vis(name = 'Fuse_Explosion', loc = sqr[:])
+#                 app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict[uniq_name].img, tags = uniq_name)
+                app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Fuse Trap\n5 Spirit', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+                app.ent_dict[id].set_attr('spirit', -5)
+                # add kill
+                if app.ent_dict[id].spirit <= 0:
+                    app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+95-app.moved_down, text = app.ent_dict[id].name.replace('_', ' ') + ' Killed...', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+                    root.after(2666, lambda id = id : app.kill(id))
+            try: app.canvas.delete(name)
+            except: pass
+            try: del app.vis_dict[name]
+            except: pass
+            return 'Not None'
+            
+        def nothing():
+            return None
+        eot = nothing
+        sqrs_area = [s for s in app.coords if dist(s, sqr) <= 2]
+        p = partial(un, sqrs_area, uniq_name)
+        app.global_effects_dict[uniq_name] = Effect(name = 'Fuse_Trap', info = 'dmgs all within range 2 when duration ends', eot_func = eot, undo = p, duration = 3)
+        root.after(1666, self.cleanup_fuse_trap)
+                    
+    def cleanup_fuse_trap(self, event = None):
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        app.unbind_all()
+        app.rebind_all()
+        app.canvas.delete('text')
+                    
+    def mesmerize(self, event = None):
         if self.attack_used == True:
             return
         root.unbind('<a>')
         root.unbind('<q>')
-        root.bind('<q>', self.cancel_confuse)
+        root.bind('<q>', self.cancel_mesmerize)
         sqrs = []
         for c in app.coords:
             if dist(self.loc, c) <= 3:
                 sqrs.append(c)
         app.animate_squares(sqrs)
         app.depop_context(event = None)
-        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_confuse(event = e, sqr = s, sqrs = sqrs)) 
-        b = tk.Button(app.context_menu, text = 'Confirm Confuse', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_confuse(event = e, sqr = s, sqrs = sqrs))
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_mesmerize(event = e, sqr = s, sqrs = sqrs)) 
+        b = tk.Button(app.context_menu, text = 'Confirm Mesmerize', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_mesmerize(event = e, sqr = s, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
         
-    def do_confuse(self, event, sqr, sqrs):
+    # add mesmerize fail text
+    def do_mesmerize(self, event, sqr, sqrs):
         if sqr not in sqrs:
             return
         id = app.grid[sqr[0]][sqr[1]]
         if id == '' or id == 'block':
             return
         effs = [k for k in app.ent_dict[id].effects_dict.keys()]
-        if 'Confuse' in effs:
+        if 'Mesmerize' in effs:
             return
 #         effect1 = pygame.mixer.Sound('Sound_Effects/confuse.ogg')
 #         effect1.set_volume(1)
@@ -4298,15 +4387,15 @@ class Familiar_Homonculus(Summon):
         app.cleanup_squares()
         self.attack_used = True
         # add confuse effect, at start of turn unit makes psyche check, on fail unit gets attack_used set to True and takes 5 dmg
-        def confuse_effect():
-            pass
+#         def mesmerize_effect():
+#             pass
         def un():
-            pass
+            return None
         def nothing():
             return None
         eot = nothing
         # SOT FUNC
-        def confused(tar):
+        def mesmerized(tar):
             app.get_focus(tar)
             # make psyche check
             if app.ent_dict[tar].attr_check('psyche') == False:
@@ -4317,24 +4406,24 @@ class Familiar_Homonculus(Summon):
                     app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+90-app.moved_down, text = app.ent_dict[tar].name.replace('_',' ') + '\nKilled...', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
             return 'Not None'
             
-        sot = partial(confused, id)
-        app.ent_dict[id].effects_dict['Confuse'] = Effect(sot_func = sot, name = 'Confuse', info = 'Confuse\nMay attack self', eot_func = eot, undo = un, duration = 2)
+        sot = partial(mesmerized, id)
+        app.ent_dict[id].effects_dict['Mesmerize'] = Effect(sot_func = sot, name = 'Mesmerize', info = 'Mesmerize\nMay attack self', eot_func = eot, undo = un, duration = 2)
         
-        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Confuse', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-        app.vis_dict['Confuse'] = Vis(name = 'Confuse', loc = sqr)
-        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Confuse'].img, tags = 'Confuse')
-        root.after(2999, self.cancel_confuse)
+        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Mesmerize', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+        app.vis_dict['Mesmerize'] = Vis(name = 'Mesmerize', loc = sqr)
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Mesmerize'].img, tags = 'Mesmerize')
+        root.after(2999, self.cancel_mesmerize)
         
         
-    def cancel_confuse(self, event = None):
+    def cancel_mesmerize(self, event = None):
         app.unbind_all()
         app.rebind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
         app.canvas.delete('text')
-        try: del app.vis_dict['Confuse']
+        try: del app.vis_dict['Mesmerize']
         except: pass
-        try: app.canvas.delete('Confuse')
+        try: app.canvas.delete('Mesmerize')
         except: pass
                     
                     
@@ -4458,6 +4547,7 @@ class Familiar_Imp(Summon):
             for name in uniq_names:
                 app.canvas.delete(name)
                 del app.vis_dict[name]
+            return None
         eot_p = partial(darkness_effect, affected_sqrs)
         p = partial(un, uniq_names)
         app.global_effects_dict[darkness_group] = Effect(name = 'Darkness', info = 'darkness limits movement', eot_func = eot_p, undo = p, duration = 5)
@@ -4534,6 +4624,7 @@ class Familiar_Imp(Summon):
             app.ent_dict[id].str_effects.append(f)
             def un(i):
                 app.ent_dict[i].str_effects.remove(poison_sting_effect)
+                return None
             p = partial(un, id)
             # EOT FUNC
             def take_2(tar):
@@ -5046,6 +5137,7 @@ class Witch(Entity):
         def un(i):
             app.ent_dict[i].agl_effects.remove(scrye_effect)
             app.ent_dict[i].psyche_effects.remove(scrye_effect)
+            return None
         p = partial(un, id)
         # EOT FUNC
         def nothing():
@@ -5303,6 +5395,7 @@ class Witch(Entity):
             app.ent_dict[id].psyche_effects.append(f)
             def un(i):
                 app.ent_dict[i].psyche_effects.remove(torment_effect)
+                return None
             p = partial(un, id)
             # EOT FUNC
             def nothing():
@@ -5440,6 +5533,7 @@ class Witch(Entity):
             app.ent_dict[i].end_effects.remove(plague_effect)
             app.ent_dict[i].agl_effects.remove(plague_effect)
             app.ent_dict[i].dodge_effects.remove(plague_effect)
+            return None
         p = partial(un, id)
         def nothing():
             return None
@@ -5749,6 +5843,7 @@ class Witch(Entity):
             app.ent_dict[i].agl_effects.remove(curse_of_oriax_effect)
             app.ent_dict[i].dodge_effects.remove(curse_of_oriax_effect)
             app.ent_dict[i].psyche_effects.remove(curse_of_oriax_effect)
+            return None
         p = partial(un, id)
         # EOT FUNC
         def take_2(tar):
@@ -5819,6 +5914,7 @@ class Witch(Entity):
             app.ent_dict[i].dodge_effects.remove(gravity_effect)
             p = partial(app.ent_dict[i].__class__.legal_moves, app.ent_dict[i]) #   PUT BACK CLASS METHOD MOVEMENT
             app.ent_dict[i].legal_moves = p
+            return None
         p = partial(un, id)
         # EOT FUNC
         def nothing():
@@ -5904,6 +6000,7 @@ class Witch(Entity):
                 app.ent_dict[i].psyche_effects.remove(beleths_command_effect)
                 p = partial(app.ent_dict[i].__class__.legal_moves, app.ent_dict[i]) #   PUT BACK CLASS METHOD MOVEMENT
                 app.ent_dict[i].legal_moves = p
+                return None
             p = partial(un, id)
             # EOT FUNC
             def nothing():
@@ -5969,6 +6066,7 @@ class Witch(Entity):
             app.ent_dict[i].psyche_effects.remove(meditate_effect)
             p = partial(app.ent_dict[i].__class__.legal_moves, app.ent_dict[i]) #   PUT BACK CLASS METHOD MOVEMENT
             app.ent_dict[i].legal_moves = p
+            return None
         p = partial(un, id)
         # EOT FUNC
         def nothing():
@@ -6082,6 +6180,7 @@ class Witch(Entity):
         def un(i):
             app.ent_dict[i].str_effects.remove(boiling_blood_str_effect)
             app.ent_dict[i].end_effects.remove(boiling_blood_end_effect)
+            return None
         p = partial(un, id)
         # EOT FUNC
         def take_1(tar):
@@ -6195,6 +6294,7 @@ class Witch(Entity):
                         app.ent_dict[i].end_effects.remove(ef)
             p = partial(app.ent_dict[i].__class__.legal_moves, app.ent_dict[i]) #   PUT BACK CLASS METHOD MOVEMENT
             app.ent_dict[i].legal_moves = p
+            return None
         def mummifier():# REPLACE CLASS MOVEMENT WITH NOTHING
             return []
         app.ent_dict[id].legal_moves = mummifier
@@ -6314,6 +6414,7 @@ class Witch(Entity):
             for ef in app.ent_dict[i].psyche_effects[:]:
                     if ef.__name__ == 'disintegrate_effect':
                         app.ent_dict[i].psyche_effects.remove(ef)
+            return None
                 
         p = partial(un, id)
         # EOT FUNC
@@ -6418,6 +6519,7 @@ class Witch(Entity):
                 for ef in app.ent_dict[i].psyche_effects[:]:
                         if ef.__name__ == 'osiris_effect':
                             app.ent_dict[i].psyche_effects.remove(ef)
+                return None
             p = partial(un, id)
             # EOT FUNC
             def nothing():
@@ -6474,6 +6576,7 @@ class Witch(Entity):
                 for ef in app.ent_dict[i].psyche_effects[:]:
                         if ef.__name__ == 'osiris_effect':
                             app.ent_dict[i].psyche_effects.remove(ef)
+                return None
             p = partial(un, id)
             # EOT FUNC
             def nothing():
@@ -7997,10 +8100,17 @@ class App(tk.Frame):
             else:
                 ef.duration -= 1
                 if ef.duration <= 0:
-                    ef.undo()
-                    del self.global_effects_dict[key]
-                g_effects = g_effects[1:]
-                self.g_effect_loop(g_effects)
+                    if ef.undo() != None:
+                        del self.global_effects_dict[key]
+                        g_effects = g_effects[1:]
+                        root.after(2666, lambda g = g_effects : self.g_effect_loop(g))
+                    else:
+                        del self.global_effects_dict[key]
+                        g_effects = g_effects[1:]
+                        self.g_effect_loop(g_effects)
+                else:
+                    g_effects = g_effects[1:]
+                    self.g_effect_loop(g_effects)
         
         
     # HANDLE EACH ENT BY PASSING ENT AND ITS EFFECTS TO EFFECTS_LOOP
