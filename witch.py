@@ -1652,43 +1652,46 @@ class White_Dragon(Summon):
                 root.after(666, lambda e = ents_list : app.do_ai_loop(e))
     
     def do_attack(self, ents_list, id):
-        app.get_focus(id)
-        # get adj ents
-        adj_coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height) if dist(app.ent_dict[id].loc, [x,y]) == 1]
-        ents = [app.grid[s[0]][s[1]] for s in adj_coords if app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
-        if 'b1' in ents:
-            ents.remove('b1')
-        ents.append(id)
-        for id in ents:
-            n = 'Iceblast' + str(app.effects_counter) # not an effect, just need unique int
-            app.effects_counter += 1 # that is why this is incr manually here, no Effect init
-            loc = app.ent_dict[id].loc[:]
-            app.vis_dict[n] = Vis(name = 'Iceblast', loc = loc)
-            def cleanup_vis(name):
-                app.canvas.delete(name)
-                del app.vis_dict[name]
-            root.after(3666, lambda n = n : cleanup_vis(n))
-            app.canvas.create_image(loc[0]*100+50-app.moved_right, loc[1]*100+50-app.moved_down, image = app.vis_dict[n].img, tags = n)
-            app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+50-app.moved_down-30, text = 'Iceblast', justify ='center', font = ('Andale Mono', 14), fill = 'black', tags = 'text')
+        if self.attack_used == True:
+            self.finish_attack(ents_list)
+        else:
+            app.get_focus(id)
+            # get adj ents
+            adj_coords = [c for c in app.coords if dist(app.ent_dict[id].loc, c) == 1]
+            ents = [app.grid[s[0]][s[1]] for s in adj_coords if app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
+            if 'b1' in ents:
+                ents.remove('b1')
+            ents.append(id)
+            for id in ents:
+                n = 'Iceblast' + str(app.effects_counter) # not an effect, just need unique int
+                app.effects_counter += 1 # that is why this is incr manually here, no Effect init
+                loc = app.ent_dict[id].loc[:]
+                app.vis_dict[n] = Vis(name = 'Iceblast', loc = loc)
+                def cleanup_vis(name):
+                    app.canvas.delete(name)
+                    del app.vis_dict[name]
+                root.after(3666, lambda n = n : cleanup_vis(n))
+                app.canvas.create_image(loc[0]*100+50-app.moved_right, loc[1]*100+50-app.moved_down, image = app.vis_dict[n].img, tags = n)
+                app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+50-app.moved_down-30, text = 'Iceblast', justify ='center', font = ('Andale Mono', 14), fill = 'black', tags = 'text')
         
-#         app.ent_dict[self.number+'top'].init_attack_anims()
-            my_agl = self.get_attr('agl')
-            target_dodge = app.ent_dict[id].get_attr('dodge')
-            if to_hit(my_agl, target_dodge) == True:
-                # HIT, SHOW VIS, DO DAMAGE, EXIT
-                my_str = self.get_attr('str')
-                target_end = app.ent_dict[id].get_attr('end')
-                d = damage(my_str, target_end)
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Hit!\n' + str(d) + '\nSpirit', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
-                app.ent_dict[id].set_attr('spirit', -d)
-                if app.ent_dict[id].spirit <= 0:
-                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+78, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
-                root.after(3666, lambda i = id : self.cleanup_attack(i)) # EXIT THROUGH CLEANUP_ATTACK()
-            else:
-                # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Miss!', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
-                root.after(3666, lambda i = id : self.cleanup_attack(i))
-        root.after(3999, lambda el = ents_list: self.finish_attack(el))
+    #         app.ent_dict[self.number+'top'].init_attack_anims()
+                my_agl = self.get_attr('agl')
+                target_dodge = app.ent_dict[id].get_attr('dodge')
+                if to_hit(my_agl, target_dodge) == True:
+                    # HIT, SHOW VIS, DO DAMAGE, EXIT
+                    my_str = self.get_attr('str')
+                    target_end = app.ent_dict[id].get_attr('end')
+                    d = damage(my_str, target_end)
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Hit!\n' + str(d) + '\nSpirit', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+                    app.ent_dict[id].set_attr('spirit', -d)
+                    if app.ent_dict[id].spirit <= 0:
+                        app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+78, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+                    root.after(3666, lambda i = id : self.cleanup_attack(i)) # EXIT THROUGH CLEANUP_ATTACK()
+                else:
+                    # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Miss!', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+                    root.after(3666, lambda i = id : self.cleanup_attack(i))
+            root.after(3999, lambda el = ents_list: self.finish_attack(el))
         
     def cleanup_attack(self, id):
         if app.ent_dict[id].spirit <= 0:
@@ -1828,39 +1831,44 @@ class Tortured_Soul(Summon):
             
             
     def do_attack(self, ents_list, id):
-        app.get_focus(id)
-        self.init_attack_anims()
-        effect1 = pygame.mixer.Sound('Sound_Effects/tortured_soul_agony.ogg')
-        effect1.set_volume(1)
-        sound_effects.play(effect1, 0)
-        # make range atk vis
-        visloc = app.ent_dict[id].loc[:]
-        app.vis_dict['Tortured_Soul_Agony'] = Vis(name = 'Tortured_Soul_Agony', loc = visloc)
-        app.canvas.create_image(visloc[0]*100+50-app.moved_right, visloc[1]*100+50-app.moved_down, image = app.vis_dict['Tortured_Soul_Agony'].img, tags = 'Tortured_Soul_Agony')
-        app.canvas.create_text(visloc[0]*100+50-app.moved_right, visloc[1]*100+95-app.moved_down, text = 'Agony', font = ('Andale Mono', 16), fill = 'orangered4', tags = 'text')
-        
-        my_agl = self.get_attr('agl')
-        target_dodge = app.ent_dict[id].get_attr('dodge')
-        if to_hit(my_agl, target_dodge) == True:
-            # HIT, SHOW VIS, DO DAMAGE, EXIT
-            my_str = self.get_attr('str')
-            target_psyche = app.ent_dict[id].get_attr('psyche')
-            d = damage(my_str, target_psyche)
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Tortured Soul Attack Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-            app.ent_dict[id].set_attr('spirit', -d)
-            if app.ent_dict[id].spirit <= 0:
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+        if self.attack_used == True:
+            self.cleanup_attack(ents_list, id)
         else:
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Tortured Soul Attack Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-        root.after(3666, lambda  el = ents_list, id = id : self.cleanup_attack(el, id))
+            app.get_focus(id)
+            self.init_attack_anims()
+            effect1 = pygame.mixer.Sound('Sound_Effects/tortured_soul_agony.ogg')
+            effect1.set_volume(1)
+            sound_effects.play(effect1, 0)
+            # make range atk vis
+            visloc = app.ent_dict[id].loc[:]
+            app.vis_dict['Tortured_Soul_Agony'] = Vis(name = 'Tortured_Soul_Agony', loc = visloc)
+            app.canvas.create_image(visloc[0]*100+50-app.moved_right, visloc[1]*100+50-app.moved_down, image = app.vis_dict['Tortured_Soul_Agony'].img, tags = 'Tortured_Soul_Agony')
+            app.canvas.create_text(visloc[0]*100+50-app.moved_right, visloc[1]*100+95-app.moved_down, text = 'Agony', font = ('Andale Mono', 16), fill = 'orangered4', tags = 'text')
+        
+            my_agl = self.get_attr('agl')
+            target_dodge = app.ent_dict[id].get_attr('dodge')
+            if to_hit(my_agl, target_dodge) == True:
+                # HIT, SHOW VIS, DO DAMAGE, EXIT
+                my_str = self.get_attr('str')
+                target_psyche = app.ent_dict[id].get_attr('psyche')
+                d = damage(my_str, target_psyche)
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Tortured Soul Attack Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                app.ent_dict[id].set_attr('spirit', -d)
+                if app.ent_dict[id].spirit <= 0:
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+            else:
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Tortured Soul Attack Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+            root.after(3666, lambda  el = ents_list, id = id : self.cleanup_attack(el, id))
         
         
     def cleanup_attack(self, ents_list, id):
         if app.ent_dict[id].spirit <= 0:
             app.kill(id)
         self.init_normal_anims()
-        app.canvas.delete('Tortured_Soul_Agony')
-        del app.vis_dict['Tortured_Soul_Agony']
+        try: 
+            app.canvas.delete('Tortured_Soul_Agony')
+            del app.vis_dict['Tortured_Soul_Agony']
+        except: pass
         try: app.canvas.delete('text')
         except: pass
         ents_list = ents_list[1:]
@@ -1941,29 +1949,32 @@ class Ghost(Summon):
                     
             
     def do_attack(self, ents_list, id):
-        app.get_focus(id)
-        effect1 = pygame.mixer.Sound('Sound_Effects/ghost_attack.ogg')
-        effect1.set_volume(1)
-        sound_effects.play(effect1, 0)
-#         self.init_attack_anims()
-        # make range atk vis
-#         visloc = app.ent_dict[id].loc[:]
-#         app.vis_dict['Revenant_Terror'] = Vis(name = 'Revenant_Terror', loc = visloc)
-#         app.canvas.create_image(visloc[0]*100+50-app.moved_right, visloc[1]*100+50-app.moved_down, image = app.vis_dict['Revenant_Terror'].img, tags = 'Revenant_Terror')
-#         app.canvas.create_text(visloc[0]*100+50-app.moved_right, visloc[1]*100+105-app.moved_down, text = 'Terror', font = ('Andale Mono', 16), fill = 'gray77', tags = 'text')
-        my_psyche = self.get_attr('psyche')
-        target_psyche = app.ent_dict[id].get_attr('psyche')
-        if to_hit(my_psyche, target_psyche) == True:
-            # HIT, SHOW VIS, DO DAMAGE, EXIT
-            d = damage(my_psyche, target_psyche)
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+80, text = 'Ghost Attack Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
-            app.ent_dict[id].set_attr('spirit', -d)
-            if app.ent_dict[id].spirit <= 0:
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+100, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
+        if self.attack_used == True:
+            self.cleanup_attack(ents_list, id)
         else:
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+80, text = 'Ghost Attack Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
+            app.get_focus(id)
+            effect1 = pygame.mixer.Sound('Sound_Effects/ghost_attack.ogg')
+            effect1.set_volume(1)
+            sound_effects.play(effect1, 0)
+    #         self.init_attack_anims()
+            # make range atk vis
+    #         visloc = app.ent_dict[id].loc[:]
+    #         app.vis_dict['Revenant_Terror'] = Vis(name = 'Revenant_Terror', loc = visloc)
+    #         app.canvas.create_image(visloc[0]*100+50-app.moved_right, visloc[1]*100+50-app.moved_down, image = app.vis_dict['Revenant_Terror'].img, tags = 'Revenant_Terror')
+    #         app.canvas.create_text(visloc[0]*100+50-app.moved_right, visloc[1]*100+105-app.moved_down, text = 'Terror', font = ('Andale Mono', 16), fill = 'gray77', tags = 'text')
+            my_psyche = self.get_attr('psyche')
+            target_psyche = app.ent_dict[id].get_attr('psyche')
+            if to_hit(my_psyche, target_psyche) == True:
+                # HIT, SHOW VIS, DO DAMAGE, EXIT
+                d = damage(my_psyche, target_psyche)
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+80, text = 'Ghost Attack Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
+                app.ent_dict[id].set_attr('spirit', -d)
+                if app.ent_dict[id].spirit <= 0:
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+100, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
+            else:
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+80, text = 'Ghost Attack Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
 
-        root.after(3666, lambda  el = ents_list, id = id : self.cleanup_attack(el, id))
+            root.after(3666, lambda  el = ents_list, id = id : self.cleanup_attack(el, id))
         
         
     def cleanup_attack(self, ents_list, id):
@@ -2098,7 +2109,6 @@ class Revenant(Summon):
                         else:
                             root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
             
-    # change to 'teleport move'
     def revenant_move(self, ents_list, endloc):
         global selected
         effect1 = pygame.mixer.Sound('Sound_Effects/revenant_move.ogg')
@@ -2172,38 +2182,43 @@ class Revenant(Summon):
                 root.after(666, lambda e = ents_list : app.do_ai_loop(e))
     
     def do_attack(self, ents_list, id):
-        app.get_focus(id)
-#         self.init_attack_anims()
-        effect1 = pygame.mixer.Sound('Sound_Effects/revenant_terror.ogg')
-        effect1.set_volume(1)
-        sound_effects.play(effect1, 0)
-        # make range atk vis
-        visloc = app.ent_dict[id].loc[:]
-        app.vis_dict['Revenant_Terror'] = Vis(name = 'Revenant_Terror', loc = visloc)
-        app.canvas.create_image(visloc[0]*100+50-app.moved_right, visloc[1]*100+50-app.moved_down, image = app.vis_dict['Revenant_Terror'].img, tags = 'Revenant_Terror')
-        app.canvas.create_text(visloc[0]*100+50-app.moved_right, visloc[1]*100+105-app.moved_down, text = 'Terror', font = ('Andale Mono', 16), fill = 'gray77', tags = 'text')
-        
-        my_psyche = self.get_attr('psyche')
-        target_psyche = app.ent_dict[id].get_attr('psyche')
-        if to_hit(my_psyche, target_psyche) == True:
-            # HIT, SHOW VIS, DO DAMAGE, EXIT
-            d = damage(my_psyche, target_psyche)
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+80, text = 'Revenant Attack Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
-            app.ent_dict[id].set_attr('spirit', -d)
-            if app.ent_dict[id].spirit <= 0:
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+100, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
+        if self.attack_used == True:
+            self.cleanup_attack(ents_list, id)
         else:
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+80, text = 'Revenant Attack Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
+            app.get_focus(id)
+    #         self.init_attack_anims()
+            effect1 = pygame.mixer.Sound('Sound_Effects/revenant_terror.ogg')
+            effect1.set_volume(1)
+            sound_effects.play(effect1, 0)
+            # make range atk vis
+            visloc = app.ent_dict[id].loc[:]
+            app.vis_dict['Revenant_Terror'] = Vis(name = 'Revenant_Terror', loc = visloc)
+            app.canvas.create_image(visloc[0]*100+50-app.moved_right, visloc[1]*100+50-app.moved_down, image = app.vis_dict['Revenant_Terror'].img, tags = 'Revenant_Terror')
+            app.canvas.create_text(visloc[0]*100+50-app.moved_right, visloc[1]*100+105-app.moved_down, text = 'Terror', font = ('Andale Mono', 16), fill = 'gray77', tags = 'text')
+        
+            my_psyche = self.get_attr('psyche')
+            target_psyche = app.ent_dict[id].get_attr('psyche')
+            if to_hit(my_psyche, target_psyche) == True:
+                # HIT, SHOW VIS, DO DAMAGE, EXIT
+                d = damage(my_psyche, target_psyche)
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+80, text = 'Revenant Attack Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
+                app.ent_dict[id].set_attr('spirit', -d)
+                if app.ent_dict[id].spirit <= 0:
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+100, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
+            else:
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+80, text = 'Revenant Attack Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
 
-        root.after(3666, lambda  el = ents_list, id = id : self.cleanup_attack(el, id))
+            root.after(3666, lambda  el = ents_list, id = id : self.cleanup_attack(el, id))
         
         
     def cleanup_attack(self, ents_list, id):
         if app.ent_dict[id].spirit <= 0:
             app.kill(id)
 #         self.init_normal_anims()
-        app.canvas.delete('Revenant_Terror')
-        del app.vis_dict['Revenant_Terror']
+        try:
+            app.canvas.delete('Revenant_Terror')
+            del app.vis_dict['Revenant_Terror']
+        except: pass
         try: app.canvas.delete('text')
         except: pass
         ents_list = ents_list[1:]
@@ -2358,32 +2373,35 @@ class Kensai(Summon):
             
     
     def do_attack(self, ents_list, id):
-        app.get_focus(id)
-        self.init_attack_anims()
-#         effect1 = pygame.mixer.Sound('Sound_Effects/kensai_cut.ogg')
-#         effect1.set_volume(1)
-#         sound_effects.play(effect1, 0)
-        visloc = app.ent_dict[id].loc[:]
-        app.vis_dict['Kensai_Cut'] = Vis(name = 'Kensai_Cut', loc = visloc)
-        app.canvas.create_image(visloc[0]*100+50-app.moved_right, visloc[1]*100+50-app.moved_down, image = app.vis_dict['Kensai_Cut'].img, tags = 'Kensai_Cut')
-        app.canvas.create_text(visloc[0]*100+50-app.moved_right, visloc[1]*100+95-app.moved_down, text = 'Cut', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
-
-        my_agl = self.get_attr('agl')
-        target_agl = app.ent_dict[id].get_attr('agl')
-        if to_hit(my_agl, target_agl) == True:
-            # HIT, SHOW VIS, DO DAMAGE, EXIT
-            my_str = self.get_attr('str')
-            target_end = app.ent_dict[id].get_attr('end')
-            d = damage(my_str, target_end)
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Kensai Attack Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-            app.ent_dict[id].set_attr('spirit', -d)
-            if app.ent_dict[id].spirit <= 0:
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-            root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id)) # EXIT THROUGH CLEANUP_ATTACK()
+        if self.attack_used == True:
+            self.cleanup_attack(ents_list, id)
         else:
-            # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Kensai Attack Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-            root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id))
+            app.get_focus(id)
+            self.init_attack_anims()
+    #         effect1 = pygame.mixer.Sound('Sound_Effects/kensai_cut.ogg')
+    #         effect1.set_volume(1)
+    #         sound_effects.play(effect1, 0)
+            visloc = app.ent_dict[id].loc[:]
+            app.vis_dict['Kensai_Cut'] = Vis(name = 'Kensai_Cut', loc = visloc)
+            app.canvas.create_image(visloc[0]*100+50-app.moved_right, visloc[1]*100+50-app.moved_down, image = app.vis_dict['Kensai_Cut'].img, tags = 'Kensai_Cut')
+            app.canvas.create_text(visloc[0]*100+50-app.moved_right, visloc[1]*100+95-app.moved_down, text = 'Cut', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+
+            my_agl = self.get_attr('agl')
+            target_agl = app.ent_dict[id].get_attr('agl')
+            if to_hit(my_agl, target_agl) == True:
+                # HIT, SHOW VIS, DO DAMAGE, EXIT
+                my_str = self.get_attr('str')
+                target_end = app.ent_dict[id].get_attr('end')
+                d = damage(my_str, target_end)
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Kensai Attack Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                app.ent_dict[id].set_attr('spirit', -d)
+                if app.ent_dict[id].spirit <= 0:
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id)) # EXIT THROUGH CLEANUP_ATTACK()
+            else:
+                # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Kensai Attack Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id))
         
     def cleanup_attack(self, ents_list, id):
         if app.ent_dict[id].spirit <= 0:
@@ -2552,26 +2570,29 @@ class Undead(Summon):
             
     
     def do_attack(self, ents_list, id):
-        app.get_focus(id)
-        self.init_attack_anims()
-        effect1 = pygame.mixer.Sound('Sound_Effects/Undead_attack.ogg')
-        sound_effects.play(effect1, 0)
-        my_agl = self.get_attr('agl')
-        target_agl = app.ent_dict[id].get_attr('agl')
-        if to_hit(my_agl, target_agl) == True:
-            # HIT, SHOW VIS, DO DAMAGE, EXIT
-            my_str = self.get_attr('str')
-            target_end = app.ent_dict[id].get_attr('end')
-            d = damage(my_str, target_end)
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Undead Attack Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-            app.ent_dict[id].set_attr('spirit', -d)
-            if app.ent_dict[id].spirit <= 0:
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-            root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id)) # EXIT THROUGH CLEANUP_ATTACK()
+        if self.attack_used == True:
+            self.cleanup_attack(ents_list, id)
         else:
-            # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Undead Attack Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-            root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id))
+            app.get_focus(id)
+            self.init_attack_anims()
+            effect1 = pygame.mixer.Sound('Sound_Effects/Undead_attack.ogg')
+            sound_effects.play(effect1, 0)
+            my_agl = self.get_attr('agl')
+            target_agl = app.ent_dict[id].get_attr('agl')
+            if to_hit(my_agl, target_agl) == True:
+                # HIT, SHOW VIS, DO DAMAGE, EXIT
+                my_str = self.get_attr('str')
+                target_end = app.ent_dict[id].get_attr('end')
+                d = damage(my_str, target_end)
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Undead Attack Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                app.ent_dict[id].set_attr('spirit', -d)
+                if app.ent_dict[id].spirit <= 0:
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id)) # EXIT THROUGH CLEANUP_ATTACK()
+            else:
+                # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Undead Attack Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id))
         
     def cleanup_attack(self, ents_list, id):
         if app.ent_dict[id].spirit <= 0:
@@ -2719,27 +2740,30 @@ class Undead_Knight(Summon):
                             root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
     
     def do_attack(self, ents_list, id):
-        app.get_focus(id)
-#         self.init_attack_anims()
-        effect1 = pygame.mixer.Sound('Sound_Effects/undead_knight_attack.ogg')
-        effect1.set_volume(1)
-        sound_effects.play(effect1, 0)
-        my_agl = self.get_attr('agl')
-        target_agl = app.ent_dict[id].get_attr('agl')
-        if to_hit(my_agl, target_agl) == True:
-            # HIT, SHOW VIS, DO DAMAGE, EXIT
-            my_str = self.get_attr('str')
-            target_end = app.ent_dict[id].get_attr('end')
-            d = damage(my_str, target_end)
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Undead Knight Attack Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-            app.ent_dict[id].set_attr('spirit', -d)
-            if app.ent_dict[id].spirit <= 0:
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-            root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id)) # EXIT THROUGH CLEANUP_ATTACK()
+        if self.attack_used == True:
+            self.cleanup_attack(ents_list, id)
         else:
-            # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Undead Knight Attack Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-            root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id))
+            app.get_focus(id)
+    #         self.init_attack_anims()
+            effect1 = pygame.mixer.Sound('Sound_Effects/undead_knight_attack.ogg')
+            effect1.set_volume(1)
+            sound_effects.play(effect1, 0)
+            my_agl = self.get_attr('agl')
+            target_agl = app.ent_dict[id].get_attr('agl')
+            if to_hit(my_agl, target_agl) == True:
+                # HIT, SHOW VIS, DO DAMAGE, EXIT
+                my_str = self.get_attr('str')
+                target_end = app.ent_dict[id].get_attr('end')
+                d = damage(my_str, target_end)
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Undead Knight Attack Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                app.ent_dict[id].set_attr('spirit', -d)
+                if app.ent_dict[id].spirit <= 0:
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id)) # EXIT THROUGH CLEANUP_ATTACK()
+            else:
+                # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Undead Knight Attack Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id))
         
     def cleanup_attack(self, ents_list, id):
         if app.ent_dict[id].spirit <= 0:
@@ -2893,27 +2917,30 @@ class Troll(Summon):
             
     
     def do_attack(self, ents_list, id):
-        app.get_focus(id)
-#         self.init_attack_anims()
-        effect1 = pygame.mixer.Sound('Sound_Effects/troll_attack.ogg')
-        effect1.set_volume(.07)
-        sound_effects.play(effect1, 0)
-        my_agl = self.get_attr('agl')
-        target_dodge = app.ent_dict[id].get_attr('dodge')
-        if to_hit(my_agl, target_dodge) == True:
-            # HIT, SHOW VIS, DO DAMAGE, EXIT
-            my_str = self.get_attr('str')
-            target_end = app.ent_dict[id].get_attr('end')
-            d = damage(my_str, target_end)
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Troll Attack Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-            app.ent_dict[id].set_attr('spirit', -d)
-            if app.ent_dict[id].spirit <= 0:
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-            root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id)) # EXIT THROUGH CLEANUP_ATTACK()
+        if self.attack_used == True:
+            self.cleanup_attack(ents_list, id)
         else:
-            # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Troll Attack Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-            root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id))
+            app.get_focus(id)
+    #         self.init_attack_anims()
+            effect1 = pygame.mixer.Sound('Sound_Effects/troll_attack.ogg')
+            effect1.set_volume(.07)
+            sound_effects.play(effect1, 0)
+            my_agl = self.get_attr('agl')
+            target_dodge = app.ent_dict[id].get_attr('dodge')
+            if to_hit(my_agl, target_dodge) == True:
+                # HIT, SHOW VIS, DO DAMAGE, EXIT
+                my_str = self.get_attr('str')
+                target_end = app.ent_dict[id].get_attr('end')
+                d = damage(my_str, target_end)
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Troll Attack Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                app.ent_dict[id].set_attr('spirit', -d)
+                if app.ent_dict[id].spirit <= 0:
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id)) # EXIT THROUGH CLEANUP_ATTACK()
+            else:
+                # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Troll Attack Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id))
         
     def cleanup_attack(self, ents_list, id):
         if app.ent_dict[id].spirit <= 0:
@@ -3122,38 +3149,43 @@ class Warlock(Summon):
                 root.after(666, lambda e = ents_list : app.do_ai_loop(e))
     
     def do_attack(self, ents_list, id):
-        app.get_focus(id)
-        self.attack_used = True
-#         self.init_attack_anims()
-        effect1 = pygame.mixer.Sound('Sound_Effects/warlock_duress.ogg')
-        effect1.set_volume(.7)
-        sound_effects.play(effect1, 0)
-        # make range atk vis
-        visloc = app.ent_dict[id].loc[:]
-        app.vis_dict['Duress'] = Vis(name = 'Duress', loc = visloc)
-        app.canvas.create_image(visloc[0]*100+50-app.moved_right, visloc[1]*100+50-app.moved_down, image = app.vis_dict['Duress'].img, tags = 'Duress')
-        app.canvas.create_text(visloc[0]*100+50-app.moved_right, visloc[1]*100+10-app.moved_down, text = 'Duress', font = ('Andale Mono', 16), fill = 'white', tags = 'text')
-        my_psyche = self.get_attr('psyche')
-        target_psyche = app.ent_dict[id].get_attr('psyche')
-        if to_hit(my_psyche, target_psyche) == True:
-            # HIT, SHOW VIS, DO DAMAGE, EXIT
-            d = damage(my_psyche, target_psyche)
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+80, text = 'Warlock Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
-            app.ent_dict[id].set_attr('spirit', -d)
-            if app.ent_dict[id].spirit <= 0:
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+100, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
+        if self.attack_used == True:
+            self.cleanup_attack(ents_list, id)
         else:
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+80, text = 'Warlock Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
+            app.get_focus(id)
+            self.attack_used = True
+    #         self.init_attack_anims()
+            effect1 = pygame.mixer.Sound('Sound_Effects/warlock_duress.ogg')
+            effect1.set_volume(.7)
+            sound_effects.play(effect1, 0)
+            # make range atk vis
+            visloc = app.ent_dict[id].loc[:]
+            app.vis_dict['Duress'] = Vis(name = 'Duress', loc = visloc)
+            app.canvas.create_image(visloc[0]*100+50-app.moved_right, visloc[1]*100+50-app.moved_down, image = app.vis_dict['Duress'].img, tags = 'Duress')
+            app.canvas.create_text(visloc[0]*100+50-app.moved_right, visloc[1]*100+10-app.moved_down, text = 'Duress', font = ('Andale Mono', 16), fill = 'white', tags = 'text')
+            my_psyche = self.get_attr('psyche')
+            target_psyche = app.ent_dict[id].get_attr('psyche')
+            if to_hit(my_psyche, target_psyche) == True:
+                # HIT, SHOW VIS, DO DAMAGE, EXIT
+                d = damage(my_psyche, target_psyche)
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+80, text = 'Warlock Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
+                app.ent_dict[id].set_attr('spirit', -d)
+                if app.ent_dict[id].spirit <= 0:
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+100, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
+            else:
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+80, text = 'Warlock Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
 
-        root.after(3666, lambda  el = ents_list, id = id : self.cleanup_attack(el, id))
+            root.after(3666, lambda  el = ents_list, id = id : self.cleanup_attack(el, id))
         
         
     def cleanup_attack(self, ents_list, id):
         if app.ent_dict[id].spirit <= 0:
             app.kill(id)
 #         self.init_normal_anims()
-        app.canvas.delete('Duress')
-        del app.vis_dict['Duress']
+        try:
+            app.canvas.delete('Duress')
+            del app.vis_dict['Duress']
+        except: pass
         try: app.canvas.delete('text')
         except: pass
         # if havent moved, attempt random move
@@ -3382,38 +3414,43 @@ class Sorceress(Summon):
     
     # change to fireblast
     def do_attack(self, ents_list, id):
-        app.get_focus(id)
-        self.attack_used = True
-#         self.init_attack_anims()
-        effect1 = pygame.mixer.Sound('Sound_Effects/warlock_duress.ogg')
-        effect1.set_volume(.7)
-        sound_effects.play(effect1, 0)
-        # make range atk vis
-        visloc = app.ent_dict[id].loc[:]
-        app.vis_dict['Duress'] = Vis(name = 'Duress', loc = visloc)
-        app.canvas.create_image(visloc[0]*100+50-app.moved_right, visloc[1]*100+50-app.moved_down, image = app.vis_dict['Duress'].img, tags = 'Duress')
-        app.canvas.create_text(visloc[0]*100+50-app.moved_right, visloc[1]*100+10-app.moved_down, text = 'Duress', font = ('Andale Mono', 16), fill = 'white', tags = 'text')
-        my_psyche = self.get_attr('psyche')
-        target_psyche = app.ent_dict[id].get_attr('psyche')
-        if to_hit(my_psyche, target_psyche) == True:
-            # HIT, SHOW VIS, DO DAMAGE, EXIT
-            d = damage(my_psyche, target_psyche)
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+80, text = 'Warlock Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
-            app.ent_dict[id].set_attr('spirit', -d)
-            if app.ent_dict[id].spirit <= 0:
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+100, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
+        if self.attack_used == True:
+            self.cleanup_attack(ents_list, id)
         else:
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+80, text = 'Warlock Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
+            app.get_focus(id)
+            self.attack_used = True
+    #         self.init_attack_anims()
+            effect1 = pygame.mixer.Sound('Sound_Effects/warlock_duress.ogg')
+            effect1.set_volume(.7)
+            sound_effects.play(effect1, 0)
+            # make range atk vis
+            visloc = app.ent_dict[id].loc[:]
+            app.vis_dict['Duress'] = Vis(name = 'Duress', loc = visloc)
+            app.canvas.create_image(visloc[0]*100+50-app.moved_right, visloc[1]*100+50-app.moved_down, image = app.vis_dict['Duress'].img, tags = 'Duress')
+            app.canvas.create_text(visloc[0]*100+50-app.moved_right, visloc[1]*100+10-app.moved_down, text = 'Duress', font = ('Andale Mono', 16), fill = 'white', tags = 'text')
+            my_psyche = self.get_attr('psyche')
+            target_psyche = app.ent_dict[id].get_attr('psyche')
+            if to_hit(my_psyche, target_psyche) == True:
+                # HIT, SHOW VIS, DO DAMAGE, EXIT
+                d = damage(my_psyche, target_psyche)
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+80, text = 'Warlock Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
+                app.ent_dict[id].set_attr('spirit', -d)
+                if app.ent_dict[id].spirit <= 0:
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+100, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
+            else:
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+80, text = 'Warlock Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
 
-        root.after(3666, lambda  el = ents_list, id = id : self.cleanup_attack(el, id))
+            root.after(3666, lambda  el = ents_list, id = id : self.cleanup_attack(el, id))
         
         
     def cleanup_attack(self, ents_list, id):
         if app.ent_dict[id].spirit <= 0:
             app.kill(id)
 #         self.init_normal_anims()
-        app.canvas.delete('Duress')
-        del app.vis_dict['Duress']
+        try:
+            app.canvas.delete('Duress')
+            del app.vis_dict['Duress']
+        except: pass
         try: app.canvas.delete('text')
         except: pass
         # if havent moved, attempt random move
@@ -3564,27 +3601,30 @@ class Orc_Axeman(Summon):
             
     
     def do_attack(self, ents_list, id):
-        app.get_focus(id)
-#         self.init_attack_anims()
-        effect1 = pygame.mixer.Sound('Sound_Effects/orc_axeman_attack.ogg')
-        effect1.set_volume(1)
-        sound_effects.play(effect1, 0)
-        my_agl = self.get_attr('agl')
-        target_agl = app.ent_dict[id].get_attr('agl')
-        if to_hit(my_agl, target_agl) == True:
-            # HIT, SHOW VIS, DO DAMAGE, EXIT
-            my_str = self.get_attr('str')
-            target_end = app.ent_dict[id].get_attr('end')
-            d = damage(my_str, target_end)
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Orc Axeman Attack Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-            app.ent_dict[id].set_attr('spirit', -d)
-            if app.ent_dict[id].spirit <= 0:
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-            root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id)) # EXIT THROUGH CLEANUP_ATTACK()
+        if self.attack_used == True:
+            self.cleanup_attack(ents_list, id)
         else:
-            # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Orc Axeman Attack Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-            root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id))
+            app.get_focus(id)
+    #         self.init_attack_anims()
+            effect1 = pygame.mixer.Sound('Sound_Effects/orc_axeman_attack.ogg')
+            effect1.set_volume(1)
+            sound_effects.play(effect1, 0)
+            my_agl = self.get_attr('agl')
+            target_agl = app.ent_dict[id].get_attr('agl')
+            if to_hit(my_agl, target_agl) == True:
+                # HIT, SHOW VIS, DO DAMAGE, EXIT
+                my_str = self.get_attr('str')
+                target_end = app.ent_dict[id].get_attr('end')
+                d = damage(my_str, target_end)
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Orc Axeman Attack Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                app.ent_dict[id].set_attr('spirit', -d)
+                if app.ent_dict[id].spirit <= 0:
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id)) # EXIT THROUGH CLEANUP_ATTACK()
+            else:
+                # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Orc Axeman Attack Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id))
         
     def cleanup_attack(self, ents_list, id):
         if app.ent_dict[id].spirit <= 0:
@@ -3733,27 +3773,30 @@ class Barbarian(Summon):
             
     
     def do_attack(self, ents_list, id):
-        app.get_focus(id)
-#         self.init_attack_anims()
-#         effect1 = pygame.mixer.Sound('Sound_Effects/orc_axeman_attack.ogg')
-#         effect1.set_volume(1)
-#         sound_effects.play(effect1, 0)
-        my_agl = self.get_attr('agl')
-        target_agl = app.ent_dict[id].get_attr('agl')
-        if to_hit(my_agl, target_agl) == True:
-            # HIT, SHOW VIS, DO DAMAGE, EXIT
-            my_str = self.get_attr('str')
-            target_end = app.ent_dict[id].get_attr('end')
-            d = damage(my_str, target_end)
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Barbarian Attack Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-            app.ent_dict[id].set_attr('spirit', -d)
-            if app.ent_dict[id].spirit <= 0:
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-            root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id)) # EXIT THROUGH CLEANUP_ATTACK()
+        if self.attack_used == True:
+            self.cleanup_attack(ents_list, id)
         else:
-            # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Barbarian Attack Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-            root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id))
+            app.get_focus(id)
+    #         self.init_attack_anims()
+    #         effect1 = pygame.mixer.Sound('Sound_Effects/orc_axeman_attack.ogg')
+    #         effect1.set_volume(1)
+    #         sound_effects.play(effect1, 0)
+            my_agl = self.get_attr('agl')
+            target_agl = app.ent_dict[id].get_attr('agl')
+            if to_hit(my_agl, target_agl) == True:
+                # HIT, SHOW VIS, DO DAMAGE, EXIT
+                my_str = self.get_attr('str')
+                target_end = app.ent_dict[id].get_attr('end')
+                d = damage(my_str, target_end)
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Barbarian Attack Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                app.ent_dict[id].set_attr('spirit', -d)
+                if app.ent_dict[id].spirit <= 0:
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id)) # EXIT THROUGH CLEANUP_ATTACK()
+            else:
+                # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Barbarian Attack Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id))
         
     def cleanup_attack(self, ents_list, id):
         if app.ent_dict[id].spirit <= 0:
@@ -4056,24 +4099,27 @@ class Minotaur(Summon):
                 root.after(666, lambda e = ents_list : app.do_ai_loop(e))
     
     def do_attack(self, ents_list, id):
-        app.get_focus(id)
-        app.ent_dict[self.number+'top'].init_attack_anims()
-        my_agl = self.get_attr('agl')
-        target_dodge = app.ent_dict[id].get_attr('dodge')
-        if to_hit(my_agl, target_dodge) == True:
-            # HIT, SHOW VIS, DO DAMAGE, EXIT
-            my_str = self.get_attr('str')
-            target_end = app.ent_dict[id].get_attr('end')
-            d = damage(my_str, target_end)
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Minotaur Attack Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-            app.ent_dict[id].set_attr('spirit', -d)
-            if app.ent_dict[id].spirit <= 0:
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-            root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id)) # EXIT THROUGH CLEANUP_ATTACK()
+        if self.attack_used == True:
+            self.cleanup_attack(ents_list, id)
         else:
-            # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Minotaur Attack Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-            root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id))
+            app.get_focus(id)
+            app.ent_dict[self.number+'top'].init_attack_anims()
+            my_agl = self.get_attr('agl')
+            target_dodge = app.ent_dict[id].get_attr('dodge')
+            if to_hit(my_agl, target_dodge) == True:
+                # HIT, SHOW VIS, DO DAMAGE, EXIT
+                my_str = self.get_attr('str')
+                target_end = app.ent_dict[id].get_attr('end')
+                d = damage(my_str, target_end)
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Minotaur Attack Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                app.ent_dict[id].set_attr('spirit', -d)
+                if app.ent_dict[id].spirit <= 0:
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id)) # EXIT THROUGH CLEANUP_ATTACK()
+            else:
+                # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Minotaur Attack Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id))
         
     def cleanup_attack(self, ents_list, id):
         if app.ent_dict[id].spirit <= 0:
@@ -4290,9 +4336,9 @@ class Familiar_Homonculus(Summon):
         visuals = [v.name for k,v in app.vis_dict.items() if v.loc == sqr]
         if 'Fuse_Trap' in visuals:
             return
-#         effect1 = pygame.mixer.Sound('Sound_Effects/forcefield.ogg')
-#         effect1.set_volume(.07)
-#         sound_effects.play(effect1, 0)
+        effect1 = pygame.mixer.Sound('Sound_Effects/fuse_trap.ogg')
+        effect1.set_volume(.07)
+        sound_effects.play(effect1, 0)
         self.attack_used = True
         app.unbind_all()
         app.cleanup_squares()
@@ -4308,6 +4354,9 @@ class Familiar_Homonculus(Summon):
         # on undo, dmg within range 2
         # show explosion on all sqrs
         def un(sqrs, name):
+            effect1 = pygame.mixer.Sound('Sound_Effects/fuse_explosion.ogg')
+            effect1.set_volume(1)
+            sound_effects.play(effect1, 0)
             ents = [k for k,v in app.ent_dict.items() if v.loc in sqrs]
             for sqr in sqrs:
                 uniq_name = 'Fuse_Explosion' + str(app.effects_counter)
@@ -4379,9 +4428,9 @@ class Familiar_Homonculus(Summon):
         effs = [k for k in app.ent_dict[id].effects_dict.keys()]
         if 'Mesmerize' in effs:
             return
-#         effect1 = pygame.mixer.Sound('Sound_Effects/confuse.ogg')
-#         effect1.set_volume(1)
-#         sound_effects.play(effect1, 0)
+        effect1 = pygame.mixer.Sound('Sound_Effects/mesmerize.ogg')
+        effect1.set_volume(1)
+        sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -4401,9 +4450,11 @@ class Familiar_Homonculus(Summon):
             if app.ent_dict[tar].attr_check('psyche') == False:
                 app.ent_dict[tar].attack_used = True
                 app.ent_dict[tar].set_attr('spirit', -5)
-                app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+50-app.moved_down, text = '5 Spirit to self', justify ='center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+                app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+70-app.moved_down, text = '5 Spirit, mesmerized', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
                 if app.ent_dict[tar].spirit <= 0:
-                    app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+90-app.moved_down, text = app.ent_dict[tar].name.replace('_',' ') + '\nKilled...', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+                    app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+90-app.moved_down, text = app.ent_dict[tar].name.replace('_',' ') + '\nKilled...', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+            else:
+                app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+70-app.moved_down, text = 'Mesmerize Save', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
             return 'Not None'
             
         sot = partial(mesmerized, id)
@@ -4491,6 +4542,9 @@ class Familiar_Imp(Summon):
     def do_darkness(self, event = None, sqr = None, sqrs = None):
         if sqr not in sqrs:
             return
+        effect1 = pygame.mixer.Sound('Sound_Effects/darkness.ogg')
+        effect1.set_volume(1)
+        sound_effects.play(effect1, 0)
         self.attack_used = True
         app.create_text(self.loc[0]*100+50, self.loc[1]*100+75, text = 'Darkness', font = ('Andale Mono', 14), tags = 'text')
         # create vis on every sqr within distance 3 from sqr
@@ -4592,6 +4646,10 @@ class Familiar_Imp(Summon):
         b.pack(side = 'top')
         app.context_buttons.append(b)
         
+        
+    # add directional vis
+    # create dart object on origin sqr, rotate image based on slope and direction of line from origin to target
+    # 
     def check_hit(self, event = None, sqr = None, sqrs = None):
         if sqr not in sqrs:
             return
@@ -4599,9 +4657,9 @@ class Familiar_Imp(Summon):
             return
         self.attack_used = True
 #         self.init_attack_anims()
-#         effect1 = pygame.mixer.Sound('Sound_Effects/poison_sting.ogg')
-#         effect1.set_volume(1)
-#         sound_effects.play(effect1, 0)
+        effect1 = pygame.mixer.Sound('Sound_Effects/poison_sting.ogg')
+        effect1.set_volume(1)
+        sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.unbind_all()
         app.cleanup_squares()
