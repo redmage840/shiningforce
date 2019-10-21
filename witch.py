@@ -1,4 +1,6 @@
-# summon_dict may not be needed
+# make sure fuse trap (sot) effects work (take focus) when 'off screen'
+
+# test familiar death text objects, put familiars back where they are found in game / remove from cantrip dict
 
 # entomb handle 'all sqrs occupied' edge case
 
@@ -181,7 +183,10 @@ class Dummy():
 class Effect():
     def __init__(self, name, info, eot_func, undo, duration, sot_func = None):
         self.name = name
-        self.sot_func = sot_func
+        if sot_func == None:
+            def nothing():
+                return None
+            self.sot_func = nothing 
         self.eot_func = eot_func
         self.info = info
         self.undo = undo
@@ -4352,8 +4357,8 @@ class Familiar_Homonculus(Summon):
         def fuse_trap_effect():
             return None
         # on undo, dmg within range 2
-        # show explosion on all sqrs
         def un(sqrs, name):
+            app.focus_square(app.vis_dict[name].loc)
             effect1 = pygame.mixer.Sound('Sound_Effects/fuse_explosion.ogg')
             effect1.set_volume(1)
             sound_effects.play(effect1, 0)
@@ -4370,10 +4375,6 @@ class Familiar_Homonculus(Summon):
                 root.after(2666, lambda n = uniq_name : clean_explosion(n))
             for id in ents:
                 sqr = app.ent_dict[id].loc[:]
-#                 uniq_name = 'Fuse_Explosion' + str(app.effects_counter)
-#                 app.effects_counter += 1
-#                 app.vis_dict[uniq_name] = Vis(name = 'Fuse_Explosion', loc = sqr[:])
-#                 app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict[uniq_name].img, tags = uniq_name)
                 app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Fuse Trap\n5 Spirit', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
                 app.ent_dict[id].set_attr('spirit', -5)
                 # add kill
@@ -4486,10 +4487,10 @@ class Familiar_Homonculus(Summon):
         loc = app.ent_dict[witch].loc[:]
         app.ent_dict[witch].set_attr('spirit', -3)
         app.get_focus(witch)
-        app.canvas.create_text(loc[0]*100+50, loc[1]*100+75, text = '3 Spirit, Familiar Death', font = ('Andale Mono', 14), tags = 'familiar_death')
+        app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+75-app.moved_down, text = '3 Spirit, Familiar Death', font = ('Andale Mono', 14), fill = 'white', tags = 'familiar_death')
         root.after(2333, lambda t = 'familiar_death' : app.canvas.delete(t))
         if app.ent_dict[witch].spirit <= 0:
-            app.canvas.create_text(loc[0]*100+50, loc[1]*100+95, text = app.ent_dict[witch].name.replace('_', ' ')+' Killed...', font = ('Andale Mono', 14), tags = 'text')
+            app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+95-app.moved_down, text = app.ent_dict[witch].name.replace('_', ' ')+' Killed...', font = ('Andale Mono', 14), fill = 'white', tags = 'self_death')
             root.after(1666, lambda id = app.ent_dict[witch].name : app.kill(id))
 
     def legal_moves(self):
@@ -4542,11 +4543,14 @@ class Familiar_Imp(Summon):
     def do_darkness(self, event = None, sqr = None, sqrs = None):
         if sqr not in sqrs:
             return
+        app.unbind_all()
+        app.depop_context(event = None)
+        app.cleanup_squares()
         effect1 = pygame.mixer.Sound('Sound_Effects/darkness.ogg')
         effect1.set_volume(1)
         sound_effects.play(effect1, 0)
         self.attack_used = True
-        app.create_text(self.loc[0]*100+50, self.loc[1]*100+75, text = 'Darkness', font = ('Andale Mono', 14), tags = 'text')
+        app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+75-app.moved_down, text = 'Darkness', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
         # create vis on every sqr within distance 3 from sqr
         affected_sqrs = []
         for c in app.coords:
@@ -4605,7 +4609,7 @@ class Familiar_Imp(Summon):
         eot_p = partial(darkness_effect, affected_sqrs)
         p = partial(un, uniq_names)
         app.global_effects_dict[darkness_group] = Effect(name = 'Darkness', info = 'darkness limits movement', eot_func = eot_p, undo = p, duration = 5)
-        self.cleanup_darkness()
+        root.after(1666, self.cleanup_darkness)
             
     def cleanup_darkness(self, event = None):
         app.unbind_all()
@@ -4623,10 +4627,10 @@ class Familiar_Imp(Summon):
         loc = app.ent_dict[witch].loc[:]
         app.ent_dict[witch].set_attr('spirit', -3)
         app.get_focus(witch)
-        app.canvas.create_text(loc[0]*100+50, loc[1]*100+75, text = '3 Spirit, Familiar Death', font = ('Andale Mono', 14), tags = 'familiar_death')
+        app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+75-app.moved_down, text = '3 Spirit, Familiar Death', font = ('Andale Mono', 14), fill = 'white', tags = 'familiar_death')
         root.after(2333, lambda t = 'familiar_death' : app.canvas.delete(t))
         if app.ent_dict[witch].spirit <= 0:
-            app.canvas.create_text(loc[0]*100+50, loc[1]*100+95, text = app.ent_dict[witch].name.replace('_', ' ')+' Killed...', font = ('Andale Mono', 14), tags = 'text')
+            app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+95-app.moved_down, text = app.ent_dict[witch].name.replace('_', ' ')+' Killed...', font = ('Andale Mono', 14), tags = 'self_death')
             root.after(1666, lambda id = app.ent_dict[witch].name : app.kill(id))
         
     def poison_sting(self, event = None):
@@ -4694,7 +4698,7 @@ class Familiar_Imp(Summon):
                 return 'Not None'
             eot = partial(take_2, id)
             n = 'Poison_Sting' + str(app.effects_counter)
-            app.ent_dict[id].effects_dict[n] = Effect(name = 'Poison_Sting', info = 'Poison Sting\n Str reduced by 1 for 3 turns\n2 Spirit damage per turn', eot_func = eot, undo = p, duration = 3)
+            app.ent_dict[id].effects_dict[n] = Effect(name = 'Poison_Sting', info = 'Poison Sting\n Str reduced by 1 for 3 turns\n2 Spirit damage per turn', eot_func = eot, undo = p, duration = 5)
         else:
             app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+50-app.moved_down, text = 'Poison Sting Missed', justify ='center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
         root.after(2666, lambda e = None : self.cancel_attack(event = e))
