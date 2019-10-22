@@ -1,6 +1,4 @@
-# ensure canvas.deletes come AFTER vis_dict del, in case animation() is called in between
-
-# make sure fuse trap (sot) effects work (take focus) when 'off screen'
+# on level 3, why are trolls hanging a little before/after some moves, 
 
 # test familiar death text objects, put familiars back where they are found in game / remove from cantrip dict
 
@@ -406,6 +404,9 @@ class Entity():
         app.unbind_all()
         app.cleanup_squares()
         app.depop_context(event = None)
+        effect1 = pygame.mixer.Sound('Sound_Effects/footsteps.ogg')
+        effect1.set_volume(.5)
+        sound_effects.play(effect1, -1)
         # start ANIM here
         if isinstance(self, Witch):
             id = self.name
@@ -489,9 +490,15 @@ class Entity():
         self.move_used = True
         oldloc = self.loc[:]
         if isinstance(self, Shadow):
+            effect1 = pygame.mixer.Sound('Sound_Effects/shadow_move.ogg')
+            effect1.set_volume(1)
+            sound_effects.play(effect1, 0)
             app.vis_dict['Shadow_Move'] = Vis(name = 'Shadow_Move', loc = oldloc[:])
             vis = app.vis_dict['Shadow_Move']
         else:
+            effect1 = pygame.mixer.Sound('Sound_Effects/teleport_move.ogg')
+            effect1.set_volume(1)
+            sound_effects.play(effect1, 0)
             app.vis_dict['Teleport'] = Vis(name = 'Teleport', loc = oldloc[:])
             vis = app.vis_dict['Teleport']
         app.canvas.create_image(oldloc[0]*100+50-app.moved_right, oldloc[1]*100+50-app.moved_down, image = vis.img, tags = 'Teleport')
@@ -509,6 +516,9 @@ class Entity():
             app.vis_dict['Shadow_Move'] = Vis(name = 'Shadow_Move', loc = endloc[:])
             vis = app.vis_dict['Shadow_Move']
         else:
+            effect1 = pygame.mixer.Sound('Sound_Effects/teleport_move.ogg')
+            effect1.set_volume(1)
+            sound_effects.play(effect1, 0)
             del app.vis_dict['Teleport']
             app.vis_dict['Teleport'] = Vis(name = 'Teleport', loc = endloc[:])
             vis = app.vis_dict['Teleport']
@@ -535,6 +545,7 @@ class Entity():
             
             
     def finish_move(self, id, end, start):
+        sound_effects.stop()
         global selected
         selected = []
         oldloc = start
@@ -564,6 +575,34 @@ class Summon(Entity):
     # only called by computer controlled Entities, takes the list of all entities to act that is consumed by each entity as it uses its turn, and the location being moved to
     def ai_move(self, ents_list, endloc):
         global selected
+        if isinstance(self, Tortured_Soul):
+            effect1 = pygame.mixer.Sound('Sound_Effects/footsteps.ogg')
+            effect1.set_volume(.5)
+            sound_effects.play(effect1, -1)
+        elif isinstance(self, Kensai):
+            effect1 = pygame.mixer.Sound('Sound_Effects/footsteps.ogg')
+            effect1.set_volume(.5)
+            sound_effects.play(effect1, -1)
+        elif isinstance(self, Undead):
+            effect1 = pygame.mixer.Sound('Sound_Effects/undead_move.ogg')
+            effect1.set_volume(.5)
+            sound_effects.play(effect1, -1)
+        elif isinstance(self, Undead_Knight):
+            effect1 = pygame.mixer.Sound('Sound_Effects/undead_knight_move.ogg')
+            effect1.set_volume(.5)
+            sound_effects.play(effect1, -1)
+        elif isinstance(self, Troll):
+            effect1 = pygame.mixer.Sound('Sound_Effects/footsteps.ogg')
+            effect1.set_volume(.5)
+            sound_effects.play(effect1, -1)
+        elif isinstance(self, Orc_Axeman):
+            effect1 = pygame.mixer.Sound('Sound_Effects/footsteps.ogg')
+            effect1.set_volume(.5)
+            sound_effects.play(effect1, -1)
+        elif isinstance(self, Barbarian):
+            effect1 = pygame.mixer.Sound('Sound_Effects/footsteps.ogg')
+            effect1.set_volume(.5)
+            sound_effects.play(effect1, -1)
         selected = [self.number]
         id = self.number
         start_sqr = self.loc[:]
@@ -613,6 +652,7 @@ class Summon(Entity):
         
     def ai_finish_move(self, end_sqr, start_sqr, ents_list):
         global selected
+        sound_effects.stop()
         selected = []
         self.loc = end_sqr[:]
         self.origin = end_sqr[:]
@@ -4090,6 +4130,9 @@ class Minotaur(Summon):
             
     def minotaur_move(self, ents_list, endloc):
         global selected
+        effect1 = pygame.mixer.Sound('Sound_Effects/minotaur_move.ogg')
+        effect1.set_volume(1)
+        sound_effects.play(effect1, -1)
         selected = [self.number, self.number+'top']
         id = self.number
         start_sqr = self.loc[:]
@@ -4145,6 +4188,7 @@ class Minotaur(Summon):
         
     def finish_move(self, end_sqr, start_sqr, ents_list):
         global selected
+        sound_effects.stop()
         selected = []
         self.loc = end_sqr[:]
         self.origin = end_sqr[:]
@@ -4172,6 +4216,9 @@ class Minotaur(Summon):
         if self.attack_used == True:
             self.cleanup_attack(ents_list, id)
         else:
+            effect1 = pygame.mixer.Sound('Sound_Effects/minotaur_attack.ogg')
+            effect1.set_volume(1)
+            sound_effects.play(effect1, -1)
             app.get_focus(id)
             app.ent_dict[self.number+'top'].init_attack_anims()
             my_agl = self.get_attr('agl')
