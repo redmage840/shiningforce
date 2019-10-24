@@ -1,3 +1,7 @@
+# spells that buff friendly for agnes, one more cantrip for each, debuff cantrip for ali
+
+# kensai cut sound effect
+
 # can run bfs() only once by making 'goals' 'dist from ANY enemy_ent'
 
 # warlock_move, pathfinding through walls (completely empty grid) is what causes move to be prematurely shortened due to path through wall that is then ended upon first contact with wall
@@ -1492,7 +1496,7 @@ class Bard(Summon):
             app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Discord Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
             app.ent_dict[id].set_attr('spirit', -d)
             if app.ent_dict[id].spirit <= 0:
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+90, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+90, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
                 root.after(1666, lambda id = id : app.kill(id))
             root.after(1666, lambda e = None : self.finish_discord(event = e))
         else:
@@ -3539,38 +3543,72 @@ class Sorceress(Summon):
             root.after(666, lambda id = id : app.get_focus(id))
             root.after(1333, lambda el = ents_list, id = id : self.do_attack(el, id)) # ATTACK
         else: # CANNOT ATTACK FROM START LOC, GET TARGET AND MOVE TOWARDS
-            enemy_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p1']
-            paths = []
-#             coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-            for el in enemy_ent_locs:
-            # FIND PATH TO SQR WITHIN RANGE OF THIS ENT
-            # Need paths 'through' objects
-            # cannot end move in 'block' or Ent
-                goals = [c for c in app.coords if dist(c, el) <= 4 and app.grid[c[0]][c[1]] == '']
-                # this can cause 'path-shortening', finds path which is then obstructed on real grid resulting in 'short move'
-                egrid = [[''] * (app.map_height//100) for i in range(app.map_width//100)]
-                path = bfs(self.loc[:], goals, egrid)
-                if path:
-                    paths.append(path)
-            smallpaths = [y for y in paths if len(y) == min(len(y) for y in paths)] # THE SHORTEST PATHS AMONG PATHS
-            if smallpaths != []: # IF ANY PATHS EXIST AT ALL
-                apath = smallpaths[0]
-                # FIND FURTHEST SQR ALONG PATH THAT CAN BE MOVED TO
-                moves = self.legal_moves()
-                endloc = None
-                for sqr in apath[::-1]: # START WITH SQRS CLOSEST TO TARGET
-                    if sqr in moves:
-                        endloc = sqr[:] # AMONG SQRS POSSIBLE TO MOVE TO, THIS IS CLOSEST TO GOAL
-                        break
-                if endloc != None:
-                    root.after(666, lambda sqr = endloc[:] : app.focus_square(sqr))
-                    root.after(1333, lambda el = ents_list, endloc = endloc : self.sorceress_move(el, endloc))
+            # among legal sqrs, move to sqr within dist of attack or that minimizes dist
+            leg_sqrs = self.legal_moves()
+            if leg_sqrs != []:
+                enemy_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p1']
+                # first try to move to sqr at edge of attack range
+                goals = [c for c in app.coords for e in enemy_ent_locs if dist(c, e) <= 3 and app.grid[c[0]][c[1]] == '']
+                target_sqrs = []
+                for sqr in leg_sqrs:
+                    if sqr in goals:
+                        target_sqrs.append(sqr)
+                if target_sqrs != []: # move to sqr within target_sqrs that is furthest from enemy_ent_loc
+                    furthest_sqrs = [s for s in target_sqrs for x in enemy_ent_locs if dist(s, x) == max([dist(j, y) for j in target_sqrs for y in enemy_ent_locs])]
+                    loc = choice(furthest_sqrs)
+                    root.after(666, lambda sqr = loc : app.focus_square(sqr))
+                    root.after(1333, lambda el = ents_list, endloc = loc : self.sorceress_move(el, loc))
+                else: # move to sqr within leg_sqrs that minimizes dist
+                    closest_sqrs = [s for s in leg_sqrs for x in enemy_ent_locs if dist(s, x) == min([dist(j, y) for j in leg_sqrs for y in enemy_ent_locs])]
+                    loc = choice(closest_sqrs)
+                    root.after(666, lambda sqr = loc : app.focus_square(sqr))
+                    root.after(1333, lambda el = ents_list, endloc = loc : self.sorceress_move(el, loc))
+            else: # continue ai_loop
+                ents_list = ents_list[1:]
+                if ents_list == []:
+                    root.after(666, app.end_turn)
                 else:
-                    ents_list = ents_list[1:]
-                    if ents_list == []:
-                        root.after(666, app.end_turn)
-                    else:
-                        root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
+                    root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
+#         atk_sqrs = self.legal_attacks()
+#         atk_sqrs = [x for x in atk_sqrs if app.ent_dict[app.grid[x[0]][x[1]]].owner == 'p1']
+#         if atk_sqrs != []:
+#             any = atk_sqrs[0]
+#             id = app.grid[any[0]][any[1]]
+#             root.after(666, lambda id = id : app.get_focus(id))
+#             root.after(1333, lambda el = ents_list, id = id : self.do_attack(el, id)) # ATTACK
+#         else: # CANNOT ATTACK FROM START LOC, GET TARGET AND MOVE TOWARDS
+#             enemy_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p1']
+#             paths = []
+# #             coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+#             for el in enemy_ent_locs:
+#             # FIND PATH TO SQR WITHIN RANGE OF THIS ENT
+#             # Need paths 'through' objects
+#             # cannot end move in 'block' or Ent
+#                 goals = [c for c in app.coords if dist(c, el) <= 4 and app.grid[c[0]][c[1]] == '']
+#                 # this can cause 'path-shortening', finds path which is then obstructed on real grid resulting in 'short move'
+#                 egrid = [[''] * (app.map_height//100) for i in range(app.map_width//100)]
+#                 path = bfs(self.loc[:], goals, egrid)
+#                 if path:
+#                     paths.append(path)
+#             smallpaths = [y for y in paths if len(y) == min(len(y) for y in paths)] # THE SHORTEST PATHS AMONG PATHS
+#             if smallpaths != []: # IF ANY PATHS EXIST AT ALL
+#                 apath = smallpaths[0]
+#                 # FIND FURTHEST SQR ALONG PATH THAT CAN BE MOVED TO
+#                 moves = self.legal_moves()
+#                 endloc = None
+#                 for sqr in apath[::-1]: # START WITH SQRS CLOSEST TO TARGET
+#                     if sqr in moves:
+#                         endloc = sqr[:] # AMONG SQRS POSSIBLE TO MOVE TO, THIS IS CLOSEST TO GOAL
+#                         break
+#                 if endloc != None:
+#                     root.after(666, lambda sqr = endloc[:] : app.focus_square(sqr))
+#                     root.after(1333, lambda el = ents_list, endloc = endloc : self.sorceress_move(el, endloc))
+#                 else:
+#                     ents_list = ents_list[1:]
+#                     if ents_list == []:
+#                         root.after(666, app.end_turn)
+#                     else:
+#                         root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
             
     # change to 'teleport move'
     def sorceress_move(self, ents_list, endloc):
@@ -3652,7 +3690,7 @@ class Sorceress(Summon):
             if to_hit(my_psyche, target_psyche) == True:
                 # HIT, SHOW VIS, DO DAMAGE, EXIT
                 d = damage(my_psyche, target_psyche)
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+80, text = 'Warlock Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+80, text = 'Sorceress Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
                 app.ent_dict[id].set_attr('spirit', -d)
                 if app.ent_dict[id].spirit <= 0:
                     app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+100, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
@@ -3678,10 +3716,10 @@ class Sorceress(Summon):
             empty_sqrs = [s for s in app.coords if app.grid[s[0]][s[1]] == '' and dist(app.ent_dict['b2'].loc, s) < 5]
             if empty_sqrs != []:
                 s =  choice(empty_sqrs)
-                effect1 = pygame.mixer.Sound('Sound_Effects/warlock_teleport_away.ogg')
-                effect1.set_volume(1)
-                sound_effects.play(effect1, 0)
-                self.warlock_move(ents_list, s)
+#                 effect1 = pygame.mixer.Sound('Sound_Effects/warlock_teleport_away.ogg')
+#                 effect1.set_volume(1)
+#                 sound_effects.play(effect1, 0)
+                self.sorceress_move(ents_list, s)
             else:
                 ents_list = ents_list[1:]
                 if ents_list == []:
@@ -7686,7 +7724,7 @@ class App(tk.Frame):
                 ents = app.ent_dict.keys()
                 if 'b0' not in ents and 'b1' not in ents and 'b2' not in ents:
                     return 'victory'
-            self.map_triggers.append(kill_ents)
+            self.map_triggers.append(kill_all)
             def self_death():
                 if app.p1_witch not in app.ent_dict.keys():
                     return 'game over'
@@ -7780,6 +7818,7 @@ class App(tk.Frame):
                     self.book3_5_cancel = tk.Button(root, text = 'Leave Alone', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.cancel_3_5_book)
                     app.canvas.create_window(1800-app.moved_right+25, 900-app.moved_down+33, window = self.book3_5_cancel)
                     self.map_triggers.remove(read_book5)
+            self.map_triggers.append(read_book5)
             # BOOK AND SPARKLE 6
             def create_sparkle6():
                 app.vis_dict['Sparkle6'] = Vis(name = 'Sparkle', loc = [1,9])
