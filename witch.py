@@ -1,6 +1,33 @@
+# hatred sound effect inaudible
+
+# only one 'tomb' at a time
+
+# sorceress teleport barbarian fails to cleanup teleport vis
+# sorceress 'teleport TOWARDS barbarian' not working always
+
+# make all summons use 'regular' movement types that get range based on some attribute so they can be easily altered (+/-N)
+
+# abilities for shadow/warrior buffs
+
+# scrye is very quiet sound effect compared to others, (probably correct level, others too loud)
+
+# make plaguebearer a plagued wolf, healable
+
+# balance bards? discord may be too good
+
+# more buff/defensive spells
+
+# psi push impact sound
+
+# turn most volumes down around 1/3
+
+# summon vis, sound
+
+# save during level, write all ents and map number, write globals like curs_pos, write all map_triggers still in effect, write app.attrs like vis_dict effects_counter global_effects_dict, on load call create_map_curs() with protag object, empty and repopulate map_triggers, replace app.attrs
+
 # spells that buff friendly for agnes, one more cantrip for each, debuff cantrip for ali
 
-# kensai cut sound effect
+# kensai cut sound effect, barbarian attack anim and sounds, dragon sounds, orc attack anim, 
 
 # can run bfs() only once by making 'goals' 'dist from ANY enemy_ent'
 
@@ -12,15 +39,13 @@
 
 # familiar imp change movement to flying (pathing, vis)
 
-# on level 3, why are trolls hanging a little before/after some moves, not due to anything in Troll ai (tested with Undead ai), 
+# on level 3, why are trolls hanging a little before/after some moves, not due to anything in Troll ai (tested with Undead ai), minimize calls to bfs with same methodology as warlock ai
 
 # entomb handle 'all sqrs occupied' edge case
 
 # boiling blood make sound 1 sec longer
 
 # update help menu, begin game help screen, spell/attr/action descriptions
-
-# sorceress attack to fireblast
 
 # minotaur regen? minotaur kill trigger? kill both undead knight trigger?
 
@@ -3677,14 +3702,14 @@ class Sorceress(Summon):
             app.get_focus(id)
             self.attack_used = True
     #         self.init_attack_anims()
-            effect1 = pygame.mixer.Sound('Sound_Effects/warlock_duress.ogg')
+            effect1 = pygame.mixer.Sound('Sound_Effects/immolate.ogg')
             effect1.set_volume(.7)
             sound_effects.play(effect1, 0)
             # make range atk vis
             visloc = app.ent_dict[id].loc[:]
-            app.vis_dict['Duress'] = Vis(name = 'Duress', loc = visloc)
-            app.canvas.create_image(visloc[0]*100+50-app.moved_right, visloc[1]*100+50-app.moved_down, image = app.vis_dict['Duress'].img, tags = 'Duress')
-            app.canvas.create_text(visloc[0]*100+50-app.moved_right, visloc[1]*100+10-app.moved_down, text = 'Duress', font = ('Andale Mono', 16), fill = 'white', tags = 'text')
+            app.vis_dict['Fireblast'] = Vis(name = 'Fireblast', loc = visloc)
+            app.canvas.create_image(visloc[0]*100+50-app.moved_right, visloc[1]*100+50-app.moved_down, image = app.vis_dict['Fireblast'].img, tags = 'Fireblast')
+            app.canvas.create_text(visloc[0]*100+50-app.moved_right, visloc[1]*100+10-app.moved_down, text = 'Fireblast', font = ('Andale Mono', 16), fill = 'white', tags = 'text')
             my_psyche = self.get_attr('psyche')
             target_psyche = app.ent_dict[id].get_attr('psyche')
             if to_hit(my_psyche, target_psyche) == True:
@@ -3695,7 +3720,7 @@ class Sorceress(Summon):
                 if app.ent_dict[id].spirit <= 0:
                     app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+100, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
             else:
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+80, text = 'Warlock Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+80, text = 'Sorceress Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
 
             root.after(3666, lambda  el = ents_list, id = id : self.cleanup_attack(el, id))
         
@@ -3705,33 +3730,33 @@ class Sorceress(Summon):
             app.kill(id)
 #         self.init_normal_anims()
         try:
-            del app.vis_dict['Duress']
-            app.canvas.delete('Duress')
+            del app.vis_dict['Fireblast']
+            app.canvas.delete('Fireblast')
         except: pass
         try: app.canvas.delete('text')
         except: pass
         # if havent moved, attempt random move
-        if self.move_used == False:
-            # change to teleport near b2
-            empty_sqrs = [s for s in app.coords if app.grid[s[0]][s[1]] == '' and dist(app.ent_dict['b2'].loc, s) < 5]
-            if empty_sqrs != []:
-                s =  choice(empty_sqrs)
-#                 effect1 = pygame.mixer.Sound('Sound_Effects/warlock_teleport_away.ogg')
-#                 effect1.set_volume(1)
-#                 sound_effects.play(effect1, 0)
-                self.sorceress_move(ents_list, s)
-            else:
-                ents_list = ents_list[1:]
-                if ents_list == []:
-                    app.end_turn()
-                else:
-                    root.after(666, lambda e = ents_list : app.do_ai_loop(e))
+#         if self.move_used == False:
+#             # change to teleport near b2
+#             empty_sqrs = [s for s in app.coords if app.grid[s[0]][s[1]] == '' and dist(app.ent_dict['b2'].loc, s) < 5]
+#             if empty_sqrs != []:
+#                 s =  choice(empty_sqrs)
+# #                 effect1 = pygame.mixer.Sound('Sound_Effects/warlock_teleport_away.ogg')
+# #                 effect1.set_volume(1)
+# #                 sound_effects.play(effect1, 0)
+#                 self.sorceress_move(ents_list, s)
+#             else:
+#                 ents_list = ents_list[1:]
+#                 if ents_list == []:
+#                     app.end_turn()
+#                 else:
+#                     root.after(666, lambda e = ents_list : app.do_ai_loop(e))
+#         else:
+        ents_list = ents_list[1:]
+        if ents_list == []:
+            app.end_turn()
         else:
-            ents_list = ents_list[1:]
-            if ents_list == []:
-                app.end_turn()
-            else:
-                root.after(666, lambda e = ents_list : app.do_ai_loop(e))
+            root.after(666, lambda e = ents_list : app.do_ai_loop(e))
         
         
     def legal_attacks(self):
@@ -7852,6 +7877,21 @@ class App(tk.Frame):
                         break
             self.map_triggers.append(awaken_group_2)
             self.load_intro_scene(map_number, protaganist_object = protaganist_object)
+        elif map_number == 4:
+            sound1 = pygame.mixer.Sound('Music/radakan - old crypt.ogg')
+            background_music.play(sound1, -1)
+            sound1.set_volume(0.8)
+            self.map_triggers = []
+#             def kill_all():
+#                 ents = app.ent_dict.keys()
+#                 if 'b0' not in ents and 'b1' not in ents and 'b2' not in ents:
+#                     return 'victory'
+#             self.map_triggers.append(kill_all)
+            def self_death():
+                if app.p1_witch not in app.ent_dict.keys():
+                    return 'game over'
+            self.map_triggers.append(self_death)
+            self.load_intro_scene(map_number, protaganist_object = protaganist_object)
     # END OF GAME
         else:
             print('you are winner hahaha')
@@ -8114,24 +8154,12 @@ class App(tk.Frame):
         self.map_top = ImageTk.PhotoImage(self.map_top_image)
         self.canvas.create_image(0, 0, anchor='nw', image= self.map_bottom, tags=('mapbottom','map'))
         self.canvas.create_image(0, 0, anchor='nw', image= self.map_top, tags = ('maptop','map'))
-        # FOG OF WAR ON SOME MAPS
-#         if map_number == 2:
-#             fogs = [f for r,d,f in walk('./1_player_map_fog/map2/')][0]
-#             fogs = [f for f in fogs[:] if f[0] != '.']
-#             print('fogs', fogs)
-#             app.fog_holder = []
-#             for i,fog in enumerate(fogs):
-#                 img = ImageTk.PhotoImage(Image.open('1_player_map_fog/map2/'+fog))
-#                 app.fog_holder.append(img)
-#                 app.canvas.create_image(0,0, image = img, anchor = 'nw', tags = ('fog'+str(i),'fog'))
         # CURSOR
         self.cursor_img = ImageTk.PhotoImage(Image.open("cursor.png").resize((100,100)))
         self.vis_dict['cursor'] = Vis(name = 'cursor', loc = [0,0])
         curs_pos = [0,0]
         grid_pos = [0,0]
         self.canvas.create_image(0, 0, image=self.cursor_img, tags='cursor')
-        # ORIENT MAP for start positions at bottom of map
-#         app.focus_square([1,1])
         # CHOOSE WITCH IF 2 PLAYER OR FIRST LEVEL
         if protaganist_object:
             self.load_witch(witch = protaganist_object.name, player_num = 1, protaganist_object = protaganist_object)
@@ -8690,7 +8718,19 @@ class App(tk.Frame):
                 result = mt()
                 if result == 'victory':
                     app.unbind_all()
-                    self.end_level() # next map is 122 on this route
+                    self.end_level()
+                    break
+                elif result == 'game over':
+                    self.reset()
+                    break
+            else:
+                self.map_trigger_id = root.after(1666, self.map_trigger_loop)
+        elif self.map_number == 4:
+            for mt in self.map_triggers:
+                result = mt()
+                if result == 'victory':
+                    app.unbind_all()
+                    self.end_level()
                     break
                 elif result == 'game over':
                     self.reset()
