@@ -1,3 +1,6 @@
+# need to fix vis on contaion/death triggers, need to be visible before going to next ai turn
+# on every call to app.kill(), if return value is None then continue without delay, else continue after() delay
+
 # hatred sound effect inaudible
 
 # only one 'tomb' at a time
@@ -1039,7 +1042,7 @@ class Shadow(Summon):
         self.attack_used = False
         self.str = 3
         self.agl = 3
-        self.end = 2
+        self.end = 3
         self.dodge = 6
         self.psyche = 4
         self.spirit = 13
@@ -1135,9 +1138,9 @@ class Plaguebearer(Summon):
         self.attack_used = False
         self.str = 2
         self.agl = 2
-        self.end = 5
+        self.end = 6
         self.dodge = 2
-        self.psyche = 4
+        self.psyche = 5
         self.spirit = 15
         self.move_type = 'normal'
         super().__init__(name, img, loc, owner, number)
@@ -1199,6 +1202,7 @@ class Plaguebearer(Summon):
                 app.canvas.create_image(app.ent_dict[e].loc[0]*100+50-app.moved_right, app.ent_dict[e].loc[1]*100+50-app.moved_down, image = app.vis_dict[n2].img, tags = n2)
                 
         root.after(3666, self.cleanup_contagion)
+        return 'Not None'
 #             super(Plaguebearer, self).set_attr(attr, amount)
 #         else:
 #             super(Plaguebearer, self).set_attr(attr, amount)
@@ -1320,7 +1324,7 @@ class Bard(Summon):
         self.attack_used = False
         self.str = 2
         self.agl = 3
-        self.end = 2
+        self.end = 3
         self.dodge = 5
         self.psyche = 6
         self.spirit = 15
@@ -1565,9 +1569,9 @@ class White_Dragon_Top(Summon):
     def __init__(self, name, img, loc, owner, number, waiting = True):
 #         self.actions = {'attack':self.do_attack}
         self.attack_used = False
-        self.str = 10
-        self.agl = 7
-        self.end = 8
+        self.str = 9
+        self.agl = 8
+        self.end = 9
         self.dodge = 5
         self.psyche = 8
         self.spirit = 157
@@ -1835,21 +1839,33 @@ class White_Dragon(Summon):
                     app.ent_dict[id].set_attr('spirit', -d)
                     if app.ent_dict[id].spirit <= 0:
                         app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+78, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
-                    root.after(3666, lambda i = id : self.cleanup_attack(i)) # EXIT THROUGH CLEANUP_ATTACK()
+#                     root.after(3666, lambda i = id : self.cleanup_attack(i)) # EXIT THROUGH CLEANUP_ATTACK()
                 else:
                     # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
                     app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Miss!', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
-                    root.after(3666, lambda i = id : self.cleanup_attack(i))
-            root.after(3999, lambda el = ents_list: self.finish_attack(el))
+#                     root.after(3666, lambda i = id : self.cleanup_attack(i))
+#             root.after(3999, lambda el = ents_list: self.finish_attack(el))
+            root.after(3999, lambda el = ents_list, ids = ents: self.cleanup_attack(el, ids))
         
-    def cleanup_attack(self, id):
-        if app.ent_dict[id].spirit <= 0:
-            app.kill(id)
-#         app.ent_dict[self.number+'top'].init_normal_anims()
-        try: app.canvas.delete('text')
-        except: pass
+    # change to loop over list of ids
+    def cleanup_attack(self, el, ids):
+        if ids != []:
+            id = ids[0]
+            ids = ids[1:]
+            if app.ent_dict[id].spirit <= 0:
+                if app.kill(id) == None:
+                    self.cleanup_attack(el, ids)
+                else:
+                    root.after(3333, lambda el = el, ids = ids : self.cleanup_attack(el, ids))
+            else:
+                self.cleanup_attack(el, ids)
+    #         app.ent_dict[self.number+'top'].init_normal_anims()
+        else:
+            root.after(1999, lambda el = el: self.finish_attack(el))
+
         
     def finish_attack(self, ents_list):
+        app.canvas.delete('text')
         ents_list = ents_list[1:]
         if ents_list == []:
             app.end_turn()
@@ -3470,27 +3486,31 @@ class Warlock(Summon):
         
         '''
 elemental mages
+sparkles 5,5 and 34,5
+orb 20,17
 
-fire mage
+fire mage 18,19
 spawn 3 elementals if no elementals exist
 elementals do small damage to large area, 2 to each ents
 killing a set of elementals temporarily 'grounds' fire mage (recharges before resummon)
 otherwise fire mage is ungroundable and teleports to between 5-7 away from player ents and casts 'fire wall' (damages all in a line across whole axis)
 
-earth mage
+earth mage 22,19
 4 elementals that always attempt to move adjacent to mage
 when all elementals are adjacent mage takes no damage
 mage casts earthquake (moves non-elementals away from mage and damages them)
 mage is 'grounded' (unmoveable)
 when elemental is killed (if), after casting earthquake resummon 1 elemental
 
-air mage
+air mage 18,15
 casts cyclone (moves ent to random sqr, dmgs)
 mage teleports around, 'grounded'
 3 elementals that fly (movement type) and attack like warlock (teleport away after attack)
 
-water mage
+water mage 22,15
         '''
+        
+    # prob do firewall before moving also
 class Fire_Mage(Summon):
     def __init__(self, name, img, loc, owner, number, waiting = False):
         self.actions = {'attack':self.do_attack}
@@ -3499,8 +3519,8 @@ class Fire_Mage(Summon):
         self.agl = 6
         self.end = 6
         self.dodge = 5
-        self.psyche = 10
-        self.spirit = 89
+        self.psyche = 9
+        self.spirit = 79
         self.waiting = waiting
         self.move_type = 'teleport'
         super().__init__(name, img, loc, owner, number)
@@ -3648,7 +3668,7 @@ class Fire_Mage(Summon):
             sound_effects.play(effect1, 0)
             sqrs = []
             for c in app.coords:
-                if c[0] == self.loc[0] and abs(c[1] - self.loc[1]) <= 5:
+                if c[0] == self.loc[0] and abs(c[1] - self.loc[1]) <= 6:
                     sqrs.append(c)
                 elif abs(c[0] - self.loc[0]) <= 5 and c[1] == self.loc[1]:
                     sqrs.append(c)
@@ -4045,7 +4065,7 @@ class Orc_Axeman(Summon):
         self.agl = 5
         self.end = 6
         self.dodge = 7
-        self.psyche = 2
+        self.psyche = 3
         self.spirit = 29
         self.waiting = waiting
         self.move_type = 'normal'
@@ -4885,7 +4905,7 @@ class Warrior(Summon):
         self.attack_used = False
         self.str = 5
         self.agl = 5
-        self.end = 5
+        self.end = 6
         self.dodge = 2
         self.psyche = 2
         self.spirit = 15
@@ -5387,7 +5407,7 @@ class Familiar_Imp(Summon):
         my_agl = self.get_attr('agl')
         target_dodge = app.ent_dict[id].get_attr('dodge')
         if to_hit(my_agl, target_dodge) == True:
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+50-app.moved_down, text = 'Poison Sting Hit', justify ='center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+75-app.moved_down, text = 'Poison Sting Hit', justify ='center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
             # poison str effect
             def poison_sting_effect(stat):
                 stat -= 1
@@ -5413,7 +5433,7 @@ class Familiar_Imp(Summon):
             n = 'Poison_Sting' + str(app.effects_counter)
             app.ent_dict[id].effects_dict[n] = Effect(name = 'Poison_Sting', info = 'Poison Sting\n Str reduced by 1 for 3 turns\n2 Spirit damage per turn', eot_func = eot, undo = p, duration = 5)
         else:
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+50-app.moved_down, text = 'Poison Sting Missed', justify ='center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+75-app.moved_down, text = 'Poison Sting Missed', justify ='center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
         root.after(2666, lambda e = None : self.cancel_attack(event = e))
         
     def cancel_attack(self, event):
