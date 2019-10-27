@@ -3000,20 +3000,15 @@ class Troll(Summon):
             else: # CANNOT ATTACK FROM START LOC, GET TARGET AND MOVE TOWARDS
                 enemy_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p1']
                 paths = []
-#                 coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-                for el in enemy_ent_locs:
-                # FIND PATH TO SQR WITHIN RANGE OF THIS ENT
-                    goals = [c for c in app.coords if dist(c, el) == 1 and app.grid[c[0]][c[1]] == '']
-                    path = bfs(self.loc[:], goals, app.grid[:])
-                    if path:
-                        paths.append(path)
-                smallpaths = [y for y in paths if len(y) == min(len(y) for y in paths)] # THE SHORTEST PATHS AMONG PATHS
-                if smallpaths != []: # IF ANY PATHS EXIST AT ALL
-                    apath = smallpaths[0]
+                # change to calling bfs once
+                goals = [c for c in app.coords for s in enemy_ent_locs if dist(c, s) == 1 and app.grid[c[0]][c[1]] == '']
+                path = bfs(self.loc[:], goals, app.grid[:])
+                if path:
+#                     apath = smallpaths[0]
                     # FIND FURTHEST SQR ALONG PATH THAT CAN BE MOVED TO
                     moves = self.legal_moves()
                     endloc = None
-                    for sqr in apath[::-1]: # START WITH SQRS CLOSEST TO TARGET
+                    for sqr in path[::-1]: # START WITH SQRS CLOSEST TO TARGET
                         if sqr in moves:
                             endloc = sqr[:] # AMONG SQRS POSSIBLE TO MOVE TO, THIS IS CLOSEST TO GOAL
                             break
@@ -3033,19 +3028,13 @@ class Troll(Summon):
                     for eloc in friendly_ent_locs:
                         egrid[eloc[0]][eloc[1]] = '' # EGRID NOW EMPTIED OF FRIENDLY ENTS
                     # NOW FIND PATH AND PASS TO MOVE
-#                     coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-                    for el in enemy_ent_locs:
-                        goals = [c for c in app.coords if dist(c, el) == 1 and app.grid[c[0]][c[1]] == '']
-                        path = bfs(self.loc[:], goals, egrid[:]) # BFS ON ALTERED GRID (FRIENDLY ENTS REMOVED)
-                        if path:
-                            paths.append(path)
-                    smallpaths = [y for y in paths if len(y) == min(len(y) for y in paths)]
-                    if smallpaths != []: # MOVE ALONG PATH AS FAR AS POSSIBLE, ATTEMPT ATTACK
-                        apath = smallpaths[0]
+                    goals = [c for c in app.coords for s in enemy_ent_locs if dist(c, s) == 1 and egrid[c[0]][c[1]] == '']
+                    path = bfs(self.loc[:], goals, egrid[:])
+                    if path:
                         # FIND FURTHEST SQR ALONG PATH THAT CAN BE MOVED TO
                         moves = self.legal_moves()
                         endloc = None
-                        for sqr in apath[::-1]: # START WITH SQRS CLOSEST TO TARGET
+                        for sqr in path[::-1]: # START WITH SQRS CLOSEST TO TARGET
                             if sqr in moves:
                                 endloc = sqr[:] # AMONG SQRS POSSIBLE TO MOVE TO, THIS IS CLOSEST TO GOAL
                                 break
@@ -3178,7 +3167,7 @@ class Warlock(Summon):
         uniq_num = app.effects_counter
         app.effects_counter += 1
         # get random empty location
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100) if dist([x,y], self.loc) <= 6]
+        coords = [c for c in app.coords if dist(c, self.loc) <= 6]
         empty = [c for c in coords if app.grid[c[0]][c[1]] == '']
         if empty != []:
             undead_loc = choice(empty)
