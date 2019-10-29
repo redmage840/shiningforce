@@ -3,18 +3,13 @@
 
 # potential visual problems when familiar death triggers happen at same time as other death triggers (contagion), due to taking focus in familiar death as soon as called, otherwise all calls to kill() allot 3333 for death trigger resolution
 
-# hatred, plague sound effect inaudible
+# scrye, hatred, plague sound effect inaudible
 
-# only one 'tomb' at a time
-
-# sorceress teleport barbarian fails to cleanup teleport vis
 # sorceress 'teleport TOWARDS barbarian' not working always
 
 # make all summons use 'regular' movement types that get range based on some attribute so they can be easily altered (+/-N)
 
 # abilities for shadow/warrior buffs
-
-# scrye is very quiet sound effect compared to others, (probably correct level, others too loud)
 
 # make plaguebearer a plagued wolf, healable
 
@@ -3731,8 +3726,8 @@ class Sorceress(Summon):
 #             root.after(1333, lambda el = ents_list : self.warlock_summon(el))
     # b2
     def teleport_barbarian(self, ents_list):
-        # if b2 within 4 sqrs teleport it to the nearest enemy ent
-        sqrs = [s for s in app.coords if dist(s, self.loc) <= 4]
+        # if b2 within 5 sqrs teleport it to the nearest enemy ent
+        sqrs = [s for s in app.coords if dist(s, self.loc) <= 5]
         ents = [app.grid[s[0]][s[1]] for s in sqrs if app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
         if 'b2' in ents:
             # find nearest enemy ent
@@ -3779,6 +3774,10 @@ class Sorceress(Summon):
         
             
     def continue_ai(self, ents_list):
+        try:
+            del app.vis_dict['Teleport']
+            app.canvas.delete('Teleport')
+        except: pass
         atk_sqrs = self.legal_attacks()
         atk_sqrs = [x for x in atk_sqrs if app.ent_dict[app.grid[x[0]][x[1]]].owner == 'p1']
         if atk_sqrs != []:
@@ -5255,8 +5254,9 @@ class Familiar_Imp(Summon):
                 if 'Blind' in effs:
                     continue
                 else:
-                    def blind_effect():
+                    def blind_effect(): # EOT effect (nothing)
                         pass
+                    # SOT effect (at begin of turn, if ent is within affected sqrs)
                     def blind(i):# REPLACE CLASS MOVEMENT WITH MOVE dist 2 if movement type == normal
                         mvlist = []
                         for c in app.coords:
@@ -5284,7 +5284,7 @@ class Familiar_Imp(Summon):
             return None
         eot_p = partial(darkness_effect, affected_sqrs)
         p = partial(un, uniq_names)
-        app.global_effects_dict[darkness_group] = Effect(name = 'Darkness', info = 'darkness limits movement', eot_func = eot_p, undo = p, duration = 5)
+        app.global_effects_dict[darkness_group] = Effect(name = 'Darkness', info = 'darkness limits movement', eot_func = eot_p, undo = p, duration = 6)
         root.after(1666, self.cleanup_darkness)
             
     def cleanup_darkness(self, event = None):
