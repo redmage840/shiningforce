@@ -1,3 +1,17 @@
+# fix sorc teleport barbarian, do not teleport if endloc is further from goal
+
+# one fuse trap at a time?, effects instead of dmg?
+
+# corner in center of great hall level, black line
+
+# monkey-patched methods cannot be pickled, like meditate_move, on level end resolve all effects
+
+# gate, name of 'gate' in choose location
+
+# library level, cant move 'all the way down'
+# revenant attack, taking focus on target?
+# ghost attack better
+
 # death triggers allot 3333 during ai/computer turn, user-controlled ents (either 1player mode killing own units OR 2player mode killing opponent user ents) may currently interrupt the visual resolution (logical not affected) of death triggers by moving beyond edge of map (quickly pressing arrow keys many times during trigger resolution) or calling some effect/spell that takes focus/focus squares on ent that is beyond edge of visible map
 # Can potentially fix above by unbind_all() / rebind_all() during death trigger
 
@@ -1344,7 +1358,7 @@ class Bard(Summon):
         if not isinstance(app.ent_dict[id], Trickster) and not isinstance(app.ent_dict[id], Warrior) and not isinstance(app.ent_dict[id], Bard) and not isinstance(app.ent_dict[id], Shadow):
              return
         effect1 = pygame.mixer.Sound('Sound_Effects/moonlight.ogg')
-        effect1.set_volume(1)
+        effect1.set_volume(.5)
         sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
@@ -6215,8 +6229,8 @@ class Witch(Entity):
         app.vis_dict['Foul_Familiar'] = Vis(name = 'Foul_Familiar', loc = sqr)
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Foul_Familiar'].img, tags = 'Foul_Familiar')
         # summon familiar based on witch
-        num = self.summon_ids
         self.summon_ids += 1
+        num = self.summon_ids
         if self.owner == 'p1':
             prefix = 'a'
         else:
