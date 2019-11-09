@@ -1,3 +1,13 @@
+# barbarian too slow / easy to separate from sorceress, make sorceress able to teleport barbarian from anywhere
+
+# is pain/entomb too good?
+
+# endurance becomes too high after all bonus relative to orcs, probably other enemies that check endurance
+
+# check orc pathfinding, slow?
+
+# randomize dmg amounts?
+
 # fix sorc teleport barbarian, do not teleport if endloc is further from goal
 
 # one fuse trap at a time?, effects instead of dmg?
@@ -5320,6 +5330,7 @@ class Familiar_Homonculus(Summon):
             return
         if app.grid[sqr[0]][sqr[1]] != '':
             return
+        # not working, allowing multiple
         visuals = [v.name for k,v in app.vis_dict.items() if v.loc == sqr]
         if 'Fuse_Trap' in visuals:
             return
@@ -5740,6 +5751,8 @@ class Witch(Entity):
             self.cantrip_dict['Boiling_Blood'] = (self.boiling_blood)
             self.cantrip_dict['Dark_Sun'] = (self.dark_sun)
             self.cantrip_dict['Meditate'] = (self.meditate)
+            self.cantrip_dict['Foul_Familiar'] = (self.foul_familiar)
+            self.arcane_dict['Entomb'] = (self.entomb,5)
             self.arcane_dict['Horrid_Wilting'] = (self.horrid_wilting,5)
             self.arcane_dict['Disintegrate'] = (self.disintegrate, 4)
             self.arcane_dict['Mummify'] = (self.mummify, 5)
@@ -6229,8 +6242,8 @@ class Witch(Entity):
         app.vis_dict['Foul_Familiar'] = Vis(name = 'Foul_Familiar', loc = sqr)
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Foul_Familiar'].img, tags = 'Foul_Familiar')
         # summon familiar based on witch
-        self.summon_ids += 1
         num = self.summon_ids
+        self.summon_ids += 1
         if self.owner == 'p1':
             prefix = 'a'
         else:
@@ -6286,12 +6299,12 @@ class Witch(Entity):
         app.vis_dict['Entomb'] = Vis(name = 'Entomb', loc = oldloc[:])
         app.canvas.create_image(oldloc[0]*100+50-app.moved_right, oldloc[1]*100+50-app.moved_down, image = app.vis_dict['Entomb'].img, tags = 'Entomb')
         # CREATE TOMB ENTITY
-        self.summon_ids += 1
         if self.owner == 'p1':
             prefix = 'a'
         else:
             prefix = 'b'
         id = prefix + str(self.summon_ids)
+        self.summon_ids += 1
         img = ImageTk.PhotoImage(Image.open('summon_imgs/Tomb.png'))
         app.ent_dict[id] = Tomb(name = 'Tomb', img = img, loc = oldloc[:], owner = self.owner, number = id)
         app.grid[oldloc[0]][oldloc[1]] = id
