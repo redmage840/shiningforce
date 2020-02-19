@@ -1,3 +1,52 @@
+# make 'click on sqr to move cursor to, maybe 'select unit' (bring up context menu)
+
+# consider limit 1 bard, how does that change certain levels that rely on healing? kensai, dragon
+
+# solve the problem of pickling to save character objects with monkey-patched temp methods overwritten temporarily by an effect (would usually be resolved by expiration of effect/undo).
+# where I am saving, need to save direct attributes of instance like obj.str or obj.max_spirit, also need to save entries in cantrip_dict and arcane_dict, do not attempt to save methods as they may be monkey-patched.
+# on load, re-init an object of the same name as object, then overwrite its attributes and spell dicts with saved info.
+# PROBLEM is in saving the spell dicts since they are dicts of strings to methods
+
+
+
+# confusing - app.effects_counter is used to get unique numbers. Whenever one is needed for an arbitrary purpose, the current value is taken and then app.effects_counter is incremented. The name comes from the fact that Effect instances grab the current value to refer to uniquely refer to the instance AND THEN the instantiation method of the Effect increments app.effects_counter. Elsewhere it is incremented manually.
+
+# remake levels with proper shadows
+
+# make each elemental unique
+
+# only warrior attack has delayed text before kill
+
+
+# allow click on unit along with press 'a'
+#   - click on 100X100 pixel sqr?
+# make right click equiv to 'q'
+#  - is contextual probably, search each bind of 'q'
+# spells right-click for info
+#   # bind button when spells populated, each button has rclick function
+# on left click, move cursor to sqr?
+#   # will be 100x100 sqr pixel areas, relative to screen grid not total grid
+# generic death anim placeholder
+#   # 'x' animation or cursor(like?) picture, blinking/fading
+# randomness to ai 'attack patterns' on some levels, ents 'group up', 'hang back', 'hold position', 'route around'
+# force player to approach warlock, fight through interim undead
+
+# BALANCED MEANS YOU SHOULD BE ABLE TO SPEND A LIFETIME EXPLORING ALL THE POSSIBLE STRATEGIES (think chess)
+
+# blood milk sky
+
+# new spell type gained at ritual circle, tarot, random element? card based?
+
+# new summon type gained at ritual circle, limit one, does not count towards other summon limit, choose one of few types, demon
+
+# fuse trap (and maybe darkness/poison sting) allows for endless kiting of slow moving enemies (orcs and slower)
+# fuse trap probably op in above situations and also not very useful against much faster enemies (dragons, teleporters...)
+# mesmerize too good against barbarian (sub-boss of level), newly acquired abilities should be useful on same level, just balance probably by raising psyche of barbarian
+
+# prob change vengeance to something else, not an interesting spell, either op or useless
+
+# kensai, barbarian, sorceress need shadow
+
 # barbarian too slow / easy to separate from sorceress, make sorceress able to teleport barbarian from anywhere
 
 # is pain/entomb too good?
@@ -6,7 +55,7 @@
 
 # check orc pathfinding, slow?
 
-# randomize dmg amounts?
+# ideally would not have randomness
 
 # fix sorc teleport barbarian, do not teleport if endloc is further from goal
 
@@ -211,15 +260,18 @@ map_pos = [0, 0]
 
 grid_pos = [0,0]
 
-import pygame
+
+# change to only import what is neededmm
+# import pygame
+from pygame import mixer
 freq = 44100     # audio CD quality
 bitsize = -16    # unsigned 16 bit
 channels = 1     # 1 is mono, 2 is stereo
 buffer = 1024    # number of samples (experiment to get right sound)
 # use this just for intro screen, ideally make it loop smoothly (no lull in sound)
-pygame.mixer.init(freq, bitsize, channels, buffer)
-background_music = pygame.mixer.Channel(0) # argument must be int
-sound_effects = pygame.mixer.Channel(1)
+mixer.init(freq, bitsize, channels, buffer)
+background_music = mixer.Channel(0) # argument must be int
+sound_effects = mixer.Channel(1)
 # background_music.music.set_volume(0.7) # optional volume 0 to 1.0
 # background_music.music.load('Ove Melaa - Dead, Buried and Cold.ogg')
 # background_music.music.play(-1, 0)
@@ -234,7 +286,9 @@ class Effect():
         if sot_func == None:
             def nothing():
                 return None
-            self.sot_func = nothing 
+            self.sot_func = nothing
+        else:
+            self.sot_func = sot_func
         self.eot_func = eot_func
         self.info = info
         self.undo = undo
@@ -453,15 +507,15 @@ class Entity():
         app.cleanup_squares()
         app.depop_context(event = None)
         if isinstance(self, Witch) or isinstance(self, Bard) or isinstance(self, Warrior) or isinstance(self, Plaguebearer):
-            effect1 = pygame.mixer.Sound('Sound_Effects/footsteps.ogg')
+            effect1 = mixer.Sound('Sound_Effects/footsteps.ogg')
             effect1.set_volume(.5)
             sound_effects.play(effect1, -1)
         elif isinstance(self, Familiar_Imp):
-            effect1 = pygame.mixer.Sound('Sound_Effects/familiar_imp_move.ogg')
+            effect1 = mixer.Sound('Sound_Effects/familiar_imp_move.ogg')
             effect1.set_volume(.5)
             sound_effects.play(effect1, -1)
         elif isinstance(self, Familiar_Homonculus):
-            effect1 = pygame.mixer.Sound('Sound_Effects/familiar_homonculus_move.ogg')
+            effect1 = mixer.Sound('Sound_Effects/familiar_homonculus_move.ogg')
             effect1.set_volume(.5)
             sound_effects.play(effect1, -1)
         # start ANIM here
@@ -547,13 +601,13 @@ class Entity():
         self.move_used = True
         oldloc = self.loc[:]
         if isinstance(self, Shadow):
-            effect1 = pygame.mixer.Sound('Sound_Effects/shadow_move.ogg')
+            effect1 = mixer.Sound('Sound_Effects/shadow_move.ogg')
             effect1.set_volume(1)
             sound_effects.play(effect1, 0)
             app.vis_dict['Shadow_Move'] = Vis(name = 'Shadow_Move', loc = oldloc[:])
             vis = app.vis_dict['Shadow_Move']
         else:
-            effect1 = pygame.mixer.Sound('Sound_Effects/teleport_move.ogg')
+            effect1 = mixer.Sound('Sound_Effects/teleport_move.ogg')
             effect1.set_volume(1)
             sound_effects.play(effect1, 0)
             app.vis_dict['Teleport'] = Vis(name = 'Teleport', loc = oldloc[:])
@@ -573,7 +627,7 @@ class Entity():
             app.vis_dict['Shadow_Move'] = Vis(name = 'Shadow_Move', loc = endloc[:])
             vis = app.vis_dict['Shadow_Move']
         else:
-            effect1 = pygame.mixer.Sound('Sound_Effects/teleport_move.ogg')
+            effect1 = mixer.Sound('Sound_Effects/teleport_move.ogg')
             effect1.set_volume(1)
             sound_effects.play(effect1, 0)
             del app.vis_dict['Teleport']
@@ -633,31 +687,31 @@ class Summon(Entity):
     def ai_move(self, ents_list, endloc):
         global selected
         if isinstance(self, Tortured_Soul):
-            effect1 = pygame.mixer.Sound('Sound_Effects/footsteps.ogg')
+            effect1 = mixer.Sound('Sound_Effects/footsteps.ogg')
             effect1.set_volume(.5)
             sound_effects.play(effect1, -1)
         elif isinstance(self, Kensai):
-            effect1 = pygame.mixer.Sound('Sound_Effects/footsteps.ogg')
+            effect1 = mixer.Sound('Sound_Effects/footsteps.ogg')
             effect1.set_volume(.5)
             sound_effects.play(effect1, -1)
         elif isinstance(self, Undead):
-            effect1 = pygame.mixer.Sound('Sound_Effects/undead_move.ogg')
+            effect1 = mixer.Sound('Sound_Effects/undead_move.ogg')
             effect1.set_volume(2)
             sound_effects.play(effect1, -1)
         elif isinstance(self, Undead_Knight):
-            effect1 = pygame.mixer.Sound('Sound_Effects/undead_knight_move.ogg')
+            effect1 = mixer.Sound('Sound_Effects/undead_knight_move.ogg')
             effect1.set_volume(.5)
             sound_effects.play(effect1, -1)
         elif isinstance(self, Troll):
-            effect1 = pygame.mixer.Sound('Sound_Effects/footsteps.ogg')
+            effect1 = mixer.Sound('Sound_Effects/footsteps.ogg')
             effect1.set_volume(.5)
             sound_effects.play(effect1, -1)
         elif isinstance(self, Orc_Axeman):
-            effect1 = pygame.mixer.Sound('Sound_Effects/footsteps.ogg')
+            effect1 = mixer.Sound('Sound_Effects/footsteps.ogg')
             effect1.set_volume(.5)
             sound_effects.play(effect1, -1)
         elif isinstance(self, Barbarian):
-            effect1 = pygame.mixer.Sound('Sound_Effects/footsteps.ogg')
+            effect1 = mixer.Sound('Sound_Effects/footsteps.ogg')
             effect1.set_volume(.5)
             sound_effects.play(effect1, -1)
         selected = [self.number]
@@ -780,7 +834,7 @@ class Trickster(Summon):
             return
         if sqr not in sqrs:
             return
-        effect1 = pygame.mixer.Sound('Sound_Effects/pyrotechnics.ogg')
+        effect1 = mixer.Sound('Sound_Effects/pyrotechnics.ogg')
         effect1.set_volume(1)
         sound_effects.play(effect1, 0)
         id = app.current_pos()
@@ -838,7 +892,7 @@ class Trickster(Summon):
         if 'Simulacrum' in app.ent_dict[id].effects_dict.keys():
             return
 #         self.set_attr('magick', -3)
-        effect1 = pygame.mixer.Sound('Sound_Effects/simulacrum.ogg')
+        effect1 = mixer.Sound('Sound_Effects/simulacrum.ogg')
         effect1.set_volume(1)
         sound_effects.play(effect1, 0)
         app.unbind_all()
@@ -981,7 +1035,7 @@ class Trickster(Summon):
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
-        effect1 = pygame.mixer.Sound('Sound_Effects/gate.ogg')
+        effect1 = mixer.Sound('Sound_Effects/gate.ogg')
         effect1.set_volume(.7)
         sound_effects.play(effect1, 0)
         oldloc = app.ent_dict[id].loc[:]
@@ -1088,7 +1142,7 @@ class Shadow(Summon):
         id = app.grid[sqr[0]][sqr[1]]
         if id == '' or id == 'block':
             return
-        effect1 = pygame.mixer.Sound('Sound_Effects/shadow_attack.ogg')
+        effect1 = mixer.Sound('Sound_Effects/shadow_attack.ogg')
         effect1.set_volume(1)
         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
@@ -1161,7 +1215,7 @@ class Plaguebearer(Summon):
 #     Override superclass set_attr(self, attr, amount) to check for own death, if no death call superclass set_attr
 #     def set_attr(self, attr, amount):
     def death_trigger(self):
-        effect1 = pygame.mixer.Sound('Sound_Effects/contagion.ogg')
+        effect1 = mixer.Sound('Sound_Effects/contagion.ogg')
         effect1.set_volume(1)
         sound_effects.play(effect1, 0)
         # app.kill is handled by killer effect/attack, just do contagion
@@ -1247,7 +1301,7 @@ class Plaguebearer(Summon):
         
     # make pox vis regardless of existing ents
     def do_pox(self, event = None, sqrs = None):
-        effect1 = pygame.mixer.Sound('Sound_Effects/pox.ogg')
+        effect1 = mixer.Sound('Sound_Effects/pox.ogg')
         effect1.set_volume(1)
         sound_effects.play(effect1, 0)
         self.attack_used = True
@@ -1367,8 +1421,8 @@ class Bard(Summon):
             return
         if not isinstance(app.ent_dict[id], Trickster) and not isinstance(app.ent_dict[id], Warrior) and not isinstance(app.ent_dict[id], Bard) and not isinstance(app.ent_dict[id], Shadow):
              return
-        effect1 = pygame.mixer.Sound('Sound_Effects/moonlight.ogg')
-        effect1.set_volume(.5)
+        effect1 = mixer.Sound('Sound_Effects/moonlight.ogg')
+        effect1.set_volume(.2)
         sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
@@ -1433,7 +1487,7 @@ class Bard(Summon):
     def do_unholy_chant(self, event = None, sqrs = None):
         self.attack_used = True
 #         self.init_attack_anims()
-        effect1 = pygame.mixer.Sound('Sound_Effects/unholy_chant.ogg')
+        effect1 = mixer.Sound('Sound_Effects/unholy_chant.ogg')
         effect1.set_volume(1)
         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
@@ -1518,8 +1572,8 @@ class Bard(Summon):
             return
         if app.ent_dict[target].loc not in sqrs:
             return
-        effect1 = pygame.mixer.Sound('Sound_Effects/discord.ogg')
-        effect1.set_volume(1)
+        effect1 = mixer.Sound('Sound_Effects/discord.ogg')
+        effect1.set_volume(.5)
         sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
@@ -2014,7 +2068,7 @@ class Tortured_Soul(Summon):
         else:
             app.get_focus(id)
             self.init_attack_anims()
-            effect1 = pygame.mixer.Sound('Sound_Effects/tortured_soul_agony.ogg')
+            effect1 = mixer.Sound('Sound_Effects/tortured_soul_agony.ogg')
             effect1.set_volume(1)
             sound_effects.play(effect1, 0)
             # make range atk vis
@@ -2142,7 +2196,7 @@ class Ghost(Summon):
             self.cleanup_attack(ents_list, id)
         else:
             app.get_focus(id)
-            effect1 = pygame.mixer.Sound('Sound_Effects/ghost_attack.ogg')
+            effect1 = mixer.Sound('Sound_Effects/ghost_attack.ogg')
             effect1.set_volume(1)
             sound_effects.play(effect1, 0)
     #         self.init_attack_anims()
@@ -2314,7 +2368,7 @@ class Revenant(Summon):
             
     def revenant_move(self, ents_list, endloc):
         global selected
-        effect1 = pygame.mixer.Sound('Sound_Effects/revenant_move.ogg')
+        effect1 = mixer.Sound('Sound_Effects/revenant_move.ogg')
         effect1.set_volume(1)
         sound_effects.play(effect1, 0)
         # FIND SQUARE FURTHEST ALONG PATH THAT IS WITHIN MOVE RANGE
@@ -2390,7 +2444,7 @@ class Revenant(Summon):
         else:
             app.get_focus(id)
     #         self.init_attack_anims()
-            effect1 = pygame.mixer.Sound('Sound_Effects/revenant_terror.ogg')
+            effect1 = mixer.Sound('Sound_Effects/revenant_terror.ogg')
             effect1.set_volume(1)
             sound_effects.play(effect1, 0)
             # make range atk vis
@@ -2592,7 +2646,7 @@ class Kensai(Summon):
         else:
             app.get_focus(id)
             self.init_attack_anims()
-    #         effect1 = pygame.mixer.Sound('Sound_Effects/kensai_cut.ogg')
+    #         effect1 = mixer.Sound('Sound_Effects/kensai_cut.ogg')
     #         effect1.set_volume(1)
     #         sound_effects.play(effect1, 0)
             visloc = app.ent_dict[id].loc[:]
@@ -2800,7 +2854,7 @@ class Undead(Summon):
         else:
             app.get_focus(id)
             self.init_attack_anims()
-            effect1 = pygame.mixer.Sound('Sound_Effects/Undead_attack.ogg')
+            effect1 = mixer.Sound('Sound_Effects/Undead_attack.ogg')
             sound_effects.play(effect1, 0)
             my_agl = self.get_attr('agl')
             target_agl = app.ent_dict[id].get_attr('agl')
@@ -2983,7 +3037,7 @@ class Undead_Knight(Summon):
         else:
             app.get_focus(id)
     #         self.init_attack_anims()
-            effect1 = pygame.mixer.Sound('Sound_Effects/undead_knight_attack.ogg')
+            effect1 = mixer.Sound('Sound_Effects/undead_knight_attack.ogg')
             effect1.set_volume(1)
             sound_effects.play(effect1, 0)
             my_agl = self.get_attr('agl')
@@ -3165,7 +3219,7 @@ class Troll(Summon):
         else:
             app.get_focus(id)
     #         self.init_attack_anims()
-            effect1 = pygame.mixer.Sound('Sound_Effects/troll_attack.ogg')
+            effect1 = mixer.Sound('Sound_Effects/troll_attack.ogg')
             effect1.set_volume(.8)
             sound_effects.play(effect1, 0)
             my_agl = self.get_attr('agl')
@@ -3280,7 +3334,7 @@ class Warlock(Summon):
             
     def warlock_summon(self, ents_list):
         # give visual cue, timing, alternate turns?
-        effect1 = pygame.mixer.Sound('Sound_Effects/warlock_summon.ogg')
+        effect1 = mixer.Sound('Sound_Effects/warlock_summon.ogg')
         effect1.set_volume(1)
         sound_effects.play(effect1, 0)
         app.effects_counter += 3 # skip existing ent ids
@@ -3411,7 +3465,7 @@ class Warlock(Summon):
             app.get_focus(id)
             self.attack_used = True
     #         self.init_attack_anims()
-            effect1 = pygame.mixer.Sound('Sound_Effects/warlock_duress.ogg')
+            effect1 = mixer.Sound('Sound_Effects/warlock_duress.ogg')
             effect1.set_volume(.7)
             sound_effects.play(effect1, 0)
             # make range atk vis
@@ -3458,7 +3512,7 @@ class Warlock(Summon):
             empty_sqrs = [s for s in app.coords if app.grid[s[0]][s[1]] == '' and dist(self.loc, s) > 9]
             if empty_sqrs != []:
                 s =  choice(empty_sqrs)
-                effect1 = pygame.mixer.Sound('Sound_Effects/warlock_teleport_away.ogg')
+                effect1 = mixer.Sound('Sound_Effects/warlock_teleport_away.ogg')
                 effect1.set_volume(1)
                 sound_effects.play(effect1, 0)
                 self.warlock_move(ents_list, s)
@@ -3526,19 +3580,20 @@ class Earth_Mage(Summon):
     def __init__(self, name, img, loc, owner, number, waiting = False):
         self.actions = {'attack':self.do_attack}
         self.attack_used = False
-        self.str = 5
-        self.agl = 6
+        self.str = 3
+        self.agl = 4
         self.end = 6
-        self.dodge = 5
-        self.psyche = 9
+        self.dodge = 4
+        self.psyche = 7
         self.spirit = 79
         self.waiting = waiting
         self.move_type = 'teleport'
+        self.summons_used = False
         super().__init__(name, img, loc, owner, number)
-        # add effects that alter attrs based on nearby elementals
+        # add effects that alter attrs based on alive elementals
         def elementals(stat):
-            near = [k for k,v in app.ent_dict.items() if dist(v.loc, self.loc) == 1 and v.name == 'Earth_Elemental']
-            bonus = len(near)
+            alive = [k for k,v in app.ent_dict.items() if v.name == 'Earth_Elemental']
+            bonus = len(alive)
             stat += bonus
             return stat
         self.str_effects.append(elementals)
@@ -3556,16 +3611,64 @@ class Earth_Mage(Summon):
     
     # make casting anims
     def do_ai(self, ents_list):
-#         p = partial(self.__class__.legal_moves, self) #   PUT BACK CLASS METHOD MOVEMENT
-#         self.legal_moves = p
-        if self.waiting == True: # GIVEN PRIORITY OVER OTHER ENTS, ONLY TRY TO ATTACK THIS ENT
+        if self.waiting == True:
             self.pass_priority(ents_list)
-        else: # NO TARGET PRIORITY, ATTEMPT ATTACK FROM STARTLOC
-            # Summon Undead
-            root.after(1333, lambda el = ents_list : self.continue_ai(el))
+        else:
+            # summon elementals once
+            if self.summons_used == False:
+                self.summons_used = True
+                app.effects_counter += 1 # skip existing ent ids, increment 'just in case'
+                num1 = app.effects_counter
+                app.effects_counter += 1
+                num2 = app.effects_counter
+                app.effects_counter += 1
+                num3 = app.effects_counter
+                app.effects_counter += 1
+                nums = [num1, num2, num3]
+                # get random empty locations
+                coords = [c for c in app.coords if dist(c, self.loc) <= 7]
+                empty = [c for c in coords if app.grid[c[0]][c[1]] == '']
+                if len(empty) >= 3:
+                    f_loc1 = choice(empty)
+                    empty.remove(f_loc1)
+                    f_loc2 = choice(empty)
+                    empty.remove(f_loc2)
+                    f_loc3 = choice(empty)
+                    empty.remove(f_loc3)
+                    f_locs = [f_loc1[:], f_loc2[:], f_loc3[:]]
+                    def summon_loop(loc, num):
+                        app.focus_square(loc)
+                        app.vis_dict['Summon_Undead'] = Vis(name = 'Summon_Undead', loc = loc[:])
+                        app.canvas.create_image(loc[0]*100+50-app.moved_right, loc[1]*100+50-app.moved_down, image = app.vis_dict['Summon_Undead'].img, tags = 'Summon_Undead')
+                        def cleanup_vis(name):
+                            del app.vis_dict[name]
+                            app.canvas.delete(name)
+                        root.after(2333, lambda name = 'Summon_Undead' : cleanup_vis(name))
+                        app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+90-app.moved_down, text = 'Summon Earth Elemental', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+                        img = ImageTk.PhotoImage(Image.open('summon_imgs/Earth_Elemental.png'))
+                        app.ent_dict['b'+str(num)] = Earth_Elemental(name = 'Earth_Elemental', img = img, loc = loc[:], owner = 'p2', number = 'b'+str(num))
+                        app.grid[loc[0]][loc[1]] = 'b'+str(num)
+                        app.canvas.create_image(loc[0]*100+50-app.moved_right, loc[1]*100+50-app.moved_down, image = img, tags = 'b'+str(num))
+                        root.after(2333, lambda t = 'text' : app.canvas.delete(t))
+                        if f_locs == []:
+                            app.get_focus(self.number)
+                            root.after(2333, lambda ents_list = ents_list : self.continue_ai(ents_list))
+                        else:
+                            loc = f_locs.pop()
+                            num = nums.pop()
+                            root.after(2333, lambda l = loc, n = num : summon_loop(l, n))
+                    loc = f_locs.pop()
+                    num = nums.pop()
+                    summon_loop(loc, num)
+                else:
+                    app.get_focus(self.number)
+                    root.after(1333, lambda el = ents_list : self.continue_ai(el))
+            else:
+                app.get_focus(self.number)
+                root.after(1333, lambda el = ents_list : self.continue_ai(el))
             
             
-    # teleport near enemy ents, cast earthquake, (elementals will try to move near, make ranged attacks)
+    # teleport near enemy ents, cast earthquake
     def continue_ai(self, ents_list):
         # get empty sqrs within 6 of any enemy
         ent_locs = [v.loc[:] for k,v in app.ent_dict.items() if v.owner == 'p1']
@@ -3628,25 +3731,33 @@ class Earth_Mage(Summon):
         else:
             self.attack_used = True
     #         self.init_attack_anims()
-            effect1 = pygame.mixer.Sound('Sound_Effects/earthquake.ogg')
-            effect1.set_volume(.7)
+            effect1 = mixer.Sound('Sound_Effects/earthquake.ogg')
+            effect1.set_volume(1)
             sound_effects.play(effect1, 0)
             sqrs = []
             for c in app.coords:
                 if dist(c, self.loc) <= 3:
                     sqrs.append(c)
             app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+85-app.moved_down, text = 'Earthquake', font = ('Andale Mono', 16), fill = 'goldenrod1', tags = 'text')
-            for s in sqrs:
-                u_name = 'Earthquake' + str(app.effects_counter)
-                app.effects_counter += 1
-                app.vis_dict[u_name] = Vis(name = 'Earthquake', loc = s[:])
-                app.canvas.create_image(s[0]*100+50-app.moved_right, s[1]*100+50-app.moved_down, image = app.vis_dict[u_name].img, tags = 'Earthquake')
+            app.vis_dict['Earthquake'] = Vis(name = 'Earthquake', loc = self.loc[:])
+            app.canvas.create_image(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+50-app.moved_down, image = app.vis_dict['Earthquake'].img, tags = 'Earthquake')
             # get all ents in vicinity
-            ents = [k for k,v in app.ent_dict.items() if v.owner != 'p1' and v.loc in sqrs and v.movement_type != 'flying']
+            ents = [k for k,v in app.ent_dict.items() if v.owner != self.owner and v.loc in sqrs and v.move_type != 'flying']
             if ents != []:
+                t1,t2,t3 = [],[],[]
+                for e in ents:
+                    if dist(app.ent_dict[e].loc, self.loc) == 3:
+                        t1.append(e)
+                    elif dist(app.ent_dict[e].loc, self.loc) == 2:
+                        t2.append(e)
+                    elif dist(app.ent_dict[e].loc, self.loc) == 1:
+                        t3.append(e)
+                ents = t1[:] + t2[:] + t3[:]
                 # check for dmg and create text object
                 # move ents away from mage
+                # must do earthquake_loop on each tier, timed
                 def earthquake_loop(ents):
+                    global selected
                     app.canvas.delete('text')
                     id = ents[0]
                     ents = ents[1:]
@@ -3659,20 +3770,101 @@ class Earth_Mage(Summon):
                     app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+75-app.moved_down, text = str(d)+' Spirit', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
                     if app.ent_dict[id].spirit <= 0:
                         app.canvas.create_text(loc[0]*100-app.moved_right+50, loc[1]*100-app.moved_down+100, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
-                        result = root.after(1333, lambda id = id : app.kill(id))
+                        result = root.after(1666, lambda id = id : app.kill(id))
                         if ents == []:
                             root.after(4666, lambda el = ents_list : self.cleanup_attack(el))
                         else:
                             root.after(4666, lambda e = ents : earthquake_loop(e))
-                    else:
-                        if ents == []:
-                            root.after(2666, lambda el = ents_list : self.cleanup_attack(el))
+                    else: # ENT NOT KILLED, INSERT PSI PUSH
+                        start_loc = app.ent_dict[id].loc[:]
+                        # LEFT
+                        if start_loc[0] < self.loc[0] and abs(start_loc[1] - self.loc[1]) <= 1:
+                            if [start_loc[0]-1,start_loc[1]] in app.coords and app.grid[start_loc[0]-1][start_loc[1]] == '':
+                                if [start_loc[0]-2,start_loc[1]] in app.coords and app.grid[start_loc[0]-2][start_loc[1]] == '':
+                                    dest = [start_loc[0]-2,start_loc[1]]
+                                else:
+                                    dest = [start_loc[0]-1,start_loc[1]]
+                            else:
+                                dest = start_loc[:]
+                        # RIGHT
+                        elif start_loc[0] > self.loc[0] and abs(start_loc[1] - self.loc[1]) <= 1:
+                            if [start_loc[0]+1,start_loc[1]] in app.coords and app.grid[start_loc[0]+1][start_loc[1]] == '':
+                                if [start_loc[0]+2,start_loc[1]] in app.coords and app.grid[start_loc[0]+2][start_loc[1]] == '':
+                                    dest = [start_loc[0]+2,start_loc[1]]
+                                else:
+                                    dest = [start_loc[0]+1,start_loc[1]]
+                            else:
+                                dest = start_loc[:]
+                        # UP
+                        elif abs(start_loc[0] - self.loc[0]) <= 1 and start_loc[1] < self.loc[1]:
+                            if [start_loc[0],start_loc[1]-1] in app.coords and app.grid[start_loc[0]][start_loc[1]-1] == '':
+                                if [start_loc[0],start_loc[1]-2] in app.coords and app.grid[start_loc[0]][start_loc[1]-2] == '':
+                                    dest = [start_loc[0],start_loc[1]-2]
+                                else:
+                                    dest = [start_loc[0],start_loc[1]-1]
+                            else:
+                                dest = start_loc[:]
+                        # DOWN
+                        elif abs(start_loc[0] - self.loc[0]) <= 1 and start_loc[1] > self.loc[1]:
+                            if [start_loc[0],start_loc[1]+1] in app.coords and app.grid[start_loc[0]][start_loc[1]+1] == '':
+                                if [start_loc[0],start_loc[1]+2] in app.coords and app.grid[start_loc[0]][start_loc[1]+2] == '':
+                                    dest = [start_loc[0],start_loc[1]+2]
+                                else:
+                                    dest = [start_loc[0],start_loc[1]+1]
+                            else:
+                                dest = start_loc[:]
+                        # end destination logic
+                        x = start_loc[0]*100+50-app.moved_right
+                        y = start_loc[1]*100+50-app.moved_down
+                        endx = dest[0]*100+50-app.moved_right
+                        endy = dest[1]*100+50-app.moved_down
+                        if start_loc != dest: # do move then go to next eq loop, else go to next eq loop
+                            selected = [id]
+                            def finish_psionic_push(tar, end_loc, start_loc):
+                                global selected
+                                selected = []
+                                app.ent_dict[tar].loc = end_loc[:]
+                                app.grid[start_loc[0]][start_loc[1]] = ''
+                                app.grid[end_loc[0]][end_loc[1]] = tar
+                                if ents == []:
+                                    root.after(3666, lambda el = ents_list : self.cleanup_attack(el))
+                                else:
+                                    root.after(3666, lambda e = ents : earthquake_loop(e))
+                                
+                            def psi_move_loop(ent, x, y, endx, endy, sqr, start_sqr):
+                                if x % 25 == 0 and y % 25 == 0:
+                                    app.ent_dict[ent].rotate_image()
+                                    app.canvas.delete(ent)
+                                    app.canvas.create_image(x, y, image = app.ent_dict[ent].img, tags = app.ent_dict[ent].tags)
+                                if x > endx:
+                                    x -= 10
+                                    app.canvas.move(ent, -10, 0)
+                                elif x < endx: 
+                                    x += 10
+                                    app.canvas.move(ent, 10, 0)
+                                if y > endy: 
+                                    y -= 10
+                                    app.canvas.move(ent, 0, -10)
+                                elif y < endy: 
+                                    y += 10
+                                    app.canvas.move(ent, 0, 10)
+                                try: app.canvas.tag_lower(app.ent_dict[ent].tags, 'large')
+                                except: pass
+                                app.canvas.tag_lower(app.ent_dict[ent].tags, 'maptop')
+                                if x == endx and y == endy:
+                                    root.after(666, lambda e = ent, s = sqr, ss = start_sqr : finish_psionic_push(e, s, ss))
+                                else:
+                                    root.after(50, lambda id = id, x = x, y = y, endx = endx, endy = endy, s = sqr, s2 = start_sqr : psi_move_loop(id, x, y, endx, endy, s, s2))
+                            psi_move_loop(id, x, y, endx, endy, dest, start_loc)
+                            
+                        elif ents == []:
+                            root.after(3666, lambda el = ents_list : self.cleanup_attack(el))
                         else:
-                            root.after(2666, lambda e = ents : earthquake_loop(e))
-                root.after(1666, lambda e = ents : earthquake_loop(e))
-            else: # cleanup vis / cont ai_loop
-                root.after(2999, lambda el = ents_list : self.cleanup_attack(el))
-            
+                            root.after(3666, lambda e = ents : earthquake_loop(e))
+                # first call of eq loop, called if affected ents exist
+                root.after(1999, lambda ents = ents : earthquake_loop(ents))
+            else: # no affected ents, exit
+                root.after(3333, lambda el = ents_list : self.cleanup_attack(el))
             
             
     def cleanup_attack(self, ents_list):
@@ -3711,6 +3903,190 @@ class Earth_Mage(Summon):
         return mvlist
         
         
+class Earth_Elemental(Summon):
+    def __init__(self, name, img, loc, owner, number, waiting = False):
+        self.actions = {'attack':self.do_attack}
+        self.attack_used = False
+        self.str = 6
+        self.agl = 5
+        self.end = 6
+        self.dodge = 6
+        self.psyche = 6
+        self.spirit = 29
+        self.waiting = waiting
+        self.move_type = 'normal'
+        super().__init__(name, img, loc, owner, number)
+        
+    def pass_priority(self, ents_list):
+        ents_list = ents_list[1:]
+        if ents_list == []:
+            app.end_turn()
+        else:
+            app.do_ai_loop(ents_list)
+        
+    # EARTH ELEMENTAL AI
+    def do_ai(self, ents_list):
+        if self.waiting == True: # PASSIVE / WAITING
+            self.pass_priority(ents_list)
+        else: # NO TARGET PRIORITY, ATTEMPT ATTACK FROM STARTLOC
+            atk_sqrs = self.legal_attacks()
+            atk_sqrs = [x for x in atk_sqrs if app.ent_dict[app.grid[x[0]][x[1]]].owner == 'p1']
+            if atk_sqrs != []:
+                any = atk_sqrs[0]
+                id = app.grid[any[0]][any[1]]
+                root.after(666, lambda id = id : app.get_focus(id))
+                root.after(1333, lambda el = ents_list, id = id : self.do_attack(el, id)) # ATTACK
+            else: # CANNOT ATTACK FROM START LOC, GET TARGET AND MOVE TOWARDS
+                enemy_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p1']
+                paths = []
+#                 coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+                for el in enemy_ent_locs:
+                # FIND PATH TO SQR WITHIN RANGE OF THIS ENT
+                    goals = [c for c in app.coords if dist(c, el) == 1 and app.grid[c[0]][c[1]] == '']
+                    path = bfs(self.loc[:], goals, app.grid[:])
+                    if path:
+                        paths.append(path)
+                smallpaths = [y for y in paths if len(y) == min(len(y) for y in paths)] # THE SHORTEST PATHS AMONG PATHS
+                if smallpaths != []: # IF ANY PATHS EXIST AT ALL
+                    apath = smallpaths[0]
+                    # FIND FURTHEST SQR ALONG PATH THAT CAN BE MOVED TO
+                    moves = self.legal_moves()
+                    endloc = None
+                    for sqr in apath[::-1]: # START WITH SQRS CLOSEST TO TARGET
+                        if sqr in moves:
+                            endloc = sqr[:] # AMONG SQRS POSSIBLE TO MOVE TO, THIS IS CLOSEST TO GOAL
+                            break
+                    if endloc != None:
+                        root.after(666, lambda sqr = endloc[:] : app.focus_square(sqr))
+                        root.after(1333, lambda el = ents_list, endloc = endloc : self.ai_move(el, endloc))
+                    else:
+                        ents_list = ents_list[1:]
+                        if ents_list == []:
+                            root.after(666, app.end_turn)
+                        else:
+                            root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
+                else: # NO PATHS TO TARGET, MAKE BEST EFFORT MINIMIZE DIST MOVE
+                    # change to 'remove friendly ents', find path, move along path as far as possible
+                    egrid = deepcopy(app.grid)
+                    friendly_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p2']
+                    for eloc in friendly_ent_locs:
+                        egrid[eloc[0]][eloc[1]] = '' # EGRID NOW EMPTIED OF FRIENDLY ENTS
+                    # NOW FIND PATH AND PASS TO MOVE
+#                     coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+                    for el in enemy_ent_locs:
+                        goals = [c for c in app.coords if dist(c, el) == 1 and app.grid[c[0]][c[1]] == '']
+                        path = bfs(self.loc[:], goals, egrid[:]) # BFS ON ALTERED GRID (FRIENDLY ENTS REMOVED)
+                        if path:
+                            paths.append(path)
+                    smallpaths = [y for y in paths if len(y) == min(len(y) for y in paths)]
+                    if smallpaths != []: # MOVE ALONG PATH AS FAR AS POSSIBLE, ATTEMPT ATTACK
+                        apath = smallpaths[0]
+                        # FIND FURTHEST SQR ALONG PATH THAT CAN BE MOVED TO
+                        moves = self.legal_moves()
+                        endloc = None
+                        for sqr in apath[::-1]: # START WITH SQRS CLOSEST TO TARGET
+                            if sqr in moves:
+                                endloc = sqr[:] # AMONG SQRS POSSIBLE TO MOVE TO, THIS IS CLOSEST TO GOAL
+                                break
+                        if endloc != None:
+                            # here need to 'trim path' to prevent moving to square 'through' friendly ents
+                            root.after(666, lambda sqr = endloc[:] : app.focus_square(sqr))
+                            root.after(1333, lambda el = ents_list, endloc = endloc : self.ai_move(el, endloc))
+                        else:
+                            ents_list = ents_list[1:]
+                            if ents_list == []:
+                                root.after(666, app.end_turn)
+                            else:
+                                root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
+                    else:
+                        ents_list = ents_list[1:]
+                        if ents_list == []:
+                            root.after(666, app.end_turn)
+                        else:
+                            root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
+            
+    
+    def do_attack(self, ents_list, id):
+        if self.attack_used == True:
+            self.cleanup_attack(ents_list, id)
+        else:
+            app.get_focus(id)
+    #         self.init_attack_anims()
+            effect1 = mixer.Sound('Sound_Effects/earth_elemental_attack.ogg')
+            effect1.set_volume(1)
+            sound_effects.play(effect1, 0)
+            my_agl = self.get_attr('agl')
+            target_agl = app.ent_dict[id].get_attr('agl')
+            if to_hit(my_agl, target_agl) == True:
+                # HIT, SHOW VIS, DO DAMAGE, EXIT
+                my_str = self.get_attr('str')
+                target_end = app.ent_dict[id].get_attr('end')
+                d = damage(my_str, target_end)
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+70, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Earth Elemental Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                app.ent_dict[id].set_attr('spirit', -d)
+                if app.ent_dict[id].spirit <= 0:
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+90, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id)) # EXIT THROUGH CLEANUP_ATTACK()
+            else:
+                # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Earth Elemental Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id))
+        
+        
+            
+    def cleanup_attack(self, ents_list, id):
+        self.init_normal_anims()
+        try: 
+            app.canvas.delete('text')
+#             del app.vis_dict['Fireblast']
+#             app.canvas.delete('Fireblast')
+        except: pass
+        if app.ent_dict[id].spirit <= 0:
+            if app.kill(id) == None:
+                ents_list = ents_list[1:]
+                if ents_list == []:
+                    app.end_turn()
+                else:
+                    app.do_ai_loop(ents_list)
+            else:
+                ents_list = ents_list[1:]
+                if ents_list == []:
+                    app.end_turn()
+                else:
+                    root.after(3333, lambda el = ents_list : app.do_ai_loop(el))
+        else:
+            ents_list = ents_list[1:]
+            if ents_list == []:
+                app.end_turn()
+            else:
+                app.do_ai_loop(ents_list)
+        
+        
+    def legal_attacks(self):
+        sqrs = []
+        for coord in app.coords:
+            if dist(coord, self.loc) == 1:
+                if app.grid[coord[0]][coord[1]] != '' and app.grid[coord[0]][coord[1]] != 'block':
+                    sqrs.append(coord)
+        return sqrs
+        
+    def legal_moves(self):
+        loc = self.loc[:]
+        mvlist = []
+        def findall(loc, start, distance):
+            if start > distance:
+                return
+            adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
+            for s in adj:
+                mvlist.append(s)
+                findall(s, start+1, distance)
+        findall(loc, 1, 4) 
+        setlist = []
+        for l in mvlist:
+            if l not in setlist:
+                setlist.append(l)
+        return setlist
+        
     # prob do firewall before moving also
 class Fire_Mage(Summon):
     def __init__(self, name, img, loc, owner, number, waiting = False):
@@ -3740,12 +4116,12 @@ class Fire_Mage(Summon):
         if self.waiting == True: # GIVEN PRIORITY OVER OTHER ENTS, ONLY TRY TO ATTACK THIS ENT
             self.pass_priority(ents_list)
         else: # NO TARGET PRIORITY, ATTEMPT ATTACK FROM STARTLOC
-            # Summon Undead
+            # Summon Elementals
             root.after(1333, lambda el = ents_list : self.elemental_summon(el))
             
     def elemental_summon(self, ents_list):
         # give visual cue, timing, alternate turns?
-#         effect1 = pygame.mixer.Sound('Sound_Effects/warlock_summon.ogg')
+#         effect1 = mixer.Sound('Sound_Effects/warlock_summon.ogg')
 #         effect1.set_volume(1)
 #         sound_effects.play(effect1, 0)
         f_elems = [v.name for k,v in app.ent_dict.items() if v.name == 'Fire_Elemental']
@@ -3864,7 +4240,7 @@ class Fire_Mage(Summon):
         else:
             self.attack_used = True
     #         self.init_attack_anims()
-            effect1 = pygame.mixer.Sound('Sound_Effects/firewall.ogg')
+            effect1 = mixer.Sound('Sound_Effects/firewall.ogg')
             effect1.set_volume(.7)
             sound_effects.play(effect1, 0)
             sqrs = []
@@ -4177,7 +4553,7 @@ class Sorceress(Summon):
             app.get_focus(id)
             self.attack_used = True
     #         self.init_attack_anims()
-            effect1 = pygame.mixer.Sound('Sound_Effects/immolate.ogg')
+            effect1 = mixer.Sound('Sound_Effects/immolate.ogg')
             effect1.set_volume(.7)
             sound_effects.play(effect1, 0)
             # make range atk vis
@@ -4358,8 +4734,8 @@ class Orc_Axeman(Summon):
         else:
             app.get_focus(id)
     #         self.init_attack_anims()
-            effect1 = pygame.mixer.Sound('Sound_Effects/orc_axeman_attack.ogg')
-            effect1.set_volume(1)
+            effect1 = mixer.Sound('Sound_Effects/orc_axeman_attack.ogg')
+            effect1.set_volume(.5)
             sound_effects.play(effect1, 0)
             my_agl = self.get_attr('agl')
             target_agl = app.ent_dict[id].get_attr('agl')
@@ -4546,7 +4922,7 @@ class Fire_Elemental(Summon):
         else:
             app.get_focus(id)
     #         self.init_attack_anims()
-            effect1 = pygame.mixer.Sound('Sound_Effects/fire_elemental_attack.ogg')
+            effect1 = mixer.Sound('Sound_Effects/fire_elemental_attack.ogg')
             effect1.set_volume(1)
             sound_effects.play(effect1, 0)
             my_agl = self.get_attr('agl')
@@ -4733,7 +5109,7 @@ class Barbarian(Summon):
         else:
             app.get_focus(id)
     #         self.init_attack_anims()
-    #         effect1 = pygame.mixer.Sound('Sound_Effects/orc_axeman_attack.ogg')
+    #         effect1 = mixer.Sound('Sound_Effects/orc_axeman_attack.ogg')
     #         effect1.set_volume(1)
     #         sound_effects.play(effect1, 0)
             my_agl = self.get_attr('agl')
@@ -4992,7 +5368,7 @@ class Minotaur(Summon):
             
     def minotaur_move(self, ents_list, endloc):
         global selected
-        effect1 = pygame.mixer.Sound('Sound_Effects/minotaur_move.ogg')
+        effect1 = mixer.Sound('Sound_Effects/minotaur_move.ogg')
         effect1.set_volume(1)
         sound_effects.play(effect1, -1)
         selected = [self.number, self.number+'top']
@@ -5078,7 +5454,7 @@ class Minotaur(Summon):
         if self.attack_used == True:
             self.cleanup_attack(ents_list, id)
         else:
-            effect1 = pygame.mixer.Sound('Sound_Effects/minotaur_attack.ogg')
+            effect1 = mixer.Sound('Sound_Effects/minotaur_attack.ogg')
             effect1.set_volume(1)
             sound_effects.play(effect1, -1)
             app.get_focus(id)
@@ -5197,7 +5573,7 @@ class Warrior(Summon):
             return
         self.attack_used = True
         self.init_attack_anims()
-        effect1 = pygame.mixer.Sound('Sound_Effects/warrior_attack.ogg')
+        effect1 = mixer.Sound('Sound_Effects/warrior_attack.ogg')
         effect1.set_volume(1)
         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
@@ -5334,7 +5710,7 @@ class Familiar_Homonculus(Summon):
         visuals = [v.name for k,v in app.vis_dict.items() if v.loc == sqr]
         if 'Fuse_Trap' in visuals:
             return
-        effect1 = pygame.mixer.Sound('Sound_Effects/fuse_trap.ogg')
+        effect1 = mixer.Sound('Sound_Effects/fuse_trap.ogg')
         effect1.set_volume(.07)
         sound_effects.play(effect1, 0)
         self.attack_used = True
@@ -5352,7 +5728,7 @@ class Familiar_Homonculus(Summon):
         # on undo, dmg within range 2
         def un(sqrs, name):
             app.focus_square(app.vis_dict[name].loc)
-            effect1 = pygame.mixer.Sound('Sound_Effects/fuse_explosion.ogg')
+            effect1 = mixer.Sound('Sound_Effects/fuse_explosion.ogg')
             effect1.set_volume(1)
             sound_effects.play(effect1, 0)
             ents = [k for k,v in app.ent_dict.items() if v.loc in sqrs]
@@ -5422,7 +5798,7 @@ class Familiar_Homonculus(Summon):
         effs = [k for k in app.ent_dict[id].effects_dict.keys()]
         if 'Mesmerize' in effs:
             return
-        effect1 = pygame.mixer.Sound('Sound_Effects/mesmerize.ogg')
+        effect1 = mixer.Sound('Sound_Effects/mesmerize.ogg')
         effect1.set_volume(1)
         sound_effects.play(effect1, 0)
         app.unbind_all()
@@ -5452,7 +5828,7 @@ class Familiar_Homonculus(Summon):
             return 'Not None'
             
         sot = partial(mesmerized, id)
-        app.ent_dict[id].effects_dict['Mesmerize'] = Effect(sot_func = sot, name = 'Mesmerize', info = 'Mesmerize\nMay attack self', eot_func = eot, undo = un, duration = 2)
+        app.ent_dict[id].effects_dict['Mesmerize'] = Effect(sot_func = sot, name = 'Mesmerize', info = 'Mesmerize\nMay attack self', eot_func = eot, undo = un, duration = 4)
         
         app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Mesmerize', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
         app.vis_dict['Mesmerize'] = Vis(name = 'Mesmerize', loc = sqr)
@@ -5539,7 +5915,7 @@ class Familiar_Imp(Summon):
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
-        effect1 = pygame.mixer.Sound('Sound_Effects/darkness.ogg')
+        effect1 = mixer.Sound('Sound_Effects/darkness.ogg')
         effect1.set_volume(1)
         sound_effects.play(effect1, 0)
         self.attack_used = True
@@ -5655,7 +6031,7 @@ class Familiar_Imp(Summon):
             return
         self.attack_used = True
 #         self.init_attack_anims()
-        effect1 = pygame.mixer.Sound('Sound_Effects/poison_sting.ogg')
+        effect1 = mixer.Sound('Sound_Effects/poison_sting.ogg')
         effect1.set_volume(1)
         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
@@ -5751,8 +6127,6 @@ class Witch(Entity):
             self.cantrip_dict['Boiling_Blood'] = (self.boiling_blood)
             self.cantrip_dict['Dark_Sun'] = (self.dark_sun)
             self.cantrip_dict['Meditate'] = (self.meditate)
-            self.cantrip_dict['Foul_Familiar'] = (self.foul_familiar)
-            self.arcane_dict['Entomb'] = (self.entomb,5)
             self.arcane_dict['Horrid_Wilting'] = (self.horrid_wilting,5)
             self.arcane_dict['Disintegrate'] = (self.disintegrate, 4)
             self.arcane_dict['Mummify'] = (self.mummify, 5)
@@ -6041,7 +6415,7 @@ class Witch(Entity):
 #             return
 #         self.spirit -= 1
 #         self.init_cast_anims()
-#         effect1 = pygame.mixer.Sound('Sound_Effects/forcefield.ogg')
+#         effect1 = mixer.Sound('Sound_Effects/forcefield.ogg')
 #         effect1.set_volume(.07)
 #         sound_effects.play(effect1, 0)
 #         app.canvas.create_text(self.loc[0]*100-app.moved_right+50, self.loc[1]*100-app.moved_down+90, text = '1 Spirit Lost', font = ('Andale Mono', 13), justify = 'center', fill = 'white', tags = 'text')
@@ -6142,7 +6516,7 @@ class Witch(Entity):
         if not isinstance(app.ent_dict[id], Summon):
             return
         self.init_cast_anims()
-        effect1 = pygame.mixer.Sound('Sound_Effects/energize.ogg')
+        effect1 = mixer.Sound('Sound_Effects/energize.ogg')
         effect1.set_volume(1)
         sound_effects.play(effect1, 0)
         app.unbind_all()
@@ -6175,7 +6549,7 @@ class Witch(Entity):
         if isinstance(app.ent_dict[id], Witch):
             return
         self.init_cast_anims()
-        effect1 = pygame.mixer.Sound('Sound_Effects/scrye.ogg')
+        effect1 = mixer.Sound('Sound_Effects/scrye.ogg')
         effect1.set_volume(.08)
         sound_effects.play(effect1, 0)
         app.unbind_all()
@@ -6232,7 +6606,7 @@ class Witch(Entity):
         if loc != '':
             return
 #         self.init_cast_anims()
-        effect1 = pygame.mixer.Sound('Sound_Effects/foul_familiar.ogg')
+        effect1 = mixer.Sound('Sound_Effects/foul_familiar.ogg')
         effect1.set_volume(1)
         sound_effects.play(effect1, 0)
         app.unbind_all()
@@ -6284,7 +6658,7 @@ class Witch(Entity):
         if loc != '':
             return
 #         self.init_cast_anims()
-#         effect1 = pygame.mixer.Sound('Sound_Effects/entomb.ogg')
+#         effect1 = mixer.Sound('Sound_Effects/entomb.ogg')
 #         effect1.set_volume(.08)
 #         sound_effects.play(effect1, 0)
         self.magick -= self.arcane_dict['Entomb'][1]
@@ -6347,7 +6721,7 @@ class Witch(Entity):
             return
 #         self.init_cast_anims()
 
-        effect1 = pygame.mixer.Sound('Sound_Effects/vengeance.ogg')
+        effect1 = mixer.Sound('Sound_Effects/vengeance.ogg')
         effect1.set_volume(.08)
         sound_effects.play(effect1, 0)
 
@@ -6378,7 +6752,7 @@ class Witch(Entity):
         
     def do_hatred(self, event = None):
 #         self.init_cast_anims()
-        effect1 = pygame.mixer.Sound('Sound_Effects/hatred.ogg')
+        effect1 = mixer.Sound('Sound_Effects/hatred.ogg')
         effect1.set_volume(.07)
         sound_effects.play(effect1, 0)
         self.magick -= self.arcane_dict['Hatred'][1]
@@ -6422,7 +6796,7 @@ class Witch(Entity):
             return
 #         self.init_cast_anims()
         
-        effect1 = pygame.mixer.Sound('Sound_Effects/torment.ogg')
+        effect1 = mixer.Sound('Sound_Effects/torment.ogg')
         effect1.set_volume(.07)
         sound_effects.play(effect1, 0)
         
@@ -6486,7 +6860,7 @@ class Witch(Entity):
         if app.ent_dict[id].owner != 'p1' or not isinstance(app.ent_dict[id], Summon):
             return
             
-        effect1 = pygame.mixer.Sound('Sound_Effects/pain.ogg')
+        effect1 = mixer.Sound('Sound_Effects/pain.ogg')
         effect1.set_volume(.07)
         sound_effects.play(effect1, 0)
             
@@ -6562,7 +6936,7 @@ class Witch(Entity):
             return
         self.init_cast_anims()
         
-        effect1 = pygame.mixer.Sound('Sound_Effects/plague.ogg')
+        effect1 = mixer.Sound('Sound_Effects/plague.ogg')
         effect1.set_volume(2)
         sound_effects.play(effect1, 0)
         
@@ -6669,7 +7043,7 @@ class Witch(Entity):
             return
         self.cantrip_used = True
         self.init_cast_anims()
-        effect1 = pygame.mixer.Sound('Sound_Effects/psionic_push.ogg')
+        effect1 = mixer.Sound('Sound_Effects/psionic_push.ogg')
         effect1.set_volume(.3)
         sound_effects.play(effect1, 0)
 #         self.magick -= self.cantrip_dict['Psionic_Push'][1]
@@ -6780,8 +7154,8 @@ class Witch(Entity):
         app.unbind_all()
         app.cleanup_squares()
         
-        effect1 = pygame.mixer.Sound('Sound_Effects/pestilence.ogg')
-        effect1.set_volume(1.3)
+        effect1 = mixer.Sound('Sound_Effects/pestilence.ogg')
+        effect1.set_volume(1)
         sound_effects.play(effect1, 0)
         
         self.arcane_used = True
@@ -6833,7 +7207,10 @@ class Witch(Entity):
             # DAMAGE
             my_psyche = self.get_attr('psyche')
             tar_psyche = app.ent_dict[id].get_attr('psyche')
-            d = damage(my_psyche, tar_psyche)
+            # HACK
+            #d = damage(my_psyche, tar_psyche)
+            d = 666
+            #
             app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+65-app.moved_down, text = str(d)+'\nSpirit', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
             app.ent_dict[id].set_attr('spirit', -d)
             if app.ent_dict[id].spirit <= 0:
@@ -6870,7 +7247,7 @@ class Witch(Entity):
              return
         self.magick -= self.arcane_dict['Curse_of_Oriax'][1]
         
-        effect1 = pygame.mixer.Sound('Sound_Effects/curse_of_oriax.ogg')
+        effect1 = mixer.Sound('Sound_Effects/curse_of_oriax.ogg')
         effect1.set_volume(.9)
         sound_effects.play(effect1, 0)
         
@@ -6942,7 +7319,7 @@ class Witch(Entity):
             return
         self.magick -= self.arcane_dict['Gravity'][1]
         
-        effect1 = pygame.mixer.Sound('Sound_Effects/gravity.ogg')
+        effect1 = mixer.Sound('Sound_Effects/gravity.ogg')
         effect1.set_volume(.9)
         sound_effects.play(effect1, 0)
         
@@ -6998,7 +7375,7 @@ class Witch(Entity):
         sqr = self.loc[:]
         self.magick -= self.arcane_dict["Beleth's_Command"][1]
         # SOUND
-        effect1 = pygame.mixer.Sound('Sound_Effects/beleths_command.ogg')
+        effect1 = mixer.Sound('Sound_Effects/beleths_command.ogg')
         effect1.set_volume(.7)
         sound_effects.play(effect1, 0)
         self.init_cast_anims()
@@ -7084,7 +7461,7 @@ class Witch(Entity):
         
     def do_meditate(self, event):
 #         self.init_cast_anims()
-        effect1 = pygame.mixer.Sound('Sound_Effects/meditate.ogg')
+        effect1 = mixer.Sound('Sound_Effects/meditate.ogg')
         effect1.set_volume(1)
         sound_effects.play(effect1, 0)
         app.unbind_all()
@@ -7154,7 +7531,7 @@ class Witch(Entity):
             return
         if app.grid[sqr[0]][sqr[1]] == '' or app.grid[sqr[0]][sqr[1]] == 'block':
             return
-        effect1 = pygame.mixer.Sound('Sound_Effects/horrid_wilting.ogg')
+        effect1 = mixer.Sound('Sound_Effects/horrid_wilting.ogg')
         effect1.set_volume(1)
         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
@@ -7218,7 +7595,7 @@ class Witch(Entity):
         effs = [v.name for k,v in app.ent_dict[id].effects_dict.items()]
         if 'Boiling_Blood' in effs:
             return
-        effect1 = pygame.mixer.Sound('Sound_Effects/boiling_blood.ogg')
+        effect1 = mixer.Sound('Sound_Effects/boiling_blood.ogg')
         effect1.set_volume(1)
         sound_effects.play(effect1, 0)
         self.cantrip_used = True
@@ -7278,7 +7655,7 @@ class Witch(Entity):
         id = app.grid[sqr[0]][sqr[1]]
         if not isinstance(app.ent_dict[id], Shadow):
             return
-        effect1 = pygame.mixer.Sound('Sound_Effects/dark_sun.ogg')
+        effect1 = mixer.Sound('Sound_Effects/dark_sun.ogg')
         effect1.set_volume(1)
         sound_effects.play(effect1, 0)
         self.cantrip_used = True
@@ -7329,7 +7706,7 @@ class Witch(Entity):
         effs = [v.name for k,v in app.ent_dict[id].effects_dict.items()]
         if 'Mummify' in effs:
             return
-        effect1 = pygame.mixer.Sound('Sound_Effects/mummify.ogg')
+        effect1 = mixer.Sound('Sound_Effects/mummify.ogg')
         effect1.set_volume(1)
         sound_effects.play(effect1, 0)
         self.magick -= self.arcane_dict['Mummify'][1]
@@ -7385,7 +7762,7 @@ class Witch(Entity):
             return
         if sqr not in sqrs:
             return
-        effect1 = pygame.mixer.Sound('Sound_Effects/immolate.ogg')
+        effect1 = mixer.Sound('Sound_Effects/immolate.ogg')
         effect1.set_volume(1)
         sound_effects.play(effect1, 0)
         id = app.grid[sqr[0]][sqr[1]]
@@ -7433,7 +7810,7 @@ class Witch(Entity):
         if 'Disintegrate' in effs:
             return
         self.magick -= self.arcane_dict['Disintegrate'][1]
-        effect1 = pygame.mixer.Sound('Sound_Effects/disintegrate.ogg')
+        effect1 = mixer.Sound('Sound_Effects/disintegrate.ogg')
         effect1.set_volume(1)
         sound_effects.play(effect1, 0)
 #         self.init_cast_anims()
@@ -7744,7 +8121,7 @@ class App(tk.Frame):
         # Papyrus 240
     def choose_num_players(self):
 #         background_music.music.load('Ove Melaa - Dead, Buried and Cold.ogg')
-        sound1 = pygame.mixer.Sound('Music/Ove Melaa - Dead, Buried and Cold.ogg')
+        sound1 = mixer.Sound('Music/Ove Melaa - Dead, Buried and Cold.ogg')
         background_music.play(sound1, -1)
         sound1.set_volume(0.6)
         self.title_screen = ImageTk.PhotoImage(Image.open('titleScreen8.png').resize((root.winfo_screenwidth(),root.winfo_screenheight())))
@@ -7782,6 +8159,7 @@ class App(tk.Frame):
                 
     def load_game(self, obj):
         self.game_title.destroy()
+        obj.move_type = 'normal'
         self.load_map_triggers(map_number = obj.current_area, protaganist_object = obj)
         
     def num_chose(self, num):
@@ -7803,8 +8181,8 @@ class App(tk.Frame):
     # make each branch load the intro scene for level, with 'continue' button when done reading/displaying to call create_map_curs_context
     def load_map_triggers(self, map_number, witch = None, protaganist_object = None):
         background_music.stop()
-        if map_number == 0: # FIRST AREA, NO 'CONTINUATION' OF BY PASSING PROTAG OBJECT
-            sound1 = pygame.mixer.Sound('Music/heroic_demise.ogg')
+        if map_number == 0: # FIRST AREA, NO 'CONTINUATION from previous level' BY PASSING PROTAG OBJECT
+            sound1 = mixer.Sound('Music/heroic_demise.ogg')
             background_music.play(sound1, -1)
             sound1.set_volume(0.2)
             # CLEANUP FROM CHOOSE_WITCH
@@ -7838,7 +8216,7 @@ class App(tk.Frame):
     # SECOND LEVEL
         elif map_number == 1:
             self.map_triggers = []
-            sound1 = pygame.mixer.Sound('Music/Caves of sorrow.ogg')
+            sound1 = mixer.Sound('Music/Caves of sorrow.ogg')
             background_music.play(sound1, -1)
 #             def summon_trick():
 #                 all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
@@ -7863,7 +8241,7 @@ class App(tk.Frame):
 #             self.create_map_curs_context(map_number, protaganist_object = protaganist_object)
     # THRID LEVEL 
         elif map_number == 2:
-            sound1 = pygame.mixer.Sound('Music/arabesque.ogg')
+            sound1 = mixer.Sound('Music/arabesque.ogg')
             background_music.play(sound1, -1)
             sound1.set_volume(0.3)
             self.map_triggers = []
@@ -7894,7 +8272,7 @@ class App(tk.Frame):
                 else:
                     return None
             self.map_triggers.append(kill_door_knight)
-#             def kill_one_undead_knight():
+#             def kill_one_undead_knight(): # change to kill both handling
 #                 all_knights = [v.name for k,v in self.ent_dict.items() if v.name == 'Undead_Knight']
 #                 if len(all_knights) <= 1:
 #                     return 'victory'
@@ -7905,7 +8283,7 @@ class App(tk.Frame):
             self.load_intro_scene(map_number, protaganist_object = protaganist_object)
 #             self.create_map_curs_context(map_number, protaganist_object = protaganist_object)
         elif map_number == 121:
-            sound1 = pygame.mixer.Sound('Music/field_of_dreams.ogg')
+            sound1 = mixer.Sound('Music/field_of_dreams.ogg')
             background_music.play(sound1, -1)
             sound1.set_volume(.08)
             self.map_triggers = []
@@ -8015,7 +8393,7 @@ class App(tk.Frame):
             self.load_intro_scene(map_number, protaganist_object = protaganist_object)
         # LABRYNTH 
         elif map_number == 21:
-            sound1 = pygame.mixer.Sound('Music/Blackmoor_Colossus.ogg')
+            sound1 = mixer.Sound('Music/Blackmoor_Colossus.ogg')
             background_music.play(sound1, -1)
             sound1.set_volume(0.3)
             self.map_triggers = []
@@ -8347,7 +8725,7 @@ class App(tk.Frame):
             
             self.load_intro_scene(map_number, protaganist_object = protaganist_object)
         elif map_number == 22:
-            sound1 = pygame.mixer.Sound('Music/Dark_Amulet.ogg')
+            sound1 = mixer.Sound('Music/Dark_Amulet.ogg')
             background_music.play(sound1, -1)
             sound1.set_volume(0.4)
             self.map_triggers = []
@@ -8411,7 +8789,7 @@ class App(tk.Frame):
             self.map_triggers.append(kill_dragon)
             self.load_intro_scene(map_number, protaganist_object = protaganist_object)
         elif map_number == 122:
-            sound1 = pygame.mixer.Sound('Music/Dark_Descent.ogg')
+            sound1 = mixer.Sound('Music/Dark_Descent.ogg')
             background_music.play(sound1, -1)
             sound1.set_volume(0.3)
             self.map_triggers = []
@@ -8452,7 +8830,7 @@ class App(tk.Frame):
             self.load_intro_scene(map_number, protaganist_object = protaganist_object)
         # LEVEL 3 SANCTUM ENTRYWAY
         elif map_number == 3:
-            sound1 = pygame.mixer.Sound('Music/radakan - old crypt.ogg')
+            sound1 = mixer.Sound('Music/radakan - old crypt.ogg')
             background_music.play(sound1, -1)
             sound1.set_volume(0.8)
             self.map_triggers = []
@@ -8589,7 +8967,7 @@ class App(tk.Frame):
             self.map_triggers.append(awaken_group_2)
             self.load_intro_scene(map_number, protaganist_object = protaganist_object)
         elif map_number == 4:
-            sound1 = pygame.mixer.Sound('Music/The Peculiar Habits of the Cave Hermits.ogg')
+            sound1 = mixer.Sound('Music/The Peculiar Habits of the Cave Hermits.ogg')
             background_music.play(sound1, -1)
             sound1.set_volume(0.8)
             self.map_triggers = []
@@ -8602,6 +8980,24 @@ class App(tk.Frame):
                 if app.p1_witch not in app.ent_dict.keys():
                     return 'game over'
             self.map_triggers.append(self_death)
+            # add firemage death trigger
+            def firemage_death():
+                if 'b0' not in app.ent_dict.keys():
+                    # kill fire elementals (find by name not id)
+                    for e in list(app.ent_dict.keys()):
+                        if app.ent_dict[e].name == 'Fire_Elemental':
+                            app.kill(app.ent_dict[e].number)
+                    # spawn earth mage
+                    img = ImageTk.PhotoImage(Image.open('summon_imgs/Earth_Mage.png'))
+                    num = app.effects_counter
+                    app.effects_counter += 1
+                    # find open spawn square
+                    sqrs = [[x,y] for x in range(17,24) for y in range(14,20) if app.grid[x][y] == '']
+                    loc = choice(sqrs)
+                    app.ent_dict['b'+str(num)] = Earth_Mage(name = 'Earth_Mage', img = img, loc = loc[:], owner = 'p2', number = 'b'+str(num))
+                    app.grid[loc[0]][loc[1]] = 'b'+str(num)
+                    self.map_triggers.remove(firemage_death)
+            self.map_triggers.append(firemage_death)
             self.load_intro_scene(map_number, protaganist_object = protaganist_object)
     # END OF GAME
         else:
@@ -8645,9 +9041,9 @@ class App(tk.Frame):
         
     def read_3_4_book(self):
         loc = app.ent_dict[app.p1_witch].loc[:]
-        app.canvas.create_text(loc[0]*100-app.moved_right, loc[1]*100-app.moved_down+85, text = 'Permanent Endurance +2', justify = 'center', font = ('Andale Mono', 16), fill = 'white', tags = 'text')
-        app.ent_dict[app.p1_witch].base_end += 2
-        app.ent_dict[app.p1_witch].end += 2
+        app.canvas.create_text(loc[0]*100-app.moved_right, loc[1]*100-app.moved_down+85, text = 'Permanent Endurance +1', justify = 'center', font = ('Andale Mono', 16), fill = 'white', tags = 'text')
+        app.ent_dict[app.p1_witch].base_end += 1
+        app.ent_dict[app.p1_witch].end += 1
         root.after(2999, lambda t = 'text' : app.canvas.delete(t))
         root.after(2999, self.cancel_3_4_book)
     def cancel_3_4_book(self):
@@ -8949,6 +9345,7 @@ class App(tk.Frame):
             self.p2_witch = witch
             loc = self.p2_start_loc
         # if protaganist_object, instead load its data, RE-INIT IMAGES THAT CANNOT BE SERIALIZED BY PICKLE DUMP
+        # changing from pickle to 'write attrs to encoded text file'... DEBUG
         if protaganist_object:
             protaganist_object.loc = loc[:]
             witch_img = ImageTk.PhotoImage(Image.open('avatars/' + witch +'.png'))
@@ -9015,11 +9412,11 @@ class App(tk.Frame):
         if ef.sot_func() != None:
             self.get_focus(k[0])
             if ent.spirit <= 0: # ENT KILLED, DO NOT EXEC ANY MORE OF ITS EFFECTS, POP ENTS LIST OR EXIT
-                root.after(1333, lambda e = k[0] : self.kill(e))
+                root.after(1999, lambda e = k[0] : self.kill(e))
                 ents_list = ents_list[1:]
                 if ents_list != []:
-                    root.after(1111, lambda t = 'text' : app.canvas.delete(t))
-                    root.after(1333, lambda e = ents_list[0], el = ents_list : self.sot_eot_loop(e, el))
+                    root.after(1666, lambda t = 'text' : app.canvas.delete(t))
+                    root.after(1999, lambda e = ents_list[0], el = ents_list : self.sot_eot_loop(e, el))
                 else: # NO MORE ENTS, FINISH_START_TURN
                     root.after(1333, self.finish_start_turn)
             else:# CONTINUE PROCESSING THIS EFFECT 
@@ -9032,13 +9429,13 @@ class App(tk.Frame):
                 # MORE EFFECTS?
                 ef_list = ef_list[1:]
                 if ef_list != []: # MORE EFFECTS FOR THIS ENT
-                    root.after(1111, lambda t = 'text' : self.canvas.delete(t))
-                    root.after(1333, lambda ef = ef_list[0], efl = ef_list, en = ent, enl = ents_list : self.sot_effects_loop(ef, efl, en, enl))
+                    root.after(1666, lambda t = 'text' : self.canvas.delete(t))
+                    root.after(1999, lambda ef = ef_list[0], efl = ef_list, en = ent, enl = ents_list : self.sot_effects_loop(ef, efl, en, enl))
                 else: # NO MORE FOR THIS ENT, CHECK IF MORE ENTS
                     ents_list = ents_list[1:]
                     if ents_list != []: # MORE ENTS TO PROCESS EFFECTS FOR
-                        root.after(1111, lambda t = 'text' : app.canvas.delete(t))
-                        root.after(1333, lambda e = ents_list[0], el = ents_list : self.sot_loop(e, el))
+                        root.after(1666, lambda t = 'text' : app.canvas.delete(t))
+                        root.after(1999, lambda e = ents_list[0], el = ents_list : self.sot_loop(e, el))
                     else: # NO MORE ENTS, FINISH_END_TURN
                         root.after(1333, self.finish_start_turn)
         else:
@@ -9141,6 +9538,10 @@ class App(tk.Frame):
                     elif self.ent_dict[ent].name == 'Fire_Mage':
                         self.ent_dict[ent].do_ai(ents)
                     elif self.ent_dict[ent].name == 'Fire_Elemental':
+                        self.ent_dict[ent].do_ai(ents)
+                    elif self.ent_dict[ent].name == 'Earth_Mage':
+                        self.ent_dict[ent].do_ai(ents)
+                    elif self.ent_dict[ent].name == 'Earth_Elemental':
                         self.ent_dict[ent].do_ai(ents)
         
         
@@ -9457,6 +9858,8 @@ class App(tk.Frame):
         global curs_pos, is_object_selected, selected, selected_vis, map_pos, grid_pos
         root.after_cancel(self.animate_id)
         root.after_cancel(self.map_trigger_id)
+        # for each effect in witch and global, call its undo
+        
         protaganist_object  = app.ent_dict[self.p1_witch]
         protaganist_object.reset_transient_vars()
         if alt_route:
@@ -9531,6 +9934,7 @@ class App(tk.Frame):
         self.cut_canvas.create_window(root.winfo_screenwidth()/2+100, root.winfo_screenheight()-80, anchor='s', window = entry)
         
         
+        # change from using pickle dump to write to text file, on load decode the written gibberish (make it gibberish in stored form)
     def do_save(self, text_var, protag_obj):
         fname = text_var.get()
         saves = [s for r,d,s in walk('./save_games')][0]
@@ -9543,6 +9947,9 @@ class App(tk.Frame):
 #             have to strip tkinter objects from protag obj
             protag_obj.img = None
             protag_obj.anim_dict = {}
+            # below, get all needed attributes of protag_obj, do a rudimentary 'encoding' to disguise
+            # on load, ensure values are 'legal'
+            # 
             dump(protag_obj, f)
     
     
@@ -9784,21 +10191,20 @@ class App(tk.Frame):
         partial()
         
     def kill(self, id):
+        if app.ent_dict[id].death_trigger() == None:
+            return_val = None
+        else:
+            return_val = 'Not None'
         # DEBUG handle if killing witch
         # If witch is dead, show popup with victory/defeat
-        app.ent_dict[id].death_trigger()
         self.canvas.delete(id)
         # destroy surrounding squares of large Ents
         if app.ent_dict[id].type == 'large_bottom':
             app.ent_dict[id].large_undo()
         self.grid[self.ent_dict[id].loc[0]][self.ent_dict[id].loc[1]] = ''
         del self.ent_dict[id]
-        # if id begins with 'a' belongs to protag_witch, else belongs to antag_witch
-#         if id[0] == 'a':
-#             del self.ent_dict[self.p1_witch].summon_dict[id]
-#         elif id[0] == 'b':
-#             if self.num_players == 2:
-#                 del self.ent_dict[self.p2_witch].summon_dict[id]
+        return return_val
+
             
     def unbind_all(self):
         for x in range(10):
