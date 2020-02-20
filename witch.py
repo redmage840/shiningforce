@@ -1,3 +1,5 @@
+# button to cycle through units
+
 # make 'click on sqr to move cursor to, maybe 'select unit' (bring up context menu)
 
 # consider limit 1 bard, how does that change certain levels that rely on healing? kensai, dragon
@@ -8,7 +10,6 @@
 # PROBLEM is in saving the spell dicts since they are dicts of strings to methods
 
 
-
 # confusing - app.effects_counter is used to get unique numbers. Whenever one is needed for an arbitrary purpose, the current value is taken and then app.effects_counter is incremented. The name comes from the fact that Effect instances grab the current value to refer to uniquely refer to the instance AND THEN the instantiation method of the Effect increments app.effects_counter. Elsewhere it is incremented manually.
 
 # remake levels with proper shadows
@@ -16,7 +17,6 @@
 # make each elemental unique
 
 # only warrior attack has delayed text before kill
-
 
 # allow click on unit along with press 'a'
 #   - click on 100X100 pixel sqr?
@@ -34,8 +34,6 @@
 # BALANCED MEANS YOU SHOULD BE ABLE TO SPEND A LIFETIME EXPLORING ALL THE POSSIBLE STRATEGIES (think chess)
 
 # blood milk sky
-
-# new spell type gained at ritual circle, tarot, random element? card based?
 
 # new summon type gained at ritual circle, limit one, does not count towards other summon limit, choose one of few types, demon
 
@@ -63,8 +61,6 @@
 
 # corner in center of great hall level, black line
 
-# monkey-patched methods cannot be pickled, like meditate_move, on level end resolve all effects
-
 # gate, name of 'gate' in choose location
 
 # library level, cant move 'all the way down'
@@ -78,8 +74,6 @@
 
 # scrye, hatred, plague sound effect inaudible
 
-# sorceress 'teleport TOWARDS barbarian' not working always
-
 # make all summons use 'regular' movement types that get range based on some attribute so they can be easily altered (+/-N)
 
 # abilities for shadow/warrior buffs
@@ -91,8 +85,6 @@
 # more buff/defensive spells
 
 # psi push impact sound
-
-# turn most volumes down around 1/3
 
 # summon vis, sound
 
@@ -128,10 +120,6 @@
 
 # save game during level 
 
-# line of sight for shadow attacks, pyrotechnics, spells, gate?
-
-# trickster teleport faster, all teleport/shadow move
-
 # in 'do_save' if a player saves and then hits cmd/ctrl+q or otherwise exits manually, the object/save may not be pickled properly resulting in zero byte file. This is because programmatic logic 'stays' in 'do_save' until 'next_area' button hit, resulting in not closing the file opened/created during pickling. Using 'with' already to auto-close file, but probably existing vars block out automatic close. To solve this, call some other function from 'do_save' (probably a dummy/empty/close-dialog), probably do not call next_area so as to skip on-screen text
 
 # revenant pathfinding, move along regular grid when egrid path results in all paths end in block
@@ -147,23 +135,12 @@
 
 # widen teleport vis
 
-# attempt to recreate bug- this happens on labyrinth also (probably any level)
-# map does not 'move' down all the way after some progress in level (works at begin)
-# extra padding on move_cursor on 'bottom' of screen not working properly
-# check that library level only shows small strip of walltop on bottom of screen
-
-# check pathfinding when route blocked or partially blocked, esp for undead
-
 # make sure to_hit range has a min/max of 10 or 5 percent
 
 # both need some damaging cantrip when runs out of magick and summons
 
 # stagger text objects when created simultaneously, esp horrid wilting
 # dark sun, bottom of anim 'blinks' text object
-
-# mouseclick for summons, still using 'cost'
-
-# track num of summons next to summon cap
 
 # level 41, should be able to occupy spawn square to prevent spawns?
 
@@ -178,10 +155,6 @@
 # victory condition happens too fast, need to freeze screen and show 'confirm' or 'notice'
 
 # death anims, at least delay before something like contagion
-
-# is origin still used without old movement setup?
-
-# place summon could have animations (gradual appearance)
 
 # would it be possible to 'pause' in the middle of a move_loop or to keep text object on screen
 
@@ -201,7 +174,7 @@ from os import walk
 from PIL import ImageTk,Image
 from random import choice, randrange
 from functools import partial
-from pickle import dump, load
+# from pickle import dump, load
 from copy import deepcopy
 # filehandler = open(filename, 'r') 
 # object = pickle.load(filehandler)
@@ -362,7 +335,7 @@ class Entity():
             self.base_dodge = self.dodge
             self.base_psyche = self.psyche
             self.base_spirit = self.spirit
-            if isinstance(self, Witch):# or isinstance(self, Trickster):
+            if isinstance(self, Witch):
                 self.base_magick = self.magick
             
             self.str_effects = []
@@ -371,7 +344,7 @@ class Entity():
             self.dodge_effects = []
             self.psyche_effects = []
         # when ent moved by effect other than regular movement, must update origin also (square of origin at begin of turn)
-        self.origin = []
+#         self.origin = []
         self.effects_dict = {}
         self.anim_dict = {}
         anims = [a for r,d,a in walk('./animations/' + self.name + '/')][0]
@@ -6389,111 +6362,7 @@ class Witch(Entity):
         selected_vis = ''
         
         
-# AGNES SPELLS
 # Agnes' spells center around Death/Decay/Disease/Telekinetics/Cosmology
-    
-    # make a sqr impassable for 2 turns (who gets the effect, global effects?) when to downtick?
-#     def forcefield(self, event = None):
-#         app.depop_context(event = None)
-#         root.unbind('<q>')
-#         root.unbind('<a>')
-#         root.bind('<q>', lambda name = 'Forcefield' : self.cleanup_spell(name = name))
-#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-#         sqrs = [s for s in coords if dist(self.loc, s) <= 6]
-#         app.animate_squares(sqrs)
-#         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_forcefield(event = e, sqr = s, sqrs = sqrs))
-#         b = tk.Button(app.context_menu, text = 'Choose Empty Square For Forcefield', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_forcefield(e, s, sqrs))
-#         b.pack(side = 'top', pady = 2)
-#         app.context_buttons.append(b)
-#         
-#     def do_forcefield(self, event, sqr, sqrs):
-#         if sqr not in sqrs:
-#             return
-#         if app.grid[sqr[0]][sqr[1]] != '':
-#             return
-#         if self.spirit == 1:
-#             return
-#         self.spirit -= 1
-#         self.init_cast_anims()
-#         effect1 = mixer.Sound('Sound_Effects/forcefield.ogg')
-#         effect1.set_volume(.07)
-#         sound_effects.play(effect1, 0)
-#         app.canvas.create_text(self.loc[0]*100-app.moved_right+50, self.loc[1]*100-app.moved_down+90, text = '1 Spirit Lost', font = ('Andale Mono', 13), justify = 'center', fill = 'white', tags = 'text')
-#         root.after(2666, lambda t = 'text' : app.canvas.delete(t))
-#         self.cantrip_used = True
-#         app.unbind_all()
-#         app.cleanup_squares()
-#         app.depop_context(event = None)
-# #         app.vis_dict['Forcefield'] = Vis(name = 'Forcefield', loc = sqr[:])
-# #         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Forcefield'].img, tags = 'Forcefield')
-#         app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Forcefield', font = ('Andale Mono', 16), fill = 'cyan2', tags = 'text')
-#         # DO Forcefield EFFECTS
-#         app.grid[sqr[0]][sqr[1]] = 'block'
-# #         def forcefield_effect():
-# #             return None
-#         def un(s,v):
-#             app.grid[s[0]][s[1]] = ''
-#             del app.vis_dict[v]
-#         def nothing():
-#             return None
-#         eot = nothing
-#         n = 'Forcefield' + str(app.effects_counter)
-#         p = partial(un, sqr[:], n)
-#         # persistent Vis
-#         app.vis_dict[n] = Vis(name = 'Forcefield', loc = sqr[:])
-#         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict[n].img, tags = n)
-#         app.global_effects_dict[n] = Effect(name = 'Forcefield', info = 'Block Square with a Forcefield', eot_func = eot, undo = p, duration = 2)
-#         root.after(1666, lambda  name = 'Forcefield' : self.cleanup_spell(name = name))
-    
-    
-#     def moonlight(self, event = None):
-#         app.depop_context(event = None)
-#         root.bind('<q>', lambda name = 'Moonlight' : self.cleanup_spell(name = name))
-#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-#         sqrs = [s for s in coords if dist(self.loc, s) <= 2]
-#         app.animate_squares(sqrs)
-#         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_moonlight(event = e, s = s, sqrs = sqrs))
-#         b = tk.Button(app.context_menu, text = 'Choose Target For Moonlight', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_moonlight(e, s, sqrs))
-#         b.pack(side = 'top', pady = 2)
-#         app.context_buttons.append(b)
-#         
-#     def do_moonlight(self, event, s, sqrs):
-#         global selected_vis
-#         id = app.grid[s[0]][s[1]]
-#         if id == '' or id == 'block':
-#             return
-#         if s not in sqrs:
-#             return
-#         if not isinstance(app.ent_dict[id], Trickster) and not isinstance(app.ent_dict[id], Warrior) and not isinstance(app.ent_dict[id], Bard) and not isinstance(app.ent_dict[id], Shadow):
-#              return
-#         app.unbind_all()
-#         app.depop_context(event = None)
-#         app.cleanup_squares()
-#         self.init_cast_anims()
-#         app.ent_dict[id].set_attr('spirit', 3)
-#         self.cantrip_used = True
-#         app.vis_dict['Moonlight'] = Vis(name = 'Moonlight', loc = s)
-#         app.canvas.create_image(s[0]*100+50-app.moved_right, s[1]*100+70-app.moved_down, image = app.vis_dict['Moonlight'].img, tags = 'Moonlight')
-#         app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+65-app.moved_down, text = 'Moonlight\n+3 Spirit', font = ('Andale Mono', 16), fill = 'azure', tags = 'text')
-#         selected_vis = 'Moonlight'
-#         
-#         # needs to be moved upwards at the same rate, when rotating image also move up one tick
-#         def moonlight_loop(starty, endy, x):
-#             if starty > endy:
-#                 app.vis_dict['Moonlight'].rotate_image()
-#                 app.canvas.delete('Moonlight')
-#                 app.canvas.create_image(x, starty, image = app.vis_dict['Moonlight'].img, tags = 'Moonlight')
-#                 starty -= 10
-#                 app.canvas.move('Moonlight', 0, -10)
-#                 app.canvas.tag_raise('Moonlight')
-#             if starty == endy:
-#                 root.after(333, lambda  name = 'Moonlight' : self.cleanup_spell(name = name))
-#             else:
-#                 root.after(166, lambda sy = starty, ey = endy, x = x : moonlight_loop(sy, ey, x))
-#                 
-#         locy = s[1]*100+70-app.moved_down
-#         locx = s[0]*100+50-app.moved_right
-#         moonlight_loop(locy, locy-120, locx)
     
     # target summon may move again this turn
     def energize(self, event = None):
@@ -8147,8 +8016,54 @@ class App(tk.Frame):
         self.game_title.saves_buttons = []
         for s in saves:
             # expand filename into readable
-            with open('save_games/'+s, 'rb') as f:
-                obj = load(f)
+            with open('save_games/'+s, 'r') as f:
+#                 obj = load(f)
+                name = f.readline().strip('\n')
+                if name == 'Agnes_Sampson':
+                    img = ImageTk.PhotoImage(Image.open('avatars/Agnes_Sampson.png'))
+                    obj = Witch(name = 'Agnes_Sampson', img = img, loc = [0,0], owner = 'p1')
+                elif name == 'Fakir_Ali':
+                    img = ImageTk.PhotoImage(Image.open('avatars/Fakir_Ali.png'))
+                    obj = Witch(name = 'Fakir_Ali', img = img, loc = [0,0], owner = 'p1')
+                cantrips = eval(f.readline().strip('\n'))
+                arcane = eval(f.readline().strip('\n'))
+                sum_cap = int(f.readline().strip('\n'))
+                b_str = int(f.readline().strip('\n'))
+                b_agl = int(f.readline().strip('\n'))
+                b_end = int(f.readline().strip('\n'))
+                b_dodge = int(f.readline().strip('\n'))
+                b_psyche = int(f.readline().strip('\n'))
+                b_spirit = int(f.readline().strip('\n'))
+                b_magick = int(f.readline().strip('\n'))
+                area = int(f.readline().strip('\n'))
+                if 'Foul_Familiar' in cantrips:
+                    obj.cantrip_dict['Foul_Familiar'] = obj.foul_familiar
+                if 'Hatred' in arcane:
+                    obj.arcane_dict['Hatred'] = (obj.hatred, 9)
+                if 'Vengeance' in arcane:
+                    obj.arcane_dict['Vengeance'] = (obj.vengeance, 13)
+                if 'Pain' in arcane:
+                    obj.arcane_dict['Pain'] = (obj.pain, 7)
+                if 'Torment' in arcane:
+                    obj.arcane_dict['Torment'] = (obj.torment, 7)
+                if 'Entomb' in arcane:
+                    obj.arcane_dict['Entomb'] = (obj.entomb, 4)
+                obj.summon_cap = sum_cap
+                obj.base_str = b_str
+                obj.str = b_str
+                obj.base_agl = b_agl
+                obj.agl = b_agl
+                obj.base_end = b_end
+                obj.end = b_end
+                obj.base_dodge = b_dodge
+                obj.dodge = b_dodge
+                obj.base_psyche = b_psyche
+                obj.psyche = b_psyche
+                obj.base_spirit = b_spirit
+                obj.spirit = b_spirit
+                obj.base_magick = b_magick
+                obj.magick = b_magick
+                obj.current_area = area
                 cmd = lambda obj = obj : self.load_game(obj)
                 b = tk.Button(self.scroll_frame.interior, text = s, width = 13, wraplength = 190, fg = 'indianred', highlightbackground = 'black', font = ('chalkduster', 24), relief = 'raised', command = cmd)
                 b.pack() 
@@ -8195,13 +8110,13 @@ class App(tk.Frame):
                     return 'game over'
             self.map_triggers.append(self_death)
             ############## GODHAND
-#             def summon_trick():
-#                 all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
-#                 if 'Bard' in all:
-#                     return 'victory'
-#                 else:
-#                     return None
-#             self.map_triggers.append(summon_trick)
+            def summon_trick():
+                all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
+                if 'Bard' in all:
+                    return 'victory'
+                else:
+                    return None
+            self.map_triggers.append(summon_trick)
             ################
             def kill_all_enemies():
                 all = [k for k,v in self.ent_dict.items() if v.owner == 'p2']
@@ -8218,13 +8133,13 @@ class App(tk.Frame):
             self.map_triggers = []
             sound1 = mixer.Sound('Music/Caves of sorrow.ogg')
             background_music.play(sound1, -1)
-#             def summon_trick():
-#                 all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
-#                 if 'Bard' in all:
-#                     return 'victory'
-#                 else:
-#                     return None
-#             self.map_triggers.append(summon_trick)
+            def summon_trick():
+                all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
+                if 'Bard' in all:
+                    return 'victory'
+                else:
+                    return None
+            self.map_triggers.append(summon_trick)
             def self_death():
                 if app.p1_witch not in app.ent_dict.keys():
                     return 'game over'
@@ -8249,13 +8164,13 @@ class App(tk.Frame):
                 if app.p1_witch not in app.ent_dict.keys():
                     return 'game over'
             self.map_triggers.append(self_death)
-#             def summon_trick():
-#                 all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
-#                 if 'Bard' in all:
-#                     return 'stairway'
-#                 else:
-#                     return None
-#             self.map_triggers.append(summon_trick)
+            def summon_trick():
+                all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
+                if 'Bard' in all:
+                    return 'stairway'
+                else:
+                    return None
+            self.map_triggers.append(summon_trick)
 #             depending on which is killed, load certain level
 #             knight near stairway is b7, knight near doorway is b8
             def kill_stair_knight():
@@ -8287,6 +8202,13 @@ class App(tk.Frame):
             background_music.play(sound1, -1)
             sound1.set_volume(.08)
             self.map_triggers = []
+            def summon_trick():
+                all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
+                if 'Bard' in all:
+                    return 'victory'
+                else:
+                    return None
+            self.map_triggers.append(summon_trick)
             # add generate revenants to global effects
             def generate_revenants():
                 if self.turn_counter % 4 == 0:
@@ -8313,13 +8235,6 @@ class App(tk.Frame):
                 app.canvas.create_image(1100+50-app.moved_right, 100+50-app.moved_down, image = app.vis_dict['Sparkle2'].img, tags = 'Sparkle2')
                 self.map_triggers.remove(create_sparkles)
             self.map_triggers.append(create_sparkles)
-#             def summon_trick():
-#                 all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
-#                 if 'Bard' in all:
-#                     return 'victory'
-#                 else:
-#                     return None
-#             self.map_triggers.append(summon_trick)
             # victory, kill ghost
             def kill_ghost():
                 if 'b2' not in [k for k in self.ent_dict.keys()]:
@@ -8397,13 +8312,13 @@ class App(tk.Frame):
             background_music.play(sound1, -1)
             sound1.set_volume(0.3)
             self.map_triggers = []
-#             def summon_trick():
-#                 all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
-#                 if 'Bard' in all:
-#                     return 'victory'
-#                 else:
-#                     return None
-#             self.map_triggers.append(summon_trick)
+            def summon_trick():
+                all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
+                if 'Bard' in all:
+                    return 'victory'
+                else:
+                    return None
+            self.map_triggers.append(summon_trick)
             def self_death():
                 if app.p1_witch not in app.ent_dict.keys():
                     return 'game over'
@@ -8729,6 +8644,13 @@ class App(tk.Frame):
             background_music.play(sound1, -1)
             sound1.set_volume(0.4)
             self.map_triggers = []
+            def summon_trick():
+                all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
+                if 'Bard' in all:
+                    return 'victory'
+                else:
+                    return None
+            self.map_triggers.append(summon_trick)
             def self_death():
                 if app.p1_witch not in app.ent_dict.keys():
                     return 'game over'
@@ -8751,13 +8673,6 @@ class App(tk.Frame):
                     app.canvas.create_window(2200-app.moved_right+25, 900-app.moved_down+33, window = self.column22_cancel)
                     self.map_triggers.remove(inspect_column)
             self.map_triggers.append(inspect_column)
-#             def summon_trick():
-#                 all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
-#                 if 'Bard' in all:
-#                     return 'victory'
-#                 else:
-#                     return None
-#             self.map_triggers.append(summon_trick)
             def awaken_orcs():
                 sqrs_near = [s for s in app.coords if dist(app.ent_dict['b7'].loc,s) <= 7 or dist(app.ent_dict['b8'].loc,s) <= 7]
                 player_ent_locs = [v.loc for k,v in app.ent_dict.items() if v.owner == 'p1']
@@ -8793,13 +8708,13 @@ class App(tk.Frame):
             background_music.play(sound1, -1)
             sound1.set_volume(0.3)
             self.map_triggers = []
-#             def summon_trick():
-#                 all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
-#                 if 'Bard' in all:
-#                     return 'victory'
-#                 else:
-#                     return None
-#             self.map_triggers.append(summon_trick)
+            def summon_trick():
+                all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
+                if 'Bard' in all:
+                    return 'victory'
+                else:
+                    return None
+            self.map_triggers.append(summon_trick)
             # SPARKLE
             def create_sparkle1():
                 app.vis_dict['Sparkle1'] = Vis(name = 'Sparkle', loc = [7,1])
@@ -8834,6 +8749,13 @@ class App(tk.Frame):
             background_music.play(sound1, -1)
             sound1.set_volume(0.8)
             self.map_triggers = []
+            def summon_trick():
+                all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
+                if 'Bard' in all:
+                    return 'victory'
+                else:
+                    return None
+            self.map_triggers.append(summon_trick)
             def kill_all():
                 ents = app.ent_dict.keys()
                 if 'b0' not in ents and 'b1' not in ents and 'b2' not in ents:
@@ -9942,15 +9864,30 @@ class App(tk.Frame):
         if fname in saves:
             text_var.set('filename already exists')
             return
-        with open('save_games/'+fname, 'wb+') as f:
+        with open('save_games/'+fname, 'w+') as f:
             text_var.set('game saved')
+            ####********
+            # strip attrs, write all spell names to file
+            f.write(protag_obj.name+'\n')
+            f.write(str(list(protag_obj.cantrip_dict.keys()))+'\n')
+            f.write(str(list(protag_obj.arcane_dict.keys()))+'\n')
+            f.write(str(protag_obj.summon_cap)+'\n')
+            f.write(str(protag_obj.base_str)+'\n')
+            f.write(str(protag_obj.base_agl)+'\n')
+            f.write(str(protag_obj.base_end)+'\n')
+            f.write(str(protag_obj.base_dodge)+'\n')
+            f.write(str(protag_obj.base_psyche)+'\n')
+            f.write(str(protag_obj.base_spirit)+'\n')
+            f.write(str(protag_obj.base_magick)+'\n')
+            f.write(str(protag_obj.current_area)+'\n')
+            ####********
 #             have to strip tkinter objects from protag obj
-            protag_obj.img = None
-            protag_obj.anim_dict = {}
+#             protag_obj.img = None
+#             protag_obj.anim_dict = {}
             # below, get all needed attributes of protag_obj, do a rudimentary 'encoding' to disguise
             # on load, ensure values are 'legal'
             # 
-            dump(protag_obj, f)
+#             dump(protag_obj, f)
     
     
     def populate_context(self, event):
@@ -10119,8 +10056,8 @@ class App(tk.Frame):
     def get_info_text(self, ent):
         txt = ''
         txt += 'Str:' + str(self.ent_dict[ent].get_attr('str')) + '\n'
-        txt += 'End:' + str(self.ent_dict[ent].get_attr('end')) + '\n'
         txt += 'Agl:' + str(self.ent_dict[ent].get_attr('agl')) + '\n'
+        txt += 'End:' + str(self.ent_dict[ent].get_attr('end')) + '\n'
         txt += 'Dodge:' + str(self.ent_dict[ent].get_attr('dodge')) + '\n'
         txt += 'Psyche:' + str(self.ent_dict[ent].get_attr('psyche')) + '\n'
         txt += 'Spirit:' + str(self.ent_dict[ent].spirit) + '\n'
