@@ -5897,7 +5897,7 @@ class Cenobite(Summon):
             root.bind('<q>', lambda e, obj = obj : cancel_attack(obj = obj))
             sqrs = []
             for c in app.coords:
-                if dist(obj.loc, c) == 1:
+                if 1 <= dist(obj.loc, c) <= 3:
                     sqrs.append(c)
             app.animate_squares(sqrs)
             app.depop_context(event = None)
@@ -5912,7 +5912,7 @@ class Cenobite(Summon):
                 if app.current_pos() == '' or app.current_pos() == 'block':
                     return
                 obj.attack_used = True
-                obj.init_attack_anims()
+#                 obj.init_attack_anims()
 #                 effect1 = mixer.Sound('Sound_Effects/hook_attack.ogg')
 #                 effect1.set_volume(1)
 #                 sound_effects.play(effect1, 0)
@@ -5948,10 +5948,22 @@ class Cenobite(Summon):
                 app.depop_context(event = None)
                 app.cleanup_squares()
             # END INNER-INNER FUNCS
-                
-            
+        # ADD ACTION TO TARGET
         p = partial(hook_attack, obj = app.ent_dict[id])
         app.ent_dict[id].actions['Hook Attack'] = p
+        def hook_effect():
+            pass
+        f = hook_effect
+        def un(i):
+            del app.ent_dict[i].actions['Hook Attack']
+            return None
+        p = partial(un, id)
+        # EOT FUNC
+        def nothing():
+            return None
+        eot = nothing
+        n = 'Hook_Attack' + str(app.effects_counter)
+        app.ent_dict[id].effects_dict[n] = Effect(name = 'Hook_Attack', info = 'Added Hook Attack', eot_func = eot, undo = p, duration = 3)
         root.after(2666, self.finish_flesh_hooks)
         
     def finish_flesh_hooks(self, event = None):
