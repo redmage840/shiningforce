@@ -1,3 +1,9 @@
+# library, sometimes 2 revenants generated on first turn instead of 1?
+
+# add delay to get_focus / focus_sqr
+
+# unbinding ints 1-4 during summon?
+
 # troll ai still hangs? only sometimes when path is impeded? movement of 9 may influence?
 
 # button to cycle through units, requires adding to 'all hotkeys' that get disabled and enabled during context switches
@@ -68,8 +74,6 @@
 
 # psi push impact sound
 
-# summon vis, sound
-
 # save during level, write all ents and map number, write globals like curs_pos, write all map_triggers still in effect, write app.attrs like vis_dict effects_counter global_effects_dict, on load call create_map_curs() with protag object, empty and repopulate map_triggers, replace app.attrs
 
 # spells that buff friendly for agnes, one more cantrip for each, debuff cantrip for ali
@@ -82,9 +86,7 @@
 # fix by finding sqr within legal moves that minimizes distance of attack range
 # this approach would only be invalidated by a series of 'block' that is longer than warlock move (does not exist on level)
 
-# entomb handle 'all sqrs occupied' edge case
-
-# boiling blood make sound 1 sec longer
+# entomb handle 'all sqrs occupied' edge case, may not be possible to even reach this state with current levels...?
 
 # update help menu, begin game help screen, spell/attr/action descriptions
 
@@ -92,11 +94,7 @@
 
 # teleport or psi pushing on to sqr with trigger (sparkle), pressing button before cleanup of spell happens will cause spell cleanup to destroy text object if button clicked quickly, no logical problems only visual destroying of text object early
 
-# ideally text objects would have 'context stroke' to appear equally well over light or dark backgrounds
-
 # when dragon 'flies' make bottom portion 'large'
-
-# make shadow movement less annoying, range cannot hit close
 
 # in 'do_save' if a player saves and then hits cmd/ctrl+q or otherwise exits manually, the object/save may not be pickled properly resulting in zero byte file. This is because programmatic logic 'stays' in 'do_save' until 'next_area' button hit, resulting in not closing the file opened/created during pickling. Using 'with' already to auto-close file, but probably existing vars block out automatic close. To solve this, call some other function from 'do_save' (probably a dummy/empty/close-dialog), probably do not call next_area so as to skip on-screen text
 
@@ -138,7 +136,7 @@
 
 # make walking/movement animations
 
-# magick regen rate or squares on maps that regen
+# magick regen rate or squares on maps that regen?, maybe for some levels, include in intent/design
 
 # show victory conditions on map start
 
@@ -521,7 +519,7 @@ class Entity():
                 root.after(66, lambda id = id, x = x, y = y, ex = endx, ey = endy, s = start_sqr, s2 = end_sqr, p = path : move_loop(id, x, y, ex, ey, s, s2, p))
         move_loop(id, x, y, endx, endy, start_sqr, end_sqr, path)
         
-        
+    # used by trickster, shadow, ...
     def teleport_move(self, event = None):
         if self.move_used == True:
             return
@@ -553,7 +551,7 @@ class Entity():
         oldloc = self.loc[:]
         if isinstance(self, Shadow):
             effect1 = mixer.Sound('Sound_Effects/shadow_move.ogg')
-            effect1.set_volume(1)
+            effect1.set_volume(.3)
             sound_effects.play(effect1, 0)
             app.vis_dict['Shadow_Move'] = Vis(name = 'Shadow_Move', loc = oldloc[:])
             vis = app.vis_dict['Shadow_Move']
@@ -564,7 +562,7 @@ class Entity():
             app.vis_dict['Teleport'] = Vis(name = 'Teleport', loc = oldloc[:])
             vis = app.vis_dict['Teleport']
         app.canvas.create_image(oldloc[0]*100+50-app.moved_right, oldloc[1]*100+50-app.moved_down, image = vis.img, tags = 'Teleport')
-        root.after(2999, lambda endloc = endloc : self.finish_teleport(endloc))
+        root.after(1999, lambda endloc = endloc : self.finish_teleport(endloc))
         
     def finish_teleport(self, endloc):
         app.grid[self.loc[0]][self.loc[1]] = ''
@@ -585,7 +583,7 @@ class Entity():
             app.vis_dict['Teleport'] = Vis(name = 'Teleport', loc = endloc[:])
             vis = app.vis_dict['Teleport']
         app.canvas.create_image(endloc[0]*100+50-app.moved_right, endloc[1]*100+50-app.moved_down, image = vis.img, tags = 'Teleport')
-        root.after(2999, lambda endloc = endloc : self.cleanup_teleport(endloc))
+        root.after(1999, lambda endloc = endloc : self.cleanup_teleport(endloc))
         
     def cleanup_teleport(self, endloc):
         try: 
@@ -763,7 +761,7 @@ class Trickster(Summon):
         self.end = 2
         self.dodge = 5
         self.psyche = 5
-        self.spirit = 12
+        self.spirit = 13
         self.move_type = 'teleport'
         super().__init__(name, img, loc, owner, number)
         
@@ -772,7 +770,6 @@ class Trickster(Summon):
             return
         app.depop_context(event = None)
         root.bind('<q>', self.cleanup_pyrotechnics)
-#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         sqrs = [s for s in app.coords if dist(self.loc, s) <= 3]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_pyrotechnics(event = e, sqr = s, sqrs = sqrs))
@@ -1040,17 +1037,10 @@ class Trickster(Summon):
     
     def legal_moves(self):
         move_list = []
-        coord_pairs = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        for coord in coord_pairs:
-            if app.grid[coord[0]][coord[1]] == '':
-                if abs(coord[0] - self.loc[0]) == 1 and abs(coord[1] - self.loc[1]) == 2:
-                    move_list.append(coord)
-                elif abs(coord[0] - self.loc[0]) == 2 and abs(coord[1] - self.loc[1]) == 1:
-                    move_list.append(coord)
-                elif abs(coord[0] - self.loc[0]) == 2 and coord[1] == self.loc[1]:
-                    move_list.append(coord)
-                elif abs(coord[1] - self.loc[1]) == 2 and coord[0] == self.loc[0]:
-                    move_list.append(coord)
+        for c in app.coords:
+            if app.grid[c[0]][c[1]] == '':
+                if dist(c, self.loc) <= 4:
+                    move_list.append(c)
         return move_list
         
 
@@ -1063,7 +1053,7 @@ class Shadow(Summon):
         self.end = 3
         self.dodge = 6
         self.psyche = 4
-        self.spirit = 13
+        self.spirit = 14
         self.move_type = 'teleport'
         super().__init__(name, img, loc, owner, number)
         
@@ -1076,9 +1066,8 @@ class Shadow(Summon):
         root.unbind('<a>')
         sqrs = []
         for coord in app.coords:
-            if dist(coord, self.loc) <= 4:
+            if 1 < dist(coord, self.loc) <= 4:
                 sqrs.append(coord)
-        sqrs.remove(self.loc[:])
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, sqr = grid_pos, sqrs = sqrs : self.check_hit(e, sqr, sqrs))
         app.depop_context(event = None)
@@ -1137,14 +1126,10 @@ class Shadow(Summon):
     
     def legal_moves(self):
         move_list = []
-        coord_pairs = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        for coord in coord_pairs:
-        # move on diag, 3 sqrs, same for both players
-            if app.grid[coord[0]][coord[1]] == '':
-                if abs(coord[0] - self.loc[0]) == abs(coord[1] - self.loc[1]) and abs(coord[0] - self.loc[0]) <= 4:
-                    move_list.append(coord)
-                if dist(self.loc, coord) == 1:
-                    move_list.append(coord)
+        for c in app.coords:
+            if app.grid[c[0]][c[1]] == '':
+                if dist(self.loc, c) <= 4:
+                    move_list.append(c)
         return move_list
 
 
@@ -1338,7 +1323,7 @@ class Bard(Summon):
         self.agl = 3
         self.end = 3
         self.dodge = 5
-        self.psyche = 6
+        self.psyche = 5
         self.spirit = 15
         self.move_type = 'normal'
         super().__init__(name, img, loc, owner, number)
@@ -1349,7 +1334,6 @@ class Bard(Summon):
             return
         app.depop_context(event = None)
         root.bind('<q>', self.cleanup_moonlight)
-#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         sqrs = [s for s in app.coords if dist(self.loc, s) <= 2]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_moonlight(event = e, s = s, sqrs = sqrs))
@@ -5867,8 +5851,8 @@ class Cenobite(Summon):
         app.unbind_all()
         app.vis_dict['Flesh_Hooks'] = Vis(name = 'Flesh_Hooks', loc = sqr)
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Flesh_Hooks'].img, tags = 'Flesh_Hooks')
-        app.canvas.create_text(sqr[0]*100-app.moved_right+50, sqr[1]*100-app.moved_down+50, text = 'Flesh Hooks', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-        # add action to ent, add effect to undo
+        app.canvas.create_text(sqr[0]*100-app.moved_right+50, sqr[1]*100-app.moved_down+90, text = 'Flesh Hooks', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+        # add action to ent, needs to focus on each hit, lessen damage(divide by targets probably?)
         def hook_attack(event = None, obj = None):
             if obj.attack_used == True:
                 return
@@ -5881,57 +5865,53 @@ class Cenobite(Summon):
                     sqrs.append(c)
             app.animate_squares(sqrs)
             app.depop_context(event = None)
-            root.bind('<a>', lambda e, s = sqrs, obj = obj : check_hit(event = e, sqrs = s, obj = obj)) 
-            b = tk.Button(app.context_menu, text = 'Confirm Hook Attack', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, s = sqrs, obj = obj : check_hit(event = e, sqrs = s, obj = obj))
+            root.bind('<a>', lambda e, sqrs = sqrs, sqr = grid_pos, obj = obj : check_hit(event = e, sqrs = sqrs, sqr = sqr, obj = obj)) 
+            b = tk.Button(app.context_menu, text = 'Confirm Hook Attack', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqrs = sqrs, sqr = grid_pos, obj = obj : check_hit(event = e, sqrs = sqrs, sqr = sqr, obj = obj))
             b.pack(side = 'top')
             app.context_buttons.append(b)
             # INNER-INNER FUNCS, context must be passed to obj receiving this action
-            def check_hit(event = None, sqrs = None, obj = None):
-#                 if grid_pos not in sqrs:
-#                     return
-#                 if app.current_pos() == '' or app.current_pos() == 'block':
-#                     return
+            def check_hit(event = None, sqrs = None, sqr = None, obj = None):
+                if sqr not in sqrs:
+                    return
+                id = app.grid[sqr[0]][sqr[1]]
+                if id == '' or id == 'block':
+                    return
                 obj.attack_used = True
 #                 obj.init_attack_anims()
-#                 effect1 = mixer.Sound('Sound_Effects/hook_attack.ogg')
-#                 effect1.set_volume(1)
-#                 sound_effects.play(effect1, 0)
+                effect1 = mixer.Sound('Sound_Effects/hook_attack.ogg')
+                effect1.set_volume(1)
+                sound_effects.play(effect1, 0)
                 app.depop_context(event = None)
                 app.unbind_all()
                 app.cleanup_squares()
-                ents = [app.grid[s[0]][s[1]] for s in sqrs if app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
-                ents = [e for e in ents if app.ent_dict[e].owner != obj.owner]
-                if ents != []:
-                    for id in ents:
-                        visloc = app.ent_dict[id].loc[:]
-                        n = 'Hook_Attack' + str(app.effects_counter)
-                        app.effects_counter += 1
-                        app.vis_dict[n] = Vis(name = 'Hook_Attack', loc = visloc)
-                        app.canvas.create_image(visloc[0]*100+50-app.moved_right, visloc[1]*100+50-app.moved_down, image = app.vis_dict[n].img, tags = 'Hook_Attack')
-                        my_agl = obj.get_attr('agl')
-                        target_dodge = app.ent_dict[id].get_attr('dodge')
-                        if to_hit(my_agl, target_dodge) == True:
-                            d = 12
-                            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Hook Attack Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-                            app.ent_dict[id].set_attr('spirit', -12)
-                            if app.ent_dict[id].spirit <= 0:
-                                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+90, text = app.ent_dict[id].name+' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-                                root.after(2666, lambda id = id : app.kill(id))
-                            root.after(2666, lambda e = None, obj = obj : cancel_attack(event = e, obj = obj))
-                        else:
-                            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Hook Attack Misses!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-                            root.after(2666, lambda e = None, obj = obj : cancel_attack(event = e, obj = obj))
-                else:
-                    # deal 3 to self, check for death
+#                 ents = [app.grid[s[0]][s[1]] for s in sqrs if app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
+#                 ents = [e for e in ents if app.ent_dict[e].owner != obj.owner]
+#                 if ents != []:
+#                     for id in ents:
+                visloc = app.ent_dict[id].loc[:]
+                app.vis_dict['Hook_Attack'] = Vis(name = 'Hook_Attack', loc = visloc)
+                app.canvas.create_image(visloc[0]*100+50-app.moved_right, visloc[1]*100+50-app.moved_down, image = app.vis_dict['Hook_Attack'].img, tags = 'Hook_Attack')
+                my_psyche = obj.get_attr('psyche')
+                target_dodge = app.ent_dict[id].get_attr('dodge')
+                if to_hit(my_psyche, target_dodge) == True:
+                    my_end = obj.get_attr('end')
+                    target_end = app.ent_dict[id].get_attr('end')
+                    d = damage(my_end, target_end)
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                    app.ent_dict[id].set_attr('spirit', -d)
+                    if app.ent_dict[id].spirit <= 0:
+                        app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+90, text = app.ent_dict[id].name+' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                        root.after(2666, lambda id = id : app.kill(id))
                     root.after(2666, lambda e = None, obj = obj : cancel_attack(event = e, obj = obj))
-
-                    
+                else:
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+90, text = 'Hook Attack Misses!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                    root.after(2666, lambda e = None, obj = obj : cancel_attack(event = e, obj = obj))
+            # INNER FUNC
             def cancel_attack(event = None, obj = None):
-                obj.init_normal_anims()
+                obj.init_normal_anims() # to init attack anims, provide them for each possible unit that can gain hook_attack
                 app.rebind_all()
                 app.canvas.delete('text')
-                try: # on cleanup, need to figure out how i want to display multiple hits/misses before finishing
-                # all same time or one after the other
+                try:
                     del app.vis_dict['Hook_Attack']
                     app.canvas.delete('Hook_Attack')
                 except: pass
@@ -6337,7 +6317,7 @@ class Witch(Entity):
             root.unbind(str(x))
         root.bind('<q>', self.cancel_placement)
         app.depop_context(event = None)
-        sqrs = [c for c in app.coords if abs(c[0]-self.loc[0]) + abs(c[1]-self.loc[1]) == 1 and app.grid[c[0]][c[1]] == '']
+        sqrs = [c for c in app.coords if dist(c, self.loc) == 1 and app.grid[c[0]][c[1]] == '']
         app.animate_squares(sqrs)
         if type == 'Warrior':
             cls = Warrior
@@ -6349,34 +6329,36 @@ class Witch(Entity):
             cls = Bard
         elif type == 'Plaguebearer':
             cls = Plaguebearer
-        cmd = lambda e = None, x = cls, y = sqrs : self.place(e, summon = x, sqrs = y)
-        root.bind('<a>', lambda e, x = cls, y = sqrs: self.place(e, x, y))
+        cmd = lambda e = None, x = cls, y = sqrs, s = grid_pos : self.place(e, summon = x, sqrs = y, sqr = s)
+        root.bind('<a>', lambda e, x = cls, y = sqrs, s = grid_pos : self.place(e, x, y, s))
         b = tk.Button(app.context_menu, text = 'Place '+type, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', wraplength = 190, command = cmd)
         b.pack(side = 'top')
         app.context_buttons.append(b)
         
         
-    def place(self, event, summon, sqrs):
-        if grid_pos not in sqrs:
+    def place(self, event, summon, sqrs, sqr):
+        if sqr not in sqrs:
             return
+        app.unbind_all()
         root.unbind('<q>')
         root.bind('<q>', app.depop_context)
         root.unbind('<a>')
         root.bind('<a>', app.populate_context)
+        # SOUND
+        effect1 = mixer.Sound('Sound_Effects/summon.ogg')
+        effect1.set_volume(1)
+        sound_effects.play(effect1, 0)
+        # place visual summon
+        app.vis_dict['Summon'] = Vis(name = 'Summon', loc = sqr)
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Summon'].img, tags = 'Summon')
         if app.active_player == 'p1':
             number = 'a' + str(self.summon_ids)
             self.summon_ids += 1
             self.summon_count += 1
-            # place visual summon
-            
-            
         elif app.active_player == 'p2':
             number = 'b' + str(self.summon_ids)
             self.summon_ids += 1
             self.summon_count += 1
-            # place visual summon
-            
-            
         if summon == Warrior:
             name = 'Warrior'
             img = ImageTk.PhotoImage(Image.open('summon_imgs/Warrior.png'))
@@ -6392,16 +6374,21 @@ class Witch(Entity):
         elif summon == Plaguebearer:
             name = 'Plaguebearer'
             img = ImageTk.PhotoImage(Image.open('summon_imgs/Plaguebearer.png'))
-        s = summon(name = name, img = img, loc = grid_pos[:], owner = app.active_player, number = number)
-        app.ent_dict[number] = s
-#         self.summon_dict[number] = s
-        app.canvas.create_image(grid_pos[0]*100+50-app.moved_right, grid_pos[1]*100+50-app.moved_down, image = img, tags = s.tags)
-        app.grid[grid_pos[0]][grid_pos[1]] = number
+        s = summon(name = name, img = img, loc = sqr[:], owner = app.active_player, number = number)
         app.cleanup_squares()
+        app.depop_context(event = None)
+        # separate here to finish summon vis, place ent after a sec or two
+        root.after(1999, lambda s = s, sqr = sqr, id = number : self.finish_place(s, sqr, id))
+        
+    def finish_place(self, summon, sqr, id):
+        app.ent_dict[id] = summon
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = summon.img, tags = summon.tags)
+        app.grid[sqr[0]][sqr[1]] = id
         app.unbind_all()
         app.rebind_all()
-        app.depop_context(event = None)
         self.summon_used = True
+        app.canvas.delete('Summon')
+        del app.vis_dict['Summon']
         
     def legal_moves(self):
         loc = self.loc
@@ -6517,15 +6504,15 @@ class Witch(Entity):
         if app.grid[sqr[0]][sqr[1]] != '':
             return
         self.init_cast_anims()
-        #effect1 = mixer.Sound('Sound_Effects/summon_cenobite.ogg')
-#         effect1.set_volume(1)
-#         sound_effects.play(effect1, 0)
+        effect1 = mixer.Sound('Sound_Effects/summon_cenobite.ogg')
+        effect1.set_volume(1)
+        sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
         self.arcane_used = True
-        app.vis_dict['Teleport'] = Vis(name = 'Teleport', loc = sqr)
-        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Teleport'].img, tags = 'Teleport')
+        app.vis_dict['Summon'] = Vis(name = 'Summon', loc = sqr)
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Summon'].img, tags = 'Summon')
         root.after(1666, lambda s = sqr : self.finish_summon_cenobite(s))
         root.after(2666, self.cleanup_summon_cenobite)
         root.after(2999, lambda name = 'Summon_Cenobite' : self.cleanup_spell(name = name))
@@ -6543,15 +6530,14 @@ class Witch(Entity):
         app.grid[sqr[0]][sqr[1]] = id
         
     def cleanup_summon_cenobite(self):
-        del app.vis_dict['Teleport']
-        app.canvas.delete('Teleport')
+        del app.vis_dict['Summon']
+        app.canvas.delete('Summon')
         
 # Agnes' spells center around Death/Decay/Disease/Telekinetics/Cosmology
     # target summon may move again this turn
     def energize(self, event = None):
         app.depop_context(event = None)
         root.bind('<q>', lambda name = 'Energize' : self.cleanup_spell(name = name))
-#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         sqrs = [s for s in app.coords if dist(self.loc, s) <= 4]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_energize(event = e, sqr = s, sqrs = sqrs))
@@ -8271,7 +8257,7 @@ class App(tk.Frame):
         if map_number == 0: # FIRST AREA, NO 'CONTINUATION from previous level' BY PASSING PROTAG OBJECT
             sound1 = mixer.Sound('Music/heroic_demise.ogg')
             background_music.play(sound1, -1)
-            sound1.set_volume(0.2)
+            sound1.set_volume(0.6)
             # CLEANUP FROM CHOOSE_WITCH
             self.avatar_popup.destroy()
             del self.wrapped_funcs
