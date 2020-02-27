@@ -5735,12 +5735,12 @@ class Cenobite(Summon):
     def __init__(self, name, img, loc, owner, number):
         self.actions = {'Strength Through Wounding':self.strength_through_wounding, 'Flesh Hooks': self.flesh_hooks, 'Hellfire': self.hellfire, 'Move': self.move}
         self.attack_used = False
-        self.str = 5
+        self.str = 6
         self.agl = 6
         self.end = 6
         self.dodge = 6
         self.psyche = 6
-        self.spirit = 19
+        self.spirit = 16
         self.move_type = 'normal'
         super().__init__(name, img, loc, owner, number)
         
@@ -5758,13 +5758,11 @@ class Cenobite(Summon):
         b.pack(side = 'top')
         app.context_buttons.append(b)
         
-        
     def do_strength_through_wounding(self, event = None, sqrs = None):
         self.attack_used = True
-#         self.init_attack_anims()
-#         effect1 = mixer.Sound('Sound_Effects/strength_through_wounding.ogg')
-#         effect1.set_volume(1)
-#         sound_effects.play(effect1, 0)
+        effect1 = mixer.Sound('Sound_Effects/strength_through_wounding.ogg')
+        effect1.set_volume(1)
+        sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
         app.unbind_all()
@@ -5774,10 +5772,10 @@ class Cenobite(Summon):
             if ent != '' and ent != 'block':
             # deal 2 to this ent
                 app.ent_dict[ent].set_attr('spirit', -2)
-                app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+70-app.moved_down, text = '2 spirit', justify = 'center', font = ('Andale Mono', 12), fill = 'ivory3', tags = 'text')
+                app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+70-app.moved_down, text = '2 spirit', justify = 'center', font = ('Andale Mono', 13), fill = 'ivory3', tags = 'text')
                 if app.ent_dict[ent].spirit <= 0:
                     app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+90-app.moved_down, text = app.ent_dict[ent].name + ' Killed...', font = ('Andale Mono', 12), fill = 'white', tags = 'text')
-                    root.after(2666, lambda e = ent : app.kill(e))
+                    root.after(3666, lambda e = ent : app.kill(e))
                 # give stat bonus if friendly
                 elif app.ent_dict[ent].owner == app.active_player:
                     ef_names = [v.name for k,v in app.ent_dict[ent].effects_dict.items()]
@@ -5809,9 +5807,10 @@ class Cenobite(Summon):
     def finish_strength_through_wounding(self, event = None):
 #         self.init_normal_anims()
         try:
-            keys = [k for k in app.vis_dict.keys() if k[:12] == 'Strength_Through_Wounding']
-            for k in keys:
-                del app.vis_dict[k]
+            ks = list(app.vis_dict.keys())
+            for k in ks:
+                if k.startswith('Strength_Through_Wounding') == True:
+                    del app.vis_dict[k]
             app.canvas.delete('Strength_Through_Wounding')
         except: pass
         app.cleanup_squares()
@@ -5884,10 +5883,6 @@ class Cenobite(Summon):
                 app.depop_context(event = None)
                 app.unbind_all()
                 app.cleanup_squares()
-#                 ents = [app.grid[s[0]][s[1]] for s in sqrs if app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
-#                 ents = [e for e in ents if app.ent_dict[e].owner != obj.owner]
-#                 if ents != []:
-#                     for id in ents:
                 visloc = app.ent_dict[id].loc[:]
                 app.vis_dict['Hook_Attack'] = Vis(name = 'Hook_Attack', loc = visloc)
                 app.canvas.create_image(visloc[0]*100+50-app.moved_right, visloc[1]*100+50-app.moved_down, image = app.vis_dict['Hook_Attack'].img, tags = 'Hook_Attack')
@@ -5906,7 +5901,7 @@ class Cenobite(Summon):
                 else:
                     app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+90, text = 'Hook Attack Misses!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
                     root.after(2666, lambda e = None, obj = obj : cancel_attack(event = e, obj = obj))
-            # INNER FUNC
+            # INNER INNER FUNC
             def cancel_attack(event = None, obj = None):
                 obj.init_normal_anims() # to init attack anims, provide them for each possible unit that can gain hook_attack
                 app.rebind_all()
@@ -6735,7 +6730,6 @@ class Witch(Entity):
     def vengeance(self, event = None):
         app.depop_context(event = None)
         root.bind('<q>', lambda name = 'Vengeance' : self.cleanup_spell(name = name))
-#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         sqrs = [s for s in app.coords if dist(self.loc, s) <= 4]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_vengeance(event = e, sqr = s, sqrs = sqrs))
