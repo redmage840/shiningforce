@@ -3466,10 +3466,10 @@ class Earth_Mage(Summon):
         self.actions = {'attack':self.do_attack}
         self.attack_used = False
         self.str = 3
-        self.agl = 4
-        self.end = 6
-        self.dodge = 4
-        self.psyche = 7
+        self.agl = 3
+        self.end = 4
+        self.dodge = 2
+        self.psyche = 5
         self.spirit = 79
         self.waiting = waiting
         self.move_type = 'teleport'
@@ -3793,10 +3793,10 @@ class Earth_Elemental(Summon):
         self.actions = {'attack':self.do_attack}
         self.attack_used = False
         self.str = 6
-        self.agl = 5
+        self.agl = 4
         self.end = 6
-        self.dodge = 6
-        self.psyche = 6
+        self.dodge = 4
+        self.psyche = 3
         self.spirit = 29
         self.waiting = waiting
         self.move_type = 'normal'
@@ -3857,7 +3857,6 @@ class Earth_Elemental(Summon):
                     for eloc in friendly_ent_locs:
                         egrid[eloc[0]][eloc[1]] = '' # EGRID NOW EMPTIED OF FRIENDLY ENTS
                     # NOW FIND PATH AND PASS TO MOVE
-#                     coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
                     for el in enemy_ent_locs:
                         goals = [c for c in app.coords if dist(c, el) == 1 and app.grid[c[0]][c[1]] == '']
                         path = bfs(self.loc[:], goals, egrid[:]) # BFS ON ALTERED GRID (FRIENDLY ENTS REMOVED)
@@ -3897,9 +3896,9 @@ class Earth_Elemental(Summon):
         else:
             app.get_focus(id)
     #         self.init_attack_anims()
-            effect1 = mixer.Sound('Sound_Effects/earth_elemental_attack.ogg')
-            effect1.set_volume(1)
-            sound_effects.play(effect1, 0)
+#             effect1 = mixer.Sound('Sound_Effects/earth_elemental_attack.ogg')
+#             effect1.set_volume(1)
+#             sound_effects.play(effect1, 0)
             my_agl = self.get_attr('agl')
             target_agl = app.ent_dict[id].get_attr('agl')
             if to_hit(my_agl, target_agl) == True:
@@ -3923,8 +3922,8 @@ class Earth_Elemental(Summon):
         self.init_normal_anims()
         try: 
             app.canvas.delete('text')
-#             del app.vis_dict['Fireblast']
-#             app.canvas.delete('Fireblast')
+#             del app.vis_dict['']
+#             app.canvas.delete('')
         except: pass
         if app.ent_dict[id].spirit <= 0:
             if app.kill(id) == None:
@@ -3968,7 +3967,8 @@ class Earth_Elemental(Summon):
         findall(loc, 1, 4)
         return [list(x) for x in set(tuple(x) for x in mvlist)]
         
-    # prob do firewall before moving also
+# casts firewall after teleporting randomly within a dist, resummons fire elementals if they all die
+# This unit regains its normal movement (teleport) at the begin of every do_ai() (like Warlock)
 class Fire_Mage(Summon):
     def __init__(self, name, img, loc, owner, number, waiting = False):
         self.actions = {'attack':self.do_attack}
@@ -4001,7 +4001,6 @@ class Fire_Mage(Summon):
             root.after(1333, lambda el = ents_list : self.elemental_summon(el))
             
     def elemental_summon(self, ents_list):
-        # give visual cue, timing, alternate turns?
 #         effect1 = mixer.Sound('Sound_Effects/warlock_summon.ogg')
 #         effect1.set_volume(1)
 #         sound_effects.play(effect1, 0)
@@ -4059,7 +4058,6 @@ class Fire_Mage(Summon):
         # End Summon Elemental, ATTEMPT ATTACK
             
     # teleport to random sqr within 6 of an enemy ent, do firewall
-    # need to get focus on teleport, cleanup firewall vis, place mage properly in new spot
     def continue_ai(self, ents_list):
         # get empty sqrs within 6 of any enemy
         ent_locs = [v.loc[:] for k,v in app.ent_dict.items() if v.owner == 'p1']
@@ -4186,25 +4184,12 @@ class Fire_Mage(Summon):
             app.end_turn()
         else:
             root.after(666, lambda e = ents_list : app.do_ai_loop(e))
-        
-        
-#     def legal_attacks(self):
-#         sqrs = []
-#         for coord in app.coords:
-#             if dist(coord, self.loc) <= 3:
-#                 if app.grid[coord[0]][coord[1]] != '' and app.grid[coord[0]][coord[1]] != 'block':
-#                     sqrs.append(coord)
-#         return sqrs
-        
-    # not used for movement, kept for purposes of monkey-patching
+    # this unit has no need of legal_attacks(), left here in case of overwrite
+    def legal_attacks(self):
+        pass
+    # this unit has no need of legal_moves(), left here in case of overwrite
     def legal_moves(self):
-        loc = self.loc[:]
-        mvlist = []
-        for c in app.coords:
-            if dist(loc, c) <= 5 and app.grid[c[0]][c[1]] == '':
-                mvlist.append(c)
-        return mvlist
-        
+        pass
         
         
 class Sorceress(Summon):
@@ -4692,12 +4677,12 @@ class Fire_Elemental(Summon):
     def __init__(self, name, img, loc, owner, number, waiting = False):
         self.actions = {'attack':self.do_attack}
         self.attack_used = False
-        self.str = 6
-        self.agl = 5
-        self.end = 6
-        self.dodge = 6
-        self.psyche = 6
-        self.spirit = 29
+        self.str = 5
+        self.agl = 4
+        self.end = 3
+        self.dodge = 4
+        self.psyche = 4
+        self.spirit = 19
         self.waiting = waiting
         self.move_type = 'normal'
         super().__init__(name, img, loc, owner, number)
@@ -4710,7 +4695,7 @@ class Fire_Elemental(Summon):
             app.do_ai_loop(ents_list)
         
     # FIRE ELEMENTAL AI
-    # change attack to sirocco, small damage to all in area
+    # change attack to sirocco, small damage to all in area?
     def do_ai(self, ents_list):
         if self.waiting == True: # PASSIVE / WAITING
             self.pass_priority(ents_list)
@@ -5397,7 +5382,7 @@ class Minotaur(Summon):
         
 class Warrior(Summon):
     def __init__(self, name, img, loc, owner, number):
-        self.actions = {'attack':self.warrior_attack, 'move':self.move}
+        self.actions = {'attack':self.warrior_attack, 'leap':self.leap, 'guard':self.guard, 'move':self.move}
         self.attack_used = False
         self.str = 5
         self.agl = 5
@@ -5408,6 +5393,182 @@ class Warrior(Summon):
         self.move_type = 'charge'
         super().__init__(name, img, loc, owner, number)
         
+    def init_leap_anims(self):
+        self.anim_dict = {}
+        self.anim_counter = 0
+        anims = [a for r,d,a in walk('./animations/Leap/')][0]
+        anims = [a for a in anims[:] if a[-3:] == 'png']
+        for i, anim in enumerate(anims):
+            a = ImageTk.PhotoImage(Image.open('animations/Leap/' + anim))
+            self.anim_dict[i] = a
+        
+    def guard(self, event = None):
+        if self.attack_used == True:
+            return
+        root.unbind('<a>')
+        root.unbind('<q>')
+        root.bind('<q>', self.cancel_attack)
+        sqrs = []
+        for c in app.coords:
+            if dist(self.loc, c) <= 3 and c != self.loc:
+                sqrs.append(c)
+        app.animate_squares(sqrs)
+        app.depop_context(event = None)
+        root.bind('<a>', lambda e, sqrs = sqrs, sqr = grid_pos : self.do_guard(event = e, sqrs = sqrs, sqr = sqr)) 
+        b = tk.Button(app.context_menu, text = 'Confirm Guard', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqrs = sqrs, sqr = grid_pos : self.do_guard(event = e, sqrs = sqrs, sqr = sqr))
+        b.pack(side = 'top')
+        app.context_buttons.append(b)
+        
+    def do_guard(self, event = None, sqrs = None, sqr = None):
+        if sqr not in sqrs:
+            return
+        self.attack_used = True
+        id = app.grid[sqr[0]][sqr[1]]
+        if id == '' or id == 'block':
+            return
+        if app.ent_dict[id].owner != self.owner:
+            return
+#         effect1 = mixer.Sound('Sound_Effects/guard.ogg')
+#         effect1.set_volume(1)
+#         sound_effects.play(effect1, 0)
+        app.depop_context(event = None)
+        app.unbind_all()
+        app.cleanup_squares()
+        def guard_effect():
+            pass
+        f = guard_effect
+        def guard_set_attr(attr = None, amount = None, obj = None, redir_obj = None):# REPLACE OBJ set_attr with -2 (2 more subtracted)
+            if attr == 'str':
+                obj.str += amount
+            elif attr == 'agl':
+                obj.agl += amount
+            elif attr == 'end':
+                obj.end += amount
+            elif attr == 'dodge':
+                obj.dodge += amount
+            elif attr == 'psyche':
+                obj.psyche += amount
+            elif attr == 'spirit':
+                app.canvas.create_text(obj.loc[0]*100-app.moved_right+50, obj.loc[1]*100-app.moved_down+95, text = 'Guard Redirect', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
+                redir_obj.spirit += amount
+                if redir_obj.spirit > obj.base_spirit:
+                    redir_obj.spirit = obj.base_spirit
+                if redir_obj.spirit <= 0:
+                    p = partial(obj.__class__.set_attr, obj, attr, d) #   PUT BACK CLASS METHOD set_attr
+                    obj.set_attr = p
+                    app.focus_square(redir_obj.loc)
+                    app.canvas.create_text(redir_obj.loc[0]*100-app.moved_right+50, redir_obj.loc[1]*100-app.moved_down+95, text = 'Guard Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
+                    root.after(1999, lambda e = self.id : app.kill(e))
+            elif isinstance(obj, Witch) or isinstance(obj, Trickster):
+                if attr == 'magick':
+                    obj. magick += amount
+                    if obj.magick > obj.base_magick:
+                        obj.magick = obj.base_magick
+        p = partial(guard_set_attr, obj = app.ent_dict[id], redir_obj = app.ent_dict[self.number])
+        app.ent_dict[id].set_attr = p
+        def un(i):
+            p = partial(app.ent_dict[i].__class__.set_attr, app.ent_dict[i], attr, d) #   PUT BACK CLASS METHOD set_attr
+            app.ent_dict[i].set_attr = p
+            return None
+        p = partial(un, id)
+        # EOT FUNC
+        def nothing():
+            return None
+        eot = nothing
+        n = 'Guard' + str(app.effects_counter)
+        app.ent_dict[id].effects_dict[n] = Effect(name = 'Guard', info = 'Guard, redir dmg', eot_func = eot, undo = p, duration = 3)
+        root.after(2666, lambda e = None: self.cancel_attack(e))
+
+
+
+
+
+        
+    def leap(self, event = None):
+        if self.attack_used == True:
+            return
+        root.unbind('<a>')
+        root.unbind('<q>')
+        root.bind('<q>', self.cancel_attack)
+        sqrs = []
+        for c in app.coords:
+            if dist(self.loc, c) <= 3 and app.grid[c[0]][c[1]] == '':
+                sqrs.append(c)
+        app.animate_squares(sqrs)
+        app.depop_context(event = None)
+        root.bind('<a>', lambda e, sqrs = sqrs, sqr = grid_pos : self.do_leap(event = e, sqrs = sqrs, sqr = sqr)) 
+        b = tk.Button(app.context_menu, text = 'Confirm Leap', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqrs = sqrs, sqr = grid_pos : self.do_leap(event = e, sqrs = sqrs, sqr = sqr))
+        b.pack(side = 'top')
+        app.context_buttons.append(b)
+        
+    def do_leap(self, event = None, sqrs = None, sqr = None):
+        global selected
+        if sqr not in sqrs:
+            return
+        self.attack_used = True
+        self.init_leap_anims()
+#         effect1 = mixer.Sound('Sound_Effects/leap.ogg')
+#         effect1.set_volume(1)
+#         sound_effects.play(effect1, 0)
+        app.depop_context(event = None)
+        app.unbind_all()
+        app.cleanup_squares()
+        x = self.loc[0]*100+50-app.moved_right
+        y = self.loc[1]*100+50-app.moved_down
+        endx = sqr[0]*100+50-app.moved_right
+        endy = sqr[1]*100+50-app.moved_down
+        start_sqr = self.loc[:]
+        end_sqr = sqr[:]
+        selected = [self.number]
+        total_distance = abs(x - endx) + abs(y - endy)
+        tic = total_distance/6
+        # need to call rotate_image every tic
+        def move_loop(x, y, endx, endy, start_sqr, end_sqr, acm, tic):
+            if acm > tic:
+                acm = 0
+                self.rotate_image()
+                app.canvas.delete(self.number)
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+            if x > endx:
+                acm += 10
+                x -= 10
+                app.canvas.move(self.number, -10, 0)
+            if x < endx:
+                acm += 10
+                x += 10
+                app.canvas.move(self.number, 10, 0)
+            if y > endy:
+                acm += 10
+                y -= 10
+                app.canvas.move(self.number, 0, -10)
+            if y < endy:
+                acm += 10
+                y += 10
+                app.canvas.move(self.number, 0, 10)
+            app.canvas.tag_raise('cursor')
+            if x == endx and y == endy:
+                self.finish_leap(end_sqr, start_sqr) # EXIT
+            else: # CONTINUE LOOP
+                root.after(66, lambda x = x, y = y, e = endx, e2 = endy, s = start_sqr, s2 = end_sqr, acm = acm, tic = tic : move_loop(x, y, e, e2, s, s2, acm, tic))
+        move_loop(x, y, endx, endy, start_sqr, end_sqr, tic+1, tic)
+            
+            
+    def finish_leap(self, end_sqr, start_sqr):
+        global selected
+        selected = []
+        self.loc = end_sqr[:]
+        app.grid[start_sqr[0]][start_sqr[1]] = ''
+        app.grid[end_sqr[0]][end_sqr[1]] = self.number
+        self.init_normal_anims()
+        app.rebind_all()
+#         app.canvas.delete('text')
+#         try: 
+#             del app.vis_dict['Warrior_Slash']
+#             app.canvas.delete('Warrior_Slash')
+#         except: pass
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        
         
     def warrior_attack(self, event = None):
         if self.attack_used == True:
@@ -5416,21 +5577,21 @@ class Warrior(Summon):
         root.unbind('<q>')
         root.bind('<q>', self.cancel_attack)
         sqrs = []
-#         coord_pairs = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         for c in app.coords:
             if dist(self.loc, c) == 1:
                 sqrs.append(c)
         app.animate_squares(sqrs)
         app.depop_context(event = None)
-        root.bind('<a>', lambda e, s = sqrs : self.check_hit(event = e, sqrs = s)) 
-        b = tk.Button(app.context_menu, text = 'Confirm Attack', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, s = sqrs : self.check_hit(event = e, sqrs = s))
+        root.bind('<a>', lambda e, sqrs = sqrs, sqr = grid_pos : self.check_hit(event = e, sqrs = sqrs, sqr = sqr)) 
+        b = tk.Button(app.context_menu, text = 'Confirm Attack', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqrs = sqrs, sqr = grid_pos : self.check_hit(event = e, sqrs = sqrs, sqr = sqr))
         b.pack(side = 'top')
         app.context_buttons.append(b)
         
-    def check_hit(self, event = None, sqrs = None):
-        if grid_pos not in sqrs:
+    def check_hit(self, event = None, sqrs = None, sqr = None):
+        if sqr not in sqrs:
             return
-        if app.current_pos() == '' or app.current_pos() == 'block':
+        id = app.grid[sqr[0]][sqr[1]]
+        if id == '' or id == 'block':
             return
         self.attack_used = True
         self.init_attack_anims()
@@ -5440,20 +5601,18 @@ class Warrior(Summon):
         app.depop_context(event = None)
         app.unbind_all()
         app.cleanup_squares()
-        id = app.current_pos()
-        visloc = app.ent_dict[id].loc[:]
-        app.vis_dict['Warrior_Slash'] = Vis(name = 'Warrior_Slash', loc = visloc)
-        app.canvas.create_image(visloc[0]*100+50-app.moved_right, visloc[1]*100+50-app.moved_down, image = app.vis_dict['Warrior_Slash'].img, tags = 'Warrior_Slash')
+        app.vis_dict['Warrior_Slash'] = Vis(name = 'Warrior_Slash', loc = sqr[:])
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Warrior_Slash'].img, tags = 'Warrior_Slash')
         my_agl = self.get_attr('agl')
         target_agl = app.ent_dict[id].get_attr('agl')
         if to_hit(my_agl, target_agl) == True:
             my_str = self.get_attr('str')
             target_end = app.ent_dict[id].get_attr('end')
             d = damage(my_str, target_end)
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Warrior Attack Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+            app.canvas.create_text(sqr[0]*100-app.moved_right+50, sqr[1]*100-app.moved_down+50, text = 'Warrior Attack Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
             root.after(2666, lambda id = id, d = d : self.do_attack(id, d))
         else:
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Warrior Attack Misses!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+            app.canvas.create_text(sqr[0]*100-app.moved_right+50, sqr[1]*100-app.moved_down+50, text = 'Warrior Attack Misses!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
             root.after(2666, lambda e = None : self.cancel_attack(event = e))
         
     def do_attack(self, id, dmg):
@@ -5942,12 +6101,113 @@ class Cenobite(Summon):
         app.rebind_all()
         app.canvas.delete('text')
         app.depop_context(event = None)
-
         
-        
-    # damage and burn to all within a range
+    # damage and possible burn to target
+    # vis, self 'glows', target flames
     def hellfire(self, event = None):
-        pass
+        if self.attack_used == True:
+            return
+        root.unbind('<a>')
+        root.unbind('<q>')
+        root.bind('<q>', self.cancel_hellfire)
+        sqrs = []
+        for c in app.coords:
+            if dist(self.loc, c) <= 2:
+                sqrs.append(c)
+        app.animate_squares(sqrs)
+        app.depop_context(event = None)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.check_hit(event = e, sqr = s, sqrs = sqrs)) 
+        b = tk.Button(app.context_menu, text = 'Confirm Hellfire', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos[:], sqrs = sqrs : self.check_hit(event = e, sqr = s, sqrs = sqrs))
+        b.pack(side = 'top')
+        app.context_buttons.append(b)
+        
+    def check_hit(self, event = None, sqr = None, sqrs = None):
+        if sqr not in sqrs:
+            return
+        id = app.grid[sqr[0]][sqr[1]]
+        if id == '' or id == 'block':
+            return
+        self.attack_used = True
+#         self.init_attack_anims()
+#         effect1 = mixer.Sound('Sound_Effects/hellfire.ogg')
+#         effect1.set_volume(1)
+#         sound_effects.play(effect1, 0)
+        app.depop_context(event = None)
+        app.unbind_all()
+        app.cleanup_squares()
+        visloc = app.ent_dict[id].loc[:]
+        app.vis_dict['Hellfire'] = Vis(name = 'Hellfire', loc = visloc)
+        app.canvas.create_image(visloc[0]*100+50-app.moved_right, visloc[1]*100+50-app.moved_down, image = app.vis_dict['Hellfire'].img, tags = 'Hellfire')
+        my_psyche = self.get_attr('psyche')
+        target_psyche = app.ent_dict[id].get_attr('psyche')
+        if to_hit(my_psyche, target_psyche) == True:
+            target_end = app.ent_dict[id].get_attr('end')
+            d = damage(my_psyche, target_end)
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+75-app.moved_down, text = 'Hit! '+str(d)+' spirit', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+            app.ent_dict[id].set_attr('spirit', -d)
+            if app.ent_dict[id].spirit <= 0:
+                app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+90-app.moved_down, text = app.ent_dict[id].name.replace('_',' ')+' Killed...', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+                root.after(2999, lambda id = id: app.kill(id))
+            else:
+            # save to avoid burn
+                if app.ent_dict[id].attr_check('end') == False:
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+95-app.moved_down, text = 'Burned', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+                # burn effect, every time burned ent takes spirit dmg it takes that much dmg plus 2
+                # need to overwrite ent.set_attr
+                    def burn_effect():
+                        pass
+                    f = burn_effect
+                    def burned_set_attr(attr = None, amount = None, obj = None):# REPLACE OBJ set_attr with -2 (2 more subtracted)
+                        if attr == 'str':
+                            obj.str += amount
+                        elif attr == 'agl':
+                            obj.agl += amount
+                        elif attr == 'end':
+                            obj.end += amount
+                        elif attr == 'dodge':
+                            obj.dodge += amount
+                        elif attr == 'psyche':
+                            obj.psyche += amount
+                        elif attr == 'spirit':
+                            obj.spirit += amount-2
+                            if obj.spirit > obj.base_spirit:
+                                obj.spirit = obj.base_spirit
+                            app.canvas.create_text(obj.loc[0]*100+50-app.moved_right, obj.loc[1]*100+55-app.moved_down, text = '2 spirit burn', justify ='center', font = ('Andale Mono', 12), fill = 'white', tags = 'text')
+                        elif isinstance(obj, Witch) or isinstance(obj, Trickster):
+                            if attr == 'magick':
+                                obj. magick += amount
+                                if obj.magick > obj.base_magick:
+                                    obj.magick = obj.base_magick
+                    p = partial(burned_set_attr, obj = app.ent_dict[id])
+                    app.ent_dict[id].set_attr = p
+                    def un(i):
+                        p = partial(app.ent_dict[i].__class__.set_attr, app.ent_dict[i], attr, d) #   PUT BACK CLASS METHOD MOVEMENT
+                        app.ent_dict[i].set_attr = p
+                        return None
+                    p = partial(un, id)
+                    # EOT FUNC
+                    def nothing():
+                        return None
+                    eot = nothing
+                    n = 'Burn' + str(app.effects_counter)
+                    app.ent_dict[id].effects_dict[n] = Effect(name = 'Burn', info = 'Burn, 2 more dmg', eot_func = eot, undo = p, duration = 3)
+        else:
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+75-app.moved_down, text = 'Missed', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+        root.after(2666, lambda e = None : self.cancel_hellfire(event = e))
+        
+    def cancel_hellfire(self, event):
+        self.init_normal_anims()
+        app.rebind_all()
+        app.canvas.delete('text')
+        try: 
+            del app.vis_dict['Hellfire']
+            app.canvas.delete('Hellfire')
+        except: pass
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        
+        
+        
         
     def legal_moves(self):
         loc = self.loc
@@ -6497,6 +6757,9 @@ class Witch(Entity):
         if sqr not in sqrs:
             return
         if app.grid[sqr[0]][sqr[1]] != '':
+            return
+        my_ent_names = [v.name for k,v in app.ent_dict.items() if v.owner == self.owner]
+        if 'Cenobite' in my_ent_names:
             return
         self.init_cast_anims()
         effect1 = mixer.Sound('Sound_Effects/summon_cenobite.ogg')
@@ -8262,13 +8525,13 @@ class App(tk.Frame):
                     return 'game over'
             self.map_triggers.append(self_death)
             ############## GODHAND
-            def summon_trick():
-                all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
-                if 'Bard' in all:
-                    return 'victory'
-                else:
-                    return None
-            self.map_triggers.append(summon_trick)
+#             def summon_trick():
+#                 all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
+#                 if 'Bard' in all:
+#                     return 'victory'
+#                 else:
+#                     return None
+#             self.map_triggers.append(summon_trick)
             ################
             def kill_all_enemies():
                 all = [k for k,v in self.ent_dict.items() if v.owner == 'p2']
@@ -8285,12 +8548,12 @@ class App(tk.Frame):
             self.map_triggers = []
             sound1 = mixer.Sound('Music/Caves of sorrow.ogg')
             background_music.play(sound1, -1)
-            def summon_trick():
-                all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
-                if 'Bard' in all:
-                    return 'victory'
-                else:
-                    return None
+#             def summon_trick():
+#                 all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
+#                 if 'Bard' in all:
+#                     return 'victory'
+#                 else:
+#                     return None
             self.map_triggers.append(summon_trick)
             def self_death():
                 if app.p1_witch not in app.ent_dict.keys():
@@ -8316,13 +8579,13 @@ class App(tk.Frame):
                 if app.p1_witch not in app.ent_dict.keys():
                     return 'game over'
             self.map_triggers.append(self_death)
-            def summon_trick():
-                all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
-                if 'Bard' in all:
-                    return 'door'
-                else:
-                    return None
-            self.map_triggers.append(summon_trick)
+#             def summon_trick():
+#                 all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
+#                 if 'Bard' in all:
+#                     return 'door'
+#                 else:
+#                     return None
+#             self.map_triggers.append(summon_trick)
 #             depending on which is killed, load certain level
 #             knight near stairway is b7, knight near doorway is b8
             def kill_stair_knight():
@@ -8362,6 +8625,7 @@ class App(tk.Frame):
                     return None
             self.map_triggers.append(summon_trick)
             # add generate revenants to global effects
+            # DEBUG should not be map trigger, happen only once per turn
             def generate_revenants():
                 if self.turn_counter % 4 == 0:
                     # get empty sqr near
@@ -8373,7 +8637,7 @@ class App(tk.Frame):
 #                         enemy_ents = [k for k,v in app.ent_dict.items() if v.owner == 'p2']
                         # needs to be unique number
                         counter = self.effects_counter+3 # seed with 3 to prevent collision existing Ents
-                        self.effects_counter += 1
+                        self.effects_counter += 3
                         id = 'b' + str(counter)
                         app.grid[24][4] = id
                         app.ent_dict[id] = Revenant(name = 'Revenant', img = img, loc = [24,4], owner = 'p2', number = id)
@@ -8464,13 +8728,13 @@ class App(tk.Frame):
             background_music.play(sound1, -1)
             sound1.set_volume(0.3)
             self.map_triggers = []
-            def summon_trick():
-                all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
-                if 'Bard' in all:
-                    return 'victory'
-                else:
-                    return None
-            self.map_triggers.append(summon_trick)
+#             def summon_trick():
+#                 all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
+#                 if 'Bard' in all:
+#                     return 'victory'
+#                 else:
+#                     return None
+#             self.map_triggers.append(summon_trick)
             def self_death():
                 if app.p1_witch not in app.ent_dict.keys():
                     return 'game over'
@@ -8796,13 +9060,13 @@ class App(tk.Frame):
             background_music.play(sound1, -1)
             sound1.set_volume(0.4)
             self.map_triggers = []
-            def summon_trick():
-                all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
-                if 'Bard' in all:
-                    return 'victory'
-                else:
-                    return None
-            self.map_triggers.append(summon_trick)
+#             def summon_trick():
+#                 all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
+#                 if 'Bard' in all:
+#                     return 'victory'
+#                 else:
+#                     return None
+#             self.map_triggers.append(summon_trick)
             def self_death():
                 if app.p1_witch not in app.ent_dict.keys():
                     return 'game over'
@@ -8860,13 +9124,13 @@ class App(tk.Frame):
             background_music.play(sound1, -1)
             sound1.set_volume(0.3)
             self.map_triggers = []
-            def summon_trick():
-                all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
-                if 'Bard' in all:
-                    return 'victory'
-                else:
-                    return None
-            self.map_triggers.append(summon_trick)
+#             def summon_trick():
+#                 all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
+#                 if 'Bard' in all:
+#                     return 'victory'
+#                 else:
+#                     return None
+#             self.map_triggers.append(summon_trick)
             # SPARKLE
             def create_sparkle1():
                 app.vis_dict['Sparkle1'] = Vis(name = 'Sparkle', loc = [7,1])
@@ -8901,13 +9165,13 @@ class App(tk.Frame):
             background_music.play(sound1, -1)
             sound1.set_volume(0.8)
             self.map_triggers = []
-            def summon_trick():
-                all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
-                if 'Bard' in all:
-                    return 'victory'
-                else:
-                    return None
-            self.map_triggers.append(summon_trick)
+#             def summon_trick():
+#                 all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
+#                 if 'Bard' in all:
+#                     return 'victory'
+#                 else:
+#                     return None
+#             self.map_triggers.append(summon_trick)
             def kill_all():
                 ents = app.ent_dict.keys()
                 if 'b0' not in ents and 'b1' not in ents and 'b2' not in ents:
@@ -9871,7 +10135,6 @@ class App(tk.Frame):
         global selected, selected_vis
         for ent in self.ent_dict.keys():
             if ent not in selected:
-            
                 self.ent_dict[ent].rotate_image()
                 self.canvas.delete(ent)
                 self.canvas.create_image(self.ent_dict[ent].loc[0]*100+50-self.moved_right, self.ent_dict[ent].loc[1]*100+50-self.moved_down, image = self.ent_dict[ent].img, tags = app.ent_dict[ent].tags)
