@@ -5451,16 +5451,19 @@ class Warrior(Summon):
             elif attr == 'psyche':
                 obj.psyche += amount
             elif attr == 'spirit':
-                app.canvas.create_text(obj.loc[0]*100-app.moved_right+50, obj.loc[1]*100-app.moved_down+95, text = 'Guard Redirect', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
-                redir_obj.spirit += amount
-                if redir_obj.spirit > obj.base_spirit:
-                    redir_obj.spirit = obj.base_spirit
-                if redir_obj.spirit <= 0:
-                    p = partial(obj.__class__.set_attr, obj, attr, d) #   PUT BACK CLASS METHOD set_attr
-                    obj.set_attr = p
-                    app.focus_square(redir_obj.loc)
-                    app.canvas.create_text(redir_obj.loc[0]*100-app.moved_right+50, redir_obj.loc[1]*100-app.moved_down+95, text = 'Guard Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
-                    root.after(1999, lambda e = self.id : app.kill(e))
+                if amount < 0:
+                    app.canvas.create_text(obj.loc[0]*100-app.moved_right+50, obj.loc[1]*100-app.moved_down+95, text = 'Guard Redirect', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
+                    redir_obj.spirit += amount
+                    if redir_obj.spirit <= 0:
+                        p = partial(obj.__class__.set_attr, obj, attr, d) #   PUT BACK CLASS METHOD set_attr
+                        obj.set_attr = p
+                        app.focus_square(redir_obj.loc)
+                        app.canvas.create_text(redir_obj.loc[0]*100-app.moved_right+50, redir_obj.loc[1]*100-app.moved_down+95, text = 'Guard Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
+                        root.after(1999, lambda e = self.id : app.kill(e))
+                else:
+                    obj.spirit += amount
+                    if obj.spirit > obj.base_spirit:
+                        obj.spirit = obj.base_spirit
             elif isinstance(obj, Witch) or isinstance(obj, Trickster):
                 if attr == 'magick':
                     obj. magick += amount
@@ -5469,7 +5472,7 @@ class Warrior(Summon):
         p = partial(guard_set_attr, obj = app.ent_dict[id], redir_obj = app.ent_dict[self.number])
         app.ent_dict[id].set_attr = p
         def un(i):
-            p = partial(app.ent_dict[i].__class__.set_attr, app.ent_dict[i], attr, d) #   PUT BACK CLASS METHOD set_attr
+            p = partial(app.ent_dict[i].__class__.set_attr, app.ent_dict[i]) # PUT BACK CLASS METHOD set_attr
             app.ent_dict[i].set_attr = p
             return None
         p = partial(un, id)
@@ -6152,8 +6155,8 @@ class Cenobite(Summon):
                 root.after(2999, lambda id = id: app.kill(id))
             else:
             # save to avoid burn
-                if 1 == 1:
-#                 if app.ent_dict[id].attr_check('end') == False:
+#                 if 1 == 1:
+                if app.ent_dict[id].attr_check('end') == False:
                     app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+95-app.moved_down, text = 'Burned', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
                 # burn effect, every time burned ent takes spirit dmg it takes that much dmg plus 2
                 # need to overwrite ent.set_attr
