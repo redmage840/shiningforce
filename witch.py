@@ -1,3 +1,5 @@
+# preload all images!
+
 # library, sometimes 2 revenants generated on first turn instead of 1?
 
 # add delay to get_focus / focus_sqr
@@ -6150,7 +6152,8 @@ class Cenobite(Summon):
                 root.after(2999, lambda id = id: app.kill(id))
             else:
             # save to avoid burn
-                if app.ent_dict[id].attr_check('end') == False:
+                if 1 == 1:
+#                 if app.ent_dict[id].attr_check('end') == False:
                     app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+95-app.moved_down, text = 'Burned', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
                 # burn effect, every time burned ent takes spirit dmg it takes that much dmg plus 2
                 # need to overwrite ent.set_attr
@@ -6169,7 +6172,10 @@ class Cenobite(Summon):
                         elif attr == 'psyche':
                             obj.psyche += amount
                         elif attr == 'spirit':
-                            obj.spirit += amount-2
+                            if amount < 0: # only add 2 dmg when taking dmg, not when healing
+                                obj.spirit += amount-2
+                            else:
+                                obj.spirit += amount
                             if obj.spirit > obj.base_spirit:
                                 obj.spirit = obj.base_spirit
                             app.canvas.create_text(obj.loc[0]*100+50-app.moved_right, obj.loc[1]*100+55-app.moved_down, text = '2 spirit burn', justify ='center', font = ('Andale Mono', 12), fill = 'white', tags = 'text')
@@ -6181,7 +6187,7 @@ class Cenobite(Summon):
                     p = partial(burned_set_attr, obj = app.ent_dict[id])
                     app.ent_dict[id].set_attr = p
                     def un(i):
-                        p = partial(app.ent_dict[i].__class__.set_attr, app.ent_dict[i], attr, d) #   PUT BACK CLASS METHOD MOVEMENT
+                        p = partial(app.ent_dict[i].__class__.set_attr, app.ent_dict[i]) # PUT BACK CLASS METHOD MOVEMENT
                         app.ent_dict[i].set_attr = p
                         return None
                     p = partial(un, id)
@@ -8617,13 +8623,13 @@ class App(tk.Frame):
             background_music.play(sound1, -1)
             sound1.set_volume(1)
             self.map_triggers = []
-            def summon_trick():
-                all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
-                if 'Bard' in all:
-                    return 'victory'
-                else:
-                    return None
-            self.map_triggers.append(summon_trick)
+#             def summon_trick():
+#                 all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
+#                 if 'Bard' in all:
+#                     return 'victory'
+#                 else:
+#                     return None
+#             self.map_triggers.append(summon_trick)
             # add generate revenants to global effects
             # DEBUG should not be map trigger, happen only once per turn
             def generate_revenants():
