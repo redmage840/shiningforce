@@ -5529,7 +5529,7 @@ class Warrior(Summon):
         tic = total_distance/6
         # need to call rotate_image every tic
         def move_loop(x, y, endx, endy, start_sqr, end_sqr, acm, tic):
-            if acm > tic:
+            if acm >= tic:
                 acm = 0
                 self.rotate_image()
                 app.canvas.delete(self.number)
