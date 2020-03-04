@@ -1,3 +1,5 @@
+# handle multiple overwrites of methods, legal_moves and set_attr mainly? use the recently created spirit_effects instead of set_attr for spirit mods
+
 # spellcasting enemies! ...things that have effects not just damage, sleep, paralyze, slow, etc
 
 # text objects, create a background/stroke/dropshadow effect by generating text twice with slight offset/color difference
@@ -310,21 +312,21 @@ class Entity():
         elif isinstance(self, Summon):
             self.tags = self.number
             
-        if isinstance(self, Witch) or isinstance(self, Summon):
-            self.base_str = self.str
-            self.base_agl = self.agl
-            self.base_end = self.end
-            self.base_dodge = self.dodge
-            self.base_psyche = self.psyche
-            self.base_spirit = self.spirit
-            if isinstance(self, Witch):
-                self.base_magick = self.magick
-            
-            self.str_effects = []
-            self.agl_effects = []
-            self.end_effects = []
-            self.dodge_effects = []
-            self.psyche_effects = []
+#         if isinstance(self, Witch) or isinstance(self, Summon):
+        self.base_str = self.str
+        self.base_agl = self.agl
+        self.base_end = self.end
+        self.base_dodge = self.dodge
+        self.base_psyche = self.psyche
+        self.base_spirit = self.spirit
+        if isinstance(self, Witch):
+            self.base_magick = self.magick
+        self.str_effects = []
+        self.agl_effects = []
+        self.end_effects = []
+        self.dodge_effects = []
+        self.psyche_effects = []
+        self.spirit_effects = []
         # when ent moved by effect other than regular movement, must update origin also (square of origin at begin of turn)
 #         self.origin = []
         self.effects_dict = {}
@@ -392,6 +394,9 @@ class Entity():
         elif attr == 'psyche':
             q = self.psyche_effects
             base = self.psyche
+        elif attr == 'spirit':
+            q = self.spirit_effects
+            base = self.spirit
         for func in q:
             base = func(base)
         return base
@@ -408,6 +413,8 @@ class Entity():
         elif attr == 'psyche':
             self.psyche += amount
         elif attr == 'spirit':
+            for func in self.spirit_effects:
+                amount = func(amount)
             self.spirit += amount
             if self.spirit > self.base_spirit:
                 self.spirit = self.base_spirit
@@ -5951,7 +5958,10 @@ class Lesser_Demon(Summon):
             return
         if app.grid[sqr[0]][sqr[1]] == '' or app.grid[sqr[0]][sqr[1]] == 'block':
             return
-        self.attack_used = True
+        id = app.grid[sqr[0]][sqr[1]]
+        efs = [v.name for k,v in app.ent_dict[id].effects_dict.items()]
+        if 'Baleful_Stare' in efs:
+            return
 #         self.init_attack_anims()
 #         effect1 = mixer.Sound('Sound_Effects/baleful_stare.ogg')
 #         effect1.set_volume(1)
@@ -5959,7 +5969,7 @@ class Lesser_Demon(Summon):
         app.depop_context(event = None)
         app.unbind_all()
         app.cleanup_squares()
-        id = app.grid[sqr[0]][sqr[1]]
+        self.attack_used = True
         visloc = app.ent_dict[id].loc[:]
         app.vis_dict['Baleful_Stare'] = Vis(name = 'Baleful_Stare', loc = visloc)
         app.canvas.create_image(visloc[0]*100+50-app.moved_right, visloc[1]*100+50-app.moved_down, image = app.vis_dict['Baleful_Stare'].img, tags = 'Baleful_Stare')
@@ -6044,7 +6054,7 @@ class Lesser_Demon(Summon):
             app.canvas.create_image(s[0]*100+50-app.moved_right, s[1]*100+50-app.moved_down, image = app.vis_dict['Dire_Charm'].img, tags = 'Dire_Charm')
             def dire_charm_loop(ents):
                 if ents == []:
-                    root.after(2666, self.finish_dire_charm)
+                    root.after(3333, self.finish_dire_charm)
                 else:
                     id = ents[0]
                     ents = ents[1:]
@@ -6057,16 +6067,20 @@ class Lesser_Demon(Summon):
                     save = app.ent_dict[id].attr_check('psyche')
                     if save == True:
                         app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+75-app.moved_down, text = 'Psyche Save', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
-                        root.after(2666, lambda es = ents : dire_charm_loop(es))
+                        root.after(3333, lambda t = 'text' : app.canvas.delete(t))
+                        root.after(3333, lambda es = ents : dire_charm_loop(es))
                     else:
-                        d = damage(app.ent_dict[id].get_attr('str'), app.ent_dict[id].get_attr('end'))
+                        tar_str = app.ent_dict[id].get_attr('str')
+                        tar_end = app.ent_dict[id].get_attr('end')
+                        d = damage(tar_str, tar_end)
                         app.ent_dict[id].set_attr('spirit', -d)
                         app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+75-app.moved_down, text = 'Attack Self '+str(d)+' Spirit', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
                         # check for death
                         if app.ent_dict[id].get_attr('spirit') <= 0:
                             app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+90-app.moved_down, text = app.ent_dict[id].name + ' Killed...', font = ('Andale Mono', 12), fill = 'white', tags = 'text')
-                            root.after(2666, lambda id = id : app.kill(id))
-                        root.after(2666, lambda es = ents : dire_charm_loop(es))
+                            root.after(3333, lambda id = id : app.kill(id))
+                        root.after(3333, lambda t = 'text' : app.canvas.delete(t))
+                        root.after(3333, lambda es = ents : dire_charm_loop(es))
             dire_charm_loop(ents)
             
             
@@ -6155,7 +6169,7 @@ class Cenobite(Summon):
                         def nothing():
                             return None
                         n = 'Strength_Through_Wounding' + str(app.effects_counter)
-                        app.ent_dict[ent].effects_dict[n] = Effect(name = 'Strength_Through_Wounding', info = 'STW, +2 end, psy', eot_func = nothing, undo = p, duration = 3)
+                        app.ent_dict[ent].effects_dict[n] = Effect(name = 'Strength_Through_Wounding', info = 'STW, +2 end, psy', eot_func = nothing, undo = p, duration = 2)
         root.after(3666, self.finish_strength_through_wounding)
         
     def finish_strength_through_wounding(self, event = None):
@@ -6307,16 +6321,16 @@ class Cenobite(Summon):
         root.bind('<q>', self.cancel_hellfire)
         sqrs = []
         for c in app.coords:
-            if dist(self.loc, c) <= 2:
+            if 1 <= dist(self.loc, c) <= 2:
                 sqrs.append(c)
         app.animate_squares(sqrs)
         app.depop_context(event = None)
-        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.check_hit(event = e, sqr = s, sqrs = sqrs)) 
-        b = tk.Button(app.context_menu, text = 'Confirm Hellfire', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos[:], sqrs = sqrs : self.check_hit(event = e, sqr = s, sqrs = sqrs))
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_hellfire(event = e, sqr = s, sqrs = sqrs)) 
+        b = tk.Button(app.context_menu, text = 'Confirm Hellfire', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos[:], sqrs = sqrs : self.do_hellfire(event = e, sqr = s, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
         
-    def check_hit(self, event = None, sqr = None, sqrs = None):
+    def do_hellfire(self, event = None, sqr = None, sqrs = None):
         if sqr not in sqrs:
             return
         id = app.grid[sqr[0]][sqr[1]]
@@ -6324,9 +6338,9 @@ class Cenobite(Summon):
             return
         self.attack_used = True
 #         self.init_attack_anims()
-#         effect1 = mixer.Sound('Sound_Effects/hellfire.ogg')
-#         effect1.set_volume(1)
-#         sound_effects.play(effect1, 0)
+        effect1 = mixer.Sound('Sound_Effects/beleths_command.ogg')
+        effect1.set_volume(1)
+        sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.unbind_all()
         app.cleanup_squares()
@@ -6343,45 +6357,50 @@ class Cenobite(Summon):
             if app.ent_dict[id].spirit <= 0:
                 app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+90-app.moved_down, text = app.ent_dict[id].name.replace('_',' ')+' Killed...', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
                 root.after(2999, lambda id = id: app.kill(id))
-            else:
-            # save to avoid burn
-#                 if 1 == 1:
-                if app.ent_dict[id].attr_check('end') == False:
+            else:# SAVE to avoid burn
+                if 1 == 1:
+#                 if app.ent_dict[id].attr_check('end') == False:
                     app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+95-app.moved_down, text = 'Burned', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
                 # burn effect, every time burned ent takes spirit dmg it takes that much dmg plus 2
-                # need to overwrite ent.set_attr
-                    def burn_effect():
-                        pass
-                    f = burn_effect
-                    def burned_set_attr(attr = None, amount = None, obj = None):# REPLACE OBJ set_attr with -2 (2 more subtracted)
-                        if attr == 'str':
-                            obj.str += amount
-                        elif attr == 'agl':
-                            obj.agl += amount
-                        elif attr == 'end':
-                            obj.end += amount
-                        elif attr == 'dodge':
-                            obj.dodge += amount
-                        elif attr == 'psyche':
-                            obj.psyche += amount
-                        elif attr == 'spirit':
-                            if amount < 0: # only add 2 dmg when taking dmg, not when healing
-                                obj.spirit += amount-2
-                            else:
-                                obj.spirit += amount
-                            if obj.spirit > obj.base_spirit:
-                                obj.spirit = obj.base_spirit
+                    def burn_effect(d = None, obj = None):
+                        if d < 0:
                             app.canvas.create_text(obj.loc[0]*100+50-app.moved_right, obj.loc[1]*100+55-app.moved_down, text = '2 spirit burn', justify ='center', font = ('Andale Mono', 12), fill = 'white', tags = 'text')
-                        elif isinstance(obj, Witch) or isinstance(obj, Trickster):
-                            if attr == 'magick':
-                                obj. magick += amount
-                                if obj.magick > obj.base_magick:
-                                    obj.magick = obj.base_magick
-                    p = partial(burned_set_attr, obj = app.ent_dict[id])
-                    app.ent_dict[id].set_attr = p
+                            d -= 2
+                            return d
+                        else:
+                            return d
+                    f = partial(burn_effect, obj = app.ent_dict[id])
+                    app.ent_dict[id].spirit_effects.append(f)
+#                     def burned_set_attr(attr = None, amount = None, obj = None):# REPLACE OBJ set_attr with -2 (2 more subtracted)
+#                         if attr == 'str':
+#                             obj.str += amount
+#                         elif attr == 'agl':
+#                             obj.agl += amount
+#                         elif attr == 'end':
+#                             obj.end += amount
+#                         elif attr == 'dodge':
+#                             obj.dodge += amount
+#                         elif attr == 'psyche':
+#                             obj.psyche += amount
+#                         elif attr == 'spirit':
+#                             if amount < 0: # only add 2 dmg when taking dmg, not when healing
+#                                 obj.spirit += amount-2
+#                             else:
+#                                 obj.spirit += amount
+#                             if obj.spirit > obj.base_spirit:
+#                                 obj.spirit = obj.base_spirit
+#                             app.canvas.create_text(obj.loc[0]*100+50-app.moved_right, obj.loc[1]*100+55-app.moved_down, text = '2 spirit burn', justify ='center', font = ('Andale Mono', 12), fill = 'white', tags = 'text')
+#                         elif isinstance(obj, Witch) or isinstance(obj, Trickster):
+#                             if attr == 'magick':
+#                                 obj. magick += amount
+#                                 if obj.magick > obj.base_magick:
+#                                     obj.magick = obj.base_magick
+#                     p = partial(burned_set_attr, obj = app.ent_dict[id])
+#                     app.ent_dict[id].set_attr = p
                     def un(i):
-                        p = partial(app.ent_dict[i].__class__.set_attr, app.ent_dict[i]) # PUT BACK CLASS METHOD MOVEMENT
-                        app.ent_dict[i].set_attr = p
+                        app.ent_dict[i].spirit_effects.remove(f)
+#                         p = partial(app.ent_dict[i].__class__.set_attr, app.ent_dict[i]) # PUT BACK CLASS METHOD MOVEMENT
+#                         app.ent_dict[i].set_attr = p
                         return None
                     p = partial(un, id)
                     # EOT FUNC
@@ -6715,6 +6734,7 @@ class Witch(Entity):
         self.end_effects = []
         self.dodge_effects = []
         self.psyche_effects = []
+        self.spirit_effects = []
         self.move_used = False
         self.effects_dict = {}
         self.summon_count = 0
