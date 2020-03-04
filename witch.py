@@ -1,3 +1,7 @@
+# spellcasting enemies! ...things that have effects not just damage, sleep, paralyze, slow, etc
+
+# text objects, create a background/stroke/dropshadow effect by generating text twice with slight offset/color difference
+
 # preload all images!
 
 # library, sometimes 2 revenants generated on first turn instead of 1?
@@ -5894,6 +5898,192 @@ class Familiar_Homonculus(Summon):
         return mvlist
 
 
+class Lesser_Demon(Summon):
+    def __init__(self, name, img, loc, owner, number):
+        self.actions = {'Dire Charm':self.dire_charm, 'Baleful Stare':self.baleful_stare, 'Brambles':self.brambles, 'Move': self.move}
+        self.attack_used = False
+        self.str = 3
+        self.agl = 4
+        self.end = 4
+        self.dodge = 5
+        self.psyche = 6
+        self.spirit = 16
+        self.move_type = 'normal'
+        super().__init__(name, img, loc, owner, number)
+        
+    def legal_moves(self):
+        loc = self.loc
+        mvlist = []
+        def findall(loc, start, distance):
+            if start > distance:
+                return
+            adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
+            for s in adj:
+                mvlist.append(s)
+                findall(s, start+1, distance)
+        findall(loc, 1, 4) 
+        return [list(x) for x in set(tuple(x) for x in mvlist)]
+        
+        
+    def brambles(self, event = None):
+        pass
+    
+        
+    def baleful_stare(self, event = None):
+        if self.attack_used == True:
+            return
+        root.unbind('<a>')
+        root.unbind('<q>')
+        root.bind('<q>', self.finish_baleful_stare)
+        sqrs = []
+        for c in app.coords:
+            if 1 <= dist(self.loc, c) <= 3:
+                sqrs.append(c)
+        app.animate_squares(sqrs)
+        app.depop_context(event = None)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_baleful_stare(event = e, sqr = s, sqrs = sqrs)) 
+        b = tk.Button(app.context_menu, text = 'Confirm Baleful Stare', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos[:], sqrs = sqrs : self.do_baleful_stare(event = e, sqr = s, sqrs = sqrs))
+        b.pack(side = 'top')
+        app.context_buttons.append(b)
+        
+    def do_baleful_stare(self, event = None, sqr = None, sqrs = None):
+        if sqr not in sqrs:
+            return
+        if app.grid[sqr[0]][sqr[1]] == '' or app.grid[sqr[0]][sqr[1]] == 'block':
+            return
+        self.attack_used = True
+#         self.init_attack_anims()
+#         effect1 = mixer.Sound('Sound_Effects/baleful_stare.ogg')
+#         effect1.set_volume(1)
+#         sound_effects.play(effect1, 0)
+        app.depop_context(event = None)
+        app.unbind_all()
+        app.cleanup_squares()
+        id = app.grid[sqr[0]][sqr[1]]
+        visloc = app.ent_dict[id].loc[:]
+        app.vis_dict['Baleful_Stare'] = Vis(name = 'Baleful_Stare', loc = visloc)
+        app.canvas.create_image(visloc[0]*100+50-app.moved_right, visloc[1]*100+50-app.moved_down, image = app.vis_dict['Baleful_Stare'].img, tags = 'Baleful_Stare')
+        my_psyche = self.get_attr('psyche')
+        target_end = app.ent_dict[id].get_attr('end')
+        if to_hit(my_psyche, target_end) == True:
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+75-app.moved_down, text = 'Baleful Stare Hit', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+            # baleful effect
+            def baleful_stare_effect(stat):
+                stat -= 1
+                if stat < 1:
+                    return 1
+                else:
+                    return stat
+            f = baleful_stare_effect
+            app.ent_dict[id].psyche_effects.append(f)
+            def un(i):
+                app.ent_dict[i].psyche_effects.remove(baleful_stare_effect)
+                return None
+            p = partial(un, id)
+            # EOT FUNC
+            def take_1(tar):
+                app.get_focus(tar)
+                app.ent_dict[tar].set_attr('spirit', -1)
+                app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+70-app.moved_down, text = '1 Spirit\nBaleful Stare', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+                if app.ent_dict[tar].spirit <= 0:
+                    app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+90-app.moved_down, text = app.ent_dict[tar].name.replace('_',' ') + '\nKilled...', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+                return 'Not None'
+            eot = partial(take_1, id)
+            n = 'Baleful_Stare' + str(app.effects_counter)
+            app.ent_dict[id].effects_dict[n] = Effect(name = 'Baleful_Stare', info = 'Baleful Stare take 1, -1psy', eot_func = eot, undo = p, duration = 4)
+        else:
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+75-app.moved_down, text = 'Baleful Stare Missed', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+        root.after(3333, lambda e = None : self.finish_baleful_stare(event = e))
+        
+    def finish_baleful_stare(self, event):
+#         self.init_normal_anims()
+        app.rebind_all()
+        app.canvas.delete('text')
+        try: 
+            del app.vis_dict['Baleful_Stare']
+            app.canvas.delete('Baleful_Stare')
+        except: pass
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        
+        
+    def dire_charm(self, event = None):
+        if self.attack_used == True:
+            return
+        root.unbind('<a>')
+        root.unbind('<q>')
+        root.bind('<q>', self.finish_dire_charm)
+        sqrs = [c for c in app.coords if 1 <= dist(self.loc, c) <= 3]
+        app.animate_squares(sqrs)
+        app.depop_context(event = None)
+        root.bind('<a>', lambda e, s = sqrs : self.do_dire_charm(event = e, sqrs = s)) 
+        b = tk.Button(app.context_menu, text = 'Confirm Dire Charm', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqrs = sqrs : self.do_dire_charm(event = e, sqrs = sqrs))
+        b.pack(side = 'top')
+        app.context_buttons.append(b)
+        
+    def do_dire_charm(self, event = None, sqrs = None):
+        self.attack_used = True
+#         effect1 = mixer.Sound('Sound_Effects/dire_charm.ogg')
+#         effect1.set_volume(1)
+#         sound_effects.play(effect1, 0)
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        app.unbind_all()
+        ents = [app.grid[s[0]][s[1]] for s in sqrs if app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
+        ents = [e for e in ents if app.ent_dict[e].owner != self.owner]
+        if ents == []:
+            # still show self vis
+            s = self.loc[:]
+            app.vis_dict['Dire_Charm'] = Vis(name = 'Dire_Charm', loc = s)
+            app.canvas.create_image(s[0]*100+50-app.moved_right, s[1]*100+50-app.moved_down, image = app.vis_dict['Dire_Charm'].img, tags = 'Dire_Charm')
+            root.after(2666, self.finish_dire_charm)
+        else:
+            # show vis, normal self vis and vis placed on each affected, delay show text/focus on each affected
+            s = self.loc[:]
+            app.vis_dict['Dire_Charm'] = Vis(name = 'Dire_Charm', loc = s)
+            app.canvas.create_image(s[0]*100+50-app.moved_right, s[1]*100+50-app.moved_down, image = app.vis_dict['Dire_Charm'].img, tags = 'Dire_Charm')
+            def dire_charm_loop(ents):
+                if ents == []:
+                    root.after(2666, self.finish_dire_charm)
+                else:
+                    id = ents[0]
+                    ents = ents[1:]
+                    s = app.ent_dict[id].loc[:]
+                    app.focus_square(s)
+                    uniq = 'Dire_Charm'+str(app.effects_counter)
+                    app.effects_counter += 1
+                    app.vis_dict[uniq] = Vis(name = 'Dire_Charmed', loc = s)
+                    app.canvas.create_image(s[0]*100+50-app.moved_right, s[1]*100+50-app.moved_down, image = app.vis_dict[uniq].img, tags = 'Dire_Charm')
+                    save = app.ent_dict[id].attr_check('psyche')
+                    if save == True:
+                        app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+75-app.moved_down, text = 'Psyche Save', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+                        root.after(2666, lambda es = ents : dire_charm_loop(es))
+                    else:
+                        d = damage(app.ent_dict[id].get_attr('str'), app.ent_dict[id].get_attr('end'))
+                        app.ent_dict[id].set_attr('spirit', -d)
+                        app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+75-app.moved_down, text = 'Attack Self '+str(d)+' Spirit', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+                        # check for death
+                        if app.ent_dict[id].get_attr('spirit') <= 0:
+                            app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+90-app.moved_down, text = app.ent_dict[id].name + ' Killed...', font = ('Andale Mono', 12), fill = 'white', tags = 'text')
+                            root.after(2666, lambda id = id : app.kill(id))
+                        root.after(2666, lambda es = ents : dire_charm_loop(es))
+            dire_charm_loop(ents)
+            
+            
+    def finish_dire_charm(self, event = None):
+        try:
+            ks = list(app.vis_dict.keys())
+            for k in ks:
+                if k.startswith('Dire_Charm') == True:
+                    del app.vis_dict[k]
+            app.canvas.delete('Dire_Charm')
+        except: pass
+        app.cleanup_squares()
+        app.unbind_all()
+        app.rebind_all()
+        app.canvas.delete('text')
+        app.depop_context(event = None)
+
 
 class Cenobite(Summon):
     def __init__(self, name, img, loc, owner, number):
@@ -6214,9 +6404,6 @@ class Cenobite(Summon):
         except: pass
         app.depop_context(event = None)
         app.cleanup_squares()
-        
-        
-        
         
     def legal_moves(self):
         loc = self.loc
@@ -6751,6 +6938,62 @@ class Witch(Entity):
     # drain_life cantrip, deal 2 to any enemy target, heal 2 spirit?
     # exchange positions of friendly summon and enemy summon, or any two summons?
     # cantrip boost stats of a summon for multiple turns, non-stacking?
+    
+    # destroy familiar..., make a little taller and resemble the imp in some way, image should be combo of imp and homunc
+    def summon_lesser_demon(self, event = None):
+        app.depop_context(event = None)
+        root.bind('<q>', lambda name = 'Summon_Lesser_Demon' : self.cleanup_spell(name = name))
+        ents = [app.grid[s[0]][s[1]] for s in app.coords if dist(self.loc, s) <= 3 and app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
+        familiars = [id for id in ents if app.ent_dict[id].owner == self.owner and (app.ent_dict[id].name == 'Familiar_Imp' or app.ent_dict[id].name == 'Familiar_Homunculus')]
+        sqrs = []
+        for id in familiars:
+            sqrs.append(app.ent_dict[id].loc[:])
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_summon_lesser_demon(event = e, sqr = s, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Choose Familiar To Transform', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_summon_lesser_demon(e, s, sqrs))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+        
+    def do_summon_lesser_demon(self, event, sqr, sqrs):
+        if sqr not in sqrs:
+            return
+        my_ent_names = [v.name for k,v in app.ent_dict.items() if v.owner == self.owner]
+        if 'Lesser_Demon' in my_ent_names:
+            return
+        id = app.grid[sqr[0]][sqr[1]]
+#         self.init_cast_anims()
+#         effect1 = mixer.Sound('Sound_Effects/summon_lesser_demon.ogg')
+#         effect1.set_volume(1)
+#         sound_effects.play(effect1, 0)
+        app.unbind_all()
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        self.arcane_used = True
+        app.canvas.delete(id)
+        app.grid[app.ent_dict[id].loc[0]][app.ent_dict[id].loc[1]] = ''
+        del app.ent_dict[id]
+        app.vis_dict['Summon'] = Vis(name = 'Summon', loc = sqr)
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Summon'].img, tags = 'Summon')
+        root.after(1666, lambda s = sqr : self.finish_summon_lesser_demon(s))
+        root.after(2666, self.cleanup_summon_lesser_demon)
+        root.after(2999, lambda name = 'Summon_Lesser_Demon' : self.cleanup_spell(name = name))
+        
+    def finish_summon_lesser_demon(self, sqr):
+        num = self.summon_ids
+        self.summon_ids += 1
+        if self.owner == 'p1':
+            prefix = 'a'
+        else:
+            prefix = 'b'
+        id = prefix + str(num)
+        img = ImageTk.PhotoImage(Image.open('summon_imgs/Lesser_Demon.png'))
+        app.ent_dict[id] = Lesser_Demon(name = 'Lesser_Demon', img = img, loc = sqr[:], owner = self.owner, number = id)
+        app.grid[sqr[0]][sqr[1]] = id
+        
+    def cleanup_summon_lesser_demon(self):
+        del app.vis_dict['Summon']
+        app.canvas.delete('Summon')
+    
     
     def summon_cenobite(self, event = None):
         app.depop_context(event = None)
@@ -8472,6 +8715,8 @@ class App(tk.Frame):
                     obj.arcane_dict['Entomb'] = (obj.entomb, 4)
                 if 'Summon_Cenobite' in arcane:
                     obj.arcane_dict['Summon_Cenobite'] = (obj.summon_cenobite, 9)
+                if 'Summon_Lesser_Demon' in arcane:
+                    obj.arcane_dict['Summon_Lesser_Demon'] = (obj.summon_lesser_demon, 9)
                 obj.summon_cap = sum_cap
                 obj.base_str = b_str
                 obj.str = b_str
