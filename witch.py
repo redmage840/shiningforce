@@ -339,13 +339,14 @@ class Entity():
 #         self.origin = []
         self.effects_dict = {}
         self.anim_dict = {}
-        anims = [a for r,d,a in walk('./animations/' + self.name + '/')][0]
-        anims = [a for a in anims[:] if a[-3:] == 'png']
-        for i, anim in enumerate(anims):
-            a = ImageTk.PhotoImage(Image.open('animations/' + self.name + '/' + anim))
-            self.anim_dict[i] = a
+        self.init_normal_anims()
+#         anims = [a for r,d,a in walk('./animations/' + self.name + '/')][0]
+#         anims = [a for a in anims[:] if a[-3:] == 'png']
+#         for i, anim in enumerate(anims):
+#             a = ImageTk.PhotoImage(Image.open('animations/' + self.name + '/' + anim))
+#             self.anim_dict[i] = a
         # randomize animation 'seed' to stagger different ent animations
-        self.anim_counter = randrange(0, len(anims))
+        self.anim_counter = randrange(0, len(self.anim_dict.keys()))
             
     def death_trigger(self):
         return None
@@ -1067,7 +1068,7 @@ class Trickster(Summon):
 
 class Shadow(Summon):
     def __init__(self, name, img, loc, owner, number):
-        self.actions = {'Attack':self.shadow_attack, 'Shadow Move':self.teleport_move}
+        self.actions = {'Attack':self.shadow_attack, 'Shadow Move':self.teleport_move, 'Phase Shift':self.phase_shift}
         self.attack_used = False
         self.str = 3
         self.agl = 3
@@ -1076,8 +1077,55 @@ class Shadow(Summon):
         self.psyche = 4
         self.spirit = 14
         self.move_type = 'teleport'
+        self.form = 'shadow_wolf'
         super().__init__(name, img, loc, owner, number)
         
+    def init_normal_anims(self):
+        self.anim_dict = {}
+        self.anim_counter = 0
+        if self.form == 'shadow_wolf':
+            anims = [a for r,d,a in walk('./animations/Shadow_Wolf/')][0]
+            anims = [a for a in anims[:] if a[-3:] == 'png']
+            for i, anim in enumerate(anims):
+                a = ImageTk.PhotoImage(Image.open('animations/Shadow_Wolf/' + anim))
+                self.anim_dict[i] = a
+        elif self.form == 'shadow_mist':
+            anims = [a for r,d,a in walk('./animations/Shadow_Mist/')][0]
+            anims = [a for a in anims[:] if a[-3:] == 'png']
+            for i, anim in enumerate(anims):
+                a = ImageTk.PhotoImage(Image.open('animations/Shadow_Mist/' + anim))
+                self.anim_dict[i] = a
+        
+    def phase_shift(self, event = None):
+        if self.attack_used == True:
+            return
+        root.unbind('<q>')
+        root.bind('<q>', self.cancel_attack)
+        root.unbind('<a>')
+        sqrs = [self.loc[:]]
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e : self.do_phase_shift(e))
+        app.depop_context(event = None)
+        b = tk.Button(app.context_menu, text = 'Confirm Phase Shift', font = ('chalkduster', 24), fg='tan3', wraplength = 190, highlightbackground = 'tan3', command = lambda e = None : self.do_phase_shift(event = e))
+        b.pack(side = 'top')
+        app.context_buttons.append(b)
+        
+    def do_phase_shift(self, event = None):
+#         effect1 = mixer.Sound('Sound_Effects/phase_shift.ogg')
+#         effect1.set_volume(1)
+#         sound_effects.play(effect1, 0)
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        app.unbind_all()
+        # shift from one phase to the other...
+        if self.form == 'shadow_wolf':
+            self.form = 'shadow_mist'
+        elif self.form == 'shadow_mist':
+            self.form = 'shadow_wolf'
+        # change own anims
+        self.init_normal_anims()
+        
+    
         
     def shadow_attack(self, event = None):
         if self.attack_used == True:
