@@ -1,3 +1,11 @@
+# kobold shaman, routines for ai to choose between, ie one of a few spells, one of a few atks or abils, OR tactics like run away, converge, support, etc...
+
+# deaths need 3333 for trigger right? any time kill() is called allow for 3333?
+
+# phase shift, 2nd healer to shadow
+
+# guard
+
 # handle multiple overwrites of methods, legal_moves and set_attr mainly? use the recently created spirit_effects instead of set_attr for spirit mods
 
 # spellcasting enemies! ...things that have effects not just damage, sleep, paralyze, slow, etc
@@ -5447,58 +5455,38 @@ class Warrior(Summon):
         app.depop_context(event = None)
         app.unbind_all()
         app.cleanup_squares()
-        def guard_effect():
-            pass
-        f = guard_effect
-        def guard_set_attr(attr = None, amount = None, obj = None, redir_obj = None):# REPLACE OBJ set_attr with -2 (2 more subtracted)
-            if attr == 'str':
-                obj.str += amount
-            elif attr == 'agl':
-                obj.agl += amount
-            elif attr == 'end':
-                obj.end += amount
-            elif attr == 'dodge':
-                obj.dodge += amount
-            elif attr == 'psyche':
-                obj.psyche += amount
-            elif attr == 'spirit':
-                if amount < 0:
-                    app.canvas.create_text(obj.loc[0]*100-app.moved_right+50, obj.loc[1]*100-app.moved_down+95, text = 'Guard Redirect', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
-                    redir_obj.spirit += amount
-                    if redir_obj.spirit <= 0:
-                        p = partial(obj.__class__.set_attr, obj, attr, d) #   PUT BACK CLASS METHOD set_attr
-                        obj.set_attr = p
-                        app.focus_square(redir_obj.loc)
-                        app.canvas.create_text(redir_obj.loc[0]*100-app.moved_right+50, redir_obj.loc[1]*100-app.moved_down+95, text = 'Guard Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
-                        root.after(1999, lambda e = self.id : app.kill(e))
-                else:
-                    obj.spirit += amount
-                    if obj.spirit > obj.base_spirit:
-                        obj.spirit = obj.base_spirit
-            elif isinstance(obj, Witch) or isinstance(obj, Trickster):
-                if attr == 'magick':
-                    obj. magick += amount
-                    if obj.magick > obj.base_magick:
-                        obj.magick = obj.base_magick
-        p = partial(guard_set_attr, obj = app.ent_dict[id], redir_obj = app.ent_dict[self.number])
-        app.ent_dict[id].set_attr = p
-        def un(i):
-            p = partial(app.ent_dict[i].__class__.set_attr, app.ent_dict[i]) # PUT BACK CLASS METHOD set_attr
-            app.ent_dict[i].set_attr = p
+        # EFFECT
+        def guard_effect(amount = None, obj = None, redir_obj = None):
+            if amount < 0:
+                app.canvas.create_text(obj.loc[0]*100-app.moved_right+50, obj.loc[1]*100-app.moved_down+95, text = 'Guard Redirect', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
+                redir_obj.spirit += amount
+                # check for guard death...
+                if redir_obj.spirit <= 0:
+                    app.canvas.create_text(obj.loc[0]*100-app.moved_right+50, obj.loc[1]*100-app.moved_down+15, text = 'Guard Death', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
+                    app.kill(redir_obj.number)
+                    obj.spirit_effects.remove(guard_effect)
+                    obj.effects_dict.remove(guard_effect)
+                return 0
+            else:
+                return amount
+        f = partial(guard_effect, obj = app.ent_dict[id], redir_obj = self)
+        app.ent_dict[id].spirit_effects.append(f)
+        # give self a death trigger to remove guard from obj
+        def death_trigger(obj, f):
+            obj.spirit_effects.remove(f)
+        dt = partial(death_trigger, app.ent_dict[id], f)
+        self.death_trigger = dt
+        def un(i, f):
+            app.ent_dict[id].spirit_effects.remove(f)
             return None
-        p = partial(un, id)
+        u = partial(un, id, f)
         # EOT FUNC
         def nothing():
             return None
         eot = nothing
         n = 'Guard' + str(app.effects_counter)
-        app.ent_dict[id].effects_dict[n] = Effect(name = 'Guard', info = 'Guard, redir dmg', eot_func = eot, undo = p, duration = 3)
+        app.ent_dict[id].effects_dict[n] = Effect(name = 'Guard', info = 'Guard, redir dmg', eot_func = eot, undo = u, duration = 3)
         root.after(2666, lambda e = None: self.cancel_attack(e))
-
-
-
-
-
         
     def leap(self, event = None):
         if self.attack_used == True:
