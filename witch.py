@@ -4,8 +4,6 @@
 
 # phase shift, 2nd healer to shadow
 
-# guard
-
 # handle multiple overwrites of methods, legal_moves and set_attr mainly? use the recently created spirit_effects instead of set_attr for spirit mods
 
 # spellcasting enemies! ...things that have effects not just damage, sleep, paralyze, slow, etc
@@ -1068,15 +1066,15 @@ class Trickster(Summon):
 
 class Shadow(Summon):
     def __init__(self, name, img, loc, owner, number):
-        self.actions = {'Attack':self.shadow_attack, 'Shadow Move':self.teleport_move, 'Phase Shift':self.phase_shift}
+        self.actions = {'Shadow Strike':self.shadow_strike, 'Dark Shroud':self.dark_shroud, 'Move':self.move, 'Phase Shift':self.phase_shift}
         self.attack_used = False
         self.str = 3
-        self.agl = 3
-        self.end = 3
+        self.agl = 5
+        self.end = 4
         self.dodge = 6
         self.psyche = 4
-        self.spirit = 14
-        self.move_type = 'teleport'
+        self.spirit = 15
+        self.move_type = 'normal'
         self.form = 'shadow_wolf'
         super().__init__(name, img, loc, owner, number)
         
@@ -1100,7 +1098,7 @@ class Shadow(Summon):
         if self.attack_used == True:
             return
         root.unbind('<q>')
-        root.bind('<q>', self.cancel_attack)
+        root.bind('<q>', self.cancel_phase_shift)
         root.unbind('<a>')
         sqrs = [self.loc[:]]
         app.animate_squares(sqrs)
@@ -1120,14 +1118,38 @@ class Shadow(Summon):
         # shift from one phase to the other...
         if self.form == 'shadow_wolf':
             self.form = 'shadow_mist'
+            self.str = 2
+            self.agl = 3
+            self.end = 3
+            self.dodge = 6
+            self.psyche = 6
+            self.move_type = 'teleport'
+            self.actions = {'Drain Life':self.drain_life, 'Muddle':self.muddle, 'Mist Move':self.teleport_move, 'Phase Shift':self.phase_shift}
         elif self.form == 'shadow_mist':
             self.form = 'shadow_wolf'
+            self.str = 3
+            self.agl = 6
+            self.end = 4
+            self.dodge = 6
+            self.psyche = 4
+            self.move_type = 'normal'
+            self.actions = {'Shadow Strike':self.shadow_strike, 'Dark Shroud':self.dark_shroud, 'Move':self.move, 'Phase Shift':self.phase_shift}
         # change own anims
         self.init_normal_anims()
+        root.after(2333, self.cancel_phase_shift)
         
-    
+    def cancel_phase_shift(self, event = None):
+        try:
+            app.canvas.delete('text')
+            del app.vis_dict['Phase_Shift']
+            app.canvas.delete('Phase_Shift')
+        except: pass
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        app.rebind_all()
         
-    def shadow_attack(self, event = None):
+    # agl v dodge, str v end, range 4
+    def shadow_strike(self, event = None):
         if self.attack_used == True:
             return
         root.unbind('<q>')
@@ -1138,13 +1160,13 @@ class Shadow(Summon):
             if 1 < dist(coord, self.loc) <= 4:
                 sqrs.append(coord)
         app.animate_squares(sqrs)
-        root.bind('<a>', lambda e, sqr = grid_pos, sqrs = sqrs : self.check_hit(e, sqr, sqrs))
+        root.bind('<a>', lambda e, sqr = grid_pos, sqrs = sqrs : self.do_shadow_strike(e, sqr, sqrs))
         app.depop_context(event = None)
-        b = tk.Button(app.context_menu, text = 'Confirm Attack', font = ('chalkduster', 24), fg='tan3', wraplength = 190, highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs: self.check_hit(event = e, sqr = sqr, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Confirm Attack', font = ('chalkduster', 24), fg='tan3', wraplength = 190, highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs: self.do_shadow_strike(event = e, sqr = sqr, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
         
-    def check_hit(self, event = None, sqr = None, sqrs = None):
+    def do_shadow_strike(self, event = None, sqr = None, sqrs = None):
         if sqr not in sqrs:
             return
         id = app.grid[sqr[0]][sqr[1]]
@@ -1156,29 +1178,25 @@ class Shadow(Summon):
         app.depop_context(event = None)
         app.cleanup_squares()
         app.unbind_all()
-        my_psyche = self.get_attr('psyche')
+        my_agl = self.get_attr('agl')
         target_dodge = app.ent_dict[id].get_attr('dodge')
         app.vis_dict['Shadow_Attack'] = Vis(name = 'Shadow_Attack', loc = sqr[:])
         vis = app.vis_dict['Shadow_Attack']
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = vis.img, tags = 'Shadow_Attack')
-        if to_hit(my_psyche, target_dodge) == True:
+        if to_hit(my_agl, target_dodge) == True:
             # VISUAL TO HIT
-            my_psyche = self.get_attr('psyche')
+            my_str = self.get_attr('str')
             target_end = app.ent_dict[id].get_attr('end')
-            d = damage(my_psyche, target_end)
-            app.canvas.create_text(sqr[0]*100-app.moved_right+50, sqr[1]*100-app.moved_down+75, text = 'Shadow Attack Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-#             if isinstance(app.ent_dict[id], Witch):
-#                 app.canvas.create_text(sqr[0]*100-app.moved_right+50, sqr[1]*100-app.moved_down+75, text = str(d) + ' Magick', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-#                 app.ent_dict[id].set_attr('magick', -d)
+            d = damage(my_str, target_end)
+            app.canvas.create_text(sqr[0]*100-app.moved_right+50, sqr[1]*100-app.moved_down+75, text = 'Shadow Attack Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
             app.ent_dict[id].set_attr('spirit', -d)
             if app.ent_dict[id].spirit <= 0:
-                app.canvas.create_text(sqr[0]*100-app.moved_right+50, sqr[1]*100-app.moved_down+100, text = app.ent_dict[id].name.replace('_', ' ') + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                app.canvas.create_text(sqr[0]*100-app.moved_right+50, sqr[1]*100-app.moved_down+100, text = app.ent_dict[id].name.replace('_', ' ') + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
             root.after(2333, lambda e = None, id = id : self.cancel_attack(event = e, id = id))
         else:
-            app.canvas.create_text(sqr[0]*100-app.moved_right+50, sqr[1]*100-app.moved_down+50, text = 'Shadow Attack Missed!\n', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+            app.canvas.create_text(sqr[0]*100-app.moved_right+50, sqr[1]*100-app.moved_down+50, text = 'Shadow Attack Missed!\n', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
             root.after(2333, lambda e = None, id = id : self.cancel_attack(event = e, id = id))
         self.attack_used = True
-    
     
     def cancel_attack(self, event = None, id = None):
         app.canvas.delete('text')
@@ -5497,17 +5515,21 @@ class Warrior(Summon):
             return
         if app.ent_dict[id].owner != self.owner:
             return
-#         effect1 = mixer.Sound('Sound_Effects/guard.ogg')
-#         effect1.set_volume(1)
-#         sound_effects.play(effect1, 0)
+        effect1 = mixer.Sound('Sound_Effects/guard.ogg')
+        effect1.set_volume(1)
+        sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.unbind_all()
         app.cleanup_squares()
+        app.vis_dict['Guard'] = Vis(name = 'Guard', loc = sqr[:])
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Guard'].img, tags = 'Guard')
+        app.canvas.create_text(sqr[0]*100-app.moved_right+50, sqr[1]*100-app.moved_down+85, text = 'Guard', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
         # EFFECT
         def guard_effect(amount = None, obj = None, redir_obj = None):
             if amount < 0:
                 app.canvas.create_text(obj.loc[0]*100-app.moved_right+50, obj.loc[1]*100-app.moved_down+95, text = 'Guard Redirect', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
-                redir_obj.spirit += amount
+                redir_obj.set_attr('spirit', amount)
+#                 redir_obj.spirit += amount
                 # check for guard death...
                 if redir_obj.spirit <= 0:
                     app.canvas.create_text(obj.loc[0]*100-app.moved_right+50, obj.loc[1]*100-app.moved_down+15, text = 'Guard Death', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
@@ -5676,13 +5698,17 @@ class Warrior(Summon):
         else:
             self.cancel_attack(event = None)
     
-    def cancel_attack(self, event):
+    def cancel_attack(self, event = None):
         self.init_normal_anims()
         app.rebind_all()
         app.canvas.delete('text')
         try: 
             del app.vis_dict['Warrior_Slash']
             app.canvas.delete('Warrior_Slash')
+        except: pass
+        try: 
+            del app.vis_dict['Guard']
+            app.canvas.delete('Guard')
         except: pass
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -5969,7 +5995,75 @@ class Lesser_Demon(Summon):
         
         
     def brambles(self, event = None):
-        pass
+        if self.attack_used == True:
+            return
+        root.unbind('<a>')
+        root.unbind('<q>')
+        root.bind('<q>', self.finish_brambles)
+        sqrs = []
+        for c in app.coords:
+            if 1 <= dist(self.loc, c) <= 5:
+                sqrs.append(c)
+        app.animate_squares(sqrs)
+        app.depop_context(event = None)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_brambles(event = e, sqr = s, sqrs = sqrs)) 
+        b = tk.Button(app.context_menu, text = 'Choose Target Brambles', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_brambles(event = e, sqr = s, sqrs = sqrs))
+        b.pack(side = 'top')
+        app.context_buttons.append(b)
+        
+    def do_brambles(self, event = None, sqr = None, sqrs = None):
+        if sqr not in sqrs:
+            return
+        if app.grid[sqr[0]][sqr[1]] == '' or app.grid[sqr[0]][sqr[1]] == 'block':
+            return
+#         self.init_attack_anims()
+#         effect1 = mixer.Sound('Sound_Effects/brambles.ogg')
+#         effect1.set_volume(1)
+#         sound_effects.play(effect1, 0)
+        app.depop_context(event = None)
+        app.unbind_all()
+        app.cleanup_squares()
+        self.attack_used = True
+        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+10-app.moved_down, text = 'Brambles', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+        ss = [c for c in app.coords if dist(sqr, c) <= 3]
+        ents = [app.grid[s[0]][s[1]] for s in ss if app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
+        ents = [e for e in ents if app.ent_dict[e].owner != self.owner]
+        if ents == []:
+            root.after(1666, self.finish_brambles)
+        else:
+            def brambles_loop(ents):
+                if ents == []:
+                    self.finish_brambles()
+                else:
+                    id = ents[0]
+                    ents = ents[1:]
+                    visloc = app.ent_dict[id].loc[:]
+                    u = 'Brambles' + str(app.effects_counter)
+                    app.effects_counter += 1
+                    app.vis_dict[u] = Vis(name = 'Brambles', loc = visloc)
+                    app.canvas.create_image(visloc[0]*100+50-app.moved_right, visloc[1]*100+50-app.moved_down, image = app.vis_dict[u].img, tags = 'Brambles')
+                    root.after(2999, lambda name = u : self.cleanup_brambles(name))
+                    root.after(3333, lambda ents = ents : brambles_loop(ents))
+            brambles_loop(ents)
+            
+    def cleanup_brambles(self, name):
+         app.canvas.delete('Brambles')
+         del app.vis_dict[name]
+         app.canvas.delete('text')
+            
+    def finish_brambles(self, event = None):
+        try:
+            ks = list(app.vis_dict.keys())
+            for k in ks:
+                if k.startswith('Brambles') == True:
+                    del app.vis_dict[k]
+            app.canvas.delete('Brambles')
+        except: pass
+        app.cleanup_squares()
+        app.unbind_all()
+        app.rebind_all()
+        app.canvas.delete('text')
+        app.depop_context(event = None)
     
         
     def baleful_stare(self, event = None):
@@ -5985,7 +6079,7 @@ class Lesser_Demon(Summon):
         app.animate_squares(sqrs)
         app.depop_context(event = None)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_baleful_stare(event = e, sqr = s, sqrs = sqrs)) 
-        b = tk.Button(app.context_menu, text = 'Confirm Baleful Stare', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos[:], sqrs = sqrs : self.do_baleful_stare(event = e, sqr = s, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Choose Target Baleful Stare', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos[:], sqrs = sqrs : self.do_baleful_stare(event = e, sqr = s, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
         
@@ -6041,7 +6135,7 @@ class Lesser_Demon(Summon):
             app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+75-app.moved_down, text = 'Baleful Stare Missed', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
         root.after(3333, lambda e = None : self.finish_baleful_stare(event = e))
         
-    def finish_baleful_stare(self, event):
+    def finish_baleful_stare(self, event = None):
 #         self.init_normal_anims()
         app.rebind_all()
         app.canvas.delete('text')
@@ -7018,9 +7112,9 @@ class Witch(Entity):
             return
         id = app.grid[sqr[0]][sqr[1]]
 #         self.init_cast_anims()
-#         effect1 = mixer.Sound('Sound_Effects/summon_lesser_demon.ogg')
-#         effect1.set_volume(1)
-#         sound_effects.play(effect1, 0)
+        effect1 = mixer.Sound('Sound_Effects/summon_lesser_demon.ogg')
+        effect1.set_volume(1)
+        sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -7188,8 +7282,7 @@ class Witch(Entity):
             return
         app.depop_context(event = None)
         root.bind('<q>', lambda name = 'Foul_Familiar' : self.cleanup_spell(name = name))
-#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        sqrs = [s for s in app.coords if dist(self.loc, s) <= 2]
+        sqrs = [s for s in app.coords if 1 <= dist(self.loc, s) <= 2]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_foul_familiar(event = e, sqr = s, sqrs = sqrs))
         b = tk.Button(app.context_menu, text = 'Choose Location', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_foul_familiar(e, s, sqrs))
