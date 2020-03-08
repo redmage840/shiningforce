@@ -1195,28 +1195,44 @@ class Shadow(Summon):
         if app.ent_dict[id].owner != self.owner:
             return
         self.attack_used = True
-#         effect1 = mixer.Sound('Sound_Effects/dark_shroud.ogg')
-#         effect1.set_volume(1)
-#         sound_effects.play(effect1, 0)
+        effect1 = mixer.Sound('Sound_Effects/dark_shroud.ogg')
+        effect1.set_volume(1)
+        sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
         app.unbind_all()
         app.vis_dict['Dark_Shroud'] = Vis(name = 'Dark_Shroud', loc = self.loc[:])
         app.canvas.create_image(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+50-app.moved_down, image = app.vis_dict['Dark_Shroud'].img, tags = 'Dark_Shroud')
+        app.canvas.create_text(self.loc[0]*100-app.moved_right+50, self.loc[1]*100-app.moved_down+85, text = 'Dark Shroud', justify = 'center', fill = 'gray', font = ('Andale Mono', 13), tags = 'text')
         ents = [app.grid[s[0]][s[1]] for s in app.coords if dist(s, sqr) <= 3 and app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
         ents = [e for e in ents if app.ent_dict[e].owner == self.owner]
-        ents = [e for e in ents if app.ent_dict[id].__class__ == Warrior or app.ent_dict[id].__class__ == Bard or app.ent_dict[id].__class__ == Trickster or app.ent_dict[id].__class__ == Plaguebearer]
+        ents = [e for e in ents if isinstance(app.ent_dict[id].__class__, Warrior) == True or isinstance(app.ent_dict[id].__class__, Bard) == True or isinstance(app.ent_dict[id].__class__, Trickster) == True or isinstance(app.ent_dict[id].__class__, Plaguebearer) == True]
         for id in ents:
             s = app.ent_dict[id].loc[:]
             uniq = 'Dark_Shroud'+str(app.effects_counter)
             app.effects_counter += 1
             app.vis_dict[uniq] = Vis(name = 'Dark_Shroud', loc = s)
             app.canvas.create_image(s[0]*100+50-app.moved_right, s[1]*100+50-app.moved_down, image = app.vis_dict[uniq].img, tags = 'Dark_Shroud')
+            app.canvas.create_text(s[0]*100-app.moved_right+50, s[1]*100-app.moved_down+85, text = '+2 spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
             # text, heal
             app.ent_dict[id].set_attr('spirit', 2)
-            
-            # dodge bonus effect
-            
+            # dodge bonus effect if eff does not exist
+            ks = [k for k,v in app.ent_dict[id].items() if v.name == 'Dark_Shroud']
+            if ks == []:
+                app.canvas.create_text(s[0]*100-app.moved_right+50, s[1]*100-app.moved_down+95, text = '+1 dodge', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
+                def dark_shroud_effect(stat):
+                    return stat+1
+                f = dark_shroud_effect
+                app.ent_dict[ent].dodge_effects.append(f)
+                def un(i, func):
+                    app.ent_dict[i].dodge_effects.remove(func)
+                    return None
+                p = partial(un, ent, f)
+                # EOT FUNC
+                def nothing():
+                    return None
+                n = 'Dark_Shroud' + str(app.effects_counter)
+                app.ent_dict[id].effects_dict[n] = Effect(name = 'Dark_Shroud', info = 'Dark Shroud +1 dodge', eot_func = nothing, undo = p, duration = 3)
         root.after(3333, self.finish_dark_shroud)
             
             
@@ -1737,7 +1753,6 @@ class Bard(Summon):
                         app.ent_dict[ent].dodge_effects.append(f)
                         app.ent_dict[ent].psyche_effects.append(f)
                         
-                        n = 'Unholy_Chant' + str(app.effects_counter)
                         def un(i, func):
                             app.ent_dict[i].str_effects.remove(func)
                             app.ent_dict[i].end_effects.remove(func)
