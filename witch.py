@@ -4,13 +4,13 @@
 
 # phase shift, 2nd healer to shadow
 
-# handle multiple overwrites of methods, legal_moves and set_attr mainly? use the recently created spirit_effects instead of set_attr for spirit mods
+# handle multiple overwrites of methods, legal_moves...
 
 # spellcasting enemies! ...things that have effects not just damage, sleep, paralyze, slow, etc
 
 # text objects, create a background/stroke/dropshadow effect by generating text twice with slight offset/color difference
 
-# preload all images!
+# preload all images?
 
 # library, sometimes 2 revenants generated on first turn instead of 1?
 
@@ -32,7 +32,7 @@
 
 # make each elemental unique
 
-# only warrior attack has delayed text before kill
+# only warrior attack and shadow strike ? has delayed text before kill
 
 # allow click on unit along with press 'a'
 #   - click on 100X100 pixel sqr?
@@ -196,12 +196,11 @@ def bfs(start, goal, grid):
                 visited.append(s)
 
 def to_hit(a1, a2):
-    base = 5
+    base = 50
     dif = a1 - a2
-    base += dif
-    chance = base * 10
+    base += (dif*5)
     rand = randrange(1, 100)
-    if rand < chance:
+    if rand < base:
         return True
     else:
         return False
@@ -551,7 +550,7 @@ class Entity():
         sqrs = self.legal_moves()
         app.animate_squares(sqrs)
         if isinstance(self, Shadow):
-            text = 'Confirm Shadow Move'
+            text = 'Confirm Mist Move'
         else:
             text = 'Confirm Teleport Square'
         b = tk.Button(app.context_menu, text = text, wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = sqrs : self.do_teleport(e, s))
@@ -1109,12 +1108,17 @@ class Shadow(Summon):
         app.context_buttons.append(b)
         
     def do_phase_shift(self, event = None):
-#         effect1 = mixer.Sound('Sound_Effects/phase_shift.ogg')
-#         effect1.set_volume(1)
-#         sound_effects.play(effect1, 0)
+        effect1 = mixer.Sound('Sound_Effects/phase_shift.ogg')
+        effect1.set_volume(1)
+        sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
         app.unbind_all()
+        self.attack_used = True
+        app.vis_dict['Phase_Shift'] = Vis(name = 'Phase_Shift', loc = self.loc[:])
+        vis = app.vis_dict['Phase_Shift']
+        app.canvas.create_image(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+50-app.moved_down, image = vis.img, tags = 'Phase_Shift')
+        app.canvas.create_text(self.loc[0]*100-app.moved_right+50, self.loc[1]*100-app.moved_down+85, text = 'Phase Shift', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
         # shift from one phase to the other...
         if self.form == 'shadow_wolf':
             self.form = 'shadow_mist'
@@ -1125,6 +1129,15 @@ class Shadow(Summon):
             self.psyche = 6
             self.move_type = 'teleport'
             self.actions = {'Drain Life':self.drain_life, 'Muddle':self.muddle, 'Mist Move':self.teleport_move, 'Phase Shift':self.phase_shift}
+            def legal_moves(obj):
+                move_list = []
+                for c in app.coords:
+                    if app.grid[c[0]][c[1]] == '':
+                        if dist(obj.loc, c) <= 5:
+                            move_list.append(c)
+                return move_list
+            p = partial(legal_moves, self)
+            self.legal_moves = p
         elif self.form == 'shadow_mist':
             self.form = 'shadow_wolf'
             self.str = 3
@@ -1134,7 +1147,15 @@ class Shadow(Summon):
             self.psyche = 4
             self.move_type = 'normal'
             self.actions = {'Shadow Strike':self.shadow_strike, 'Dark Shroud':self.dark_shroud, 'Move':self.move, 'Phase Shift':self.phase_shift}
-        # change own anims
+            def legal_moves(obj):
+                move_list = []
+                for c in app.coords:
+                    if app.grid[c[0]][c[1]] == '':
+                        if dist(obj.loc, c) <= 4:
+                            move_list.append(c)
+                return move_list
+            p = partial(legal_moves, self)
+            self.legal_moves = p
         self.init_normal_anims()
         root.after(2333, self.cancel_phase_shift)
         
@@ -1148,12 +1169,91 @@ class Shadow(Summon):
         app.cleanup_squares()
         app.rebind_all()
         
+    def dark_shroud(self, event = None):
+        pass
+    
+    def drain_life(self, event = None):
+        pass
+        
+    def muddle(self, event = None):
+        if self.attack_used == True:
+            return
+        root.unbind('<q>')
+        root.bind('<q>', self.finish_muddle)
+        root.unbind('<a>')
+        sqrs = []
+        for coord in app.coords:
+            if 1 <= dist(coord, self.loc) <= 4:
+                sqrs.append(coord)
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e, sqr = grid_pos, sqrs = sqrs : self.do_muddle(e, sqr, sqrs))
+        app.depop_context(event = None)
+        b = tk.Button(app.context_menu, text = 'Confirm Muddle', font = ('chalkduster', 24), fg='tan3', wraplength = 190, highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs: self.do_muddle(event = e, sqr = sqr, sqrs = sqrs))
+        b.pack(side = 'top')
+        app.context_buttons.append(b)
+        
+    def do_muddle(self, event = None, sqr = None, sqrs = None):
+        if sqr not in sqrs:
+            return
+        id = app.grid[sqr[0]][sqr[1]]
+        if id == '' or id == 'block':
+            return
+        self.attack_used = True
+#         effect1 = mixer.Sound('Sound_Effects/muddle.ogg')
+#         effect1.set_volume(1)
+#         sound_effects.play(effect1, 0)
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        app.unbind_all()
+        app.vis_dict['Muddle'] = Vis(name = 'Muddle', loc = sqr[:])
+        vis = app.vis_dict['Muddle']
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = vis.img, tags = 'Muddle')
+        if app.ent_dict[id].attr_check('psyche') == False: # SAVE FAILS
+            app.canvas.create_text(sqr[0]*100-app.moved_right+50, sqr[1]*100-app.moved_down+75, text = 'Confused...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
+            # add effect
+            def muddle_effect():
+                pass
+            f = muddle_effect
+            def un():
+                return None
+            p = un
+            # EOT FUNC
+            def attack_self(id):
+                app.get_focus(id)
+                my_agl = app.ent_dict[id].get_attr('agl')
+                if check_hit(my_agl, my_agl) == True:
+                    my_str = app.ent_dict[id].get_attr('str')
+                    my_end = app.ent_dict[id].get_attr('end')
+                    d = damage(my_str, my_end)
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+75-app.moved_down, text = 'Muddle Damage Self '+str(d)+' Spirit!', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+                    app.ent_dict[id].set_attr('spirit', -d)
+                    if app.ent_dict[id].spirit <= 0:
+                        app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+95-app.moved_down, text = app.ent_dict[id].name.replace('_',' ') + '\nKilled...', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+                return 'Not None'
+            eot = partial(attack_self, id)
+            n = 'Muddle' + str(app.effects_counter)
+            app.ent_dict[id].effects_dict[n] = Effect(name = 'Muddle', info = 'Muddle, atk self eot', eot_func = eot, undo = p, duration = 3)
+            root.after(3333, lambda e = None : self.finish_muddle(event = e))
+        else:
+            app.canvas.create_text(sqr[0]*100-app.moved_right+50, sqr[1]*100-app.moved_down+80, text = 'Muddle Psyche Save', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
+            root.after(3333, lambda e = None : self.finish_muddle(event = e))
+    
+    def finish_muddle(self, event = None):
+        app.canvas.delete('text')
+        try:
+            del app.vis_dict['Muddle']
+            app.canvas.delete('Muddle')
+        except: pass
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        app.rebind_all()
+        
     # agl v dodge, str v end, range 4
     def shadow_strike(self, event = None):
         if self.attack_used == True:
             return
         root.unbind('<q>')
-        root.bind('<q>', self.cancel_attack)
+        root.bind('<q>', self.finish_shadow_strike)
         root.unbind('<a>')
         sqrs = []
         for coord in app.coords:
@@ -1172,7 +1272,7 @@ class Shadow(Summon):
         id = app.grid[sqr[0]][sqr[1]]
         if id == '' or id == 'block':
             return
-        effect1 = mixer.Sound('Sound_Effects/shadow_attack.ogg')
+        effect1 = mixer.Sound('Sound_Effects/shadow_strike.ogg')
         effect1.set_volume(1)
         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
@@ -1180,29 +1280,29 @@ class Shadow(Summon):
         app.unbind_all()
         my_agl = self.get_attr('agl')
         target_dodge = app.ent_dict[id].get_attr('dodge')
-        app.vis_dict['Shadow_Attack'] = Vis(name = 'Shadow_Attack', loc = sqr[:])
-        vis = app.vis_dict['Shadow_Attack']
-        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = vis.img, tags = 'Shadow_Attack')
+        app.vis_dict['Shadow_Strike'] = Vis(name = 'Shadow_Strike', loc = sqr[:])
+        vis = app.vis_dict['Shadow_Strike']
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = vis.img, tags = 'Shadow_Strike')
         if to_hit(my_agl, target_dodge) == True:
             # VISUAL TO HIT
             my_str = self.get_attr('str')
             target_end = app.ent_dict[id].get_attr('end')
             d = damage(my_str, target_end)
-            app.canvas.create_text(sqr[0]*100-app.moved_right+50, sqr[1]*100-app.moved_down+75, text = 'Shadow Attack Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
+            app.canvas.create_text(sqr[0]*100-app.moved_right+50, sqr[1]*100-app.moved_down+75, text = 'Shadow Strike Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
             app.ent_dict[id].set_attr('spirit', -d)
             if app.ent_dict[id].spirit <= 0:
                 app.canvas.create_text(sqr[0]*100-app.moved_right+50, sqr[1]*100-app.moved_down+100, text = app.ent_dict[id].name.replace('_', ' ') + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
-            root.after(2333, lambda e = None, id = id : self.cancel_attack(event = e, id = id))
+            root.after(2333, lambda e = None, id = id : self.finish_shadow_strike(event = e, id = id))
         else:
-            app.canvas.create_text(sqr[0]*100-app.moved_right+50, sqr[1]*100-app.moved_down+50, text = 'Shadow Attack Missed!\n', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
-            root.after(2333, lambda e = None, id = id : self.cancel_attack(event = e, id = id))
+            app.canvas.create_text(sqr[0]*100-app.moved_right+50, sqr[1]*100-app.moved_down+50, text = 'Shadow Strike Missed!\n', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
+            root.after(2333, lambda e = None, id = id : self.finish_shadow_strike(event = e, id = id))
         self.attack_used = True
     
-    def cancel_attack(self, event = None, id = None):
+    def finish_shadow_strike(self, event = None, id = None):
         app.canvas.delete('text')
         try:
-            del app.vis_dict['Shadow_Attack']
-            app.canvas.delete('Shadow_Attack')
+            del app.vis_dict['Shadow_Strike']
+            app.canvas.delete('Shadow_Strike')
         except: pass
         if id:
             if app.ent_dict[id].spirit <= 0:
@@ -1240,11 +1340,7 @@ class Plaguebearer(Summon):
         effect1 = mixer.Sound('Sound_Effects/contagion.ogg')
         effect1.set_volume(1)
         sound_effects.play(effect1, 0)
-        # app.kill is handled by killer effect/attack, just do contagion
-#         if attr == 'spirit' and self.spirit + amount < 1: # amount is passed int 'negative' for subtracting attrs
-            # DO CONTAGION
-            # get Ents within AOE
-#         coord_pairs = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+        # get Ents within AOE
         sqrs = [c for c in app.coords if dist(self.loc, c) == 1]
         ents = [app.grid[s[0]][s[1]] for s in sqrs if app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
         for e in ents:
@@ -1290,7 +1386,7 @@ class Plaguebearer(Summon):
                 app.canvas.create_text(app.ent_dict[e].loc[0]*100-app.moved_right+50, app.ent_dict[e].loc[1]*100-app.moved_down+90, text = 'CONTAGION', justify = 'center', fill = 'green2', font = ('Andale Mono', 16), tags = ('contagion_text'))# CALLED DURING A SET_ATTR, SO NEED A DIFFERENT TEXT TAG TO AVOID CLEANUP OF UNRELATED TEXT OBJECTS ON CANVAS
                 app.canvas.create_image(app.ent_dict[e].loc[0]*100+50-app.moved_right, app.ent_dict[e].loc[1]*100+50-app.moved_down, image = app.vis_dict[n2].img, tags = n2)
                 
-        root.after(3333, self.cleanup_contagion)
+        root.after(2666, self.cleanup_contagion)
         return 'Not None'
 #             super(Plaguebearer, self).set_attr(attr, amount)
 #         else:
@@ -1305,14 +1401,13 @@ class Plaguebearer(Summon):
         except: pass
         app.canvas.delete('contagion_text')
         
-    # give all adj units pox Effect if they have no pox effects, causes 2 spirit damage EOT, if affected ent's movement is blocked by obstacles it's movement is reduced by 1 to a minimum of 1, lasts 4 turns
+    # give all adj units pox Effect if they have no pox effects, causes 3 spirit damage EOT
     def pox(self, event = None):
         if self.attack_used == True:
             return
         root.unbind('<a>')
         root.unbind('<q>')
         root.bind('<q>', self.finish_pox)
-#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         sqrs = [c for c in app.coords if dist(self.loc, c) == 1]
         app.animate_squares(sqrs)
         app.depop_context(event = None)
@@ -1321,7 +1416,6 @@ class Plaguebearer(Summon):
         b.pack(side = 'top')
         app.context_buttons.append(b)
         
-    # make pox vis regardless of existing ents
     def do_pox(self, event = None, sqrs = None):
         effect1 = mixer.Sound('Sound_Effects/pox.ogg')
         effect1.set_volume(1)
@@ -1339,27 +1433,19 @@ class Plaguebearer(Summon):
             rand_start_anim = randrange(1,7)
             for i in range(rand_start_anim):
                 app.vis_dict[n2].rotate_image()
-#             app.canvas.create_image(s[0]*100+50-app.moved_right, s[1]*100+50-app.moved_down, image = app.vis_dict[n2].img, tags = 'Pox')
             ent = app.grid[s[0]][s[1]]
             if ent != '' and ent != 'block' and isinstance(app.ent_dict[ent].__class__, Plaguebearer) == False:
                 #GIVE POX EFFECT if doesn't exist
                 ef_names = [v.name for k,v in app.ent_dict[ent].effects_dict.items()]
                 if 'Pox' not in ef_names:
-#                     n2 = 'Pox' + str(app.effects_counter) # not an effect, just need unique int
-#                     app.effects_counter += 1 # that is why this is incr manually here, no Effect init
-#                     app.vis_dict[n2] = Vis(name = 'Pox', loc = s)
-#                     rand_start_anim = randrange(1,7)
-#                     for i in range(rand_start_anim):
-#                         app.vis_dict[n2].rotate_image()
-#                     app.canvas.create_image(s[0]*100+50-app.moved_right, s[1]*100+50-app.moved_down, image = app.vis_dict[n2].img, tags = 'Pox')
                     n = 'Pox'+str(app.effects_counter)
                     # needs name, info, eot_func, undo, duration
                     def take_3(tar):
                         app.get_focus(tar)
                         app.ent_dict[tar].set_attr('spirit', -3)
-                        app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+60-app.moved_down, text = '3 Spirit\nPox', justify ='center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+                        app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+60-app.moved_down, text = '3 Spirit\nPox', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
                         if app.ent_dict[tar].spirit <= 0:
-                            app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+90-app.moved_down, text = app.ent_dict[tar].name.replace('_',' ') + '\nKilled...', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+                            app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+90-app.moved_down, text = app.ent_dict[tar].name.replace('_',' ') + '\nKilled...', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
                         return 'Not None'
                     # EOT
                     eot = partial(take_3, ent)
@@ -1370,7 +1456,6 @@ class Plaguebearer(Summon):
                     # POX VIS
                     app.ent_dict[ent].effects_dict[n] = Effect(name = 'Pox', info = 'Pox\n2 Spirit damage EOT\n-1 to Entities with normal movement', eot_func = eot , undo = u, duration = 4)
                     app.canvas.create_text(app.ent_dict[ent].loc[0]*100-app.moved_right+50, app.ent_dict[ent].loc[1]*100-app.moved_down+90, text = 'Pox', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-                
         root.after(2999, self.finish_pox)
         
     def finish_pox(self, event = None):
@@ -1444,13 +1529,13 @@ class Bard(Summon):
         app.depop_context(event = None)
         app.cleanup_squares()
 #         self.init_cast_anims()
-        app.ent_dict[id].set_attr('spirit', 3)
+        app.ent_dict[id].set_attr('spirit', 4)
         self.attack_used = True
         app.vis_dict['Moonlight'] = Vis(name = 'Moonlight', loc = s)
         app.canvas.create_image(s[0]*100+50-app.moved_right, s[1]*100+70-app.moved_down, image = app.vis_dict['Moonlight'].img, tags = 'Moonlight')
-        app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+65-app.moved_down, text = 'Moonlight\n+3 Spirit', font = ('Andale Mono', 16), fill = 'azure', tags = 'text')
+        app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+75-app.moved_down, text = 'Moonlight', font = ('Andale Mono', 16), fill = 'azure', tags = 'text')
+        app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+90-app.moved_down, text = '+4 Spirit', font = ('Andale Mono', 13), fill = 'azure', tags = 'text')
         selected_vis = 'Moonlight'
-        # needs to be moved upwards at the same rate, when rotating image also move up one tick
         def moonlight_loop(starty, endy, x):
             if starty > endy:
                 app.vis_dict['Moonlight'].rotate_image()
@@ -1483,14 +1568,13 @@ class Bard(Summon):
         selected = []
         selected_vis = ''
         
-    # change to effect that gives +1 to all stats for 1 turn, non-stackable
+    # +1 to all stats for 1 turn, non-stackable
     def unholy_chant(self, event = None):
         if self.attack_used == True:
             return
         root.unbind('<a>')
         root.unbind('<q>')
         root.bind('<q>', self.finish_unholy_chant)
-#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         sqrs = [c for c in app.coords if dist(self.loc, c) <= 2]
         app.animate_squares(sqrs)
         app.depop_context(event = None)
@@ -1569,8 +1653,7 @@ class Bard(Summon):
         root.unbind('<a>')
         root.unbind('<q>')
         root.bind('<q>', self.finish_discord)
-#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        sqrs = [c for c in app.coords if dist(self.loc, c) <= 3]
+        sqrs = [c for c in app.coords if 1 <= dist(self.loc, c) <= 3]
         app.animate_squares(sqrs)
         app.depop_context(event = None)
         root.bind('<a>', lambda e, sqr = grid_pos, sqrs = sqrs : self.do_discord(event = e, sqr = sqr, sqrs = sqrs))
@@ -1578,7 +1661,6 @@ class Bard(Summon):
         b.pack(side = 'top')
         app.context_buttons.append(b)
         
-    # make discord vis
     def do_discord(self, event, sqr, sqrs):
         target = app.grid[sqr[0]][sqr[1]]
         if target == '' or target == 'block':
@@ -1602,14 +1684,14 @@ class Bard(Summon):
             d = d//2
             if d == 0: d = 1
             d += 1
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Discord Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Discord Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
             app.ent_dict[id].set_attr('spirit', -d)
             if app.ent_dict[id].spirit <= 0:
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+90, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+90, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
                 root.after(1666, lambda id = id : app.kill(id))
             root.after(1666, lambda e = None : self.finish_discord(event = e))
         else:
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Discord Missed!\n', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+80, text = 'Discord Missed!\n', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
             root.after(1666, lambda e = None : self.finish_discord(event = e))
         self.attack_used = True
         
@@ -1624,8 +1706,6 @@ class Bard(Summon):
         app.canvas.delete('text')
         app.cleanup_squares()
         
-    
-    
     def legal_moves(self):
         loc = self.loc
         mvlist = []
@@ -8159,7 +8239,7 @@ class Witch(Entity):
         sqr = self.loc[:]
         app.vis_dict['Meditate'] = Vis(name = 'Meditate', loc = sqr)
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Meditate'].img, tags = 'Meditate')
-        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Meditate', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+85-app.moved_down, text = 'Meditate', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
         # DO Meditate EFFECTS
         def meditate_effect(stat):
             stat += 2
@@ -10960,7 +11040,7 @@ class App(tk.Frame):
         Cursor over an object you control and press 'a' to see action options\n
         Press 'q' to cancel the context menu for a selected object\n
         Cursor over enemy controlled object and press 'a' for available info\n
-        Your witch can cast one spell AND use one summon per turn AND move once\n
+        Your witch can cast one arcane spell AND one cantrip AND use one summon AND move once per turn\n
         Your summons can move AND use one action per turn\n
         '''
         self.text = tk.Label(self.help_popup, text = help_text, font = ('chalkduster', 24), fg='indianred', bg = 'black')
