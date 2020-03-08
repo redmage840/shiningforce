@@ -1,3 +1,5 @@
+# slicing is used on some strings to find names of effects that begin with a name (created in batches with numbers suffixed), change these all to string.startswith() in case of slicing strings too small...
+
 # kobold shaman, routines for ai to choose between, ie one of a few spells, one of a few atks or abils, OR tactics like run away, converge, support, etc...
 
 # deaths need 3333 for trigger right? any time kill() is called allow for 3333?
@@ -1114,7 +1116,7 @@ class Shadow(Summon):
         app.depop_context(event = None)
         app.cleanup_squares()
         app.unbind_all()
-        self.attack_used = True
+#         self.attack_used = True
         app.vis_dict['Phase_Shift'] = Vis(name = 'Phase_Shift', loc = self.loc[:])
         vis = app.vis_dict['Phase_Shift']
         app.canvas.create_image(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+50-app.moved_down, image = vis.img, tags = 'Phase_Shift')
@@ -1169,11 +1171,130 @@ class Shadow(Summon):
         app.cleanup_squares()
         app.rebind_all()
         
+    # all friendly non-shadow wolf summons (war, bar, plagb, trkstr) within range3 of target heal 2, get non-stacking +1 dodge
     def dark_shroud(self, event = None):
-        pass
+        if self.attack_used == True:
+            return
+        root.unbind('<a>')
+        root.unbind('<q>')
+        root.bind('<q>', self.finish_dark_shroud)
+        sqrs = [c for c in app.coords if 1 <= dist(self.loc, c) <= 3]
+        app.animate_squares(sqrs)
+        app.depop_context(event = None)
+        root.bind('<a>', lambda e, sqr = grid_pos, sqrs = sqrs : self.do_dark_shroud(event = e, sqr = sqr, sqrs = sqrs)) 
+        b = tk.Button(app.context_menu, text = 'Choose Target Dark Shroud', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_dark_shroud(event = e, sqr = sqr, sqrs = sqrs))
+        b.pack(side = 'top')
+        app.context_buttons.append(b)
+        
+    def do_dark_shroud(self, event = None, sqr = None, sqrs = None):
+        if sqr not in sqrs:
+            return
+        id = app.grid[sqr[0]][sqr[1]]
+        if id == '' or id == 'block':
+            return
+        if app.ent_dict[id].owner != self.owner:
+            return
+        self.attack_used = True
+#         effect1 = mixer.Sound('Sound_Effects/dark_shroud.ogg')
+#         effect1.set_volume(1)
+#         sound_effects.play(effect1, 0)
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        app.unbind_all()
+        app.vis_dict['Dark_Shroud'] = Vis(name = 'Dark_Shroud', loc = self.loc[:])
+        app.canvas.create_image(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+50-app.moved_down, image = app.vis_dict['Dark_Shroud'].img, tags = 'Dark_Shroud')
+        ents = [app.grid[s[0]][s[1]] for s in app.coords if dist(s, sqr) <= 3 and app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
+        ents = [e for e in ents if app.ent_dict[e].owner == self.owner]
+        ents = [e for e in ents if app.ent_dict[id].__class__ == Warrior or app.ent_dict[id].__class__ == Bard or app.ent_dict[id].__class__ == Trickster or app.ent_dict[id].__class__ == Plaguebearer]
+        for id in ents:
+            s = app.ent_dict[id].loc[:]
+            uniq = 'Dark_Shroud'+str(app.effects_counter)
+            app.effects_counter += 1
+            app.vis_dict[uniq] = Vis(name = 'Dark_Shroud', loc = s)
+            app.canvas.create_image(s[0]*100+50-app.moved_right, s[1]*100+50-app.moved_down, image = app.vis_dict[uniq].img, tags = 'Dark_Shroud')
+            # text, heal
+            app.ent_dict[id].set_attr('spirit', 2)
+            
+            # dodge bonus effect
+            
+            root.after(3333, self.finish_dark_shroud)
+            
+            
+    def finish_dark_shroud(self, event = None):
+        try:
+            ks = list(app.vis_dict.keys())
+            for k in ks:
+                if k.startswith('Dark_Shroud') == True:
+                    del app.vis_dict[k]
+            app.canvas.delete('Dark_Shroud')
+        except: pass
+        app.cleanup_squares()
+        app.unbind_all()
+        app.rebind_all()
+        app.canvas.delete('text')
+        app.depop_context(event = None)
     
+    # psy v psy, psy v psy//2 + 1, range5, heal amnt
     def drain_life(self, event = None):
-        pass
+        if self.attack_used == True:
+            return
+        root.unbind('<a>')
+        root.unbind('<q>')
+        root.bind('<q>', self.finish_drain_life)
+        sqrs = [c for c in app.coords if 1 <= dist(self.loc, c) <= 5]
+        app.animate_squares(sqrs)
+        app.depop_context(event = None)
+        root.bind('<a>', lambda e, sqr = grid_pos, sqrs = sqrs : self.do_drain_life(event = e, sqr = sqr, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Confirm Drain Life Target', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_drain_life(event = e, sqr = sqr, sqrs = sqrs))
+        b.pack(side = 'top')
+        app.context_buttons.append(b)
+        
+    def do_drain_life(self, event, sqr, sqrs):
+        if sqr not in sqrs:
+            return
+        id = app.grid[sqr[0]][sqr[1]]
+        if id == '' or id == 'block':
+            return
+#         effect1 = mixer.Sound('Sound_Effects/drain_life.ogg')
+#         effect1.set_volume(.5)
+#         sound_effects.play(effect1, 0)
+        app.unbind_all()
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        self.attack_used = True
+        app.vis_dict['Drain_Life'] = Vis(name = 'Drain_Life', loc = sqr[:])
+        vis = app.vis_dict['Drain_Life']
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = vis.img, tags = 'Drain_Life')
+        
+        my_psyche = self.get_attr('psyche')
+        tar_psyche = app.ent_dict[id].get_attr('psyche')
+        if to_hit(my_psyche, tar_psyche) == True:
+            d = damage(my_psyche, tar_psyche)
+            d = d//2
+            if d == 0: d = 1
+            d += 1
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Drain Life Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
+            app.canvas.create_text(self.loc[0]*100-app.moved_right+50, self.loc[1]*100-app.moved_down+75, text = 'Heal ' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
+            app.ent_dict[id].set_attr('spirit', -d)
+            self.set_attr('spirit', d)
+            if app.ent_dict[id].spirit <= 0:
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+90, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
+                root.after(1666, lambda id = id : app.kill(id))
+            root.after(1666, lambda e = None : self.finish_drain_life(event = e))
+        else:
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+80, text = 'Drain Life Missed!\n', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
+            root.after(1666, lambda e = None : self.finish_drain_life(event = e))
+        
+    def finish_drain_life(self, event):
+        try: 
+            del app.vis_dict['Drain_Life']
+            app.canvas.delete('Drain_Life')
+        except: pass
+        app.unbind_all()
+        app.rebind_all()
+        app.depop_context(event = None)
+        app.canvas.delete('text')
+        app.cleanup_squares()
         
     def muddle(self, event = None):
         if self.attack_used == True:
@@ -1520,7 +1641,7 @@ class Bard(Summon):
             return
         if s not in sqrs:
             return
-        if not isinstance(app.ent_dict[id], Trickster) and not isinstance(app.ent_dict[id], Warrior) and not isinstance(app.ent_dict[id], Bard) and not isinstance(app.ent_dict[id], Shadow):
+        if not isinstance(app.ent_dict[id], Trickster) and not isinstance(app.ent_dict[id], Warrior) and not isinstance(app.ent_dict[id], Plaguebearer) and not isinstance(app.ent_dict[id], Shadow):
              return
         effect1 = mixer.Sound('Sound_Effects/moonlight.ogg')
         effect1.set_volume(.2)
@@ -1662,10 +1783,10 @@ class Bard(Summon):
         app.context_buttons.append(b)
         
     def do_discord(self, event, sqr, sqrs):
-        target = app.grid[sqr[0]][sqr[1]]
-        if target == '' or target == 'block':
+        if sqr not in sqrs:
             return
-        if app.ent_dict[target].loc not in sqrs:
+        id = app.grid[sqr[0]][sqr[1]]
+        if id == '' or id == 'block':
             return
         effect1 = mixer.Sound('Sound_Effects/discord.ogg')
         effect1.set_volume(.5)
@@ -1673,10 +1794,10 @@ class Bard(Summon):
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
+        self.attack_used = True
         app.vis_dict['Discord'] = Vis(name = 'Discord', loc = sqr[:])
         vis = app.vis_dict['Discord']
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = vis.img, tags = 'Discord')
-        id = target
         my_psyche = self.get_attr('psyche')
         tar_psyche = app.ent_dict[id].get_attr('psyche')
         if to_hit(my_psyche, tar_psyche) == True:
@@ -1693,7 +1814,6 @@ class Bard(Summon):
         else:
             app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+80, text = 'Discord Missed!\n', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
             root.after(1666, lambda e = None : self.finish_discord(event = e))
-        self.attack_used = True
         
     def finish_discord(self, event):
         try: 
