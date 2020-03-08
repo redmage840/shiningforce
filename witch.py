@@ -1217,7 +1217,7 @@ class Shadow(Summon):
             
             # dodge bonus effect
             
-            root.after(3333, self.finish_dark_shroud)
+        root.after(3333, self.finish_dark_shroud)
             
             
     def finish_dark_shroud(self, event = None):
