@@ -1022,7 +1022,6 @@ class Trickster(Summon):
         app.grid[app.ent_dict[id].loc[0]][app.ent_dict[id].loc[1]] = ''
         app.canvas.delete(id)
         app.ent_dict[id].loc = newloc[:]
-        app.ent_dict[id].origin = newloc[:]
         app.grid[newloc[0]][newloc[1]] = id
         try: 
             del app.vis_dict['Gate']
@@ -3742,15 +3741,6 @@ class Warlock(Summon):
         return mvlist
         
         
-        '''
-air mage 18,15
-casts cyclone (moves ent to random sqr, dmgs)
-mage teleports around, 'grounded'
-3 elementals that fly (movement type) and attack like warlock (teleport away after attack)
-
-water mage 22,15
-        '''
-
 class Air_Mage(Summon):
     def __init__(self, name, img, loc, owner, number, waiting = False):
         self.actions = {'attack':self.do_attack}
@@ -3891,13 +3881,11 @@ class Air_Mage(Summon):
             self.attack_used = True
     #         self.init_attack_anims()
             rand = randrange(1,100)
-            if rand < 15:
+            if rand < 20:
                 self.do_sandstorm(ents_list)
-            elif 15 <= rand < 75:
-                # dmg and teleport single target
+            elif 20 <= rand < 105:
                 self.do_cyclone(ents_list)
             else:
-                # if elems exist, heal them some and remove their effects, if not exists do 1
                 elems = [v for k,v in app.ent_dict.items() if v.name == 'Air_Elemental']
                 if elems == []:
                     self.do_sandstorm(ents_list)
@@ -3961,17 +3949,64 @@ class Air_Mage(Summon):
             root.after(3666, lambda el = ents_list : self.cleanup_attack(el))
                     
                     
-            
-            
-
+    # dmg and teleport one target
     def do_cyclone(self, ents_list):
-#         effect1 = mixer.Sound('Sound_Effects/torrent.ogg')
+#         effect1 = mixer.Sound('Sound_Effects/cyclone.ogg')
 #         effect1.set_volume(1)
 #         sound_effects.play(effect1, 0)
         ents = [app.grid[c[0]][c[1]] for c in app.coords if dist(c, self.loc) <= 4 and app.grid[c[0]][c[1]] != '' and app.grid[c[0]][c[1]] != 'block']
         ents = [e for e in ents if app.ent_dict[e].owner != self.owner]
         if ents == []:
             root.after(666, lambda e = ents_list : app.do_ai_loop(e))
+        else:
+            id = choice(ents)
+            loc = app.ent_dict[id].loc[:]
+            app.focus_square(loc)
+            app.vis_dict['Cyclone'] = Vis(name = 'Cyclone', loc = loc[:])
+            app.canvas.create_image(loc[0]*100+50-app.moved_right, loc[1]*100+50-app.moved_down, image = app.vis_dict['Cyclone'].img, tags = 'Cyclone')
+            my_psyche = self.get_attr('psyche')
+            tar_str = app.ent_dict[id].get_attr('str')
+            if to_hit(my_psyche, tar_str) == True:
+                d = damage(my_psyche, tar_str)
+                app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+75-app.moved_down, text = 'Cyclone Hit! '+str(d)+' spirit', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+                app.ent_dict[id].set_attr('spirit', -d)
+                if app.ent_dict[id].spirit <= 0:
+                    app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+95-app.moved_down, text = app.ent_dict[id].name+' Killed...', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+                    root.after(1666, lambda id = id : app.kill(id))
+                    root.after(3666, lambda el = ents_list : self.cleanup_attack(el))
+                else:# Teleport to random loc
+                    sqrs = [c for c in app.coords if app.grid[c[0]][c[1]] == '']
+                    loc = choice(sqrs)
+                    root.after(3333, lambda el = ents_list, id = id, loc = loc : self.cyclone_teleport(el, id, loc))
+            else:
+                app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+75-app.moved_down, text = 'Cyclone Missed!', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+                root.after(3333, lambda el = ents_list : self.cleanup_attack(el))
+    
+    def cyclone_teleport(self, el, id, loc):
+        # erase old cyclone vis
+        # create new cyclone vis in loc
+        # erase id imgs
+        del app.vis_dict['Cyclone']
+        app.canvas.delete('Cyclone')
+        app.vis_dict['Cyclone'] = Vis(name = 'Cyclone', loc = loc[:])
+        app.focus_square(loc)
+        app.canvas.create_image(loc[0]*100+50-app.moved_right, loc[1]*100+50-app.moved_down, image = app.vis_dict['Cyclone'].img, tags = 'Cyclone')
+        app.grid[app.ent_dict[id].loc[0]][app.ent_dict[id].loc[1]] = ''
+        app.canvas.delete(id)
+        root.after(1666, lambda el = el, id = id, loc = loc : self.finish_cyclone(el, id, loc))
+        
+    def finish_cyclone(self, el, id, loc):
+        app.ent_dict[id].loc = loc[:]
+        app.grid[loc[0]][loc[1]] = id
+        del app.vis_dict['Cyclone']
+        app.canvas.delete('Cyclone')
+        app.canvas.create_image(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+50-app.moved_down, image = app.ent_dict[id].img, tags = app.ent_dict[id].tags)
+        try: app.canvas.tag_lower((app.ent_dict[id].tags), 'large')
+        except: pass
+        app.canvas.tag_lower((app.ent_dict[id].tags), 'maptop')
+        root.after(666, lambda el = el : app.do_ai_loop(el))
+        
+        
         
     def do_breath_of_life(self, ents_list):
 #         effect1 = mixer.Sound('Sound_Effects/fog.ogg')
@@ -3985,7 +4020,7 @@ class Air_Mage(Summon):
                 
     def cleanup_attack(self, ents_list):
 #         self.init_normal_anims()
-        names = [k for k,v in app.vis_dict.items() if v.name == 'Deluge' or v.name == 'Torrent' or v.name == 'Fog']
+        names = [k for k,v in app.vis_dict.items() if v.name == 'Sandstorm' or v.name == 'Cyclone' or v.name == 'Breath_of_Life']
         for n in names:
             del app.vis_dict[n]
 #         try:
