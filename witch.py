@@ -1,3 +1,5 @@
+# guard interaction with new death triggers... guard is kill()ed inside spirit_effect...
+
 # new death triggers wait time can be predicted by length of death_trigger list held by object that is being kill()ed, 2333 for each trigger, each call to kill needs to wait 2333*len(obj.death_triggers) before proceeding with game logic
 
 # shadow wolf move not being impeded by obstacles properly
@@ -1505,7 +1507,7 @@ class Plaguebearer(Summon):
             effect1 = mixer.Sound('Sound_Effects/contagion.ogg')
             effect1.set_volume(1)
             sound_effects.play(effect1, 0)
-            app.get_focus(self)
+            app.focus_square(loc)
             sqrs = [c for c in app.coords if dist(self.loc, c) == 1]
             ents = [app.grid[s[0]][s[1]] for s in sqrs if app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
             for e in ents:
@@ -2462,11 +2464,11 @@ class Ghost(Summon):
             self.finish_attack(ents_list)
             
     def finish_attack(self, ents_list):
-        ents_list = ents_list[1:]
+        el = ents_list[1:]
         if ents_list == []:
             app.end_turn()
         else:
-            app.do_ai_loop(ents_list)
+            app.do_ai_loop(el)
         
         
     def legal_attacks(self):
@@ -2702,11 +2704,11 @@ class Revenant(Summon):
             self.finish_attack(ents_list)
             
     def finish_attack(self, ents_list):
-        ents_list = ents_list[1:]
+        el = ents_list[1:]
         if ents_list == []:
             app.end_turn()
         else:
-            app.do_ai_loop(ents_list)
+            app.do_ai_loop(el)
         
         
     def legal_attacks(self):
@@ -3088,11 +3090,11 @@ class Undead(Summon):
             self.finish_attack(ents_list)
             
     def finish_attack(self, ents_list):
-        ents_list = ents_list[1:]
+        el = ents_list[1:]
         if ents_list == []:
             app.end_turn()
         else:
-            app.do_ai_loop(ents_list)
+            app.do_ai_loop(el)
         
     def legal_attacks(self):
         sqrs = []
@@ -3260,11 +3262,11 @@ class Undead_Knight(Summon):
             self.finish_attack(ents_list)
             
     def finish_attack(self, ents_list):
-        ents_list = ents_list[1:]
+        el = ents_list[1:]
         if ents_list == []:
             app.end_turn()
         else:
-            app.do_ai_loop(ents_list)
+            app.do_ai_loop(el)
         
     def legal_attacks(self):
         sqrs = []
@@ -4029,7 +4031,7 @@ class Air_Mage(Summon):
         if el == []:
             app.end_turn()
         else:
-            app.do_ai_loop(ents_list)
+            app.do_ai_loop(el)
                 
 #     def legal_attacks(self):
 #         sqrs = []
@@ -4192,7 +4194,7 @@ class Air_Elemental(Summon):
         if el == []:
             app.end_turn()
         else:
-            app.do_ai_loop(ents_list)
+            app.do_ai_loop(el)
         
         
     def legal_attacks(self):
@@ -4772,7 +4774,7 @@ class Water_Elemental(Summon):
         if el == []:
             app.end_turn()
         else:
-            app.do_ai_loop(ents_list)
+            app.do_ai_loop(el)
         
     def legal_attacks(self):
         sqrs = []
@@ -5249,24 +5251,18 @@ class Earth_Elemental(Summon):
             app.canvas.delete('text')
         except: pass
         if app.ent_dict[id].spirit <= 0:
-            if app.kill(id) == None:
-                ents_list = ents_list[1:]
-                if ents_list == []:
-                    app.end_turn()
-                else:
-                    app.do_ai_loop(ents_list)
-            else:
-                ents_list = ents_list[1:]
-                if ents_list == []:
-                    app.end_turn()
-                else:
-                    root.after(3333, lambda el = ents_list : app.do_ai_loop(el))
+            time = 2333*len(app.ent_dict[id].death_triggers)
+            app.kill(id)
+            root.after(time, lambda el = ents_list : self.finish_attack(el))
         else:
-            ents_list = ents_list[1:]
-            if ents_list == []:
-                app.end_turn()
-            else:
-                app.do_ai_loop(ents_list)
+            self.finish_attack(ents_list)
+                    
+    def finish_attack(self, ents_list):
+        el = ents_list[1:]
+        if el == []:
+            app.end_turn()
+        else:
+            app.do_ai_loop(el)
         
         
     def legal_attacks(self):
@@ -5463,28 +5459,26 @@ class Fire_Mage(Summon):
             if ents != []:
                 # check for dmg and create text object
                 def firewall_loop(ents):
-                    app.canvas.delete('text')
-                    id = ents[0]
-                    ents = ents[1:]
-                    app.get_focus(id)
-                    my_psyche = self.get_attr('psyche')
-                    target_end = app.ent_dict[id].get_attr('end')
-                    d = damage(my_psyche, target_end)
-                    app.ent_dict[id].set_attr('spirit', -d)
-                    loc = app.ent_dict[id].loc[:]
-                    app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+75-app.moved_down, text = str(d)+' Spirit', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
-                    if app.ent_dict[id].spirit <= 0:
-                        app.canvas.create_text(loc[0]*100-app.moved_right+50, loc[1]*100-app.moved_down+100, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
-                        result = root.after(1333, lambda id = id : app.kill(id))
-                        if ents == []:
-                            root.after(4666, lambda el = ents_list : self.cleanup_attack(el))
-                        else:
-                            root.after(4666, lambda e = ents : firewall_loop(e))
+                    if ents == []:
+                        root.after(3666, lambda el = ents_list : self.cleanup_attack(el))
                     else:
-                        if ents == []:
-                            root.after(2666, lambda el = ents_list : self.cleanup_attack(el))
+                        app.canvas.delete('text')
+                        id = ents[0]
+                        ents = ents[1:]
+                        app.get_focus(id)
+                        my_psyche = self.get_attr('psyche')
+                        target_end = app.ent_dict[id].get_attr('end')
+                        d = damage(my_psyche, target_end)
+                        app.ent_dict[id].set_attr('spirit', -d)
+                        loc = app.ent_dict[id].loc[:]
+                        app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+75-app.moved_down, text = str(d)+' Spirit', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+                        if app.ent_dict[id].spirit <= 0:
+                            app.canvas.create_text(loc[0]*100-app.moved_right+50, loc[1]*100-app.moved_down+100, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
+                            time = 3666+2333*len(app.ent_dict[id].death_triggers)
+                            app.kill(id)
+                            root.after(time, lambda ents = ents : firewall_loop(ents))
                         else:
-                            root.after(2666, lambda e = ents : firewall_loop(e))
+                            root.after(3666, lambda ents = ents : firewall_loop(ents))
                 root.after(1666, lambda e = ents : firewall_loop(e))
             else: # cleanup vis / cont ai_loop
                 root.after(2999, lambda el = ents_list : self.cleanup_attack(el))
@@ -5497,7 +5491,6 @@ class Fire_Mage(Summon):
         for n in names:
             del app.vis_dict[n]
         try:
-            del app.vis_dict['Firewall']
             app.canvas.delete('Firewall')
         except: pass
         try: app.canvas.delete('text')
@@ -5773,30 +5766,21 @@ class Sorceress(Summon):
             app.canvas.delete('Fireblast')
         except: pass
         if app.ent_dict[id].spirit <= 0:
-            if app.kill(id) == None:
-                ents_list = ents_list[1:]
-                if ents_list == []:
-                    app.end_turn()
-                else:
-                    app.do_ai_loop(ents_list)
-            else:
-                ents_list = ents_list[1:]
-                if ents_list == []:
-                    app.end_turn()
-                else:
-                    root.after(3333, lambda el = ents_list : app.do_ai_loop(el))
+            time = 2333*len(app.ent_dict[id].death_triggers)
+            app.kill(id)
+            root.after(time, lambda el = ents_list : self.finish_attack(el))
         else:
-            ents_list = ents_list[1:]
-            if ents_list == []:
-                app.end_turn()
-            else:
-                app.do_ai_loop(ents_list)
-        
-        
+            self.finish_attack(ents_list)
+                    
+    def finish_attack(self, ents_list):
+        el = ents_list[1:]
+        if el == []:
+            app.end_turn()
+        else:
+            app.do_ai_loop(el)
         
     def legal_attacks(self):
         sqrs = []
-#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         for coord in app.coords:
             if dist(coord, self.loc) <= 3:
                 if app.grid[coord[0]][coord[1]] != '' and app.grid[coord[0]][coord[1]] != 'block':
@@ -5806,7 +5790,6 @@ class Sorceress(Summon):
     def legal_moves(self):
         loc = self.loc[:]
         mvlist = []
-#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         for c in app.coords:
             if dist(loc, c) <= 5 and app.grid[c[0]][c[1]] == '':
                 mvlist.append(c)
@@ -5949,37 +5932,29 @@ class Orc_Axeman(Summon):
         self.init_normal_anims()
         try: 
             app.canvas.delete('text')
-#             del app.vis_dict['Fireblast']
-#             app.canvas.delete('Fireblast')
+#             del app.vis_dict['']
+#             app.canvas.delete('')
         except: pass
         if app.ent_dict[id].spirit <= 0:
-            if app.kill(id) == None:
-                ents_list = ents_list[1:]
-                if ents_list == []:
-                    app.end_turn()
-                else:
-                    app.do_ai_loop(ents_list)
-            else:
-                ents_list = ents_list[1:]
-                if ents_list == []:
-                    app.end_turn()
-                else:
-                    root.after(3333, lambda el = ents_list : app.do_ai_loop(el))
+            time = 2333*len(app.ent_dict[id].death_triggers)
+            app.kill(id)
+            root.after(time, lambda el = ents_list : self.finish_attack(el))
         else:
-            ents_list = ents_list[1:]
-            if ents_list == []:
-                app.end_turn()
-            else:
-                app.do_ai_loop(ents_list)
-        
+            self.finish_attack(ents_list)
+                    
+    def finish_attack(self, ents_list):
+        el = ents_list[1:]
+        if el == []:
+            app.end_turn()
+        else:
+            app.do_ai_loop(el)
         
     def legal_attacks(self):
         sqrs = []
-#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        for coord in app.coords:
-            if dist(coord, self.loc) == 1:
-                if app.grid[coord[0]][coord[1]] != '' and app.grid[coord[0]][coord[1]] != 'block':
-                    sqrs.append(coord)
+        for c in app.coords:
+            if dist(c, self.loc) == 1:
+                if app.grid[c[0]][c[1]] != '' and app.grid[c[0]][c[1]] != 'block':
+                    sqrs.append(c)
         return sqrs
         
     def legal_moves(self):
@@ -6103,6 +6078,7 @@ class Fire_Elemental(Summon):
         if self.attack_used == True:
             self.cleanup_attack(ents_list, id)
         else:
+            self.attack_used = True
             app.get_focus(id)
     #         self.init_attack_anims()
             effect1 = mixer.Sound('Sound_Effects/fire_elemental_attack.ogg')
@@ -6119,11 +6095,11 @@ class Fire_Elemental(Summon):
                 app.ent_dict[id].set_attr('spirit', -d)
                 if app.ent_dict[id].spirit <= 0:
                     app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+90, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-                root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id)) # EXIT THROUGH CLEANUP_ATTACK()
+                root.after(2666, lambda e = ents_list, id = id : self.cleanup_attack(e, id)) # EXIT THROUGH CLEANUP_ATTACK()
             else:
                 # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
                 app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Fire Elemental Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-                root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id))
+                root.after(2666, lambda e = ents_list, id = id : self.cleanup_attack(e, id))
         
         
             
@@ -6131,29 +6107,22 @@ class Fire_Elemental(Summon):
         self.init_normal_anims()
         try: 
             app.canvas.delete('text')
-#             del app.vis_dict['Fireblast']
-#             app.canvas.delete('Fireblast')
+#             del app.vis_dict['']
+#             app.canvas.delete('')
         except: pass
         if app.ent_dict[id].spirit <= 0:
-            if app.kill(id) == None:
-                ents_list = ents_list[1:]
-                if ents_list == []:
-                    app.end_turn()
-                else:
-                    app.do_ai_loop(ents_list)
-            else:
-                ents_list = ents_list[1:]
-                if ents_list == []:
-                    app.end_turn()
-                else:
-                    root.after(3333, lambda el = ents_list : app.do_ai_loop(el))
+            time = 2333*len(app.ent_dict[id].death_triggers)
+            app.kill(id)
+            root.after(time, lambda el = ents_list : self.finish_attack(el))
         else:
-            ents_list = ents_list[1:]
-            if ents_list == []:
-                app.end_turn()
-            else:
-                app.do_ai_loop(ents_list)
-        
+            self.finish_attack(ents_list)
+                    
+    def finish_attack(self, ents_list):
+        el = ents_list[1:]
+        if el == []:
+            app.end_turn()
+        else:
+            app.do_ai_loop(el)
         
     def legal_attacks(self):
         sqrs = []
@@ -6315,37 +6284,29 @@ class Barbarian(Summon):
         self.init_normal_anims()
         try: 
             app.canvas.delete('text')
-#             del app.vis_dict['Fireblast']
-#             app.canvas.delete('Fireblast')
+#             del app.vis_dict['']
+#             app.canvas.delete('')
         except: pass
         if app.ent_dict[id].spirit <= 0:
-            if app.kill(id) == None:
-                ents_list = ents_list[1:]
-                if ents_list == []:
-                    app.end_turn()
-                else:
-                    app.do_ai_loop(ents_list)
-            else:
-                ents_list = ents_list[1:]
-                if ents_list == []:
-                    app.end_turn()
-                else:
-                    root.after(3333, lambda el = ents_list : app.do_ai_loop(el))
+            time = 2333*len(app.ent_dict[id].death_triggers)
+            app.kill(id)
+            root.after(time, lambda el = ents_list : self.finish_attack(el))
         else:
-            ents_list = ents_list[1:]
-            if ents_list == []:
-                app.end_turn()
-            else:
-                app.do_ai_loop(ents_list)
-        
+            self.finish_attack(ents_list)
+                    
+    def finish_attack(self, ents_list):
+        el = ents_list[1:]
+        if el == []:
+            app.end_turn()
+        else:
+            app.do_ai_loop(el)
         
     def legal_attacks(self):
         sqrs = []
-#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        for coord in app.coords:
-            if dist(coord, self.loc) == 1:
-                if app.grid[coord[0]][coord[1]] != '' and app.grid[coord[0]][coord[1]] != 'block':
-                    sqrs.append(coord)
+        for c in app.coords:
+            if dist(c, self.loc) == 1:
+                if app.grid[c[0]][c[1]] != '' and app.grid[c[0]][c[1]] != 'block':
+                    sqrs.append(c)
         return sqrs
         
     def legal_moves(self):
@@ -6657,29 +6618,22 @@ class Minotaur(Summon):
         app.ent_dict[self.number+'top'].init_normal_anims()
         try: 
             app.canvas.delete('text')
-#             del app.vis_dict['Fireblast']
-#             app.canvas.delete('Fireblast')
+#             del app.vis_dict['']
+#             app.canvas.delete('')
         except: pass
         if app.ent_dict[id].spirit <= 0:
-            if app.kill(id) == None:
-                ents_list = ents_list[1:]
-                if ents_list == []:
-                    app.end_turn()
-                else:
-                    app.do_ai_loop(ents_list)
-            else:
-                ents_list = ents_list[1:]
-                if ents_list == []:
-                    app.end_turn()
-                else:
-                    root.after(3333, lambda el = ents_list : app.do_ai_loop(el))
+            time = 2333*len(app.ent_dict[id].death_triggers)
+            app.kill(id)
+            root.after(time, lambda el = ents_list : self.finish_attack(el))
         else:
-            ents_list = ents_list[1:]
-            if ents_list == []:
-                app.end_turn()
-            else:
-                app.do_ai_loop(ents_list)
-        
+            self.finish_attack(ents_list)
+                    
+    def finish_attack(self, ents_list):
+        el = ents_list[1:]
+        if el == []:
+            app.end_turn()
+        else:
+            app.do_ai_loop(el)
         
     def legal_attacks(self):
         sqrs = []
@@ -6931,12 +6885,11 @@ class Warrior(Summon):
         app.ent_dict[id].set_attr('spirit', -dmg)
         if app.ent_dict[id].spirit <= 0:
             app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = app.ent_dict[id].name.replace('_', ' ') + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-            root.after(1666, lambda id = id : app.kill(id))
-            root.after(1666, lambda e = None : self.cancel_attack(e))
+            root.after(1666, lambda e = None, id = id : self.cancel_attack(e, id))
         else:
             self.cancel_attack(event = None)
     
-    def cancel_attack(self, event = None):
+    def cancel_attack(self, event = None, id = None):
         self.init_normal_anims()
         app.rebind_all()
         app.canvas.delete('text')
@@ -6950,6 +6903,9 @@ class Warrior(Summon):
         except: pass
         app.depop_context(event = None)
         app.cleanup_squares()
+        if id:
+            if app.ent_dict[id].spirit <= 0:
+                app.kill(id)
     
     def legal_moves(self):
         loc = self.loc
@@ -8101,6 +8057,7 @@ class Witch(Entity):
         self.dodge_effects = []
         self.psyche_effects = []
         self.spirit_effects = []
+        self.death_triggers = []
         self.move_used = False
         self.effects_dict = {}
         self.summon_count = 0
@@ -11032,6 +10989,7 @@ class App(tk.Frame):
                     # kill fire elementals (find by name not id)
                     for e in list(app.ent_dict.keys()):
                         if app.ent_dict[e].name == 'Fire_Elemental':
+                            app.ent_dict[e].death_triggers = []
                             app.kill(app.ent_dict[e].number)
                     # spawn earth mage
                     img = ImageTk.PhotoImage(Image.open('summon_imgs/Earth_Mage.png'))
@@ -11482,11 +11440,12 @@ class App(tk.Frame):
         if ef.sot_func() != None:
             self.get_focus(k[0])
             if ent.spirit <= 0: # ENT KILLED, DO NOT EXEC ANY MORE OF ITS EFFECTS, POP ENTS LIST OR EXIT
+                time = 1999+2333*len(app.ent_dict[k[0]].death_triggers)
                 root.after(1999, lambda e = k[0] : self.kill(e))
                 ents_list = ents_list[1:]
                 if ents_list != []:
-                    root.after(1666, lambda t = 'text' : app.canvas.delete(t))
-                    root.after(1999, lambda e = ents_list[0], el = ents_list : self.sot_eot_loop(e, el))
+                    root.after(time-333, lambda t = 'text' : app.canvas.delete(t))
+                    root.after(time, lambda e = ents_list[0], el = ents_list : self.sot_eot_loop(e, el))
                 else: # NO MORE ENTS, FINISH_START_TURN
                     root.after(1333, self.finish_start_turn)
             else:# CONTINUE PROCESSING THIS EFFECT 
@@ -11683,13 +11642,14 @@ class App(tk.Frame):
         if ef.eot_func() != None:
             self.get_focus(k[0])
             if ent.spirit <= 0: # ENT KILLED, DO NOT EXEC ANY MORE OF ITS EFFECTS, POP ENTS LIST OR EXIT
+                time = 1333+2333*len(app.ent_dict[k[0]].death_triggers)
                 root.after(1333, lambda e = k[0] : self.kill(e))
                 ents_list = ents_list[1:]
                 if ents_list != []:
-                    root.after(1111, lambda t = 'text' : app.canvas.delete(t))
-                    root.after(1333, lambda e = ents_list[0], el = ents_list : self.eot_loop(e, el))
+                    root.after(time-222, lambda t = 'text' : app.canvas.delete(t))
+                    root.after(time, lambda e = ents_list[0], el = ents_list : self.eot_loop(e, el))
                 else: # NO MORE ENTS, FINISH_END_TURN
-                    root.after(1333, self.finish_end_turn)
+                    root.after(time, self.finish_end_turn)
             else:# CONTINUE PROCESSING THIS EFFECT 
                 # CHECK IF EFFECT DURATION ENDS AND CALL UNDO IF SO
                 ef.duration -= 1
