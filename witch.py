@@ -1505,6 +1505,7 @@ class Plaguebearer(Summon):
             effect1 = mixer.Sound('Sound_Effects/contagion.ogg')
             effect1.set_volume(1)
             sound_effects.play(effect1, 0)
+            app.get_focus(self)
             sqrs = [c for c in app.coords if dist(self.loc, c) == 1]
             ents = [app.grid[s[0]][s[1]] for s in sqrs if app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
             for e in ents:
@@ -4972,116 +4973,106 @@ class Earth_Mage(Summon):
                     elif dist(app.ent_dict[e].loc, self.loc) == 1:
                         t3.append(e)
                 ents = t1[:] + t2[:] + t3[:]
-                # check for dmg and create text object
-                # move ents away from mage
-                # must do earthquake_loop on each tier, timed
-                def earthquake_loop(ents):
+                def earthquake_loop(ents_list, ids):
                     global selected
-                    app.canvas.delete('text')
-                    id = ents[0]
-                    ents = ents[1:]
-                    app.get_focus(id)
-                    my_psyche = self.get_attr('psyche')
-                    target_agl = app.ent_dict[id].get_attr('agl')
-                    d = damage(my_psyche, target_agl)
-                    app.ent_dict[id].set_attr('spirit', -d)
-                    loc = app.ent_dict[id].loc[:]
-                    app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+75-app.moved_down, text = str(d)+' Spirit', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
-                    if app.ent_dict[id].spirit <= 0:
-                        app.canvas.create_text(loc[0]*100-app.moved_right+50, loc[1]*100-app.moved_down+100, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
-                        result = root.after(1666, lambda id = id : app.kill(id))
-                        if ents == []:
-                            root.after(4666, lambda el = ents_list : self.cleanup_attack(el))
-                        else:
-                            root.after(4666, lambda e = ents : earthquake_loop(e))
-                    else: # ENT NOT KILLED, INSERT PSI PUSH
-                        start_loc = app.ent_dict[id].loc[:]
-                        # LEFT
-                        if start_loc[0] < self.loc[0] and abs(start_loc[1] - self.loc[1]) <= 1:
-                            if [start_loc[0]-1,start_loc[1]] in app.coords and app.grid[start_loc[0]-1][start_loc[1]] == '':
-                                if [start_loc[0]-2,start_loc[1]] in app.coords and app.grid[start_loc[0]-2][start_loc[1]] == '':
-                                    dest = [start_loc[0]-2,start_loc[1]]
+                    if ids == []:
+                        self.cleanup_attack(ents_list)
+                    else:
+                        id = ids[0]
+                        ids = ids[1:]
+                        app.get_focus(id)
+                        loc = app.ent_dict[id].loc[:]
+                        my_psyche = self.get_attr('psyche')
+                        target_agl = app.ent_dict[id].get_attr('agl')
+                        d = damage(my_psyche, target_agl)
+                        app.ent_dict[id].set_attr('spirit', -d)
+                        app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+75-app.moved_down, text = str(d)+' spirit', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+                        if app.ent_dict[id].spirit <= 0:
+                            app.canvas.create_text(loc[0]*100-app.moved_right+50, loc[1]*100-app.moved_down+100, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
+                            time = 3333+2333*len(app.ent_dict[id].death_triggers)
+                            app.kill(id)
+                            root.after(time, lambda el = ents_list, ids = ids : earthquake_loop(el, ids))
+                        else: # ENT NOT KILLED, INSERT PSI PUSH
+                            start_loc = app.ent_dict[id].loc[:]
+                            # LEFT
+                            if start_loc[0] < self.loc[0] and abs(start_loc[1] - self.loc[1]) <= 1:
+                                if [start_loc[0]-1,start_loc[1]] in app.coords and app.grid[start_loc[0]-1][start_loc[1]] == '':
+                                    if [start_loc[0]-2,start_loc[1]] in app.coords and app.grid[start_loc[0]-2][start_loc[1]] == '':
+                                        dest = [start_loc[0]-2,start_loc[1]]
+                                    else:
+                                        dest = [start_loc[0]-1,start_loc[1]]
                                 else:
-                                    dest = [start_loc[0]-1,start_loc[1]]
+                                    dest = start_loc[:]
+                            # RIGHT
+                            elif start_loc[0] > self.loc[0] and abs(start_loc[1] - self.loc[1]) <= 1:
+                                if [start_loc[0]+1,start_loc[1]] in app.coords and app.grid[start_loc[0]+1][start_loc[1]] == '':
+                                    if [start_loc[0]+2,start_loc[1]] in app.coords and app.grid[start_loc[0]+2][start_loc[1]] == '':
+                                        dest = [start_loc[0]+2,start_loc[1]]
+                                    else:
+                                        dest = [start_loc[0]+1,start_loc[1]]
+                                else:
+                                    dest = start_loc[:]
+                            # UP
+                            elif abs(start_loc[0] - self.loc[0]) <= 1 and start_loc[1] < self.loc[1]:
+                                if [start_loc[0],start_loc[1]-1] in app.coords and app.grid[start_loc[0]][start_loc[1]-1] == '':
+                                    if [start_loc[0],start_loc[1]-2] in app.coords and app.grid[start_loc[0]][start_loc[1]-2] == '':
+                                        dest = [start_loc[0],start_loc[1]-2]
+                                    else:
+                                        dest = [start_loc[0],start_loc[1]-1]
+                                else:
+                                    dest = start_loc[:]
+                            # DOWN
+                            elif abs(start_loc[0] - self.loc[0]) <= 1 and start_loc[1] > self.loc[1]:
+                                if [start_loc[0],start_loc[1]+1] in app.coords and app.grid[start_loc[0]][start_loc[1]+1] == '':
+                                    if [start_loc[0],start_loc[1]+2] in app.coords and app.grid[start_loc[0]][start_loc[1]+2] == '':
+                                        dest = [start_loc[0],start_loc[1]+2]
+                                    else:
+                                        dest = [start_loc[0],start_loc[1]+1]
+                                else:
+                                    dest = start_loc[:]
+                            # end destination logic
+                            x = start_loc[0]*100+50-app.moved_right
+                            y = start_loc[1]*100+50-app.moved_down
+                            endx = dest[0]*100+50-app.moved_right
+                            endy = dest[1]*100+50-app.moved_down
+                            if start_loc != dest: # do move then go to next eq loop, else go to next eq loop
+                                selected = [id]
+                                def finish_psionic_push(tar, end_loc, start_loc):
+                                    global selected
+                                    selected = []
+                                    app.ent_dict[tar].loc = end_loc[:]
+                                    app.grid[start_loc[0]][start_loc[1]] = ''
+                                    app.grid[end_loc[0]][end_loc[1]] = tar
+                                    root.after(3666, lambda el = ents_list, ids = ids : earthquake_loop(el, ids))
+                                def psi_move_loop(ent, x, y, endx, endy, sqr, start_sqr):
+                                    if x % 25 == 0 and y % 25 == 0:
+                                        app.ent_dict[ent].rotate_image()
+                                        app.canvas.delete(ent)
+                                        app.canvas.create_image(x, y, image = app.ent_dict[ent].img, tags = app.ent_dict[ent].tags)
+                                    if x > endx:
+                                        x -= 10
+                                        app.canvas.move(ent, -10, 0)
+                                    elif x < endx: 
+                                        x += 10
+                                        app.canvas.move(ent, 10, 0)
+                                    if y > endy: 
+                                        y -= 10
+                                        app.canvas.move(ent, 0, -10)
+                                    elif y < endy: 
+                                        y += 10
+                                        app.canvas.move(ent, 0, 10)
+                                    try: app.canvas.tag_lower(app.ent_dict[ent].tags, 'large')
+                                    except: pass
+                                    app.canvas.tag_lower(app.ent_dict[ent].tags, 'maptop')
+                                    if x == endx and y == endy:
+                                        root.after(666, lambda e = ent, s = sqr, ss = start_sqr : finish_psionic_push(e, s, ss))
+                                    else:
+                                        root.after(50, lambda id = id, x = x, y = y, endx = endx, endy = endy, s = sqr, s2 = start_sqr : psi_move_loop(id, x, y, endx, endy, s, s2))
+                                psi_move_loop(id, x, y, endx, endy, dest, start_loc)
                             else:
-                                dest = start_loc[:]
-                        # RIGHT
-                        elif start_loc[0] > self.loc[0] and abs(start_loc[1] - self.loc[1]) <= 1:
-                            if [start_loc[0]+1,start_loc[1]] in app.coords and app.grid[start_loc[0]+1][start_loc[1]] == '':
-                                if [start_loc[0]+2,start_loc[1]] in app.coords and app.grid[start_loc[0]+2][start_loc[1]] == '':
-                                    dest = [start_loc[0]+2,start_loc[1]]
-                                else:
-                                    dest = [start_loc[0]+1,start_loc[1]]
-                            else:
-                                dest = start_loc[:]
-                        # UP
-                        elif abs(start_loc[0] - self.loc[0]) <= 1 and start_loc[1] < self.loc[1]:
-                            if [start_loc[0],start_loc[1]-1] in app.coords and app.grid[start_loc[0]][start_loc[1]-1] == '':
-                                if [start_loc[0],start_loc[1]-2] in app.coords and app.grid[start_loc[0]][start_loc[1]-2] == '':
-                                    dest = [start_loc[0],start_loc[1]-2]
-                                else:
-                                    dest = [start_loc[0],start_loc[1]-1]
-                            else:
-                                dest = start_loc[:]
-                        # DOWN
-                        elif abs(start_loc[0] - self.loc[0]) <= 1 and start_loc[1] > self.loc[1]:
-                            if [start_loc[0],start_loc[1]+1] in app.coords and app.grid[start_loc[0]][start_loc[1]+1] == '':
-                                if [start_loc[0],start_loc[1]+2] in app.coords and app.grid[start_loc[0]][start_loc[1]+2] == '':
-                                    dest = [start_loc[0],start_loc[1]+2]
-                                else:
-                                    dest = [start_loc[0],start_loc[1]+1]
-                            else:
-                                dest = start_loc[:]
-                        # end destination logic
-                        x = start_loc[0]*100+50-app.moved_right
-                        y = start_loc[1]*100+50-app.moved_down
-                        endx = dest[0]*100+50-app.moved_right
-                        endy = dest[1]*100+50-app.moved_down
-                        if start_loc != dest: # do move then go to next eq loop, else go to next eq loop
-                            selected = [id]
-                            def finish_psionic_push(tar, end_loc, start_loc):
-                                global selected
-                                selected = []
-                                app.ent_dict[tar].loc = end_loc[:]
-                                app.grid[start_loc[0]][start_loc[1]] = ''
-                                app.grid[end_loc[0]][end_loc[1]] = tar
-                                if ents == []:
-                                    root.after(3666, lambda el = ents_list : self.cleanup_attack(el))
-                                else:
-                                    root.after(3666, lambda e = ents : earthquake_loop(e))
-                                
-                            def psi_move_loop(ent, x, y, endx, endy, sqr, start_sqr):
-                                if x % 25 == 0 and y % 25 == 0:
-                                    app.ent_dict[ent].rotate_image()
-                                    app.canvas.delete(ent)
-                                    app.canvas.create_image(x, y, image = app.ent_dict[ent].img, tags = app.ent_dict[ent].tags)
-                                if x > endx:
-                                    x -= 10
-                                    app.canvas.move(ent, -10, 0)
-                                elif x < endx: 
-                                    x += 10
-                                    app.canvas.move(ent, 10, 0)
-                                if y > endy: 
-                                    y -= 10
-                                    app.canvas.move(ent, 0, -10)
-                                elif y < endy: 
-                                    y += 10
-                                    app.canvas.move(ent, 0, 10)
-                                try: app.canvas.tag_lower(app.ent_dict[ent].tags, 'large')
-                                except: pass
-                                app.canvas.tag_lower(app.ent_dict[ent].tags, 'maptop')
-                                if x == endx and y == endy:
-                                    root.after(666, lambda e = ent, s = sqr, ss = start_sqr : finish_psionic_push(e, s, ss))
-                                else:
-                                    root.after(50, lambda id = id, x = x, y = y, endx = endx, endy = endy, s = sqr, s2 = start_sqr : psi_move_loop(id, x, y, endx, endy, s, s2))
-                            psi_move_loop(id, x, y, endx, endy, dest, start_loc)
-                            
-                        elif ents == []:
-                            root.after(3666, lambda el = ents_list : self.cleanup_attack(el))
-                        else:
-                            root.after(3666, lambda e = ents : earthquake_loop(e))
-                # first call of eq loop, called if affected ents exist
-                root.after(1999, lambda ents = ents : earthquake_loop(ents))
+                                root.after(3666, lambda el = ents_list, ids = ids : earthquake_loop(el, ids))
+                    # first call of eq loop, called if affected ents exist
+                root.after(1999, lambda el = ents_list, ids = ents : earthquake_loop(el, ids))
             else: # no affected ents, exit
                 root.after(3333, lambda el = ents_list : self.cleanup_attack(el))
             
@@ -5101,7 +5092,7 @@ class Earth_Mage(Summon):
         if ents_list == []:
             app.end_turn()
         else:
-            root.after(666, lambda e = ents_list : app.do_ai_loop(e))
+            root.after(666, lambda el = ents_list : app.do_ai_loop(el))
         
         
 #     def legal_attacks(self):
@@ -5244,7 +5235,7 @@ class Earth_Elemental(Summon):
                 app.ent_dict[id].set_attr('spirit', -d)
                 if app.ent_dict[id].spirit <= 0:
                     app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+90, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-                root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id)) # EXIT THROUGH CLEANUP_ATTACK()
+                root.after(2666, lambda e = ents_list, id = id : self.cleanup_attack(e, id)) # EXIT THROUGH CLEANUP_ATTACK()
             else:
                 # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
                 app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Earth Elemental Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
@@ -6788,6 +6779,8 @@ class Warrior(Summon):
         app.ent_dict[id].spirit_effects.append(f)
         # give self a death trigger to remove guard from obj
         def death_trigger(obj, f):
+            app.canvas.create_text(obj.loc[0]*100-app.moved_right+50, obj.loc[1]*100-app.moved_down+35, text = 'Guard Removed', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
+            root.after(2333, lambda t = 'text' : app.canvas.delete(t))
             obj.spirit_effects.remove(f)
         dt = partial(death_trigger, app.ent_dict[id], f)
         self.death_triggers.append(dt)
@@ -7031,6 +7024,7 @@ class Familiar_Homonculus(Summon):
             else:
                 witch = app.p2_witch
             loc = app.ent_dict[witch].loc[:]
+            app.focus_square(loc)
             app.ent_dict[witch].set_attr('spirit', -3)
             app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+75-app.moved_down, text = '3 spirit, Familiar Death', font = ('Andale Mono', 13), fill = 'white', tags = 'familiar_death')
             root.after(2333, lambda t = 'familiar_death' : app.canvas.delete(t))
@@ -7831,7 +7825,7 @@ class Familiar_Imp(Summon):
                 witch = app.p2_witch
             loc = app.ent_dict[witch].loc[:]
             app.ent_dict[witch].set_attr('spirit', -3)
-            app.get_focus(witch)
+            app.focus_square(loc)
             app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+75-app.moved_down, text = '3 Spirit, Familiar Death', font = ('Andale Mono', 13), fill = 'white', tags = 'familiar_death')
             root.after(2333, lambda t = 'familiar_death' : app.canvas.delete(t))
             if app.ent_dict[witch].spirit <= 0:
