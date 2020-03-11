@@ -3885,7 +3885,7 @@ class Air_Mage(Summon):
             rand = randrange(1,100)
             if rand < 20:
                 self.do_sandstorm(ents_list)
-            elif 20 <= rand < 105:
+            elif 20 <= rand < 85:
                 self.do_cyclone(ents_list)
             else:
                 elems = [v for k,v in app.ent_dict.items() if v.name == 'Air_Elemental']
@@ -4145,9 +4145,8 @@ class Air_Elemental(Summon):
                     for eloc in friendly_ent_locs:
                         egrid[eloc[0]][eloc[1]] = '' # EGRID NOW EMPTIED OF FRIENDLY ENTS
                     # NOW FIND PATH AND PASS TO MOVE
-#                     coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
                     for el in enemy_ent_locs:
-                        goals = [c for c in app.coords if dist(c, el) == 1 and app.grid[c[0]][c[1]] == '']
+                        goals = [c for c in app.coords if dist(c, el) == 4 and app.grid[c[0]][c[1]] == '']
                         path = bfs(self.loc[:], goals, egrid[:]) # BFS ON ALTERED GRID (FRIENDLY ENTS REMOVED)
                         if path:
                             paths.append(path)
@@ -4189,8 +4188,8 @@ class Air_Elemental(Summon):
 #             effect1.set_volume(1)
 #             sound_effects.play(effect1, 0)
             my_agl = self.get_attr('agl')
-            target_agl = app.ent_dict[id].get_attr('agl')
-            if to_hit(my_agl, target_agl) == True:
+            target_dodge = app.ent_dict[id].get_attr('dodge')
+            if to_hit(my_agl, target_dodge) == True:
                 # HIT, SHOW VIS, DO DAMAGE, EXIT
                 my_str = self.get_attr('str')
                 target_end = app.ent_dict[id].get_attr('end')
@@ -4233,10 +4232,11 @@ class Air_Elemental(Summon):
         
     def legal_attacks(self):
         sqrs = []
-        for coord in app.coords:
-            if dist(coord, self.loc) == 1:
-                if app.grid[coord[0]][coord[1]] != '' and app.grid[coord[0]][coord[1]] != 'block':
-                    sqrs.append(coord)
+        for c in app.coords:
+            if dist(c, self.loc) <= 4:
+                if app.grid[c[0]][c[1]] != '' and app.grid[c[0]][c[1]] != 'block':
+                    if app.ent_dict[app.grid[c[0]][c[1]]].owner != self.owner:
+                        sqrs.append(c)
         return sqrs
         
     def legal_moves(self):
@@ -4249,7 +4249,7 @@ class Air_Elemental(Summon):
             for s in adj:
                 mvlist.append(s)
                 findall(s, start+1, distance)
-        findall(loc, 1, 4)
+        findall(loc, 1, 5)
         return [list(x) for x in set(tuple(x) for x in mvlist)]
 
 
@@ -5301,10 +5301,10 @@ class Earth_Elemental(Summon):
         
     def legal_attacks(self):
         sqrs = []
-        for coord in app.coords:
-            if dist(coord, self.loc) == 1:
-                if app.grid[coord[0]][coord[1]] != '' and app.grid[coord[0]][coord[1]] != 'block':
-                    sqrs.append(coord)
+        for c in app.coords:
+            if dist(c, self.loc) == 1:
+                if app.grid[c[0]][c[1]] != '' and app.grid[c[0]][c[1]] != 'block':
+                    sqrs.append(c)
         return sqrs
         
     def legal_moves(self):
@@ -6097,7 +6097,7 @@ class Fire_Elemental(Summon):
                     # NOW FIND PATH AND PASS TO MOVE
 #                     coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
                     for el in enemy_ent_locs:
-                        goals = [c for c in app.coords if dist(c, el) == 1 and app.grid[c[0]][c[1]] == '']
+                        goals = [c for c in app.coords if dist(c, el) <= 3 and app.grid[c[0]][c[1]] == '']
                         path = bfs(self.loc[:], goals, egrid[:]) # BFS ON ALTERED GRID (FRIENDLY ENTS REMOVED)
                         if path:
                             paths.append(path)
@@ -6190,8 +6190,8 @@ class Fire_Elemental(Summon):
         for c in app.coords:
             if dist(c, self.loc) <= 3:
                 if app.grid[c[0]][c[1]] != '' and app.grid[c[0]][c[1]] != 'block':
-                    if app.ent_dict[app.grid[c[0]][c[1]].owner != self.owner:
-                        sqrs.append(coord)
+                    if app.ent_dict[app.grid[c[0]][c[1]]].owner != self.owner:
+                        sqrs.append(c)
         return sqrs
         
     def legal_moves(self):
@@ -7215,13 +7215,12 @@ class Familiar_Homonculus(Summon):
             witch = app.p1_witch
         else:
             witch = app.p2_witch
-        loc = app.ent_dict[witch].loc[:]
+        loc = self.loc[:]
         app.ent_dict[witch].set_attr('spirit', -3)
-        app.get_focus(witch)
-        app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+75-app.moved_down, text = '3 Spirit, Familiar Death', font = ('Andale Mono', 14), fill = 'white', tags = 'familiar_death')
+        app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+75-app.moved_down, text = '3 spirit, Familiar Death', font = ('Andale Mono', 13), fill = 'white', tags = 'familiar_death')
         root.after(2333, lambda t = 'familiar_death' : app.canvas.delete(t))
         if app.ent_dict[witch].spirit <= 0:
-            app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+95-app.moved_down, text = app.ent_dict[witch].name.replace('_', ' ')+' Killed...', font = ('Andale Mono', 14), fill = 'white', tags = 'self_death')
+            app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+95-app.moved_down, text = app.ent_dict[witch].name.replace('_', ' ')+' Killed...', font = ('Andale Mono', 13), fill = 'white', tags = 'self_death')
             root.after(1666, lambda id = app.ent_dict[witch].name : app.kill(id))
 
     def legal_moves(self):
