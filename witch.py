@@ -1,38 +1,23 @@
-# guard interaction with new death triggers... guard is kill()ed inside spirit_effect...
+# fuse_trap, guard interaction with new death triggers... guard is kill()ed inside spirit_effect...
+# also need to change AOE to damage one at a time...
 
 # new death triggers wait time can be predicted by length of death_trigger list held by object that is being kill()ed, 2333 for each trigger, each call to kill needs to wait 2333*len(obj.death_triggers) before proceeding with game logic
 
-# shadow wolf move not being impeded by obstacles properly
+# could do same as death triggers for legal_moves(), make a list of effects applied to the returned squares from class method legal_moves()
 
-# maybe change death_trigger from method to stack/list, so on kill() call each in list (same time or consecutive), would solve problem of multiple overwrites of death_trigger
-
-# could do same as above for legal_moves(), make a list of effects applied to the returned squares from class method legal_moves()
-
-# familiar death trigger removed get_focus() call, only contagion has get_focus() call in death_trigger, probably just remove all mutating effects from all death triggers and let them be called without worrying about timing, this removes much code in ents that have to check for results of death_triggers when calling kill()
-
-# fix elementals
+# finish elementals
 
 # spell ideas, mental decay, clear mind, quicken, shift season/weather, electrify, ice, spoil water, sunbeam, zombify, command, trance
-
-# go through earthmage ai
 
 # slicing is used on some strings to find names of effects that begin with a name (created in batches with numbers suffixed), change these all to string.startswith() in case of slicing strings too small...
 
 # kobold shaman, routines for ai to choose between, ie one of a few spells, one of a few atks or abils, OR tactics like run away, converge, support, etc...
 
-# handle multiple overwrites of methods, legal_moves... currently last write will take precedence (desired behavior) but an undo from an older effect will reset legal_moves() to the class method before the newer effect expires
-
-# spellcasting enemies! ...things that have effects not just damage, sleep, paralyze, slow, etc
-
 # text objects, create a background/stroke/dropshadow effect by generating text twice with slight offset/color difference
 
 # preload all images?
 
-# library, sometimes 2 revenants generated on first turn instead of 1?
-
 # add delay to get_focus / focus_sqr
-
-# unbinding ints 1-4 during summon?
 
 # troll ai still hangs? only sometimes when path is impeded? movement of 9 may influence?
 
@@ -42,13 +27,7 @@
 
 # consider limit 1 bard, how does that change certain levels that rely on healing? kensai, dragon. Possibly increase heal amount by ~2 and limit one bard at a time (as opposed to ever)
 
-# confusing - app.effects_counter is used to get unique numbers. Whenever one is needed for an arbitrary purpose, the current value is taken and then app.effects_counter is incremented. The name comes from the fact that Effect instances grab the current value to refer to uniquely refer to the instance AND THEN the init method of the Effect increments app.effects_counter. Elsewhere it is incremented manually.
-
 # remake levels with proper shadows
-
-# make each elemental unique
-
-# only warrior attack and shadow strike ? has delayed text before kill
 
 # allow click on unit along with press 'a'
 #   - click on 100X100 pixel sqr?
@@ -81,24 +60,11 @@
 
 # fix sorc teleport barbarian, do not teleport if endloc is further from goal
 
-# one fuse trap at a time?, effects instead of dmg?
-
 # library level, cant move 'all the way down', seems to happen on dragon level also?
 # revenant attack, taking focus on target?
 # ghost attack better
 
-# death triggers allot 3333 during ai/computer turn, user-controlled ents (either 1player mode killing own units OR 2player mode killing opponent user ents) may currently interrupt the visual resolution (logical not affected) of death triggers by moving beyond edge of map (quickly pressing arrow keys many times during trigger resolution) or calling some effect/spell that takes focus/focus squares on ent that is beyond edge of visible map
-# Can potentially fix above by unbind_all() / rebind_all() during death trigger
-
-# potential visual problems when familiar death triggers happen at same time as other death triggers (contagion), due to taking focus in familiar death as soon as called, otherwise all calls to kill() allot 3333 for death trigger resolution
-
 # scrye, hatred, sound effect inaudible
-
-# make all summons use 'regular' movement types that get range based on some attribute so they can be easily altered (+/-N)
-
-# abilities for shadow/warrior buffs
-
-# make plaguebearer a plagued wolf, healable
 
 # more buff/defensive spells
 
@@ -10949,6 +10915,7 @@ class App(tk.Frame):
                     # kill air elementals (find by name not id)
                     for e in list(app.ent_dict.keys()):
                         if app.ent_dict[e].name == 'Air_Elemental':
+                            app.ent_dict[e].death_triggers = []
                             app.kill(app.ent_dict[e].number)
                     # spawn water mage
                     img = ImageTk.PhotoImage(Image.open('summon_imgs/Water_Mage.png'))
@@ -10969,6 +10936,7 @@ class App(tk.Frame):
                     # kill earth elementals (find by name not id)
                     for e in list(app.ent_dict.keys()):
                         if app.ent_dict[e].name == 'Earth_Elemental':
+                            app.ent_dict[e].death_triggers = []
                             app.kill(app.ent_dict[e].number)
                     # spawn air mage
                     img = ImageTk.PhotoImage(Image.open('summon_imgs/Air_Mage.png'))
