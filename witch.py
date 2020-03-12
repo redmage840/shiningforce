@@ -1,3 +1,5 @@
+# if path is blocked by other units, maybe just wait?
+
 # fuse_trap, guard interaction with new death triggers... guard is kill()ed inside spirit_effect...
 # also need to change AOE to damage one at a time...
 
@@ -1351,11 +1353,11 @@ class Shadow(Summon):
             def attack_self(id):
                 app.get_focus(id)
                 my_agl = app.ent_dict[id].get_attr('agl')
-                if check_hit(my_agl, my_agl) == True:
+                if to_hit(my_agl, my_agl) == True:
                     my_str = app.ent_dict[id].get_attr('str')
                     my_end = app.ent_dict[id].get_attr('end')
                     d = damage(my_str, my_end)
-                    app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+75-app.moved_down, text = 'Muddle Damage Self '+str(d)+' Spirit!', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+75-app.moved_down, text = 'Muddle Damage '+str(d)+' spirit!', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
                     app.ent_dict[id].set_attr('spirit', -d)
                     if app.ent_dict[id].spirit <= 0:
                         app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+95-app.moved_down, text = app.ent_dict[id].name.replace('_',' ') + '\nKilled...', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
@@ -5087,10 +5089,10 @@ class Earth_Elemental(Summon):
         self.attack_used = False
         self.str = 6
         self.agl = 4
-        self.end = 8
+        self.end = 7
         self.dodge = 3
         self.psyche = 3
-        self.spirit = 29
+        self.spirit = 19
         self.waiting = waiting
         self.move_type = 'normal'
         super().__init__(name, img, loc, owner, number)
@@ -5249,7 +5251,7 @@ class Earth_Elemental(Summon):
             for s in adj:
                 mvlist.append(s)
                 findall(s, start+1, distance)
-        findall(loc, 1, 5)
+        findall(loc, 1, 6)
         return [list(x) for x in set(tuple(x) for x in mvlist)]
         
 # casts firewall after teleporting randomly within a dist, resummons fire elementals if they all die
@@ -5414,7 +5416,7 @@ class Fire_Mage(Summon):
                 elif abs(c[0] - self.loc[0]) <= 5 and c[1] == self.loc[1]:
                     sqrs.append(c)
             sqrs.remove(self.loc)
-            app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+85-app.moved_down, text = 'Firewall', font = ('Andale Mono', 16), fill = 'yellow', tags = 'text')
+            app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+85-app.moved_down, text = 'Firewall', font = ('Andale Mono', 16), fill = 'orangered2', tags = 'text')
             for s in sqrs:
                 u_name = 'Firewall' + str(app.effects_counter)
                 app.effects_counter += 1
@@ -5426,7 +5428,7 @@ class Fire_Mage(Summon):
                 # check for dmg and create text object
                 def firewall_loop(ents):
                     if ents == []:
-                        root.after(3666, lambda el = ents_list : self.cleanup_attack(el))
+                        self.cleanup_attack(ents_list)
                     else:
                         app.canvas.delete('text')
                         id = ents[0]
@@ -6041,6 +6043,7 @@ class Fire_Elemental(Summon):
             
     
     def do_attack(self, ents_list, id):
+        global selected_vis
         if self.attack_used == True:
             self.cleanup_attack(ents_list, id)
         else:
@@ -6050,31 +6053,78 @@ class Fire_Elemental(Summon):
             effect1 = mixer.Sound('Sound_Effects/fire_elemental_attack.ogg')
             effect1.set_volume(1)
             sound_effects.play(effect1, 0)
-            my_agl = self.get_attr('agl')
-            target_agl = app.ent_dict[id].get_attr('agl')
-            if to_hit(my_agl, target_agl) == True:
-                # HIT, SHOW VIS, DO DAMAGE, EXIT
-                my_str = self.get_attr('str')
-                target_end = app.ent_dict[id].get_attr('end')
-                d = damage(my_str, target_end)
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+70, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Fire Elemental Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-                app.ent_dict[id].set_attr('spirit', -d)
-                if app.ent_dict[id].spirit <= 0:
-                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+90, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-                root.after(2666, lambda e = ents_list, id = id : self.cleanup_attack(e, id)) # EXIT THROUGH CLEANUP_ATTACK()
-            else:
-                # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Fire Elemental Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-                root.after(2666, lambda e = ents_list, id = id : self.cleanup_attack(e, id))
-        
-        
+            loc = app.ent_dict[id].loc[:]
+            # create vis
+            app.vis_dict['Fire_Elem_Ball'] = Vis(name = 'Fire_Elem_Ball', loc = self.loc[:])
+            app.canvas.create_image(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+50-app.moved_down, image = app.vis_dict['Fire_Elem_Ball'].img, tags = 'Fire_Elem_Ball')
+            # move vis to target
+            selected_vis = 'Fire_Elem_Ball'
+            def moonlight_loop(starty, endy, startx, endx):
+                if starty > endy:
+                    starty -= 10
+#                     app.canvas.move('Fire_Elem_Ball', 0, -10)
+                    app.canvas.delete('Fire_Elem_Ball')
+                    app.canvas.create_image(startx, starty, image = app.vis_dict['Fire_Elem_Ball'].img, tags = 'Fire_Elem_Ball')
+                    app.vis_dict['Fire_Elem_Ball'].rotate_image()
+                    app.canvas.tag_raise('Fire_Elem_Ball')
+                elif starty < endy:
+                    starty += 10
+#                     app.canvas.move('Fire_Elem_Ball', 0, 10)
+                    app.canvas.delete('Fire_Elem_Ball')
+                    app.canvas.create_image(startx, starty, image = app.vis_dict['Fire_Elem_Ball'].img, tags = 'Fire_Elem_Ball')
+                    app.vis_dict['Fire_Elem_Ball'].rotate_image()
+                    app.canvas.tag_raise('Fire_Elem_Ball')
+                if startx > endx:
+                    startx -= 10
+#                     app.canvas.move('Fire_Elem_Ball', -10, 0)
+                    app.canvas.delete('Fire_Elem_Ball')
+                    app.canvas.create_image(startx, starty, image = app.vis_dict['Fire_Elem_Ball'].img, tags = 'Fire_Elem_Ball')
+                    app.vis_dict['Fire_Elem_Ball'].rotate_image()
+                    app.canvas.tag_raise('Fire_Elem_Ball')
+                elif startx < endx:
+                    startx += 10
+#                     app.canvas.move('Fire_Elem_Ball', 10, 0)
+                    app.canvas.delete('Fire_Elem_Ball')
+                    app.canvas.create_image(startx, starty, image = app.vis_dict['Fire_Elem_Ball'].img, tags = 'Fire_Elem_Ball')
+                    app.vis_dict['Fire_Elem_Ball'].rotate_image()
+                    app.canvas.tag_raise('Fire_Elem_Ball')
+                if starty == endy and startx == endx:
+                    root.after(333, lambda el = ents_list, id = id : self.continue_attack(el, id))
+                else:
+                    root.after(66, lambda sy = starty, ey = endy, sx = startx, ex = endx : moonlight_loop(sy, ey, sx, ex))
+            starty = self.loc[1]*100+50-app.moved_down
+            startx = self.loc[0]*100+50-app.moved_right
+            endy = loc[1]*100+50-app.moved_down
+            endx = loc[0]*100+50-app.moved_right
+            moonlight_loop(starty, endy, startx, endx)
+            
+    def continue_attack(self, ents_list, id):
+        loc = app.ent_dict[id].loc[:]
+        my_agl = self.get_attr('agl')
+        target_agl = app.ent_dict[id].get_attr('agl')
+        if to_hit(my_agl, target_agl) == True:
+            # HIT, SHOW VIS, DO DAMAGE, EXIT
+            my_str = self.get_attr('str')
+            target_end = app.ent_dict[id].get_attr('end')
+            d = damage(my_str, target_end)
+            app.canvas.create_text(loc[0]*100-app.moved_right+70, loc[1]*100-app.moved_down+50, text = 'Fire Elemental Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+            app.ent_dict[id].set_attr('spirit', -d)
+            if app.ent_dict[id].spirit <= 0:
+                app.canvas.create_text(loc[0]*100-app.moved_right+50, loc[1]*100-app.moved_down+90, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+            root.after(2666, lambda e = ents_list, id = id : self.cleanup_attack(e, id)) # EXIT THROUGH CLEANUP_ATTACK()
+        else:
+            # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
+            app.canvas.create_text(loc[0]*100-app.moved_right+50, loc[1]*100-app.moved_down+50, text = 'Fire Elemental Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+            root.after(2666, lambda e = ents_list, id = id : self.cleanup_attack(e, id))
             
     def cleanup_attack(self, ents_list, id):
+        global selected_vis
+        selected_vis = ''
         self.init_normal_anims()
         try: 
             app.canvas.delete('text')
-#             del app.vis_dict['']
-#             app.canvas.delete('')
+            del app.vis_dict['Fire_Elem_Ball']
+            app.canvas.delete('Fire_Elem_Ball')
         except: pass
         if app.ent_dict[id].spirit <= 0:
             time = 2333*len(app.ent_dict[id].death_triggers)
@@ -6685,10 +6735,10 @@ class Warrior(Summon):
             if amount < 0:
                 app.canvas.create_text(obj.loc[0]*100-app.moved_right+50, obj.loc[1]*100-app.moved_down+95, text = 'Guard Redirect', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
                 redir_obj.set_attr('spirit', amount)
-#                 redir_obj.spirit += amount
                 # check for guard death...
                 if redir_obj.spirit <= 0:
                     app.canvas.create_text(obj.loc[0]*100-app.moved_right+50, obj.loc[1]*100-app.moved_down+15, text = 'Guard Death', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
+                    app.ent_dict[redir_obj].death_triggers = []
                     app.kill(redir_obj.number)
                     obj.spirit_effects.remove(guard_effect)
                     obj.effects_dict.remove(guard_effect)
@@ -7365,9 +7415,13 @@ class Lesser_Demon(Summon):
                         # check for death
                         if app.ent_dict[id].get_attr('spirit') <= 0:
                             app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+90-app.moved_down, text = app.ent_dict[id].name + ' Killed...', font = ('Andale Mono', 12), fill = 'white', tags = 'text')
-                            root.after(3333, lambda id = id : app.kill(id))
-                        root.after(3333, lambda t = 'text' : app.canvas.delete(t))
-                        root.after(3333, lambda es = ents : dire_charm_loop(es))
+                            time = 3333+2333*len(app.ent_dict[id].death_triggers)
+                            app.kill(id)
+                            root.after(time-333, lambda t = 'text' : app.canvas.delete(t))
+                            root.after(time, lambda es = ents : dire_charm_loop(es))
+                        else:
+                            root.after(3111, lambda t = 'text' : app.canvas.delete(t))
+                            root.after(3333, lambda es = ents : dire_charm_loop(es))
             dire_charm_loop(ents)
             
             
@@ -9822,7 +9876,7 @@ class Witch(Entity):
             # SPIRIT
             app.ent_dict[id].set_attr('spirit', -1)
             if app.ent_dict[id].spirit <= 0:
-                app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+100-app.moved_down, text = app.ent_dict[id].name+' Killed...', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+                app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+100-app.moved_down, text = app.ent_dict[id].name+' Killed...', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
                 root.after(2666, lambda id = id : app.kill(id))
             # DO Command of Osiris EFFECTS
             def osiris_effect(stat):
@@ -9861,10 +9915,7 @@ class Witch(Entity):
             eot = nothing
             n = 'Command_of_Osiris' + str(app.effects_counter)
             app.ent_dict[id].effects_dict[n] = Effect(name = 'Command_of_Osiris', info = '+1 attrs, spirit friendly ents, -1 attrs, spirit enemy ents', eot_func = eot, undo = p, duration = 3)
-            
-            
         root.after(3666, lambda  name = 'Command_of_Osiris' : self.cleanup_spell(name = name))
-        print('command_of_osiris')
         
 # MORGAN SPELLS
         # Morgan's spells center around Nature/Earth/Weather/Illusion
