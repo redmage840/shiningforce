@@ -7475,19 +7475,25 @@ class Cenobite(Summon):
         app.depop_context(event = None)
         app.cleanup_squares()
         app.unbind_all()
-        ents = []
-        for s in sqrs:
-            ent = app.grid[s[0]][s[1]]
-            if ent != '' and ent != 'block':
-            # deal 2 to this ent
-                app.ent_dict[ent].set_attr('spirit', -2)
+        ents = [app.grid[c[0]][c[1]] for c in app.coords if dist(c, self.loc) <= 3 and app.grid[c[0]][c[1]] != '' and app.grid[c[0]][c[1]] != 'block']
+        def stw_loop(ents):
+            if ents == []:
+                self.finish_strength_through_wounding()
+            else:
+                id = ents[0]
+                ents = ents[1:]
+                s = app.ent_dict[id].loc[:]
+                app.ent_dict[id].set_attr('spirit', -2)
                 app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+70-app.moved_down, text = '2 spirit', justify = 'center', font = ('Andale Mono', 13), fill = 'ivory3', tags = 'text')
-                if app.ent_dict[ent].spirit <= 0:
+                if app.ent_dict[id].spirit <= 0:
                     app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+90-app.moved_down, text = app.ent_dict[ent].name + ' Killed...', font = ('Andale Mono', 12), fill = 'white', tags = 'text')
-                    root.after(3666, lambda e = ent : app.kill(e))
+                    time = 2666+2333*len(app.ent_dict[id].death_triggers)
+                    app.kill(id)
+                    root.after(time-333, lambda t = 'text' : app.canvas.delete(t))
+                    root.after(time, lambda es = ents : stw_loop(es))
                 # give stat bonus if friendly
-                elif app.ent_dict[ent].owner == app.active_player:
-                    ef_names = [v.name for k,v in app.ent_dict[ent].effects_dict.items()]
+                elif app.ent_dict[id].owner == app.active_player:
+                    ef_names = [v.name for k,v in app.ent_dict[id].effects_dict.items()]
                     if 'Strength_Through_Wounding' not in ef_names:
                         n2 = 'Strength_Through_Wounding' + str(app.effects_counter) # not an effect, just need unique int
                         app.effects_counter += 1 # that is why this is incr manually here, no Effect init
@@ -7498,20 +7504,22 @@ class Cenobite(Summon):
                             stat += 2
                             return stat
                         f = strength_through_wounding_effect
-                        app.ent_dict[ent].end_effects.append(f)
-                        app.ent_dict[ent].psyche_effects.append(f)
+                        app.ent_dict[id].end_effects.append(f)
+                        app.ent_dict[id].psyche_effects.append(f)
                         n = 'Strength_Through_Wounding' + str(app.effects_counter)
                         def un(i, func):
                             app.ent_dict[i].end_effects.remove(func)
                             app.ent_dict[i].psyche_effects.remove(func)
                             return None
-                        p = partial(un, ent, f)
+                        p = partial(un, id, f)
                         # EOT FUNC
                         def nothing():
                             return None
                         n = 'Strength_Through_Wounding' + str(app.effects_counter)
-                        app.ent_dict[ent].effects_dict[n] = Effect(name = 'Strength_Through_Wounding', info = 'STW, +2 end, psy', eot_func = nothing, undo = p, duration = 2)
-        root.after(3666, self.finish_strength_through_wounding)
+                        app.ent_dict[id].effects_dict[n] = Effect(name = 'Strength_Through_Wounding', info = 'STW, +2 end, psy', eot_func = nothing, undo = p, duration = 2)
+                    root.after(2444, lambda t = 'text' : app.canvas.delete(t))
+                    root.after(2666, lambda es = ents : stw_loop(es))
+        stw_loop(ents)
         
     def finish_strength_through_wounding(self, event = None):
 #         self.init_normal_anims()
