@@ -8312,7 +8312,7 @@ class Witch(Entity):
         tup_list = list(self.arcane_dict.items())
         self.page_spells(tup_list = tup_list, index = 0)
         
-    def page_spells(self, tup_list, index):
+    def page_spells(self, event = None, tup_list = None, index = None):
         app.depop_context(event = None)
         for i, name_spellcosttuple in enumerate(tup_list[index:index+7]):
             name = name_spellcosttuple[0]
@@ -8328,14 +8328,14 @@ class Witch(Entity):
                 root.bind(str(i), spell)
             app.context_buttons.append(b1)
         if index > 0:
-            b4 = tk.Button(app.context_menu, text = 'Prev', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda t = tup_list, i = index-7 : self.page_spells(t, i))
+            b4 = tk.Button(app.context_menu, text = 'Prev', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda t = tup_list, i = index-7 : self.page_spells(tup_list = t, index = i))
             b4.pack(side = 'top')
-            root.bind(str(9), lambda t = tup_list, i = index-7 : self.page_spells(t, i))
+            root.bind(str(9), lambda e, t = tup_list, i = index-7 : self.page_spells(tup_list = t, index = i))
             app.context_buttons.append(b4)
         if len(tup_list) > len(tup_list[:index+7]):
-            b3 = tk.Button(app.context_menu, text = 'Next', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda t = tup_list, i = index+7 : self.page_spells(t, i))
+            b3 = tk.Button(app.context_menu, text = 'Next', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda t = tup_list, i = index+7 : self.page_spells(tup_list = t, index = i))
             b3.pack(side = 'top')
-            root.bind(str(8), lambda t = tup_list, i = index+7 : self.page_spells(t, i))
+            root.bind(str(8), lambda e, t = tup_list, i = index+7 : self.page_spells(tup_list = t, index = i))
             app.context_buttons.append(b3)
             b2 = tk.Button(app.context_menu, text = 'Cancel', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = self.cleanup_spell)
             b2.pack(side = 'top')
