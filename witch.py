@@ -8305,50 +8305,17 @@ class Witch(Entity):
 #         h = root.winfo_screenheight() # or parent?
         # get number of spellbuttons needed
 #         spellnum = len(self.arcane_dict)
-
         # first divide into 'pages' of 7
 #         first7pairs = {k: self.arcane_dict[k] for k in list(self.arcane_dict.keys())[:7]}
 #         num_pages = ceil(len(self.arcane_dict.items())/7)
         # display first page (should attempt to maintain order across calls)
-        cpy = dict(self.arcane_dict)
-        prev = {}
-        for i, name_spellcosttuple in enumerate(list(self.arcane_dict.items())[:7]):
-            name = name_spellcosttuple[0]
-            prev[name] = cpy[name]
-            cpy.pop(name)
-            name = name.replace('_', ' ')
-            spell = name_spellcosttuple[1][0]
-            cost = name_spellcosttuple[1][1]
-            i += 1
-            b1 = tk.Button(app.context_menu, wraplength = 190, text = str(i) +' : '+ name + ' •'+str(cost), font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = spell)
-            b1.pack(side = 'top', pady = 2)
-            if cost > self.magick:
-                b1.config(state = 'disabled')
-            else:
-                root.bind(str(i), spell)
-            app.context_buttons.append(b1)
-            if i == 7 and cpy != {}: # Filled up this page and more spells left
-                # place 'next' and 'prev' button ('prev' starts out disabled) ('split' button?)
-                b3 = tk.Button(app.context_menu, text = 'Next', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sd = dict(cpy) : self.next_spells(e, sd))
-                b3.pack(side = 'top')
-                root.bind(str(8), lambda e = None, sd = dict(cpy) : self.next_spells(e, sd))
-                app.context_buttons.append(b3)
-                b4 = tk.Button(app.context_menu, text = 'Prev', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = self.cleanup_spell)
-                b4.pack(side = 'top')
-                root.bind(str(9), self.prev_spells)
-                app.context_buttons.append(b4)
-        b2 = tk.Button(app.context_menu, text = 'Cancel', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = self.cleanup_spell)
-        b2.pack(side = 'top')
-        app.context_buttons.append(b2)
+        tup_list = list(self.arcane_dict.items())
+        self.page_spells(tup_list = tup_list, index = 0)
         
-    def next_spells(self, event = None, spell_dict = None):
+    def page_spells(self, tup_list, index):
         app.depop_context(event = None)
-        cpy = dict(spell_dict)
-        prev = {}
-        for i, name_spellcosttuple in enumerate(list(spell_dict.items())[:7]):
+        for i, name_spellcosttuple in enumerate(tup_list[index:index+7]):
             name = name_spellcosttuple[0]
-            prev[name] = cpy[name]
-            cpy.pop(name)
             name = name.replace('_', ' ')
             spell = name_spellcosttuple[1][0]
             cost = name_spellcosttuple[1][1]
@@ -8360,22 +8327,19 @@ class Witch(Entity):
             else:
                 root.bind(str(i), spell)
             app.context_buttons.append(b1)
-            if i == 7 and cpy != {}: # Filled up this page and more spells left
-                # place 'next' and 'prev' button ('prev' starts out disabled) ('split' button?)
-                b3 = tk.Button(app.context_menu, text = 'Next', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = self.next_spell)
-                b3.pack(side = 'top')
-                root.bind(str(8), self.next_spells)
-                app.context_buttons.append(b3)
-                b4 = tk.Button(app.context_menu, text = 'Prev', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = self.cleanup_spell)
-                b4.pack(side = 'top')
-                root.bind(str(9), self.prev_spells)
-                app.context_buttons.append(b4)
-        b2 = tk.Button(app.context_menu, text = 'Cancel', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = self.cleanup_spell)
-        b2.pack(side = 'top')
-        app.context_buttons.append(b2)
-        
-    def prev_spells(self, event = None, spell_dict = None):
-        pass
+        if index > 0:
+            b4 = tk.Button(app.context_menu, text = 'Prev', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda t = tup_list, i = index-7 : self.page_spells(t, i))
+            b4.pack(side = 'top')
+            root.bind(str(9), lambda t = tup_list, i = index-7 : self.page_spells(t, i))
+            app.context_buttons.append(b4)
+        if len(tup_list) > len(tup_list[:index+7]):
+            b3 = tk.Button(app.context_menu, text = 'Next', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda t = tup_list, i = index+7 : self.page_spells(t, i))
+            b3.pack(side = 'top')
+            root.bind(str(8), lambda t = tup_list, i = index+7 : self.page_spells(t, i))
+            app.context_buttons.append(b3)
+            b2 = tk.Button(app.context_menu, text = 'Cancel', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = self.cleanup_spell)
+            b2.pack(side = 'top')
+            app.context_buttons.append(b2)
     
     def cleanup_spell(self, event = None, name = None):
         global selected, selected_vis
