@@ -1,3 +1,11 @@
+# buttons being continuously created?
+
+# continue change legal_moves, gravity, etc...
+
+# buttons for large spell lists
+
+# make spell 'next' in context_menu (for too many spells to display/different size displays)
+
 # if path is blocked by other units, maybe just wait?
 
 # fuse_trap, guard interaction with new death triggers... guard is kill()ed inside spirit_effect...
@@ -150,6 +158,7 @@ from random import choice, randrange
 from functools import partial
 # from pickle import dump, load
 from copy import deepcopy
+from math import ceil
 # filehandler = open(filename, 'r') 
 # object = pickle.load(filehandler)
 
@@ -316,6 +325,7 @@ class Entity():
         self.dodge_effects = []
         self.psyche_effects = []
         self.spirit_effects = []
+        self.move_effects = []
         self.death_triggers = []
         # when ent moved by effect other than regular movement, must update origin also (square of origin at begin of turn)
 #         self.origin = []
@@ -1048,6 +1058,8 @@ class Trickster(Summon):
             if app.grid[c[0]][c[1]] == '':
                 if dist(c, self.loc) <= 4:
                     move_list.append(c)
+        for f in self.move_effects:
+            move_list = f(move_list)
         return move_list
         
 
@@ -1123,6 +1135,8 @@ class Shadow(Summon):
                     if app.grid[c[0]][c[1]] == '':
                         if dist(obj.loc, c) <= 5:
                             move_list.append(c)
+                for f in self.move_effects:
+                    move_list = f(move_list)
                 return move_list
             p = partial(legal_moves, self)
             self.legal_moves = p
@@ -1145,8 +1159,11 @@ class Shadow(Summon):
                     for s in adj:
                         mvlist.append(s)
                         findall(s, start+1, distance)
-                findall(loc, 1, 4) 
-                return [list(x) for x in set(tuple(x) for x in mvlist)]
+                findall(loc, 1, 4)
+                mvlist = [list(x) for x in set(tuple(x) for x in mvlist)]
+                for f in self.move_effects:
+                    mvlist = f(mvlist)
+                return mvlist
             p = partial(legal_moves, self)
             self.legal_moves = p
         self.init_normal_anims()
@@ -7244,13 +7261,49 @@ class Lesser_Demon(Summon):
                 else:
                     id = ents[0]
                     ents = ents[1:]
-                    visloc = app.ent_dict[id].loc[:]
+                    s = app.ent_dict[id].loc[:]
                     u = 'Brambles' + str(app.effects_counter)
                     app.effects_counter += 1
-                    app.vis_dict[u] = Vis(name = 'Brambles', loc = visloc)
-                    app.canvas.create_image(visloc[0]*100+50-app.moved_right, visloc[1]*100+50-app.moved_down, image = app.vis_dict[u].img, tags = 'Brambles')
-                    root.after(2999, lambda name = u : self.cleanup_brambles(name))
-                    root.after(3333, lambda ents = ents : brambles_loop(ents))
+                    app.vis_dict[u] = Vis(name = 'Brambles', loc = s)
+                    app.canvas.create_image(s[0]*100+50-app.moved_right, s[1]*100+50-app.moved_down, image = app.vis_dict[u].img, tags = 'Brambles')
+                    # ADD brambles effects, fail dodge save take damage, fail str save have normal movement inhibited
+                    if app.ent_dict[id].attr_check('dodge') == False:
+                        my_psyche = self.get_attr('psyche')
+                        tar_end = app.ent_dict[id].get_attr('end')
+                        d = damage(my_psyche, tar_end)
+                        app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+75-app.moved_down, text = str(d)+' spirit', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+                        app.ent_dict[id].set_attr('spirit', -d)
+                        if app.ent_dict[id].spirit <= 0:
+                            app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+90-app.moved_down, text = app.ent_dict[id].name.replace('_',' ')+' Killed...', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+                            time = 2999+2333*len(app.ent_dict[id].death_triggers)
+                            root.after(time-333, lambda name = u : self.cleanup_brambles(name))
+                            root.after(time, lambda ents = ents : brambles_loop(ents))
+                        elif app.ent_dict[id].move_type == 'normal':
+                            if app.ent_dict[id].attr_check('str') == False:
+                                app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+95-app.moved_down, text = 'Movement Reduced', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+                                def brambles_move_effect(sqrs = None, obj = None):
+                                    n = [s for s in sqrs if dist(s, obj.loc) == 1]
+                                    return n
+                                p = partial(brambles_move_effect, obj = app.ent_dict[id])
+                                app.ent_dict[id].move_effects.append(p)
+                                def un(i, f):
+                                    app.ent_dict[i].move_effects.remove(f)
+                                    return None
+                                uf = partial(un, id, p)
+                                # EOT FUNC
+                                def nothing():
+                                    return None
+                                eot = nothing
+                                n = 'Brambles' + str(app.effects_counter)
+                                app.ent_dict[id].effects_dict[n] = Effect(name = 'Brambles', info = 'Brambles reduce move', eot_func = eot, undo = uf, duration = 1)
+                                root.after(2666, lambda name = u : self.cleanup_brambles(name))
+                                root.after(2999, lambda ents = ents : brambles_loop(ents))
+                            else:
+                                root.after(2666, lambda name = u : self.cleanup_brambles(name))
+                                root.after(2999, lambda ents = ents : brambles_loop(ents))
+                        else:
+                            root.after(2666, lambda name = u : self.cleanup_brambles(name))
+                            root.after(2999, lambda ents = ents : brambles_loop(ents))
             brambles_loop(ents)
             
     def cleanup_brambles(self, name):
@@ -7613,8 +7666,11 @@ class Cenobite(Summon):
                     app.ent_dict[id].set_attr('spirit', -d)
                     if app.ent_dict[id].spirit <= 0:
                         app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+90, text = app.ent_dict[id].name+' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-                        root.after(2666, lambda id = id : app.kill(id))
-                    root.after(2666, lambda e = None, obj = obj : cancel_attack(event = e, obj = obj))
+                        time = 2666+2333*len(app.ent_dict[id].death_triggers)
+                        app.kill(id)
+                        root.after(time, lambda e = None, obj = obj : cancel_attack(event = e, obj = obj))
+                    else:
+                        root.after(2666, lambda e = None, obj = obj : cancel_attack(event = e, obj = obj))
                 else:
                     app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+90, text = 'Hook Attack Misses!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
                     root.after(2666, lambda e = None, obj = obj : cancel_attack(event = e, obj = obj))
@@ -7705,10 +7761,11 @@ class Cenobite(Summon):
             app.ent_dict[id].set_attr('spirit', -d)
             if app.ent_dict[id].spirit <= 0:
                 app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+90-app.moved_down, text = app.ent_dict[id].name.replace('_',' ')+' Killed...', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
-                root.after(2999, lambda id = id: app.kill(id))
+                time = 2666+2333*len(app.ent_dict[id].death_triggers)
+                app.kill(id)
+                root.after(time, lambda e = None : self.cancel_hellfire(event = e))
             else:# SAVE to avoid burn
-                if 1 == 1:
-#                 if app.ent_dict[id].attr_check('end') == False:
+                if app.ent_dict[id].attr_check('end') == False:
                     app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+95-app.moved_down, text = 'Burned', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
                 # burn effect, every time burned ent takes spirit dmg it takes that much dmg plus 2
                     def burn_effect(d = None, obj = None):
@@ -7720,36 +7777,8 @@ class Cenobite(Summon):
                             return d
                     f = partial(burn_effect, obj = app.ent_dict[id])
                     app.ent_dict[id].spirit_effects.append(f)
-#                     def burned_set_attr(attr = None, amount = None, obj = None):# REPLACE OBJ set_attr with -2 (2 more subtracted)
-#                         if attr == 'str':
-#                             obj.str += amount
-#                         elif attr == 'agl':
-#                             obj.agl += amount
-#                         elif attr == 'end':
-#                             obj.end += amount
-#                         elif attr == 'dodge':
-#                             obj.dodge += amount
-#                         elif attr == 'psyche':
-#                             obj.psyche += amount
-#                         elif attr == 'spirit':
-#                             if amount < 0: # only add 2 dmg when taking dmg, not when healing
-#                                 obj.spirit += amount-2
-#                             else:
-#                                 obj.spirit += amount
-#                             if obj.spirit > obj.base_spirit:
-#                                 obj.spirit = obj.base_spirit
-#                             app.canvas.create_text(obj.loc[0]*100+50-app.moved_right, obj.loc[1]*100+55-app.moved_down, text = '2 spirit burn', justify ='center', font = ('Andale Mono', 12), fill = 'white', tags = 'text')
-#                         elif isinstance(obj, Witch) or isinstance(obj, Trickster):
-#                             if attr == 'magick':
-#                                 obj. magick += amount
-#                                 if obj.magick > obj.base_magick:
-#                                     obj.magick = obj.base_magick
-#                     p = partial(burned_set_attr, obj = app.ent_dict[id])
-#                     app.ent_dict[id].set_attr = p
                     def un(i):
                         app.ent_dict[i].spirit_effects.remove(f)
-#                         p = partial(app.ent_dict[i].__class__.set_attr, app.ent_dict[i]) # PUT BACK CLASS METHOD MOVEMENT
-#                         app.ent_dict[i].set_attr = p
                         return None
                     p = partial(un, id)
                     # EOT FUNC
@@ -7758,9 +7787,10 @@ class Cenobite(Summon):
                     eot = nothing
                     n = 'Burn' + str(app.effects_counter)
                     app.ent_dict[id].effects_dict[n] = Effect(name = 'Burn', info = 'Burn, 2 more dmg', eot_func = eot, undo = p, duration = 3)
+                root.after(2666, lambda e = None : self.cancel_hellfire(event = e))
         else:
             app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+75-app.moved_down, text = 'Missed', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
-        root.after(2666, lambda e = None : self.cancel_hellfire(event = e))
+            root.after(2666, lambda e = None : self.cancel_hellfire(event = e))
         
     def cancel_hellfire(self, event):
         self.init_normal_anims()
@@ -8269,8 +8299,23 @@ class Witch(Entity):
         root.unbind('<q>')
         root.unbind('<a>')
         root.bind('<q>', self.cleanup_spell)
-        for i, name_spellcosttuple in enumerate(self.arcane_dict.items()):
+        # change: if screenheight>num_spells*30, divide spells into number of 'pages', create 'next page' button DEBUG
+        # FOR NOW: just grab seven spells at a time, with room for a 'next' and 'back/prev' button (for hotkeys)
+        # first get screenheight
+#         h = root.winfo_screenheight() # or parent?
+        # get number of spellbuttons needed
+#         spellnum = len(self.arcane_dict)
+
+        # first divide into 'pages' of 7
+#         first7pairs = {k: self.arcane_dict[k] for k in list(self.arcane_dict.keys())[:7]}
+#         num_pages = ceil(len(self.arcane_dict.items())/7)
+        # display first page (should attempt to maintain order across calls)
+        cpy = dict(self.arcane_dict)
+        prev = {}
+        for i, name_spellcosttuple in enumerate(list(self.arcane_dict.items())[:7]):
             name = name_spellcosttuple[0]
+            prev[name] = cpy[name]
+            cpy.pop(name)
             name = name.replace('_', ' ')
             spell = name_spellcosttuple[1][0]
             cost = name_spellcosttuple[1][1]
@@ -8282,10 +8327,55 @@ class Witch(Entity):
             else:
                 root.bind(str(i), spell)
             app.context_buttons.append(b1)
+            if i == 7 and cpy != {}: # Filled up this page and more spells left
+                # place 'next' and 'prev' button ('prev' starts out disabled) ('split' button?)
+                b3 = tk.Button(app.context_menu, text = 'Next', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sd = dict(cpy) : self.next_spells(e, sd))
+                b3.pack(side = 'top')
+                root.bind(str(8), lambda e = None, sd = dict(cpy) : self.next_spells(e, sd))
+                app.context_buttons.append(b3)
+                b4 = tk.Button(app.context_menu, text = 'Prev', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = self.cleanup_spell)
+                b4.pack(side = 'top')
+                root.bind(str(9), self.prev_spells)
+                app.context_buttons.append(b4)
         b2 = tk.Button(app.context_menu, text = 'Cancel', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = self.cleanup_spell)
         b2.pack(side = 'top')
         app.context_buttons.append(b2)
-    
+        
+    def next_spells(self, event = None, spell_dict = None):
+        app.depop_context(event = None)
+        cpy = dict(spell_dict)
+        prev = {}
+        for i, name_spellcosttuple in enumerate(list(spell_dict.items())[:7]):
+            name = name_spellcosttuple[0]
+            prev[name] = cpy[name]
+            cpy.pop(name)
+            name = name.replace('_', ' ')
+            spell = name_spellcosttuple[1][0]
+            cost = name_spellcosttuple[1][1]
+            i += 1
+            b1 = tk.Button(app.context_menu, wraplength = 190, text = str(i) +' : '+ name + ' •'+str(cost), font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = spell)
+            b1.pack(side = 'top', pady = 2)
+            if cost > self.magick:
+                b1.config(state = 'disabled')
+            else:
+                root.bind(str(i), spell)
+            app.context_buttons.append(b1)
+            if i == 7 and cpy != {}: # Filled up this page and more spells left
+                # place 'next' and 'prev' button ('prev' starts out disabled) ('split' button?)
+                b3 = tk.Button(app.context_menu, text = 'Next', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = self.next_spell)
+                b3.pack(side = 'top')
+                root.bind(str(8), self.next_spells)
+                app.context_buttons.append(b3)
+                b4 = tk.Button(app.context_menu, text = 'Prev', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = self.cleanup_spell)
+                b4.pack(side = 'top')
+                root.bind(str(9), self.prev_spells)
+                app.context_buttons.append(b4)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = self.cleanup_spell)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
+        
+    def prev_spells(self, event = None, spell_dict = None):
+        pass
     
     def cleanup_spell(self, event = None, name = None):
         global selected, selected_vis
@@ -8629,11 +8719,9 @@ class Witch(Entity):
         if id == '' or id == 'block':
             return
 #         self.init_cast_anims()
-
         effect1 = mixer.Sound('Sound_Effects/vengeance.ogg')
         effect1.set_volume(.08)
         sound_effects.play(effect1, 0)
-
         self.magick -= self.arcane_dict['Vengeance'][1]
         app.unbind_all()
         app.depop_context(event = None)
@@ -8646,8 +8734,11 @@ class Witch(Entity):
         app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Vengeance\n'+str(d)+' Spirit', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
         if app.ent_dict[id].spirit <= 0:
             app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+100-app.moved_down, text = app.ent_dict[id].name.replace('_',' ')+' Killed...', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
-            root.after(2999, lambda id = id: app.kill(id))
-        root.after(2999, lambda  name = 'Vengeance' : self.cleanup_spell(name = name))
+            time = 2666+2333*len(app.ent_dict[id].death_triggers)
+            app.kill(id)
+            root.after(time, lambda  name = 'Vengeance' : self.cleanup_spell(name = name))
+        else:
+            root.after(2666, lambda  name = 'Vengeance' : self.cleanup_spell(name = name))
       
     # lose 3 spirit, all summons within range 2 may act again?
     def hatred(self, event = None):
@@ -8704,11 +8795,9 @@ class Witch(Entity):
         if id == '' or id == 'block':
             return
 #         self.init_cast_anims()
-        
         effect1 = mixer.Sound('Sound_Effects/torment.ogg')
         effect1.set_volume(.07)
         sound_effects.play(effect1, 0)
-        
         self.magick -= self.arcane_dict['Torment'][1]
         app.unbind_all()
         app.depop_context(event = None)
@@ -8723,30 +8812,31 @@ class Witch(Entity):
         app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Torment\n'+str(d)+' Spirit', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
         if app.ent_dict[id].spirit <= 0:
             app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+100-app.moved_down, text = app.ent_dict[id].name.replace('_',' ')+' Killed...', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
-            root.after(3666, lambda id = id: app.kill(id))
-        effs = [v.name for k,v in app.ent_dict[id].effects_dict.items()]
-        if 'Torment' not in effs:
-            def torment_effect(stat):
-                stat -= 2
-                if stat < 1:
-                    return 1
-                else:
-                    return stat
-            f = torment_effect
-            app.ent_dict[id].psyche_effects.append(f)
-            def un(i):
-                app.ent_dict[i].psyche_effects.remove(torment_effect)
-                return None
-            p = partial(un, id)
-            # EOT FUNC
-            def nothing():
-                return None
-            eot = nothing
-            n = 'Torment' + str(app.effects_counter)
-            app.ent_dict[id].effects_dict[n] = Effect(name = 'Torment', info = 'Torment, -2 psyche 4 turns', eot_func = eot, undo = p, duration = 4)
-        root.after(3666, lambda  name = 'Torment' : self.cleanup_spell(name = name))
-
-
+            time = 2666+2333*len(app.ent_dict[id].death_triggers)
+            app.kill(id)
+            root.after(time, lambda  name = 'Torment' : self.cleanup_spell(name = name))
+        else:
+            effs = [v.name for k,v in app.ent_dict[id].effects_dict.items()]
+            if 'Torment' not in effs:
+                def torment_effect(stat):
+                    stat -= 2
+                    if stat < 1:
+                        return 1
+                    else:
+                        return stat
+                f = torment_effect
+                app.ent_dict[id].psyche_effects.append(f)
+                def un(i):
+                    app.ent_dict[i].psyche_effects.remove(torment_effect)
+                    return None
+                p = partial(un, id)
+                # EOT FUNC
+                def nothing():
+                    return None
+                eot = nothing
+                n = 'Torment' + str(app.effects_counter)
+                app.ent_dict[id].effects_dict[n] = Effect(name = 'Torment', info = 'Torment, -2 psyche 4 turns', eot_func = eot, undo = p, duration = 4)
+            root.after(2999, lambda  name = 'Torment' : self.cleanup_spell(name = name))
 
     # destroy a summon you own to deal dmg to adj ents
     def pain(self, event = None):
@@ -8768,13 +8858,9 @@ class Witch(Entity):
             return
         if app.ent_dict[id].owner != 'p1' or not isinstance(app.ent_dict[id], Summon):
             return
-            
         effect1 = mixer.Sound('Sound_Effects/pain.ogg')
         effect1.set_volume(.07)
         sound_effects.play(effect1, 0)
-            
-        app.kill(id)
-#         self.init_cast_anims()
         self.magick -= self.arcane_dict['Pain'][1]
         app.unbind_all()
         app.depop_context(event = None)
@@ -8784,10 +8870,16 @@ class Witch(Entity):
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Pain'].img, tags = 'Pain')
         app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Pain', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
         root.after(1777, lambda  name = 'Pain' : self.cleanup_spell(name = name))
+#         self.init_cast_anims()
+        # kill here and handle death triggers, then make explosion
+        time = 1666+2333*len(app.ent_dict[id].death_triggers)
+        app.kill(id)
+        root.after(time, lambda id = id : continue_pain(id))
         
-#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+    def continue_pain(self, id):
+        sqr = app.ent_dict[id].loc[:]
         adj_sqrs = [s for s in app.coords if dist(sqr, s) == 1 and app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
-        adj_ents = [app.grid[s[0]][s[1]] for s in adj_sqrs] #if app.ent_dict[app.grid[s[0]][s[1]]].owner != self.owner] 
+        adj_ents = [app.grid[s[0]][s[1]] for s in adj_sqrs]
         all_targets = adj_ents
         for id in all_targets:
             n = 'Pain' + str(app.effects_counter) # not an effect, just need unique int
@@ -9223,11 +9315,9 @@ class Witch(Entity):
         if 'Gravity' in effs:
             return
         self.magick -= self.arcane_dict['Gravity'][1]
-        
         effect1 = mixer.Sound('Sound_Effects/gravity.ogg')
         effect1.set_volume(.9)
         sound_effects.play(effect1, 0)
-        
         self.init_cast_anims()
         app.unbind_all()
         app.depop_context(event = None)
@@ -10080,6 +10170,8 @@ class App(tk.Frame):
                     obj.arcane_dict['Summon_Cenobite'] = (obj.summon_cenobite, 9)
                 if 'Summon_Lesser_Demon' in arcane:
                     obj.arcane_dict['Summon_Lesser_Demon'] = (obj.summon_lesser_demon, 9)
+                if 'Immolate' in arcane:
+                    obj.arcane_dict['Immolate'] = (obj.immolate, 9)
                 obj.summon_cap = sum_cap
                 obj.base_str = b_str
                 obj.str = b_str
@@ -10171,7 +10263,7 @@ class App(tk.Frame):
 #                     return 'victory'
 #                 else:
 #                     return None
-            self.map_triggers.append(summon_trick)
+#             self.map_triggers.append(summon_trick)
             def self_death():
                 if app.p1_witch not in app.ent_dict.keys():
                     return 'game over'
@@ -12370,9 +12462,9 @@ class App(tk.Frame):
         execl(python, python, * argv)
 
         
-#     def debugger(self, event):
-#         print(app.ent_dict['b2'].base_spirit)
-#         print(app.ent_dict['b2'].waiting)
+    def debugger(self, event):
+        for b in self.context_buttons:
+            print(b)
 
 root = tk.Tk()
 app = App(master=root)
@@ -12386,7 +12478,7 @@ root.bind('<q>', app.depop_context)
 app.unbind_all()
 # root.bind('<Escape>', app.exit_fullscreen)
 #### DEBUG ####
-# root.bind('<d>', app.debugger)
+root.bind('<d>', app.debugger)
 
 
 root.configure(background = 'black')
