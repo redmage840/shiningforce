@@ -12029,6 +12029,8 @@ class App(tk.Frame):
         self.attacking = []
         self.turn_counter = 0
         self.effects_counter = 0 # used for uniquely naming Effects with the same prefix/name
+        self.death_count = 0
+        self.dethloks = {}
         # CALL IN-BETWEEN LEVEL SCREEN / VICTORY SCREEN
         # GIVE ANY STORYLINE RELATED TO FINISHED AND NEXT LEVEL
         # GIVE OPTION TO SAVE PROGRESS
