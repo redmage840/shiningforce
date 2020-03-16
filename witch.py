@@ -1,3 +1,7 @@
+# max = reduce(lambda a,b : if a > b: return a else: b)
+
+# pain needs to be timed better
+
 # ents = [k for k,v in app.ent_dict.items() if v.loc in sqrs]
 
 # make dragon move around more, summon small enemies
@@ -8321,7 +8325,7 @@ class Witch(Entity):
         root.bind('<a>', app.populate_context)
         # SOUND
         effect1 = mixer.Sound('Sound_Effects/summon.ogg')
-        effect1.set_volume(1)
+        effect1.set_volume(.7)
         sound_effects.play(effect1, 0)
         # place visual summon
         app.vis_dict['Summon'] = Vis(name = 'Summon', loc = sqr)
@@ -8905,9 +8909,9 @@ class Witch(Entity):
             name = 'dethlok'+str(app.death_count)
             app.death_count += 1
             app.dethloks[name] = tk.IntVar(0)
-            root.after(2333, lambda id = id, n = name : app.kill(id, n))
+            root.after(2666, lambda id = id, n = name : app.kill(id, n))
             root.wait_variable(app.dethloks[name])
-            self.cleanup_spell(name = 'Torment'))
+            self.cleanup_spell(name = 'Torment')
         else:
             effs = [v.name for k,v in app.ent_dict[id].effects_dict.items()]
             if 'Torment' not in effs:
@@ -8965,12 +8969,16 @@ class Witch(Entity):
         root.after(1777, lambda  name = 'Pain' : self.cleanup_spell(name = name))
 #         self.init_cast_anims()
         # kill here and handle death triggers, then make explosion
-        time = 1666+2333*len(app.ent_dict[id].death_triggers)
-        app.kill(id)
-        root.after(time, lambda id = id : continue_pain(id))
+        loc = app.ent_dict[id].loc[:]
+        name = 'dethlok'+str(app.death_count)
+        app.death_count += 1
+        app.dethloks[name] = tk.IntVar(0)
+        app.kill(id, name)
+        root.wait_variable(app.dethloks[name])
+        root.after(1666, lambda loc = loc : self.continue_pain(loc))
         
-    def continue_pain(self, id):
-        sqr = app.ent_dict[id].loc[:]
+    def continue_pain(self, loc):
+        sqr = loc[:]
         adj_sqrs = [s for s in app.coords if dist(sqr, s) == 1 and app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
         adj_ents = [app.grid[s[0]][s[1]] for s in adj_sqrs]
         all_targets = adj_ents
@@ -8997,10 +9005,12 @@ class Witch(Entity):
             app.ent_dict[id].set_attr('spirit', -d)
             if app.ent_dict[id].spirit <= 0:
                 app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+100-app.moved_down, text = app.ent_dict[id].name.replace('_',' ') + '\nKilled...', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
-                root.after(3666, lambda id = id : app.kill(id))
-#         root.after(3666, lambda  name = 'Pain' : self.cleanup_spell(name = name))
-
-        
+                name = 'dethlok'+str(app.death_count)
+                app.death_count += 1
+                app.dethloks[name] = tk.IntVar(0)
+                root.after(2333, lambda id = id, n = name : app.kill(id, n))
+                root.wait_variable(app.dethloks[name])
+        root.after(2999, lambda  name = 'Pain' : self.cleanup_spell(name = name))
         
         
     def plague(self, event = None):
@@ -9215,7 +9225,11 @@ class Witch(Entity):
                     app.canvas.create_text(app.ent_dict[ent].loc[0]*100+50-app.moved_right, app.ent_dict[ent].loc[1]*100+70-app.moved_down, text = str(d) + ' Spirit', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
                     if app.ent_dict[ent].spirit <= 0:
                         app.canvas.create_text(app.ent_dict[ent].loc[0]*100+50-app.moved_right, app.ent_dict[ent].loc[1]*100+100-app.moved_down, text = app.ent_dict[ent].name + '\nKilled...', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
-                        root.after(1333, app.kill(ent))
+                        name = 'Dethlok'+str(app.death_count)
+                        app.death_count += 1
+                        app.dethloks[name] = tk.IntVar(0)
+                        root.after(2666, lambda id = ent, name = name : app.kill(id, name))
+                        app.wait_variable(app.dethloks[name])
                 # MISS
                 else:
                     app.canvas.create_text(app.ent_dict[ent].loc[0]*100+50-app.moved_right, app.ent_dict[ent].loc[1]*100+70-app.moved_down, text = 'Agility\nSave',justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
@@ -9298,14 +9312,18 @@ class Witch(Entity):
             my_psyche = self.get_attr('psyche')
             tar_psyche = app.ent_dict[id].get_attr('psyche')
             # HACK
-            #d = damage(my_psyche, tar_psyche)
-            d = 666
+            d = damage(my_psyche, tar_psyche)
+#             d = 666
             #
             app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+65-app.moved_down, text = str(d)+'\nSpirit', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
             app.ent_dict[id].set_attr('spirit', -d)
             if app.ent_dict[id].spirit <= 0:
                 app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+100-app.moved_down, text = app.ent_dict[id].name.replace('_',' ') + '\nKilled...', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
-                root.after(3666, lambda id = id : app.kill(id))
+                name = 'Dethlok'+str(app.death_count)
+                app.death_count += 1
+                app.dethloks[name] = tk.IntVar(0)
+                root.after(2666, lambda id = id, name = name : app.kill(id, name))
+                app.wait_variable(app.dethloks[name])
         root.after(3666, lambda  name = 'Pestilence' : self.cleanup_spell(name = name))
     
     
@@ -9499,10 +9517,14 @@ class Witch(Entity):
             app.effects_counter += 1
             app.vis_dict[uniq_name] = Vis(name = 'Immolate', loc = s) # using Immolate animations
             app.canvas.create_image(s[0]*100+50-app.moved_right, s[1]*100+50-app.moved_down, image = app.vis_dict[uniq_name].img, tags = "Beleth's_Command")
-            app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+80-app.moved_down, text = "9 Spirit", justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+            app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+80-app.moved_down, text = "9 Spirit", justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
             if app.ent_dict[e].spirit <= 0:
-                app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+95-app.moved_down, text = name+' Killed...', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
-                root.after(2666, lambda id = e : app.kill(id))
+                app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+95-app.moved_down, text = name+' Killed...', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+                name = 'Dethlok'+str(app.death_count)
+                app.death_count += 1
+                app.dethloks[name] = tk.IntVar(0)
+                root.after(2666, lambda id = id, name = name : app.kill(id, name))
+                app.wait_variable(app.dethloks[name])
             def clean_beleths_command(n):
                 del app.vis_dict[n]
                 app.canvas.delete(n)
@@ -9622,8 +9644,6 @@ class Witch(Entity):
         app.cleanup_squares()
         self.arcane_used = True
         self.magick -= self.arcane_dict['Horrid_Wilting'][1]
-        # get ent and all adj ents
-#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         adj_sqrs = [s for s in app.coords if dist(sqr, s) == 1 and app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
         adj_ents = [app.grid[s[0]][s[1]] for s in adj_sqrs] #if app.ent_dict[app.grid[s[0]][s[1]]].owner != self.owner] 
         all_targets = adj_ents + [app.grid[sqr[0]][sqr[1]]]
@@ -9649,7 +9669,11 @@ class Witch(Entity):
             app.ent_dict[id].set_attr('spirit', -d)
             if app.ent_dict[id].spirit <= 0:
                 app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+100-app.moved_down, text = app.ent_dict[id].name.replace('_',' ') + '\nKilled...', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
-                root.after(3666, lambda id = id : app.kill(id))
+                name = 'Dethlok'+str(app.death_count)
+                app.death_count += 1
+                app.dethloks[name] = tk.IntVar(0)
+                root.after(2666, lambda id = id, name = name : app.kill(id, name)
+                app.wait_variable(app.dethloks[name])
         root.after(3666, lambda  name = 'Horrid_Wilting' : self.cleanup_spell(name = name))
         
         
@@ -9866,8 +9890,11 @@ class Witch(Entity):
         app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+80-app.moved_down, text = str(d)+' Spirit', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
         if app.ent_dict[id].spirit <= 0:
             app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+95-app.moved_down, text = app.ent_dict[id].name.replace('_', ' ')+' Killed...', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
-            root.after(3111, lambda id = id : app.kill(id))
-                
+            name = 'Dethlok'+str(app.death_count)
+            app.death_count += 1
+            app.dethloks[name] = tk.IntVar(0)
+            root.after(2999, lambda id = id, name = name : app.kill(id, name))
+            app.wait_variable(app.dethloks[name])
         root.after(3111, lambda  name = 'Immolate' : self.cleanup_spell(name = name))
         
         
@@ -10068,7 +10095,11 @@ class Witch(Entity):
             app.ent_dict[id].set_attr('spirit', -1)
             if app.ent_dict[id].spirit <= 0:
                 app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+100-app.moved_down, text = app.ent_dict[id].name+' Killed...', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
-                root.after(2666, lambda id = id : app.kill(id))
+                name = 'Dethlok'+str(app.death_count)
+                app.death_count += 1
+                app.dethloks[name] = tk.IntVar(0)
+                root.after(2666, lambda id = id, name = name : app.kill(id, name))
+                app.wait_variable(app.dethloks[name])
             # DO Command of Osiris EFFECTS
             def osiris_effect(stat):
                 stat -= 1
@@ -10352,6 +10383,7 @@ class App(tk.Frame):
             self.map_triggers = []
             sound1 = mixer.Sound('Music/Caves of sorrow.ogg')
             background_music.play(sound1, -1)
+            sound1.set_volume(1.6)
 #             def summon_trick():
 #                 all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
 #                 if 'Bard' in all:
@@ -11657,7 +11689,7 @@ class App(tk.Frame):
                 name = 'dethlok'+str(app.death_count)
                 app.death_count += 1
                 app.dethloks[name] = tk.IntVar(0)
-                self.kill(k[0])
+                self.kill(k[0], name)
                 root.wait_variable(app.dethloks[name])
                 ents_list = ents_list[1:]
                 if ents_list != []:
@@ -11862,7 +11894,7 @@ class App(tk.Frame):
                 name = 'dethlok'+str(app.death_count)
                 app.death_count += 1
                 app.dethloks[name] = tk.IntVar(0)
-                self.kill(k[0])
+                self.kill(k[0], name)
                 root.wait_variable(app.dethloks[name])
                 ents_list = ents_list[1:]
                 if ents_list != []:
