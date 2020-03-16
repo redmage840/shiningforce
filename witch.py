@@ -1,10 +1,16 @@
-# buttons being continuously created?
+# wait_variable may be changing the global because of running into other after() in kill(), try x = IntVar() then x.set(1)
+
+# orc_axeman waits when no goal square, what if no goal squares....
+
+# Widget.waitvariable(name), wait for kill to return...
+
+# styling of sizes of stuff, buttons, fonts (mainly fonts, which will fill buttons to their size), make var on start that is screensize and set font as some fraction of that
+
+# beleths command still fighting for image priority with caster
+
+# buttons being continuously created? seems fine, maybe profile longer
 
 # continue change legal_moves, gravity, etc...
-
-# buttons for large spell lists
-
-# make spell 'next' in context_menu (for too many spells to display/different size displays)
 
 # if path is blocked by other units, maybe just wait?
 
@@ -3057,7 +3063,14 @@ class Undead(Summon):
                 app.ent_dict[id].set_attr('spirit', -d)
                 if app.ent_dict[id].spirit <= 0:
                     app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-                root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id)) # EXIT THROUGH CLEANUP_ATTACK()
+                    name = 'dethlok'+str(app.death_count)
+                    app.death_count += 1
+                    app.dethloks[name] = tk.IntVar(0)
+                    app.kill(id, name)
+                    root.wait_variable(app.dethloks[name])
+                    self.cleanup_attack(ents_list, id)
+                else:
+                    root.after(2666, lambda e = ents_list, id = id : self.cleanup_attack(e, id)) # EXIT THROUGH CLEANUP_ATTACK()
             else:
                 # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
                 app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Undead Attack Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
@@ -3067,12 +3080,13 @@ class Undead(Summon):
         self.init_normal_anims()
         try: app.canvas.delete('text')
         except: pass
-        if app.ent_dict[id].spirit <= 0:
-            time = 2333*len(app.ent_dict[id].death_triggers)
-            app.kill(id)
-            root.after(time, lambda el = ents_list : self.finish_attack(el))
-        else:
-            self.finish_attack(ents_list)
+        self.finish_attack(ents_list)
+#         if app.ent_dict[id].spirit <= 0:
+#             time = 2333*len(app.ent_dict[id].death_triggers)
+#             app.kill(id)
+#             root.after(time, lambda el = ents_list : self.finish_attack(el))
+#         else:
+#             self.finish_attack(ents_list)
             
     def finish_attack(self, ents_list):
         el = ents_list[1:]
@@ -10058,6 +10072,8 @@ class App(tk.Frame):
         self.moved_down = 0
         self.context_buttons = []
         self.help_buttons = []
+        self.dethloks = {}
+        self.death_count = 0
         # list to hold entity that is being animated as 'attacking'
         self.attacking = []
         self.effects_counter = 0 # used for uniquely naming Effects with the same prefix/name
@@ -12324,11 +12340,11 @@ class App(tk.Frame):
         window.destroy()
         partial()
         
-    def kill(self, id):
+    def kill(self, id, lockname):
         app.unbind_all()
         def trigger_loop(triggers):
             if triggers == []:
-                self.finish_kill(id)
+                self.finish_kill(id, lockname)
             else:
                 t = triggers[0]
                 triggers = triggers[1:]
@@ -12339,7 +12355,7 @@ class App(tk.Frame):
 #             return_val = None
 #         else:
 #             return_val = 'Not None'
-    def finish_kill(self, id):
+    def finish_kill(self, id, lockname):
         # DEBUG handle if killing witch
         # If witch is dead, show popup with victory/defeat
         self.canvas.delete(id)
@@ -12350,7 +12366,7 @@ class App(tk.Frame):
         del self.ent_dict[id]
         if app.num_players == 2 or app.active_player == 'p1':
             app.rebind_all()
-#         return return_val
+        app.dethloks[lockname].set(1)
 
             
     def unbind_all(self):
@@ -12427,8 +12443,9 @@ class App(tk.Frame):
 
         
     def debugger(self, event):
-        for b in self.context_buttons:
-            print(b)
+        print(root.winfo_children())
+#         for b in self.context_buttons:
+#             print(b)
 
 root = tk.Tk()
 app = App(master=root)
