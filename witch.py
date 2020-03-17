@@ -1,9 +1,5 @@
 # make fireball/fire elem atk move in a straight line
 
-# make sure always some delay with kill() locks, kill can return too quickly when not used with after()
-
-# pestilence death timing kill multi, arrows rebound
-
 # DO DROP SHADOW
 
 # dragon fight gets tedious if you lure him with attack formation where he can only hit one at a time, make him move more and summon minor enemies, do different attacks, dragon (or sub-enemies) need way of moving your stuff around so the dragon can maybe hit multiple with iceblast
@@ -17,28 +13,16 @@
 
 # ents = [k for k,v in app.ent_dict.items() if v.loc in sqrs]
 
-# make dragon move around more, summon small enemies
-
 # water_mage handling multiple ent deaths in attack cleanup should be changed to handle one at a time when damaged... should 'concurrent' damage (aoe) that triggers a death_trigger...should that death_trigger 'see' a unit that was killed 'at the same time'
 
 # orc_axeman waits when no goal square, what if no goal squares....
-
-# Widget.waitvariable(name), wait for kill to return...
 
 # styling of sizes of stuff, buttons, fonts (mainly fonts, which will fill buttons to their size), make var on start that is screensize and set font as some fraction of that
 
 # beleths command still fighting for image priority with caster
 
-# buttons being continuously created? seems fine, maybe profile longer
-
-# continue change legal_moves, gravity, etc...
-
-# when path is not completely blocked, avoid long reroutes, just converge on target along egrid path
-
 # fuse_trap, guard interaction with new death triggers... guard is kill()ed inside spirit_effect...
 # also need to change AOE to damage one at a time...
-
-# could do same as death triggers for legal_moves(), make a list of effects applied to the returned squares from class method legal_moves()
 
 # finish elementals
 
@@ -48,8 +32,6 @@
 
 # kobold shaman, routines for ai to choose between, ie one of a few spells, one of a few atks or abils, OR tactics like run away, converge, support, etc...
 
-# text objects, create a background/stroke/dropshadow effect by generating text twice with slight offset/color difference
-
 # preload all images?
 
 # add delay to get_focus / focus_sqr, need to separate calls to move_curs() with wait_variable, after() calls not working?
@@ -58,33 +40,10 @@
 
 # button to cycle through units, requires adding to 'all hotkeys' that get disabled and enabled during context switches
 
-# make 'click on sqr to move cursor to, maybe 'select unit' (bring up context menu)
-
-# consider limit 1 bard, how does that change certain levels that rely on healing? kensai, dragon. Possibly increase heal amount by ~2 and limit one bard at a time (as opposed to ever)
-
 # remake levels with proper shadows
 
-# allow click on unit along with press 'a'
-#   - click on 100X100 pixel sqr?
-# make right click equiv to 'q'
-#  - is contextual probably, search each bind of 'q'
-# spells right-click for info
-#   # bind button when spells populated, each button has rclick function
-# on left click, move cursor to sqr?
-#   # will be 100x100 sqr pixel areas, relative to screen grid not total grid
-# generic death anim placeholder
-#   # 'x' animation or cursor(like?) picture, blinking/fading
-# randomness to ai 'attack patterns' on some levels, ents 'group up', 'hang back', 'hold position', 'route around'
 # force player to approach warlock, fight through interim undead
 
-# BALANCED MEANS YOU SHOULD BE ABLE TO SPEND A LIFETIME EXPLORING ALL THE POSSIBLE STRATEGIES (think chess)
-
-# blood milk sky
-
-# new summon type gained at ritual circle, limit one, does not count towards other summon limit, choose one of few types, demon
-
-# fuse trap (and maybe darkness/poison sting) allows for endless kiting of slow moving enemies (orcs and slower)
-# fuse trap probably op in above situations and also not very useful against much faster enemies (dragons, teleporters...)
 # mesmerize too good against barbarian (sub-boss of level), newly acquired abilities should be useful on same level, just balance probably by raising psyche of barbarian
 
 # prob change vengeance to something else, not an interesting spell, either op or useless
@@ -107,15 +66,7 @@
 
 # save during level, write all ents and map number, write globals like curs_pos, write all map_triggers still in effect, write app.attrs like vis_dict effects_counter global_effects_dict, on load call create_map_curs() with protag object, empty and repopulate map_triggers, replace app.attrs
 
-# spells that buff friendly for agnes, one more cantrip for each, debuff cantrip for ali
-
 # kensai cut sound effect, barbarian attack anim and sounds, dragon sounds, orc attack anim, 
-
-# can run bfs() only once by making 'goals' 'dist from ANY enemy_ent'
-
-# warlock_move, pathfinding through walls (completely empty grid) is what causes move to be prematurely shortened due to path through wall that is then ended upon first contact with wall
-# fix by finding sqr within legal moves that minimizes distance of attack range
-# this approach would only be invalidated by a series of 'block' that is longer than warlock move (does not exist on level)
 
 # entomb handle 'all sqrs occupied' edge case, may not be possible to even reach this state with current levels...?
 
@@ -127,27 +78,13 @@
 
 # when dragon 'flies' make bottom portion 'large'
 
-# in 'do_save' if a player saves and then hits cmd/ctrl+q or otherwise exits manually, the object/save may not be pickled properly resulting in zero byte file. This is because programmatic logic 'stays' in 'do_save' until 'next_area' button hit, resulting in not closing the file opened/created during pickling. Using 'with' already to auto-close file, but probably existing vars block out automatic close. To solve this, call some other function from 'do_save' (probably a dummy/empty/close-dialog), probably do not call next_area so as to skip on-screen text
-
-# revenant pathfinding, move along regular grid when egrid path results in all paths end in block
-# warlock pathfinding, is searching empty grid? removing 'block'?
-
 # menu options to adjust music, sound effects volume
 
 # make sure ownership checks also work  for 2player mode
 
-# bug with bfs-pathfinding - if there is no 'goal' square (sqr within moving Ents attack range of target) then no path will be returned by bfs, ie if Enemy Ent has attack range of 1 and all squares within range 1 of target are occupied, then no path exists, this will be solved by egrid removing friendly ents UNLESS ent is set to target a specific ent blockaded by its own friendly ents OR if a map contains a square surrounded by 'block' on all squares within range of the pathfinding ent, CURRENTLY no square exists like this on any maps (0-122/22) and only Minotaur pathfinds for specific ents, minotaur mostly handles blockades by removing ALL ents on egrid (except for target)
-
-# get_focus and focus_square calls in conjunction with other 'afters' most likely potential causes for race conditions
-
-# widen teleport vis
-
-# make sure to_hit range has a min/max of 10 or 5 percent
+# make sure to_hit range has a min/max of 5/95 percent
 
 # both need some damaging cantrip when runs out of magick and summons
-
-# stagger text objects when created simultaneously, esp horrid wilting
-# dark sun, bottom of anim 'blinks' text object
 
 # level 41, should be able to occupy spawn square to prevent spawns?
 
@@ -197,7 +134,6 @@ def dist(loc1, loc2):
 # 'row' holds strings ('', 'EntityID', or 'block')
 # returns path from start to goal (list of coords)
 def bfs(start, goal, grid):
-#     coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
     path = []
     q = [[start]]
     visited = [start]
