@@ -1,6 +1,15 @@
+# stuff got rebound on opp turn during dragon move-away... arrows
+
+# DO DROP SHADOW
+
+# dragon fight gets tedious if you lure him with attack formation where he can only hit one at a time, make him move more and summon minor enemies, do different attacks, dragon (or sub-enemies) need way of moving your stuff around so the dragon can maybe hit multiple with iceblast
+# currently, if prevent pre-waking of 2nd orc group, and have something attack a little after dragon is potentially lured out...
+
+# spell, make addtnl summon this turn
+
 # max = reduce(lambda a,b : if a > b: return a else: b)
 
-# pain needs to be timed better
+# pain needs to be timed better, a few other spells recoded for new kill() in haste
 
 # ents = [k for k,v in app.ent_dict.items() if v.loc in sqrs]
 
@@ -1495,8 +1504,11 @@ class Shadow(Summon):
             for s in adj:
                 mvlist.append(s)
                 findall(s, start+1, distance)
-        findall(loc, 1, 4) 
-        return [list(x) for x in set(tuple(x) for x in mvlist)]
+        findall(loc, 1, 4)
+        mvlist = [list(x) for x in set(tuple(x) for x in mvlist)]
+        for f in self.move_effects:
+            mvlist = f(mvlist)
+        return mvlist
 
 
 # contagion adjacent ents on death
@@ -1652,7 +1664,10 @@ class Plaguebearer(Summon):
                 mvlist.append(s)
                 findall(s, start+1, distance)
         findall(loc, 1, 2)
-        return [list(x) for x in set(tuple(x) for x in mvlist)]
+        mvlist = [list(x) for x in set(tuple(x) for x in mvlist)]
+        for f in self.move_effects:
+            mvlist = f(mvlist)
+        return mvlist
 
 
 
@@ -1890,7 +1905,10 @@ class Bard(Summon):
                 mvlist.append(s)
                 findall(s, start+1, distance)
         findall(loc, 1, 5) 
-        return [list(x) for x in set(tuple(x) for x in mvlist)]
+        mvlist = [list(x) for x in set(tuple(x) for x in mvlist)]
+        for f in self.move_effects:
+            mvlist = f(mvlist)
+        return mvlist
         
         
 class White_Dragon_Top(Summon):
@@ -2226,6 +2244,8 @@ class White_Dragon(Summon):
         for c in app.coords:
             if app.grid[c[0]][c[1]] == '' and dist(loc, c) <= 9:
                 mvlist.append(c)
+        for f in self.move_effects:
+            mvlist = f(mvlist)
         return mvlist
         
         
@@ -2406,7 +2426,10 @@ class Tortured_Soul(Summon):
                 mvlist.append(s)
                 findall(s, start+1, distance)
         findall(loc, 1, 6)
-        return [list(x) for x in set(tuple(x) for x in mvlist)]
+        mvlist = [list(x) for x in set(tuple(x) for x in mvlist)]
+        for f in self.move_effects:
+            mvlist = f(mvlist)
+        return mvlist
         
         
 class Ghost(Summon):
@@ -2763,6 +2786,8 @@ class Revenant(Summon):
         for c in app.coords:
             if dist(loc, c) <= 5 and app.grid[c[0]][c[1]] == '':
                 mvlist.append(c)
+        for f in self.move_effects:
+            mvlist = f(mvlist)
         return mvlist
         
         
@@ -2985,7 +3010,10 @@ class Kensai(Summon):
                 mvlist.append(s)
                 findall(s, start+1, distance)
         findall(loc, 1, 3)
-        return [list(x) for x in set(tuple(x) for x in mvlist)]
+        mvlist = [list(x) for x in set(tuple(x) for x in mvlist)]
+        for f in self.move_effects:
+            mvlist = f(mvlist)
+        return mvlist
         
         
 class Undead(Summon):
@@ -3161,7 +3189,10 @@ class Undead(Summon):
                 mvlist.append(s)
                 findall(s, start+1, distance)
         findall(loc, 1, 3)
-        return [list(x) for x in set(tuple(x) for x in mvlist)]
+        mvlist = [list(x) for x in set(tuple(x) for x in mvlist)]
+        for f in self.move_effects:
+            mvlist = f(mvlist)
+        return mvlist
         
 class Undead_Knight(Summon):
     def __init__(self, name, img, loc, owner, number, waiting = False):
@@ -3336,7 +3367,10 @@ class Undead_Knight(Summon):
                 mvlist.append(s)
                 findall(s, start+1, distance)
         findall(loc, 1, 3)
-        return [list(x) for x in set(tuple(x) for x in mvlist)]
+        mvlist = [list(x) for x in set(tuple(x) for x in mvlist)]
+        for f in self.move_effects:
+            mvlist = f(mvlist)
+        return mvlist
         
 class Troll(Summon):
     def __init__(self, name, img, loc, owner, number, waiting = False):
@@ -3508,7 +3542,10 @@ class Troll(Summon):
                 mvlist.append(s)
                 findall(s, start+1, distance)
         findall(loc, 1, 9)
-        return [list(x) for x in set(tuple(x) for x in mvlist)]
+        mvlist = [list(x) for x in set(tuple(x) for x in mvlist)]
+        for f in self.move_effects:
+            mvlist = f(mvlist)
+        return mvlist
         
         
 class Warlock(Summon):
@@ -3761,6 +3798,8 @@ class Warlock(Summon):
         for c in app.coords:
             if dist(loc, c) <= 5 and app.grid[c[0]][c[1]] == '':
                 mvlist.append(c)
+        for f in self.move_effects:
+            mvlist = f(mvlist)
         return mvlist
         
         
@@ -4107,6 +4146,8 @@ class Air_Mage(Summon):
         for c in app.coords:
             if dist(loc, c) <= 5 and app.grid[c[0]][c[1]] == '':
                 mvlist.append(c)
+        for f in self.move_effects:
+            mvlist = f(mvlist)
         return mvlist
 
 class Air_Elemental(Summon):
@@ -4279,7 +4320,10 @@ class Air_Elemental(Summon):
                 mvlist.append(s)
                 findall(s, start+1, distance)
         findall(loc, 1, 5)
-        return [list(x) for x in set(tuple(x) for x in mvlist)]
+        mvlist = [list(x) for x in set(tuple(x) for x in mvlist)]
+        for f in self.move_effects:
+            mvlist = f(mvlist)
+        return mvlist
 
 
 class Water_Mage(Summon):
@@ -4686,6 +4730,8 @@ class Water_Mage(Summon):
         for c in app.coords:
             if dist(loc, c) <= 5 and app.grid[c[0]][c[1]] == '':
                 mvlist.append(c)
+        for f in self.move_effects:
+            mvlist = f(mvlist)
         return mvlist
 
 class Water_Elemental(Summon):
@@ -4863,7 +4909,10 @@ class Water_Elemental(Summon):
                 mvlist.append(s)
                 findall(s, start+1, distance)
         findall(loc, 1, 4)
-        return [list(x) for x in set(tuple(x) for x in mvlist)]
+        mvlist = [list(x) for x in set(tuple(x) for x in mvlist)]
+        for f in self.move_effects:
+            mvlist = f(mvlist)
+        return mvlist
 
         
 class Earth_Mage(Summon):
@@ -5183,6 +5232,8 @@ class Earth_Mage(Summon):
         for c in app.coords:
             if dist(loc, c) <= 5 and app.grid[c[0]][c[1]] == '':
                 mvlist.append(c)
+        for f in self.move_effects:
+            mvlist = f(mvlist)
         return mvlist
         
         
@@ -5358,7 +5409,10 @@ class Earth_Elemental(Summon):
                 mvlist.append(s)
                 findall(s, start+1, distance)
         findall(loc, 1, 6)
-        return [list(x) for x in set(tuple(x) for x in mvlist)]
+        mvlist = [list(x) for x in set(tuple(x) for x in mvlist)]
+        for f in self.move_effects:
+            mvlist = f(mvlist)
+        return mvlist
         
 # casts firewall after teleporting randomly within a dist, resummons fire elementals if they all die
 # This unit regains its normal movement (teleport) at the begin of every do_ai() (like Warlock)
@@ -5873,6 +5927,8 @@ class Sorceress(Summon):
         for c in app.coords:
             if dist(loc, c) <= 5 and app.grid[c[0]][c[1]] == '':
                 mvlist.append(c)
+        for f in self.move_effects:
+            mvlist = f(mvlist)
         return mvlist
         
         
@@ -6052,7 +6108,10 @@ class Orc_Axeman(Summon):
                 mvlist.append(s)
                 findall(s, start+1, distance)
         findall(loc, 1, 4)
-        return [list(x) for x in set(tuple(x) for x in mvlist)]
+        mvlist = [list(x) for x in set(tuple(x) for x in mvlist)]
+        for f in self.move_effects:
+            mvlist = f(mvlist)
+        return mvlist
         
         
 class Fire_Elemental(Summon):
@@ -6279,7 +6338,10 @@ class Fire_Elemental(Summon):
                 mvlist.append(s)
                 findall(s, start+1, distance)
         findall(loc, 1, 4)
-        return [list(x) for x in set(tuple(x) for x in mvlist)]
+        mvlist = [list(x) for x in set(tuple(x) for x in mvlist)]
+        for f in self.move_effects:
+            mvlist = f(mvlist)
+        return mvlist
         
         
         
@@ -6458,7 +6520,10 @@ class Barbarian(Summon):
                 mvlist.append(s)
                 findall(s, start+1, distance)
         findall(loc, 1, 2) 
-        return [list(x) for x in set(tuple(x) for x in mvlist)]
+        mvlist = [list(x) for x in set(tuple(x) for x in mvlist)]
+        for f in self.move_effects:
+            mvlist = f(mvlist)
+        return mvlist
         
         
     # if no ent within immediate move/attack range, only move toward witch
@@ -6795,17 +6860,20 @@ class Minotaur(Summon):
                 mvlist.append(s)
                 findall(s, start+1, distance)
         findall(loc, 1, 5)
-        return [list(x) for x in set(tuple(x) for x in mvlist)]
+        mvlist = [list(x) for x in set(tuple(x) for x in mvlist)]
+        for f in self.move_effects:
+            mvlist = f(mvlist)
+        return mvlist
         
         
 class Warrior(Summon):
     def __init__(self, name, img, loc, owner, number):
         self.actions = {'attack':self.warrior_attack, 'leap':self.leap, 'guard':self.guard, 'move':self.move}
         self.attack_used = False
-        self.str = 5
+        self.str = 6
         self.agl = 5
         self.end = 6
-        self.dodge = 2
+        self.dodge = 3
         self.psyche = 2
         self.spirit = 15
         self.move_type = 'charge'
@@ -7059,10 +7127,9 @@ class Warrior(Summon):
     def legal_moves(self):
         loc = self.loc
         mvlist = []
-        coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-        # need to stop movement when obstructed
-        coords.remove(loc)
-        for c in coords:
+        coords = app.coords[:]
+        # need to stop movement when obstructed, DEBUG make more concise/clear
+        for c in app.coords:
             if loc[0]-1 == c[0] and c[1] == loc[1] and app.grid[c[0]][c[1]] == '':
                 mvlist.append(c)
                 n = [c[0]-1, c[1]]
@@ -7073,7 +7140,6 @@ class Warrior(Summon):
                         if n in coords:
                             if  app.grid[n[0]][n[1]] == '':
                                 mvlist.append(n)
-                        
             elif loc[0]+1 == c[0] and c[1] == loc[1] and app.grid[c[0]][c[1]] == '':
                 mvlist.append(c)
                 n = [c[0]+1, c[1]]
@@ -7084,7 +7150,6 @@ class Warrior(Summon):
                         if n in coords:
                             if  app.grid[n[0]][n[1]] == '':
                                 mvlist.append(n)
-                        
             elif c[0] == loc[0] and loc[1]-1 == c[1] and app.grid[c[0]][c[1]] == '':
                 mvlist.append(c)
                 n = [c[0], c[1]-1]
@@ -7095,7 +7160,6 @@ class Warrior(Summon):
                         if n in coords:
                             if  app.grid[n[0]][n[1]] == '':
                                 mvlist.append(n)
-                        
             elif c[0] == loc[0] and loc[1]+1 == c[1] and app.grid[c[0]][c[1]] == '':
                 mvlist.append(c)
                 n = [c[0], c[1]+1]
@@ -7106,6 +7170,8 @@ class Warrior(Summon):
                         if n in coords:
                             if  app.grid[n[0]][n[1]] == '':
                                 mvlist.append(n)
+        for f in self.move_effects:
+            mvlist = f(mvlist)
         return mvlist
                     
                     
@@ -7316,6 +7382,8 @@ class Familiar_Homonculus(Summon):
         for c in app.coords:
             if dist(c, loc) <= 5 and app.grid[c[0]][c[1]] == '':
                 mvlist.append(c)
+        for f in self.move_effects:
+            mvlist = f(mvlist)
         return mvlist
 
 class Lesser_Demon(Summon):
@@ -7342,7 +7410,10 @@ class Lesser_Demon(Summon):
                 mvlist.append(s)
                 findall(s, start+1, distance)
         findall(loc, 1, 4) 
-        return [list(x) for x in set(tuple(x) for x in mvlist)]
+        mvlist = [list(x) for x in set(tuple(x) for x in mvlist)]
+        for f in self.move_effects:
+            mvlist = f(mvlist)
+        return mvlist
         
         
     def brambles(self, event = None):
@@ -7937,7 +8008,10 @@ class Cenobite(Summon):
                 mvlist.append(s)
                 findall(s, start+1, distance)
         findall(loc, 1, 4) 
-        return [list(x) for x in set(tuple(x) for x in mvlist)]
+        mvlist = [list(x) for x in set(tuple(x) for x in mvlist)]
+        for f in self.move_effects:
+            mvlist = f(mvlist)
+        return mvlist
         
     # ensure only one at a time, on death witch loses spirit, flight for movement (not blocked by obstacles)
     # casts poison sting, darkness, 
@@ -8162,6 +8236,8 @@ class Familiar_Imp(Summon):
         for c in app.coords:
             if dist(c, loc) <= 5 and app.grid[c[0]][c[1]] == '':
                 mvlist.append(c)
+        for f in self.move_effects:
+            mvlist = f(mvlist)
         return mvlist
                     
 class Witch(Entity):
@@ -8380,7 +8456,10 @@ class Witch(Entity):
                 mvlist.append(s)
                 findall(s, start+1, distance)
         findall(loc, 1, 3)
-        return [list(x) for x in set(tuple(x) for x in mvlist)]
+        mvlist = [list(x) for x in set(tuple(x) for x in mvlist)]
+        for f in self.move_effects:
+            mvlist = f(mvlist)
+        return mvlist
         
     def spell(self, event = None):
 #         if self.spell_used == True:
@@ -9447,14 +9526,13 @@ class Witch(Entity):
         f = gravity_effect
         app.ent_dict[id].agl_effects.append(f)
         app.ent_dict[id].dodge_effects.append(f)
-        def gravity():# REPLACE CLASS MOVEMENT WITH NOTHING
+        def gravity_move(sqrs):# REPLACE CLASS MOVEMENT WITH NOTHING
             return []
-        app.ent_dict[id].legal_moves = gravity
+        app.ent_dict[id].move_effects.append(gravity_move)
         def un(i):
             app.ent_dict[i].agl_effects.remove(gravity_effect)
             app.ent_dict[i].dodge_effects.remove(gravity_effect)
-            p = partial(app.ent_dict[i].__class__.legal_moves, app.ent_dict[i]) #   PUT BACK CLASS METHOD MOVEMENT
-            app.ent_dict[i].legal_moves = p
+            app.ent_dict[i].move_effects.remove(gravity_move)
             return None
         p = partial(un, id)
         # EOT FUNC
@@ -9506,7 +9584,6 @@ class Witch(Entity):
                 root.after(99, lambda t = timeout : beleths_loop(t))
         beleths_loop(36)
         # Adj ents take 9 spirit
-#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         sqrs = [s for s in app.coords if dist(sqr, s) == 1]
         ents = [app.grid[s[0]][s[1]] for s in sqrs if app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
         for e in ents:
@@ -9538,14 +9615,12 @@ class Witch(Entity):
             f = beleths_command_effect
             app.ent_dict[id].end_effects.append(f)
             app.ent_dict[id].psyche_effects.append(f)
-            def beleth():# REPLACE CLASS MOVEMENT WITH NOTHING
+            def beleth_move(sqrs):# REPLACE CLASS MOVEMENT WITH NOTHING
                 return []
-            app.ent_dict[id].legal_moves = beleth
             def un(i):
                 app.ent_dict[i].end_effects.remove(beleths_command_effect)
                 app.ent_dict[i].psyche_effects.remove(beleths_command_effect)
-                p = partial(app.ent_dict[i].__class__.legal_moves, app.ent_dict[i]) #   PUT BACK CLASS METHOD MOVEMENT
-                app.ent_dict[i].legal_moves = p
+                app.ent_dict[i].move_effects.remove(beleth_move)
                 return None
             p = partial(un, id)
             # EOT FUNC
@@ -9672,7 +9747,7 @@ class Witch(Entity):
                 name = 'Dethlok'+str(app.death_count)
                 app.death_count += 1
                 app.dethloks[name] = tk.IntVar(0)
-                root.after(2666, lambda id = id, name = name : app.kill(id, name)
+                root.after(2666, lambda id = id, name = name : app.kill(id, name))
                 app.wait_variable(app.dethloks[name])
         root.after(3666, lambda  name = 'Horrid_Wilting' : self.cleanup_spell(name = name))
         
@@ -12303,8 +12378,7 @@ class App(tk.Frame):
     
     
     def move_curs(self, event = None, dir = None):
-        # need to either unbind arrows, or unbind as much as possible during execution
-        app.unbind_arrows()
+        # need to either unbind arrows, or unbind as much as possible during execution without becoming rebound on ai turn
         if event == None:
             event = Dummy()
             event.keysym = None
@@ -12324,7 +12398,6 @@ class App(tk.Frame):
                 map_pos[0] -= 1
                 self.move_map('Left')
                 grid_pos[0] -= 1
-                
         elif event.keysym == 'Right' or dir == 'Right':
             if grid_pos[0] == ((self.map_width//100) - 1):
                 return
@@ -12362,7 +12435,6 @@ class App(tk.Frame):
                 self.move_map('Up')
                 map_pos[1] += 1
                 grid_pos[1] += 1
-        app.rebind_arrows()
 
     def move_map(self, direction):
         tmp = self.ent_dict.keys()
