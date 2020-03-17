@@ -1,3 +1,9 @@
+# make fireball/fire elem atk move in a straight line
+
+# make sure always some delay with kill() locks, kill can return too quickly when not used with after()
+
+# pestilence death timing kill multi, arrows rebound
+
 # DO DROP SHADOW
 
 # dragon fight gets tedious if you lure him with attack formation where he can only hit one at a time, make him move more and summon minor enemies, do different attacks, dragon (or sub-enemies) need way of moving your stuff around so the dragon can maybe hit multiple with iceblast
@@ -851,7 +857,7 @@ class Trickster(Summon):
                 name = 'Dethlok'+str(app.death_count)
                 app.death_count += 1
                 app.dethloks[name] = tk.IntVar(0)
-                app.kill(id, name)
+                root.after(666, lambda id = id, name = name : app.kill(id, name))
                 app.wait_variable(app.dethloks[name])
         app.unbind_all()
         app.rebind_all()
@@ -1358,7 +1364,7 @@ class Shadow(Summon):
                 name = 'Dethlok'+str(app.death_count)
                 app.death_count += 1
                 app.dethloks[name] = tk.IntVar(0)
-                app.kill(id, name)
+                root.after(666, lambda id = id, name = name : app.kill(id, name))
                 app.wait_variable(app.dethloks[name])
         app.unbind_all()
         app.rebind_all()
@@ -1506,7 +1512,7 @@ class Shadow(Summon):
                 name = 'Dethlok'+str(app.death_count)
                 app.death_count += 1
                 app.dethloks[name] = tk.IntVar(0)
-                app.kill(id, name)
+                root.after(666, lambda id = id, name = name : app.kill(id, name))
                 app.wait_variable(app.dethloks[name])
         app.unbind_all()
         app.rebind_all()
@@ -1642,11 +1648,11 @@ class Plaguebearer(Summon):
                     def take_3(tar):
                         app.get_focus(tar)
                         app.ent_dict[tar].set_attr('spirit', -3)
-                        app.canvas.create_text(app.ent_dict[tar].loc[0]*100+49-app.moved_right, app.ent_dict[tar].loc[1]*100+59-app.moved_down, text = '3 Spirit\nPox', justify ='center', font = ('Andale Mono', 13), fill = 'black', tags = 'text')
-                        app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+60-app.moved_down, text = '3 Spirit\nPox', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+                        app.canvas.create_text(app.ent_dict[tar].loc[0]*100+49-app.moved_right, app.ent_dict[tar].loc[1]*100+59-app.moved_down, text = '3 spirit Pox', justify ='center', font = ('Andale Mono', 13), fill = 'black', tags = 'text')
+                        app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+60-app.moved_down, text = '3 spirit Pox', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
                         if app.ent_dict[tar].spirit <= 0:
-                            app.canvas.create_text(app.ent_dict[tar].loc[0]*100+49-app.moved_right, app.ent_dict[tar].loc[1]*100+89-app.moved_down, text = app.ent_dict[tar].name.replace('_',' ') + ' Killed...', justify = 'center', font = ('Andale Mono', 13), fill = 'black', tags = 'text')
-                            app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+90-app.moved_down, text = app.ent_dict[tar].name.replace('_',' ') + '\nKilled...', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+                            app.canvas.create_text(app.ent_dict[tar].loc[0]*100+49-app.moved_right, app.ent_dict[tar].loc[1]*100+94-app.moved_down, text = app.ent_dict[tar].name.replace('_',' ') + ' Killed...', justify = 'center', font = ('Andale Mono', 13), fill = 'black', tags = 'text')
+                            app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+95-app.moved_down, text = app.ent_dict[tar].name.replace('_',' ') + ' Killed...', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
                         return 'Not None'
                     # EOT
                     eot = partial(take_3, ent)
@@ -1917,7 +1923,7 @@ class Bard(Summon):
                 name = 'Dethlok'+str(app.death_count)
                 app.death_count += 1
                 app.dethloks[name] = tk.IntVar(0)
-                app.kill(id, name)
+                root.after(666, lambda id = id, name = name : app.kill(id, name))
                 app.wait_variable(app.dethloks[name])
         app.unbind_all()
         app.rebind_all()
@@ -2379,21 +2385,23 @@ class Tortured_Soul(Summon):
             visloc = app.ent_dict[id].loc[:]
             app.vis_dict['Tortured_Soul_Agony'] = Vis(name = 'Tortured_Soul_Agony', loc = visloc)
             app.canvas.create_image(visloc[0]*100+50-app.moved_right, visloc[1]*100+50-app.moved_down, image = app.vis_dict['Tortured_Soul_Agony'].img, tags = 'Tortured_Soul_Agony')
+            app.canvas.create_text(visloc[0]*100+49-app.moved_right, visloc[1]*100+94-app.moved_down, text = 'Agony', font = ('Andale Mono', 16), fill = 'black', tags = 'text')
             app.canvas.create_text(visloc[0]*100+50-app.moved_right, visloc[1]*100+95-app.moved_down, text = 'Agony', font = ('Andale Mono', 16), fill = 'orangered4', tags = 'text')
-        
             my_agl = self.get_attr('agl')
             target_dodge = app.ent_dict[id].get_attr('dodge')
             if to_hit(my_agl, target_dodge) == True:
-                # HIT, SHOW VIS, DO DAMAGE, EXIT
                 my_str = self.get_attr('str')
                 target_psyche = app.ent_dict[id].get_attr('psyche')
                 d = damage(my_str, target_psyche)
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Tortured Soul Attack Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
                 app.ent_dict[id].set_attr('spirit', -d)
                 if app.ent_dict[id].spirit <= 0:
-                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+94, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+95, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
             else:
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Tortured Soul Attack Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Miss!', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Miss!', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
             root.after(3666, lambda  el = ents_list, id = id : self.cleanup_attack(el, id))
         
         
@@ -2408,7 +2416,7 @@ class Tortured_Soul(Summon):
             name = 'dethlok'+str(app.death_count)
             app.death_count += 1
             app.dethloks[name] = tk.IntVar(0)
-            app.kill(id, name)
+            root.after(666, lambda id = id, name = name : app.kill(id, name))
             root.wait_variable(app.dethloks[name])
             self.finish_attack(ents_list)
         else:
@@ -2507,13 +2515,15 @@ class Ghost(Summon):
             if to_hit(my_psyche, target_psyche) == True:
                 # HIT, SHOW VIS, DO DAMAGE, EXIT
                 d = damage(my_psyche, target_psyche)
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+80, text = 'Ghost Attack Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
                 app.ent_dict[id].set_attr('spirit', -d)
                 if app.ent_dict[id].spirit <= 0:
-                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+100, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+94, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+95, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
             else:
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+80, text = 'Ghost Attack Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
-
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Miss!', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Miss!', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
             root.after(3666, lambda  el = ents_list, id = id : self.cleanup_attack(el, id))
         
         
@@ -2529,7 +2539,7 @@ class Ghost(Summon):
             name = 'dethlok'+str(app.death_count)
             app.death_count += 1
             app.dethloks[name] = tk.IntVar(0)
-            app.kill(id, name)
+            root.after(666, lambda id = id, name = name : app.kill(id, name))
             root.wait_variable(app.dethloks[name])
             self.finish_attack(ents_list)
         else:
@@ -2744,6 +2754,7 @@ class Revenant(Summon):
             visloc = app.ent_dict[id].loc[:]
             app.vis_dict['Revenant_Terror'] = Vis(name = 'Revenant_Terror', loc = visloc)
             app.canvas.create_image(visloc[0]*100+50-app.moved_right, visloc[1]*100+50-app.moved_down, image = app.vis_dict['Revenant_Terror'].img, tags = 'Revenant_Terror')
+            app.canvas.create_text(visloc[0]*100+49-app.moved_right, visloc[1]*100+104-app.moved_down, text = 'Terror', font = ('Andale Mono', 16), fill = 'black', tags = 'text')
             app.canvas.create_text(visloc[0]*100+50-app.moved_right, visloc[1]*100+105-app.moved_down, text = 'Terror', font = ('Andale Mono', 16), fill = 'gray77', tags = 'text')
         
             my_psyche = self.get_attr('psyche')
@@ -2751,12 +2762,15 @@ class Revenant(Summon):
             if to_hit(my_psyche, target_psyche) == True:
                 # HIT, SHOW VIS, DO DAMAGE, EXIT
                 d = damage(my_psyche, target_psyche)
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+80, text = 'Revenant Attack Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
                 app.ent_dict[id].set_attr('spirit', -d)
                 if app.ent_dict[id].spirit <= 0:
-                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+100, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+94, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+95, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
             else:
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+80, text = 'Revenant Attack Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Miss!', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Miss!', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
 
             root.after(3666, lambda  el = ents_list, id = id : self.cleanup_attack(el, id))
             
@@ -2772,7 +2786,7 @@ class Revenant(Summon):
             name = 'dethlok'+str(app.death_count)
             app.death_count += 1
             app.dethloks[name] = tk.IntVar(0)
-            app.kill(id, name)
+            root.after(666, lambda id = id, name = name : app.kill(id, name))
             root.wait_variable(app.dethloks[name])
             self.finish_attack(ents_list)
         else:
@@ -2941,23 +2955,23 @@ class Kensai(Summon):
             visloc = app.ent_dict[id].loc[:]
             app.vis_dict['Kensai_Cut'] = Vis(name = 'Kensai_Cut', loc = visloc)
             app.canvas.create_image(visloc[0]*100+50-app.moved_right, visloc[1]*100+50-app.moved_down, image = app.vis_dict['Kensai_Cut'].img, tags = 'Kensai_Cut')
-            app.canvas.create_text(visloc[0]*100+50-app.moved_right, visloc[1]*100+95-app.moved_down, text = 'Cut', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
-
             my_agl = self.get_attr('agl')
             target_agl = app.ent_dict[id].get_attr('agl')
             if to_hit(my_agl, target_agl) == True:
-                # HIT, SHOW VIS, DO DAMAGE, EXIT
                 my_str = self.get_attr('str')
                 target_end = app.ent_dict[id].get_attr('end')
                 d = damage(my_str, target_end)
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Kensai Attack Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
                 app.ent_dict[id].set_attr('spirit', -d)
                 if app.ent_dict[id].spirit <= 0:
-                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+94, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+95, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
                 root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id)) # EXIT THROUGH CLEANUP_ATTACK()
             else:
                 # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Kensai Attack Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Miss!', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Miss!', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
                 root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id))
         
         
@@ -2974,7 +2988,7 @@ class Kensai(Summon):
             name = 'dethlok'+str(app.death_count)
             app.death_count += 1
             app.dethloks[name] = tk.IntVar(0)
-            app.kill(id, name)
+            root.after(666, lambda id = id, name = name : app.kill(id, name))
             root.wait_variable(app.dethloks[name])
             self.continue_cleanup(ents_list, id)
         else:
@@ -3025,6 +3039,225 @@ class Kensai(Summon):
                 findall(s, start+1, distance)
         findall(loc, 1, 3)
         mvlist = [list(x) for x in set(tuple(x) for x in mvlist)]
+        for f in self.move_effects:
+            mvlist = f(mvlist)
+        return mvlist
+
+class Kobold_Shaman(Summon):
+    def __init__(self, name, img, loc, owner, number, waiting = False):
+        self.actions = {'attack':self.do_attack}
+        self.attack_used = False
+        self.str = 5
+        self.agl = 4
+        self.end = 3
+        self.dodge = 4
+        self.psyche = 4
+        self.spirit = 19
+        self.waiting = waiting
+        self.move_type = 'normal'
+        super().__init__(name, img, loc, owner, number)
+        
+    def pass_priority(self, ents_list):
+        ents_list = ents_list[1:]
+        if ents_list == []:
+            app.end_turn()
+        else:
+            app.do_ai_loop(ents_list)
+        
+    def do_ai(self, ents_list):
+        if self.waiting == True: # PASSIVE / WAITING
+            self.pass_priority(ents_list)
+        else: # NO TARGET PRIORITY, ATTEMPT ATTACK FROM STARTLOC
+            atk_sqrs = self.legal_attacks()
+            atk_sqrs = [x for x in atk_sqrs if app.ent_dict[app.grid[x[0]][x[1]]].owner == 'p1']
+            if atk_sqrs != []:
+                any = atk_sqrs[0]
+                id = app.grid[any[0]][any[1]]
+                root.after(666, lambda id = id : app.get_focus(id))
+                root.after(1333, lambda el = ents_list, id = id : self.do_attack(el, id)) # ATTACK
+            else: # CANNOT ATTACK FROM START LOC, GET TARGET AND MOVE TOWARDS
+                enemy_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p1']
+                paths = []
+                for el in enemy_ent_locs:
+                # FIND PATH TO SQR WITHIN RANGE OF THIS ENT
+                    goals = [c for c in app.coords if dist(c, el) <= 3 and app.grid[c[0]][c[1]] == '']
+                    path = bfs(self.loc[:], goals, app.grid[:])
+                    if path:
+                        paths.append(path)
+                smallpaths = [y for y in paths if len(y) == min(len(y) for y in paths)] # THE SHORTEST PATHS AMONG PATHS
+                if smallpaths != []: # IF ANY PATHS EXIST AT ALL
+                    apath = smallpaths[0]
+                    # FIND FURTHEST SQR ALONG PATH THAT CAN BE MOVED TO
+                    moves = self.legal_moves()
+                    endloc = None
+                    for sqr in apath[::-1]: # START WITH SQRS CLOSEST TO TARGET
+                        if sqr in moves:
+                            endloc = sqr[:] # AMONG SQRS POSSIBLE TO MOVE TO, THIS IS CLOSEST TO GOAL
+                            break
+                    if endloc != None:
+                        root.after(666, lambda sqr = endloc[:] : app.focus_square(sqr))
+                        root.after(1333, lambda el = ents_list, endloc = endloc : self.ai_move(el, endloc))
+                    else:
+                        ents_list = ents_list[1:]
+                        if ents_list == []:
+                            root.after(666, app.end_turn)
+                        else:
+                            root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
+                else: # NO PATHS TO TARGET, remove friendly, move along path
+                    egrid = deepcopy(app.grid)
+                    friendly_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p2']
+                    for eloc in friendly_ent_locs:
+                        egrid[eloc[0]][eloc[1]] = '' # EGRID NOW EMPTIED OF FRIENDLY ENTS
+                    # NOW FIND PATH AND PASS TO MOVE
+                    for el in enemy_ent_locs:
+                        goals = [c for c in app.coords if dist(c, el) <= 3 and app.grid[c[0]][c[1]] == '']
+                        path = bfs(self.loc[:], goals, egrid[:]) # BFS ON EGRID
+                        if path:
+                            paths.append(path)
+                    smallpaths = [y for y in paths if len(y) == min(len(y) for y in paths)]
+                    if smallpaths != []: # MOVE ALONG PATH AS FAR AS POSSIBLE, ATTEMPT ATTACK
+                        apath = smallpaths[0]
+                        # FIND FURTHEST SQR ALONG PATH THAT CAN BE MOVED TO
+                        moves = self.legal_moves()
+                        endloc = None
+                        for sqr in apath[::-1]: # START WITH SQRS CLOSEST TO TARGET
+                            if sqr in moves:
+                                endloc = sqr[:] # AMONG SQRS POSSIBLE TO MOVE TO, THIS IS CLOSEST TO GOAL
+                                break
+                        if endloc != None:
+                            # here need to 'trim path' to prevent moving to square 'through' friendly ents
+                            root.after(666, lambda sqr = endloc[:] : app.focus_square(sqr))
+                            root.after(1333, lambda el = ents_list, endloc = endloc : self.ai_move(el, endloc))
+                        else:
+                            ents_list = ents_list[1:]
+                            if ents_list == []:
+                                root.after(666, app.end_turn)
+                            else:
+                                root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
+                    else:
+                        ents_list = ents_list[1:]
+                        if ents_list == []:
+                            root.after(666, app.end_turn)
+                        else:
+                            root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
+            
+    def do_attack(self, ents_list, id):
+        global selected_vis
+        if self.attack_used == True:
+            self.cleanup_attack(ents_list, id)
+        else:
+            self.attack_used = True
+            app.get_focus(id)
+    #         self.init_attack_anims()
+            effect1 = mixer.Sound('Sound_Effects/fire_elemental_attack.ogg')
+            effect1.set_volume(1)
+            sound_effects.play(effect1, 0)
+            loc = app.ent_dict[id].loc[:]
+            app.vis_dict['Fire_Elem_Ball'] = Vis(name = 'Fire_Elem_Ball', loc = self.loc[:])
+            app.canvas.create_image(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+50-app.moved_down, image = app.vis_dict['Fire_Elem_Ball'].img, tags = 'Fire_Elem_Ball')
+            selected_vis = 'Fire_Elem_Ball'
+            def moonlight_loop(starty, endy, startx, endx):
+                if starty > endy:
+                    starty -= 10
+                    app.canvas.delete('Fire_Elem_Ball')
+                    app.canvas.create_image(startx, starty, image = app.vis_dict['Fire_Elem_Ball'].img, tags = 'Fire_Elem_Ball')
+                    app.vis_dict['Fire_Elem_Ball'].rotate_image()
+                    app.canvas.tag_raise('Fire_Elem_Ball')
+                elif starty < endy:
+                    starty += 10
+                    app.canvas.delete('Fire_Elem_Ball')
+                    app.canvas.create_image(startx, starty, image = app.vis_dict['Fire_Elem_Ball'].img, tags = 'Fire_Elem_Ball')
+                    app.vis_dict['Fire_Elem_Ball'].rotate_image()
+                    app.canvas.tag_raise('Fire_Elem_Ball')
+                if startx > endx:
+                    startx -= 10
+                    app.canvas.delete('Fire_Elem_Ball')
+                    app.canvas.create_image(startx, starty, image = app.vis_dict['Fire_Elem_Ball'].img, tags = 'Fire_Elem_Ball')
+                    app.vis_dict['Fire_Elem_Ball'].rotate_image()
+                    app.canvas.tag_raise('Fire_Elem_Ball')
+                elif startx < endx:
+                    startx += 10
+                    app.canvas.delete('Fire_Elem_Ball')
+                    app.canvas.create_image(startx, starty, image = app.vis_dict['Fire_Elem_Ball'].img, tags = 'Fire_Elem_Ball')
+                    app.vis_dict['Fire_Elem_Ball'].rotate_image()
+                    app.canvas.tag_raise('Fire_Elem_Ball')
+                if starty == endy and startx == endx:
+                    root.after(333, lambda el = ents_list, id = id : self.continue_attack(el, id))
+                else:
+                    root.after(66, lambda sy = starty, ey = endy, sx = startx, ex = endx : moonlight_loop(sy, ey, sx, ex))
+            starty = self.loc[1]*100+50-app.moved_down
+            startx = self.loc[0]*100+50-app.moved_right
+            endy = loc[1]*100+50-app.moved_down
+            endx = loc[0]*100+50-app.moved_right
+            moonlight_loop(starty, endy, startx, endx)
+            
+    def continue_attack(self, ents_list, id):
+        loc = app.ent_dict[id].loc[:]
+        my_psyche = self.get_attr('psyche')
+        target_dodge = app.ent_dict[id].get_attr('dodge')
+        if to_hit(my_psyche, target_dodge) == True:
+            # HIT, SHOW VIS, DO DAMAGE, EXIT
+            target_end = app.ent_dict[id].get_attr('end')
+            d = damage(my_psyche, target_end)
+            app.canvas.create_text(loc[0]*100-app.moved_right+49, loc[1]*100-app.moved_down+74, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+            app.canvas.create_text(loc[0]*100-app.moved_right+50, loc[1]*100-app.moved_down+75, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
+            app.ent_dict[id].set_attr('spirit', -d)
+            if app.ent_dict[id].spirit <= 0:
+                app.canvas.create_text(loc[0]*100-app.moved_right+49, loc[1]*100-app.moved_down+94, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
+                app.canvas.create_text(loc[0]*100-app.moved_right+50, loc[1]*100-app.moved_down+95, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
+            root.after(2666, lambda e = ents_list, id = id : self.cleanup_attack(e, id))
+        else:# MISS
+            app.canvas.create_text(loc[0]*100-app.moved_right+49, loc[1]*100-app.moved_down+74, text = 'Miss!', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+            app.canvas.create_text(loc[0]*100-app.moved_right+50, loc[1]*100-app.moved_down+75, text = 'Miss!', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
+            root.after(2666, lambda e = ents_list, id = id : self.cleanup_attack(e, id))
+            
+    def cleanup_attack(self, ents_list, id):
+        global selected_vis
+        selected_vis = ''
+        self.init_normal_anims()
+        try: 
+            app.canvas.delete('text')
+            del app.vis_dict['Fire_Elem_Ball']
+            app.canvas.delete('Fire_Elem_Ball')
+        except: pass
+        if app.ent_dict[id].spirit <= 0:
+            name = 'dethlok'+str(app.death_count)
+            app.death_count += 1
+            app.dethloks[name] = tk.IntVar(0)
+            root.after(666, lambda id = id, name = name : app.kill(id, name))
+            root.wait_variable(app.dethloks[name])
+            self.finish_attack(ents_list)
+        else:
+            self.finish_attack(ents_list)
+                    
+    def finish_attack(self, ents_list):
+        el = ents_list[1:]
+        if el == []:
+            app.end_turn()
+        else:
+            app.do_ai_loop(el)
+        
+    def legal_attacks(self):
+        sqrs = []
+        for c in app.coords:
+            if dist(c, self.loc) <= 3:
+                if app.grid[c[0]][c[1]] != '' and app.grid[c[0]][c[1]] != 'block':
+                    if app.ent_dict[app.grid[c[0]][c[1]]].owner != self.owner:
+                        sqrs.append(c)
+        return sqrs
+        
+    def legal_moves(self):
+        loc = self.loc[:]
+        mvlist = []
+        def findall(loc, start, distance):
+            if start > distance:
+                return
+            adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
+            for s in adj:
+                if s not in mvlist:
+                    mvlist.append(s)
+                findall(s, start+1, distance)
+        findall(loc, 1, 4)
         for f in self.move_effects:
             mvlist = f(mvlist)
         return mvlist
@@ -3151,10 +3384,12 @@ class Undead(Summon):
                 my_str = self.get_attr('str')
                 target_end = app.ent_dict[id].get_attr('end')
                 d = damage(my_str, target_end)
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Undead Attack Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
                 app.ent_dict[id].set_attr('spirit', -d)
                 if app.ent_dict[id].spirit <= 0:
-                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+94, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+95, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
                     name = 'dethlok'+str(app.death_count)
                     app.death_count += 1
                     app.dethloks[name] = tk.IntVar(0)
@@ -3166,7 +3401,8 @@ class Undead(Summon):
                     root.after(2666, lambda e = ents_list : self.finish_attack(e))
             else:
                 # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Undead Attack Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Miss!', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Miss!', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
                 root.after(2666, lambda e = ents_list : self.finish_attack(e))
         
     def cleanup_attack(self):
@@ -3328,14 +3564,17 @@ class Undead_Knight(Summon):
                 my_str = self.get_attr('str')
                 target_end = app.ent_dict[id].get_attr('end')
                 d = damage(my_str, target_end)
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Undead Knight Attack Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
                 app.ent_dict[id].set_attr('spirit', -d)
                 if app.ent_dict[id].spirit <= 0:
-                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+94, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+95, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
                 root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id)) # EXIT THROUGH CLEANUP_ATTACK()
             else:
                 # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Undead Knight Attack Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Miss!', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Miss!', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
                 root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id))
         
     def cleanup_attack(self, ents_list, id):
@@ -3349,7 +3588,7 @@ class Undead_Knight(Summon):
             name = 'dethlok'+str(app.death_count)
             app.death_count += 1
             app.dethloks[name] = tk.IntVar(0)
-            app.kill(id, name)
+            root.after(666, lambda id = id, name = name : app.kill(id, name))
             root.wait_variable(app.dethloks[name])
             self.finish_attack(ents_list)
         else:
@@ -3415,7 +3654,8 @@ class Troll(Summon):
         else: # NO TARGET PRIORITY, ATTEMPT ATTACK FROM STARTLOC
             # TROLL REGEN
             if self.spirit < 35:
-                app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+50-app.moved_down, text='Regen 2 Spirit', font= ('Andale Mono', 14), fill = 'white', tags = 'text')
+                app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+74-app.moved_down, text='Regen 2 Spirit', font= ('Andale Mono', 13), fill = 'black', tags = 'text')
+                app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+75-app.moved_down, text='Regen 2 Spirit', font= ('Andale Mono', 13), fill = 'white', tags = 'text')
                 root.after(999, lambda t = 'text' : app.canvas.delete('text'))
                 self.spirit += 2
                 if self.spirit > 35:
@@ -3502,14 +3742,17 @@ class Troll(Summon):
                 my_str = self.get_attr('str')
                 target_end = app.ent_dict[id].get_attr('end')
                 d = damage(my_str, target_end)
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Troll Attack Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
                 app.ent_dict[id].set_attr('spirit', -d)
                 if app.ent_dict[id].spirit <= 0:
-                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+94, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+95, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
                 root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id)) # EXIT THROUGH CLEANUP_ATTACK()
             else:
                 # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Troll Attack Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Miss!', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Miss!', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
                 root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id))
         
         
@@ -3524,7 +3767,7 @@ class Troll(Summon):
             name = 'dethlok'+str(app.death_count)
             app.death_count += 1
             app.dethloks[name] = tk.IntVar(0)
-            app.kill(id, name)
+            root.after(666, lambda id = id, name = name : app.kill(id, name))
             root.wait_variable(app.dethloks[name])
             self.finish_attack(ents_list)
         else:
@@ -3766,7 +4009,7 @@ class Warlock(Summon):
             name = 'dethlok'+str(app.death_count)
             app.death_count += 1
             app.dethloks[name] = tk.IntVar(0)
-            app.kill(id, name)
+            root.after(666, lambda id = id, name = name : app.kill(id, name))
             root.wait_variable(app.dethloks[name])
             self.finish_cleanup(ents_list, id)
         else:
@@ -4132,7 +4375,7 @@ class Air_Mage(Summon):
                 name = 'dethlok'+str(app.death_count)
                 app.death_count += 1
                 app.dethloks[name] = tk.IntVar(0)
-                app.kill(id, name)
+                root.after(666, lambda id = id, name = name : app.kill(id, name))
                 root.wait_variable(app.dethloks[name])
                 self.finish_attack(ents_list)
         else:
@@ -4300,7 +4543,7 @@ class Air_Elemental(Summon):
             name = 'dethlok'+str(app.death_count)
             app.death_count += 1
             app.dethloks[name] = tk.IntVar(0)
-            app.kill(id, name)
+            root.after(666, lambda id = id, name = name : app.kill(id, name))
             root.wait_variable(app.dethloks[name])
             self.finish_attack(ents_list)
         else:
@@ -4576,7 +4819,7 @@ class Water_Mage(Summon):
                         name = 'dethlok'+str(app.death_count)
                         app.death_count += 1
                         app.dethloks[name] = tk.IntVar(0)
-                        app.kill(id, name)
+                        root.after(666, lambda id = id, name = name : app.kill(id, name))
                         root.wait_variable(app.dethloks[name])
                         self.death_loop(ids, ents_list)
                     else:
@@ -4891,7 +5134,7 @@ class Water_Elemental(Summon):
             name = 'dethlok'+str(app.death_count)
             app.death_count += 1
             app.dethloks[name] = tk.IntVar(0)
-            app.kill(id, name)
+            root.after(666, lambda id = id, name = name : app.kill(id, name))
             root.wait_variable(app.dethloks[name])
             self.finish_attack(ents_list)
         else:
@@ -5125,7 +5368,7 @@ class Earth_Mage(Summon):
                             name = 'dethlok'+str(app.death_count)
                             app.death_count += 1
                             app.dethloks[name] = tk.IntVar(0)
-                            app.kill(id, name)
+                            root.after(666, lambda id = id, name = name : app.kill(id, name))
                             root.wait_variable(app.dethloks[name])
                             root.after(time, lambda el = ents_list, ids = ids : earthquake_loop(el, ids))
                         else: # ENT NOT KILLED, INSERT PSI PUSH
@@ -5390,7 +5633,7 @@ class Earth_Elemental(Summon):
             name = 'dethlok'+str(app.death_count)
             app.death_count += 1
             app.dethloks[name] = tk.IntVar(0)
-            app.kill(id, name)
+            root.after(666, lambda id = id, name = name : app.kill(id, name))
             root.wait_variable(app.dethloks[name])
             self.finish_attack(ents_list)
         else:
@@ -5619,7 +5862,7 @@ class Fire_Mage(Summon):
                             name = 'dethlok'+str(app.death_count)
                             app.death_count += 1
                             app.dethloks[name] = tk.IntVar(0)
-                            app.kill(id, name)
+                            root.after(666, lambda id = id, name = name : app.kill(id, name))
                             root.wait_variable(app.dethloks[name])
                             root.after(time, lambda ents = ents : firewall_loop(ents))
                         else:
@@ -5914,7 +6157,7 @@ class Sorceress(Summon):
             name = 'dethlok'+str(app.death_count)
             app.death_count += 1
             app.dethloks[name] = tk.IntVar(0)
-            app.kill(id, name)
+            root.after(666, lambda id = id, name = name : app.kill(id, name))
             root.wait_variable(app.dethloks[name])
             self.finish_attack(ents_list)
         else:
@@ -5968,7 +6211,6 @@ class Orc_Axeman(Summon):
             app.do_ai_loop(ents_list)
         
     #  ORC AXEMAN AI
-    # instead of calling bfs on each potential target, can i walk grid with bfs until any enemy is found?
     def do_ai(self, ents_list):
         if self.waiting == True: # PASSIVE / WAITING
             self.pass_priority(ents_list)
@@ -6016,7 +6258,6 @@ class Orc_Axeman(Summon):
                     for eloc in friendly_ent_locs:
                         egrid[eloc[0]][eloc[1]] = '' # EGRID NOW EMPTIED OF FRIENDLY ENTS
                     # NOW FIND PATH AND PASS TO MOVE
-#                     coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
                     for el in enemy_ent_locs:
                         goals = [c for c in app.coords if dist(c, el) == 1 and app.grid[c[0]][c[1]] == '']
                         path = bfs(self.loc[:], goals, egrid[:]) # BFS ON ALTERED GRID (FRIENDLY ENTS REMOVED)
@@ -6049,7 +6290,6 @@ class Orc_Axeman(Summon):
                         else:
                             root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
             
-    
     def do_attack(self, ents_list, id):
         if self.attack_used == True:
             self.cleanup_attack(ents_list, id)
@@ -6078,7 +6318,6 @@ class Orc_Axeman(Summon):
                 root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id))
         
         
-            
     def cleanup_attack(self, ents_list, id):
         self.init_normal_anims()
         try: 
@@ -6090,7 +6329,7 @@ class Orc_Axeman(Summon):
             name = 'dethlok'+str(app.death_count)
             app.death_count += 1
             app.dethloks[name] = tk.IntVar(0)
-            app.kill(id, name)
+            root.after(666, lambda id = id, name = name : app.kill(id, name))
             root.wait_variable(app.dethloks[name])
             self.finish_attack(ents_list)
         else:
@@ -6319,7 +6558,7 @@ class Fire_Elemental(Summon):
             name = 'dethlok'+str(app.death_count)
             app.death_count += 1
             app.dethloks[name] = tk.IntVar(0)
-            app.kill(id, name)
+            root.after(666, lambda id = id, name = name : app.kill(id, name))
             root.wait_variable(app.dethloks[name])
             self.finish_attack(ents_list)
         else:
@@ -6502,7 +6741,7 @@ class Barbarian(Summon):
             name = 'dethlok'+str(app.death_count)
             app.death_count += 1
             app.dethloks[name] = tk.IntVar(0)
-            app.kill(id, name)
+            root.after(666, lambda id = id, name = name : app.kill(id, name))
             root.wait_variable(app.dethloks[name])
             self.finish_attack(ents_list)
         else:
@@ -6842,7 +7081,7 @@ class Minotaur(Summon):
             name = 'dethlok'+str(app.death_count)
             app.death_count += 1
             app.dethloks[name] = tk.IntVar(0)
-            app.kill(id, name)
+            root.after(666, lambda id = id, name = name : app.kill(id, name))
             root.wait_variable(app.dethloks[name])
             self.finish_attack(ents_list)
         else:
@@ -6948,7 +7187,7 @@ class Warrior(Summon):
                     name = 'dethlok'+str(app.death_count)
                     app.death_count += 1
                     app.dethloks[name] = tk.IntVar(0)
-                    app.kill(redir_obj.number, name)
+                    root.after(999, lambda id = redir_obj.number, name = name : app.kill(id, name))
                     root.wait_variable(app.dethloks[name])
                     obj.spirit_effects.remove(guard_effect)
                     obj.effects_dict.remove(guard_effect)
@@ -7133,7 +7372,7 @@ class Warrior(Summon):
                 name = 'Dethlok'+str(app.death_count)
                 app.death_count += 1
                 app.dethloks[name] = tk.IntVar(0)
-                app.kill(id, name)
+                root.after(666, lambda id = id, name = name : app.kill(id, name))
                 app.wait_variable(app.dethloks[name])
         app.unbind_all()
         app.rebind_all()
@@ -9066,7 +9305,7 @@ class Witch(Entity):
         name = 'dethlok'+str(app.death_count)
         app.death_count += 1
         app.dethloks[name] = tk.IntVar(0)
-        app.kill(id, name)
+        root.after(666, lambda id = id, name = name : app.kill(id, name))
         root.wait_variable(app.dethloks[name])
         root.after(1666, lambda loc = loc : self.continue_pain(loc))
         
@@ -11280,10 +11519,14 @@ class App(tk.Frame):
             def airmage_death():
                 if 'Air_Mage' not in [v.name for k,v in app.ent_dict.items()]:
                     # kill air elementals (find by name not id)
-                    for e in list(app.ent_dict.keys()):
-                        if app.ent_dict[e].name == 'Air_Elemental':
-                            app.ent_dict[e].death_triggers = []
-                            app.kill(app.ent_dict[e].number)
+                    for id in list(app.ent_dict.keys()):
+                        if app.ent_dict[id].name == 'Air_Elemental':
+                            app.ent_dict[id].death_triggers = []
+                            name = 'Dethlok'+str(app.death_count)
+                            app.death_count += 1
+                            app.dethloks[name] = tk.IntVar(0)
+                            root.after(666, lambda id = id, name = name : app.kill(id, name))
+                            app.wait_variable(app.dethloks[name])
                     # spawn water mage
                     img = ImageTk.PhotoImage(Image.open('summon_imgs/Water_Mage.png'))
                     num = app.effects_counter
@@ -11301,10 +11544,14 @@ class App(tk.Frame):
                     # add sparkle2 powerup
                     self.map_triggers.append(inspect_astrolabe)
                     # kill earth elementals (find by name not id)
-                    for e in list(app.ent_dict.keys()):
-                        if app.ent_dict[e].name == 'Earth_Elemental':
-                            app.ent_dict[e].death_triggers = []
-                            app.kill(app.ent_dict[e].number)
+                    for id in list(app.ent_dict.keys()):
+                        if app.ent_dict[id].name == 'Earth_Elemental':
+                            app.ent_dict[id].death_triggers = []
+                            name = 'Dethlok'+str(app.death_count)
+                            app.death_count += 1
+                            app.dethloks[name] = tk.IntVar(0)
+                            root.after(666, lambda id = id, name = name : app.kill(id, name))
+                            app.wait_variable(app.dethloks[name])
                     # spawn air mage
                     img = ImageTk.PhotoImage(Image.open('summon_imgs/Air_Mage.png'))
                     num = app.effects_counter
@@ -11322,10 +11569,14 @@ class App(tk.Frame):
                     # add sparkle1 powerup
                     self.map_triggers.append(inspect_baphomet_statue)
                     # kill fire elementals (find by name not id)
-                    for e in list(app.ent_dict.keys()):
-                        if app.ent_dict[e].name == 'Fire_Elemental':
-                            app.ent_dict[e].death_triggers = []
-                            app.kill(app.ent_dict[e].number)
+                    for id in list(app.ent_dict.keys()):
+                        if app.ent_dict[id].name == 'Fire_Elemental':
+                            app.ent_dict[id].death_triggers = []
+                            name = 'Dethlok'+str(app.death_count)
+                            app.death_count += 1
+                            app.dethloks[name] = tk.IntVar(0)
+                            root.after(666, lambda id = id, name = name : app.kill(id, name))
+                            app.wait_variable(app.dethloks[name])
                     # spawn earth mage
                     img = ImageTk.PhotoImage(Image.open('summon_imgs/Earth_Mage.png'))
                     num = app.effects_counter
@@ -11778,7 +12029,7 @@ class App(tk.Frame):
                 name = 'dethlok'+str(app.death_count)
                 app.death_count += 1
                 app.dethloks[name] = tk.IntVar(0)
-                self.kill(k[0], name)
+                root.after(1666, lambda id = k[0], name = name : self.kill(id, name))
                 root.wait_variable(app.dethloks[name])
                 ents_list = ents_list[1:]
                 if ents_list != []:
@@ -11874,52 +12125,12 @@ class App(tk.Frame):
                         self.do_ai_loop(ents)
                 else:
                     self.get_focus(ent)
-                    if self.ent_dict[ent].name == 'Undead':
-                        self.ent_dict[ent].do_ai(ents)
-                    elif self.ent_dict[ent].name == 'Orc_Axeman':
-                        self.ent_dict[ent].do_ai(ents)
-                    elif self.ent_dict[ent].name == 'Tortured_Soul':
-                        self.ent_dict[ent].do_ai(ents)
-                    elif self.ent_dict[ent].name == 'Troll':
-                        self.ent_dict[ent].do_ai(ents)
-                    elif self.ent_dict[ent].name == 'Undead_Knight':
-                        self.ent_dict[ent].do_ai(ents)
-                    elif self.ent_dict[ent].name == 'Revenant':
-                        self.ent_dict[ent].do_ai(ents)
-                    elif self.ent_dict[ent].name == 'Ghost':
-                        self.ent_dict[ent].do_ai(ents)
-                    elif self.ent_dict[ent].name == 'Minotaur':
-                        self.ent_dict[ent].do_ai(ents)
-                    elif self.ent_dict[ent].name == 'White_Dragon':
-                        self.ent_dict[ent].do_ai(ents)
-                    elif self.ent_dict[ent].name == 'Warlock':
-                        self.ent_dict[ent].do_ai(ents)
-                    elif self.ent_dict[ent].name == 'Kensai':
+                    if self.ent_dict[ent].name == 'Kensai':
                         self.ent_dict[ent].times_attacked = 0
                         self.ent_dict[ent].attacked_ids = []
                         self.ent_dict[ent].do_ai(ents)
-                    elif self.ent_dict[ent].name == 'Barbarian':
+                    else:
                         self.ent_dict[ent].do_ai(ents)
-                    elif self.ent_dict[ent].name == 'Sorceress':
-                        self.ent_dict[ent].do_ai(ents)
-                    elif self.ent_dict[ent].name == 'Fire_Mage':
-                        self.ent_dict[ent].do_ai(ents)
-                    elif self.ent_dict[ent].name == 'Fire_Elemental':
-                        self.ent_dict[ent].do_ai(ents)
-                    elif self.ent_dict[ent].name == 'Earth_Mage':
-                        self.ent_dict[ent].do_ai(ents)
-                    elif self.ent_dict[ent].name == 'Earth_Elemental':
-                        self.ent_dict[ent].do_ai(ents)
-                    elif self.ent_dict[ent].name == 'Air_Mage':
-                        self.ent_dict[ent].do_ai(ents)
-                    elif self.ent_dict[ent].name == 'Air_Elemental':
-                        self.ent_dict[ent].do_ai(ents)
-                    elif self.ent_dict[ent].name == 'Water_Mage':
-                        self.ent_dict[ent].do_ai(ents)
-                    elif self.ent_dict[ent].name == 'Water_Elemental':
-                        self.ent_dict[ent].do_ai(ents)
-        
-        
         
     def end_turn(self):
         self.unbind_all()
@@ -11983,7 +12194,7 @@ class App(tk.Frame):
                 name = 'dethlok'+str(app.death_count)
                 app.death_count += 1
                 app.dethloks[name] = tk.IntVar(0)
-                self.kill(k[0], name)
+                root.after(1666, lambda id = k[0], name = name : self.kill(id, name))
                 root.wait_variable(app.dethloks[name])
                 ents_list = ents_list[1:]
                 if ents_list != []:
@@ -12584,7 +12795,6 @@ class App(tk.Frame):
         partial()
         
     def kill(self, id, lockname):
-        app.unbind_all()
         def trigger_loop(triggers):
             if triggers == []:
                 self.finish_kill(id, lockname)
@@ -12594,10 +12804,7 @@ class App(tk.Frame):
                 t()
                 root.after(2333, lambda ts = triggers : trigger_loop(ts))
         trigger_loop(app.ent_dict[id].death_triggers)
-#         if app.ent_dict[id].death_trigger() == None:
-#             return_val = None
-#         else:
-#             return_val = 'Not None'
+
     def finish_kill(self, id, lockname):
         # DEBUG handle if killing witch
         # If witch is dead, show popup with victory/defeat
@@ -12607,8 +12814,8 @@ class App(tk.Frame):
             app.ent_dict[id].large_undo()
         self.grid[self.ent_dict[id].loc[0]][self.ent_dict[id].loc[1]] = ''
         del self.ent_dict[id]
-        if app.num_players == 2 or app.active_player == 'p1':
-            app.rebind_all()
+#         if app.num_players == 2 or app.active_player == 'p1':
+#             app.rebind_all()
         app.dethloks[lockname].set(1)
 
 
