@@ -2,6 +2,8 @@
 
 # DO DROP SHADOW
 
+# item system!
+
 # dragon fight gets tedious if you lure him with attack formation where he can only hit one at a time, make him move more and summon minor enemies, do different attacks, dragon (or sub-enemies) need way of moving your stuff around so the dragon can maybe hit multiple with iceblast
 # currently, if prevent pre-waking of 2nd orc group, and have something attack a little after dragon is potentially lured out...
 
@@ -117,7 +119,7 @@ import tkinter as tk
 from os import walk
 from PIL import ImageTk,Image
 from random import choice, randrange
-from functools import partial
+from functools import partial, reduce
 # from pickle import dump, load
 from copy import deepcopy
 from math import ceil
@@ -148,6 +150,7 @@ def bfs(start, goal, grid):
             if s not in visited:
                 q.append(path + [s])
                 visited.append(s)
+    return None
 
 def to_hit(a1, a2):
     base = 50
@@ -699,12 +702,12 @@ class Summon(Entity):
         app.grid[end_sqr[0]][end_sqr[1]] = self.number
         # MAKE ATTACK ON ANY ENEMY ENT WITHIN RANGE
         atk_sqrs = self.legal_attacks()
-        ents_near = [e for e in atk_sqrs if app.grid[e[0]][e[1]] != '' and app.grid[e[0]][e[1]] != 'block']
-        enemy_ents = [e for e in ents_near if app.ent_dict[app.grid[e[0]][e[1]]].owner == 'p1']
+#         ents_near = [e for e in atk_sqrs if app.grid[e[0]][e[1]] != '' and app.grid[e[0]][e[1]] != 'block']
+#         enemy_ents = [e for e in ents_near if app.ent_dict[app.grid[e[0]][e[1]]].owner == 'p1']
         if isinstance(self, Kensai):
             enemy_ents = [e for e in enemy_ents if app.grid[e[0]][e[1]] not in self.attacked_ids]
-        if enemy_ents != []:
-            any = enemy_ents[0]
+        if atk_sqrs != []:
+            any = atk_sqrs[0]
             id = app.grid[any[0]][any[1]]
             root.after(666, lambda t = id : app.get_focus(t))
             root.after(1333, lambda el = ents_list, t = id : self.do_attack(el, t)) # EXIT THROUGH ATTACK
@@ -2188,10 +2191,12 @@ class White_Dragon(Summon):
         
     def legal_attacks(self):
         sqrs = []
-        for coord in app.coords:
-            if dist(coord, self.loc) <= 3:
-                if app.grid[coord[0]][coord[1]] != '' and app.grid[coord[0]][coord[1]] != 'block':
-                    sqrs.append(coord)
+        for c in app.coords:
+            if dist(c, self.loc) <= 3:
+                id = app.grid[c[0]][c[1]]
+                if id != '' and id != 'block':
+                    if app.ent_dict[id].owner != self.owner:
+                        sqrs.append(c)
         return sqrs
         
     def legal_moves(self):
@@ -2367,10 +2372,12 @@ class Tortured_Soul(Summon):
         
     def legal_attacks(self):
         sqrs = []
-        for coord in app.coords:
-            if dist(coord, self.loc) <= 3:
-                if app.grid[coord[0]][coord[1]] != '' and app.grid[coord[0]][coord[1]] != 'block':
-                    sqrs.append(coord)
+        for c in app.coords:
+            if dist(c, self.loc) <= 3:
+                id = app.grid[c[0]][c[1]]
+                if id != '' and id != 'block':
+                    if app.ent_dict[id].owner != self.owner:
+                        sqrs.append(c)
         return sqrs
         
     def legal_moves(self):
@@ -2491,10 +2498,12 @@ class Ghost(Summon):
         
     def legal_attacks(self):
         sqrs = []
-        for coord in app.coords:
-            if dist(coord, self.loc) <= 3:
-                if app.grid[coord[0]][coord[1]] != '' and app.grid[coord[0]][coord[1]] != 'block':
-                    sqrs.append(coord)
+        for c in app.coords:
+            if dist(c, self.loc) <= 3:
+                id = app.grid[c[0]][c[1]]
+                if id != '' and id != 'block':
+                    if app.ent_dict[id].owner != self.owner:
+                        sqrs.append(c)
         return sqrs
         
         
@@ -2738,10 +2747,12 @@ class Revenant(Summon):
         
     def legal_attacks(self):
         sqrs = []
-        for coord in app.coords:
-            if dist(coord, self.loc) <= 2:
-                if app.grid[coord[0]][coord[1]] != '' and app.grid[coord[0]][coord[1]] != 'block':
-                    sqrs.append(coord)
+        for c in app.coords:
+            if dist(c, self.loc) <= 2:
+                id = app.grid[c[0]][c[1]]
+                if id != '' and id != 'block':
+                    if app.ent_dict[id].owner != self.owner:
+                        sqrs.append(c)
         return sqrs
         
     def legal_moves(self):
@@ -2957,10 +2968,12 @@ class Kensai(Summon):
         
     def legal_attacks(self):
         sqrs = []
-        for coord in app.coords:
-            if dist(coord, self.loc) == 1:
-                if app.grid[coord[0]][coord[1]] != '' and app.grid[coord[0]][coord[1]] != 'block':
-                    sqrs.append(coord)
+        for c in app.coords:
+            if dist(c, self.loc) == 1:
+                id = app.grid[c[0]][c[1]]
+                if id != '' and id != 'block':
+                    if app.ent_dict[id].owner != self.owner:
+                        sqrs.append(c)
         return sqrs
         
     def legal_moves(self):
@@ -3177,8 +3190,9 @@ class Kobold_Shaman(Summon):
         sqrs = []
         for c in app.coords:
             if dist(c, self.loc) <= 3:
-                if app.grid[c[0]][c[1]] != '' and app.grid[c[0]][c[1]] != 'block':
-                    if app.ent_dict[app.grid[c[0]][c[1]]].owner != self.owner:
+                id = app.grid[c[0]][c[1]]
+                if id != '' and id != 'block':
+                    if app.ent_dict[id].owner != self.owner:
                         sqrs.append(c)
         return sqrs
         
@@ -3198,7 +3212,7 @@ class Kobold_Shaman(Summon):
             mvlist = f(mvlist)
         return mvlist
         
-        
+
 class Undead(Summon):
     def __init__(self, name, img, loc, owner, number, waiting = False):
         self.actions = {'attack':self.do_attack}
@@ -3213,7 +3227,6 @@ class Undead(Summon):
         self.move_type = 'normal'
         super().__init__(name, img, loc, owner, number)
         
-    
     def pass_priority(self, ents_list):
         ents_list = ents_list[1:]
         if ents_list == []:
@@ -3221,109 +3234,71 @@ class Undead(Summon):
         else:
             app.do_ai_loop(ents_list)
         
-    #  UNDEAD AI
-    # instead of calling bfs on each potential target, can i walk grid with bfs until any enemy is found?
     def do_ai(self, ents_list):
-        if self.waiting == True: # GIVEN PRIORITY OVER OTHER ENTS, ONLY TRY TO ATTACK THIS ENT
+        if self.waiting == True:
             self.pass_priority(ents_list)
-        else: # NO TARGET PRIORITY, ATTEMPT ATTACK FROM STARTLOC
-            atk_sqrs = self.legal_attacks()
-            atk_sqrs = [x for x in atk_sqrs if app.ent_dict[app.grid[x[0]][x[1]]].owner == 'p1']
-            if atk_sqrs != []:
-                any = atk_sqrs[0]
-                id = app.grid[any[0]][any[1]]
-                root.after(666, lambda id = id : app.get_focus(id))
-                root.after(1333, lambda el = ents_list, id = id : self.do_attack(el, id)) # ATTACK
-            else: # CANNOT ATTACK FROM START LOC, GET TARGET AND MOVE TOWARDS
-                enemy_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p1']
-                paths = []
-#                 coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-                for el in enemy_ent_locs:
-                # FIND PATH TO SQR WITHIN RANGE OF THIS ENT
-                    goals = [c for c in app.coords if dist(c, el) == 1 and app.grid[c[0]][c[1]] == '']
-                    path = bfs(self.loc[:], goals, app.grid[:])
-                    if path:
-                        paths.append(path)
-                smallpaths = [y for y in paths if len(y) == min(len(y) for y in paths)] # THE SHORTEST PATHS AMONG PATHS
-                if smallpaths != []: # IF ANY PATHS EXIST AT ALL
-                    apath = smallpaths[0]
-                    # FIND FURTHEST SQR ALONG PATH THAT CAN BE MOVED TO
-                    moves = self.legal_moves()
-                    endloc = None
-                    for sqr in apath[::-1]: # START WITH SQRS CLOSEST TO TARGET
-                        if sqr in moves:
-                            endloc = sqr[:] # AMONG SQRS POSSIBLE TO MOVE TO, THIS IS CLOSEST TO GOAL
-                            break
-                    if endloc != None:
-                        root.after(666, lambda sqr = endloc[:] : app.focus_square(sqr))
-                        root.after(1333, lambda el = ents_list, endloc = endloc : self.ai_move(el, endloc))
-                    else:
-                        ents_list = ents_list[1:]
-                        if ents_list == []:
-                            root.after(666, app.end_turn)
-                        else:
-                            root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
-                else: # NO PATHS TO TARGET, MAKE BEST EFFORT MINIMIZE DIST MOVE
-                    # change to 'remove friendly ents', find path, move along path as far as possible
-                    egrid = deepcopy(app.grid)
-                    friendly_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p2']
-                    for eloc in friendly_ent_locs:
-                        egrid[eloc[0]][eloc[1]] = '' # EGRID NOW EMPTIED OF FRIENDLY ENTS
-                    # NOW FIND PATH AND PASS TO MOVE
-#                     coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-                    for el in enemy_ent_locs:
-                        goals = [c for c in app.coords if dist(c, el) == 1 and app.grid[c[0]][c[1]] == '']
-                        path = bfs(self.loc[:], goals, egrid[:]) # BFS ON ALTERED GRID (FRIENDLY ENTS REMOVED)
-                        if path:
-                            paths.append(path)
-                    smallpaths = [y for y in paths if len(y) == min(len(y) for y in paths)]
-                    if smallpaths != []: # MOVE ALONG PATH AS FAR AS POSSIBLE, ATTEMPT ATTACK
-                        apath = smallpaths[0]
-                        # FIND FURTHEST SQR ALONG PATH THAT CAN BE MOVED TO
-                        moves = self.legal_moves()
-                        endloc = None
-                        for sqr in apath[::-1]: # START WITH SQRS CLOSEST TO TARGET
-                            if sqr in moves:
-                                endloc = sqr[:] # AMONG SQRS POSSIBLE TO MOVE TO, THIS IS CLOSEST TO GOAL
-                                break
-                        if endloc != None:
-                            # here need to 'trim path' to prevent moving to square 'through' friendly ents
-                            root.after(666, lambda sqr = endloc[:] : app.focus_square(sqr))
-                            root.after(1333, lambda el = ents_list, endloc = endloc : self.ai_move(el, endloc))
-                        else:
-                            ents_list = ents_list[1:]
-                            if ents_list == []:
-                                root.after(666, app.end_turn)
-                            else:
-                                root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
-                    else:
-                        ents_list = ents_list[1:]
-                        if ents_list == []:
-                            root.after(666, app.end_turn)
-                        else:
-                            root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
+        else:
+            self.continue_ai(ents_list)
             
+    def continue_ai(self, ents_list):
+        atk_sqrs = self.legal_attacks()
+        if atk_sqrs != []: # CAN ATTACK BEFORE MOVING
+            any = atk_sqrs[0]
+            id = app.grid[any[0]][any[1]]
+            root.after(666, lambda id = id : app.get_focus(id))
+            root.after(1333, lambda el = ents_list, id = id : self.do_attack(el, id)) # ATTACK
+        else: # FIND PATH
+            enemy_locs = [v.loc for k,v in app.ent_dict.items() if v.owner != self.owner]
+            friendly_locs = [v.loc for k,v in app.ent_dict.items() if v.owner == self.owner]
+            egrid = deepcopy(app.grid)
+            for s in friendly_locs:
+                egrid[s[0]][s[1]] = '' # EGRID NOW EMPTIED OF FRIENDLY ENTS
+            # some redundant goals below but currently doesnt matter for bfs()
+            goals = [s for s in app.coords for el in enemy_locs if dist(s, el) == 1 and app.grid[s[0]][s[1]] == '']
+            egoals = [s for s in app.coords for el in enemy_locs if dist(s, el) == 1 and egrid[s[0]][s[1]] == '']
+            path = bfs(self.loc[:], goals, app.grid[:])# there may not be a path
+            epath = bfs(self.loc[:], egoals, egrid[:])# always an epath unls efx make 'block's in future
+            # if path is None or is 'much longer' than epath, use epath
+            if path == None or (len(path) > len(epath)+5):
+                self.move_along_path(epath, ents_list)
+            else:
+                self.move_along_path(path, ents_list)
+                
+    # takes a list of coords, passes an estimate of the 'best' destination coord to self.ai_move
+    def move_along_path(self, path, ents_list):
+        # what if no legal_moves
+        moves_tups = [tuple(s) for s in self.legal_moves()]
+        path_tups = [tuple(s) for s in path]
+        intersect = list(set(moves_tups) & set(path_tups))
+        if intersect == []:
+            ents_list = ents_list[1:]
+            if ents_list == []:
+                root.after(666, app.end_turn)
+            else:
+                root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
+        else:
+            move = list(reduce(lambda a,b : a if dist(self.loc, a) > dist(self.loc, b) else b, intersect))
+            root.after(666, lambda sqr = move : app.focus_square(sqr))
+            root.after(1333, lambda el = ents_list, sqr = move : self.ai_move(el, sqr))
             
-    
     def do_attack(self, ents_list, id):
         if self.attack_used == True:
             self.cleanup_attack(ents_list)
         else:
             app.get_focus(id)
             self.init_attack_anims()
-            effect1 = mixer.Sound('Sound_Effects/Undead_attack.ogg')
+            effect1 = mixer.Sound('Sound_Effects/undead_attack.ogg')
             sound_effects.play(effect1, 0)
             my_agl = self.get_attr('agl')
             target_agl = app.ent_dict[id].get_attr('agl')
-            if to_hit(my_agl, target_agl) == True:
-                # HIT, SHOW VIS, DO DAMAGE, EXIT
+            if to_hit(my_agl, target_agl) == True:# HIT
                 my_str = self.get_attr('str')
-                target_end = app.ent_dict[id].get_attr('end')
-                d = damage(my_str, target_end)
+                tar_end = app.ent_dict[id].get_attr('end')
+                d = damage(my_str, tar_end)
                 app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
                 app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
                 app.ent_dict[id].set_attr('spirit', -d)
-                if app.ent_dict[id].spirit <= 0:
+                if app.ent_dict[id].spirit <= 0:# HIT, KILL
                     app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+94, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
                     app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+95, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
                     name = 'dethlok'+str(app.death_count)
@@ -3333,10 +3308,9 @@ class Undead(Summon):
                     root.after(2666, lambda id = id, name = name : app.kill(id, name))
                     root.wait_variable(app.dethloks[name])
                     self.finish_attack(ents_list)
-                else:
+                else:# HIT, NO KILL
                     root.after(2666, lambda e = ents_list : self.finish_attack(e))
-            else:
-                # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
+            else:# MISS
                 app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Miss!', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
                 app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Miss!', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
                 root.after(2666, lambda e = ents_list : self.finish_attack(e))
@@ -3358,10 +3332,12 @@ class Undead(Summon):
         
     def legal_attacks(self):
         sqrs = []
-        for coord in app.coords:
-            if dist(coord, self.loc) == 1:
-                if app.grid[coord[0]][coord[1]] != '' and app.grid[coord[0]][coord[1]] != 'block':
-                    sqrs.append(coord)
+        for c in app.coords:
+            if dist(c, self.loc) == 1:
+                id = app.grid[c[0]][c[1]]
+                if id != '' and id != 'block':
+                    if app.ent_dict[id].owner != self.owner:
+                        sqrs.append(c)
         return sqrs
         
     def legal_moves(self):
@@ -3372,13 +3348,196 @@ class Undead(Summon):
                 return
             adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
             for s in adj:
-                mvlist.append(s)
+                if s not in mvlist:
+                    mvlist.append(s)
                 findall(s, start+1, distance)
-        findall(loc, 1, 3)
-        mvlist = [list(x) for x in set(tuple(x) for x in mvlist)]
+        findall(loc, 1, 4)
         for f in self.move_effects:
             mvlist = f(mvlist)
         return mvlist
+
+# class Undead(Summon):
+#     def __init__(self, name, img, loc, owner, number, waiting = False):
+#         self.actions = {'attack':self.do_attack}
+#         self.attack_used = False
+#         self.str = 5
+#         self.agl = 3
+#         self.end = 4
+#         self.dodge = 2
+#         self.psyche = 2
+#         self.spirit = 9
+#         self.waiting = waiting
+#         self.move_type = 'normal'
+#         super().__init__(name, img, loc, owner, number)
+#         
+#     
+#     def pass_priority(self, ents_list):
+#         ents_list = ents_list[1:]
+#         if ents_list == []:
+#             app.end_turn()
+#         else:
+#             app.do_ai_loop(ents_list)
+#         
+#     #  UNDEAD AI
+#     # instead of calling bfs on each potential target, can i walk grid with bfs until any enemy is found?
+#     def do_ai(self, ents_list):
+#         if self.waiting == True: # GIVEN PRIORITY OVER OTHER ENTS, ONLY TRY TO ATTACK THIS ENT
+#             self.pass_priority(ents_list)
+#         else: # NO TARGET PRIORITY, ATTEMPT ATTACK FROM STARTLOC
+#             atk_sqrs = self.legal_attacks()
+#             atk_sqrs = [x for x in atk_sqrs if app.ent_dict[app.grid[x[0]][x[1]]].owner == 'p1']
+#             if atk_sqrs != []:
+#                 any = atk_sqrs[0]
+#                 id = app.grid[any[0]][any[1]]
+#                 root.after(666, lambda id = id : app.get_focus(id))
+#                 root.after(1333, lambda el = ents_list, id = id : self.do_attack(el, id)) # ATTACK
+#             else: # CANNOT ATTACK FROM START LOC, GET TARGET AND MOVE TOWARDS
+#                 enemy_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p1']
+#                 paths = []
+# #                 coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+#                 for el in enemy_ent_locs:
+#                 # FIND PATH TO SQR WITHIN RANGE OF THIS ENT
+#                     goals = [c for c in app.coords if dist(c, el) == 1 and app.grid[c[0]][c[1]] == '']
+#                     path = bfs(self.loc[:], goals, app.grid[:])
+#                     if path:
+#                         paths.append(path)
+#                 smallpaths = [y for y in paths if len(y) == min(len(y) for y in paths)] # THE SHORTEST PATHS AMONG PATHS
+#                 if smallpaths != []: # IF ANY PATHS EXIST AT ALL
+#                     apath = smallpaths[0]
+#                     # FIND FURTHEST SQR ALONG PATH THAT CAN BE MOVED TO
+#                     moves = self.legal_moves()
+#                     endloc = None
+#                     for sqr in apath[::-1]: # START WITH SQRS CLOSEST TO TARGET
+#                         if sqr in moves:
+#                             endloc = sqr[:] # AMONG SQRS POSSIBLE TO MOVE TO, THIS IS CLOSEST TO GOAL
+#                             break
+#                     if endloc != None:
+#                         root.after(666, lambda sqr = endloc[:] : app.focus_square(sqr))
+#                         root.after(1333, lambda el = ents_list, endloc = endloc : self.ai_move(el, endloc))
+#                     else:
+#                         ents_list = ents_list[1:]
+#                         if ents_list == []:
+#                             root.after(666, app.end_turn)
+#                         else:
+#                             root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
+#                 else: # NO PATHS TO TARGET, MAKE BEST EFFORT MINIMIZE DIST MOVE
+#                     # change to 'remove friendly ents', find path, move along path as far as possible
+#                     egrid = deepcopy(app.grid)
+#                     friendly_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p2']
+#                     for eloc in friendly_ent_locs:
+#                         egrid[eloc[0]][eloc[1]] = '' # EGRID NOW EMPTIED OF FRIENDLY ENTS
+#                     # NOW FIND PATH AND PASS TO MOVE
+# #                     coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
+#                     for el in enemy_ent_locs:
+#                         goals = [c for c in app.coords if dist(c, el) == 1 and app.grid[c[0]][c[1]] == '']
+#                         path = bfs(self.loc[:], goals, egrid[:]) # BFS ON ALTERED GRID (FRIENDLY ENTS REMOVED)
+#                         if path:
+#                             paths.append(path)
+#                     smallpaths = [y for y in paths if len(y) == min(len(y) for y in paths)]
+#                     if smallpaths != []: # MOVE ALONG PATH AS FAR AS POSSIBLE, ATTEMPT ATTACK
+#                         apath = smallpaths[0]
+#                         # FIND FURTHEST SQR ALONG PATH THAT CAN BE MOVED TO
+#                         moves = self.legal_moves()
+#                         endloc = None
+#                         for sqr in apath[::-1]: # START WITH SQRS CLOSEST TO TARGET
+#                             if sqr in moves:
+#                                 endloc = sqr[:] # AMONG SQRS POSSIBLE TO MOVE TO, THIS IS CLOSEST TO GOAL
+#                                 break
+#                         if endloc != None:
+#                             # here need to 'trim path' to prevent moving to square 'through' friendly ents
+#                             root.after(666, lambda sqr = endloc[:] : app.focus_square(sqr))
+#                             root.after(1333, lambda el = ents_list, endloc = endloc : self.ai_move(el, endloc))
+#                         else:
+#                             ents_list = ents_list[1:]
+#                             if ents_list == []:
+#                                 root.after(666, app.end_turn)
+#                             else:
+#                                 root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
+#                     else:
+#                         ents_list = ents_list[1:]
+#                         if ents_list == []:
+#                             root.after(666, app.end_turn)
+#                         else:
+#                             root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
+#             
+#             
+#     
+#     def do_attack(self, ents_list, id):
+#         if self.attack_used == True:
+#             self.cleanup_attack(ents_list)
+#         else:
+#             app.get_focus(id)
+#             self.init_attack_anims()
+#             effect1 = mixer.Sound('Sound_Effects/Undead_attack.ogg')
+#             sound_effects.play(effect1, 0)
+#             my_agl = self.get_attr('agl')
+#             target_agl = app.ent_dict[id].get_attr('agl')
+#             if to_hit(my_agl, target_agl) == True:
+#                 # HIT, SHOW VIS, DO DAMAGE, EXIT
+#                 my_str = self.get_attr('str')
+#                 target_end = app.ent_dict[id].get_attr('end')
+#                 d = damage(my_str, target_end)
+#                 app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+#                 app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
+#                 app.ent_dict[id].set_attr('spirit', -d)
+#                 if app.ent_dict[id].spirit <= 0:
+#                     app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+94, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+#                     app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+95, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
+#                     name = 'dethlok'+str(app.death_count)
+#                     app.death_count += 1
+#                     app.dethloks[name] = tk.IntVar(0)
+#                     root.after(2666, self.cleanup_attack)
+#                     root.after(2666, lambda id = id, name = name : app.kill(id, name))
+#                     root.wait_variable(app.dethloks[name])
+#                     self.finish_attack(ents_list)
+#                 else:
+#                     root.after(2666, lambda e = ents_list : self.finish_attack(e))
+#             else:
+#                 # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
+#                 app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Miss!', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+#                 app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Miss!', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
+#                 root.after(2666, lambda e = ents_list : self.finish_attack(e))
+#         
+#     def cleanup_attack(self):
+#         self.init_normal_anims()
+#         try: app.canvas.delete('text')
+#         except: pass
+#             
+#     def finish_attack(self, ents_list):
+#         self.init_normal_anims()
+#         try: app.canvas.delete('text')
+#         except: pass
+#         el = ents_list[1:]
+#         if ents_list == []:
+#             app.end_turn()
+#         else:
+#             app.do_ai_loop(el)
+#         
+#     def legal_attacks(self):
+#         sqrs = []
+#         for c in app.coords:
+#             if dist(c, self.loc) == 1:
+#                 id = app.grid[c[0]][c[1]]
+#                 if id != '' and id != 'block':
+#                     if app.ent_dict[id].owner != self.owner:
+#                         sqrs.append(c)
+#         return sqrs
+#         
+#     def legal_moves(self):
+#         loc = self.loc[:]
+#         mvlist = []
+#         def findall(loc, start, distance):
+#             if start > distance:
+#                 return
+#             adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
+#             for s in adj:
+#                 mvlist.append(s)
+#                 findall(s, start+1, distance)
+#         findall(loc, 1, 3)
+#         mvlist = [list(x) for x in set(tuple(x) for x in mvlist)]
+#         for f in self.move_effects:
+#             mvlist = f(mvlist)
+#         return mvlist
         
 class Undead_Knight(Summon):
     def __init__(self, name, img, loc, owner, number, waiting = False):
@@ -3541,8 +3700,10 @@ class Undead_Knight(Summon):
         sqrs = []
         for c in app.coords:
             if dist(c, self.loc) == 1:
-                if app.grid[c[0]][c[1]] != '' and app.grid[c[0]][c[1]] != 'block':
-                    sqrs.append(c)
+                id = app.grid[c[0]][c[1]]
+                if id != '' and id != 'block':
+                    if app.ent_dict[id].owner != self.owner:
+                        sqrs.append(c)
         return sqrs
         
     def legal_moves(self):
@@ -3720,8 +3881,10 @@ class Troll(Summon):
         sqrs = []
         for c in app.coords:
             if dist(c, self.loc) == 1:
-                if app.grid[c[0]][c[1]] != '' and app.grid[c[0]][c[1]] != 'block':
-                    sqrs.append(c)
+                id = app.grid[c[0]][c[1]]
+                if id != '' and id != 'block':
+                    if app.ent_dict[id].owner != self.owner:
+                        sqrs.append(c)
         return sqrs
         
     def legal_moves(self):
@@ -3979,10 +4142,12 @@ class Warlock(Summon):
         
     def legal_attacks(self):
         sqrs = []
-        for coord in app.coords:
-            if dist(coord, self.loc) <= 3:
-                if app.grid[coord[0]][coord[1]] != '' and app.grid[coord[0]][coord[1]] != 'block':
-                    sqrs.append(coord)
+        for c in app.coords:
+            if dist(c, self.loc) <= 3:
+                id = app.grid[c[0]][c[1]]
+                if id != '' and id != 'block':
+                    if app.ent_dict[id].owner != self.owner:
+                        sqrs.append(c)
         return sqrs
         
     def legal_moves(self):
@@ -4497,8 +4662,9 @@ class Air_Elemental(Summon):
         sqrs = []
         for c in app.coords:
             if dist(c, self.loc) <= 4:
-                if app.grid[c[0]][c[1]] != '' and app.grid[c[0]][c[1]] != 'block':
-                    if app.ent_dict[app.grid[c[0]][c[1]]].owner != self.owner:
+                id = app.grid[c[0]][c[1]]
+                if id != '' and id != 'block':
+                    if app.ent_dict[id].owner != self.owner:
                         sqrs.append(c)
         return sqrs
         
@@ -5085,10 +5251,12 @@ class Water_Elemental(Summon):
         
     def legal_attacks(self):
         sqrs = []
-        for coord in app.coords:
-            if dist(coord, self.loc) == 1:
-                if app.grid[coord[0]][coord[1]] != '' and app.grid[coord[0]][coord[1]] != 'block':
-                    sqrs.append(coord)
+        for c in app.coords:
+            if dist(c, self.loc) == 1:
+                id = app.grid[c[0]][c[1]]
+                if id != '' and id != 'block':
+                    if app.ent_dict[id].owner != self.owner:
+                        sqrs.append(c)
         return sqrs
         
     def legal_moves(self):
@@ -5587,8 +5755,10 @@ class Earth_Elemental(Summon):
         sqrs = []
         for c in app.coords:
             if dist(c, self.loc) == 1:
-                if app.grid[c[0]][c[1]] != '' and app.grid[c[0]][c[1]] != 'block':
-                    sqrs.append(c)
+                id = app.grid[c[0]][c[1]]
+                if id != '' and id != 'block':
+                    if app.ent_dict[id].owner != self.owner:
+                        sqrs.append(c)
         return sqrs
         
     def legal_moves(self):
@@ -6108,10 +6278,12 @@ class Sorceress(Summon):
         
     def legal_attacks(self):
         sqrs = []
-        for coord in app.coords:
-            if dist(coord, self.loc) <= 3:
-                if app.grid[coord[0]][coord[1]] != '' and app.grid[coord[0]][coord[1]] != 'block':
-                    sqrs.append(coord)
+        for c in app.coords:
+            if dist(c, self.loc) <= 3:
+                id = app.grid[c[0]][c[1]]
+                if id != '' and id != 'block':
+                    if app.ent_dict[id].owner != self.owner:
+                        sqrs.append(c)
         return sqrs
         
     def legal_moves(self):
@@ -6282,8 +6454,10 @@ class Orc_Axeman(Summon):
         sqrs = []
         for c in app.coords:
             if dist(c, self.loc) == 1:
-                if app.grid[c[0]][c[1]] != '' and app.grid[c[0]][c[1]] != 'block':
-                    sqrs.append(c)
+                id = app.grid[c[0]][c[1]]
+                if id != '' and id != 'block':
+                    if app.ent_dict[id].owner != self.owner:
+                        sqrs.append(c)
         return sqrs
         
     def legal_moves(self):
@@ -6511,8 +6685,9 @@ class Fire_Elemental(Summon):
         sqrs = []
         for c in app.coords:
             if dist(c, self.loc) <= 3:
-                if app.grid[c[0]][c[1]] != '' and app.grid[c[0]][c[1]] != 'block':
-                    if app.ent_dict[app.grid[c[0]][c[1]]].owner != self.owner:
+                id = app.grid[c[0]][c[1]]
+                if id != '' and id != 'block':
+                    if app.ent_dict[id].owner != self.owner:
                         sqrs.append(c)
         return sqrs
         
@@ -6694,8 +6869,10 @@ class Barbarian(Summon):
         sqrs = []
         for c in app.coords:
             if dist(c, self.loc) == 1:
-                if app.grid[c[0]][c[1]] != '' and app.grid[c[0]][c[1]] != 'block':
-                    sqrs.append(c)
+                id = app.grid[c[0]][c[1]]
+                if id != '' and id != 'block':
+                    if app.ent_dict[id].owner != self.owner:
+                        sqrs.append(c)
         return sqrs
         
     def legal_moves(self):
@@ -7032,10 +7209,12 @@ class Minotaur(Summon):
         
     def legal_attacks(self):
         sqrs = []
-        for coord in app.coords:
-            if dist(coord, self.loc) == 1:
-                if app.grid[coord[0]][coord[1]] != '' and app.grid[coord[0]][coord[1]] != 'block':
-                    sqrs.append(coord)
+        for c in app.coords:
+            if dist(c, self.loc) == 1:
+                id = app.grid[c[0]][c[1]]
+                if id != '' and id != 'block':
+                    if app.ent_dict[id].owner != self.owner:
+                        sqrs.append(c)
         return sqrs
         
     def legal_moves(self):
