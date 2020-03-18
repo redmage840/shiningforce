@@ -688,10 +688,12 @@ class Summon(Entity):
         sound_effects.stop()
         selected = []
         self.loc = end_sqr[:]
-        self.origin = end_sqr[:]
         app.grid[start_sqr[0]][start_sqr[1]] = ''
         app.grid[end_sqr[0]][end_sqr[1]] = self.number
         # MAKE ATTACK ON ANY ENEMY ENT WITHIN RANGE
+        if isinstance(self, Water_Elemental):
+            self.continue_ai(ents_list)
+            return
         atk_sqrs = self.legal_attacks()
         if isinstance(self, Kensai):
             atk_sqrs = [e for e in atk_sqrs if app.grid[e[0]][e[1]] not in self.attacked_ids]
@@ -2837,7 +2839,7 @@ class Kobold_Shaman(Summon):
                     app.canvas.create_image(startx, starty, image = app.vis_dict['Fire_Elem_Ball'].img, tags = 'Fire_Elem_Ball')
                     app.canvas.tag_raise('Fire_Elem_Ball')
                 elif startx < endx:
-                    startx += ystep
+                    startx += xstep
                     app.canvas.delete('Fire_Elem_Ball')
                     app.canvas.create_image(startx, starty, image = app.vis_dict['Fire_Elem_Ball'].img, tags = 'Fire_Elem_Ball')
                     app.canvas.tag_raise('Fire_Elem_Ball')
@@ -3898,6 +3900,7 @@ class Air_Mage(Summon):
         return mvlist
 
 # need to: update pathing, keep behavior: seek edge of own range
+# if can attack from starting position, then move to edge of range if possible
 class Air_Elemental(Summon):
     def __init__(self, name, img, loc, owner, number, waiting = False):
         self.actions = {'attack':self.do_attack}
@@ -3913,27 +3916,21 @@ class Air_Elemental(Summon):
         super().__init__(name, img, loc, owner, number)
         
     def pass_priority(self, ents_list):
-        ents_list = ents_list[1:]
-        if ents_list == []:
-            app.end_turn()
-        else:
-            app.do_ai_loop(ents_list)
+        self.ai_end_turn(ents_list)
         
     def do_ai(self, ents_list):
         if self.waiting == True: # PASSIVE / WAITING
             self.pass_priority(ents_list)
         else: # NO TARGET PRIORITY, ATTEMPT ATTACK FROM STARTLOC
             atk_sqrs = self.legal_attacks()
-            atk_sqrs = [x for x in atk_sqrs if app.ent_dict[app.grid[x[0]][x[1]]].owner == 'p1']
             if atk_sqrs != []:
                 any = atk_sqrs[0]
                 id = app.grid[any[0]][any[1]]
                 root.after(666, lambda id = id : app.get_focus(id))
                 root.after(1333, lambda el = ents_list, id = id : self.do_attack(el, id)) # ATTACK
             else: # CANNOT ATTACK FROM START LOC, GET TARGET AND MOVE TOWARDS
-                enemy_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p1']
+                enemy_ent_locs = [v.loc for k,v in app.ent_dict.items() if v.owner != self.owner]
                 paths = []
-#                 coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
                 for el in enemy_ent_locs:
                 # FIND PATH TO SQR WITHIN RANGE OF THIS ENT
                     goals = [c for c in app.coords if dist(c, el) == 4 and app.grid[c[0]][c[1]] == '']
@@ -3986,17 +3983,9 @@ class Air_Elemental(Summon):
                             root.after(666, lambda sqr = endloc[:] : app.focus_square(sqr))
                             root.after(1333, lambda el = ents_list, endloc = endloc : self.ai_move(el, endloc))
                         else:
-                            ents_list = ents_list[1:]
-                            if ents_list == []:
-                                root.after(666, app.end_turn)
-                            else:
-                                root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
+                            self.ai_end_turn(ents_list)
                     else:
-                        ents_list = ents_list[1:]
-                        if ents_list == []:
-                            root.after(666, app.end_turn)
-                        else:
-                            root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
+                        self.ai_end_turn(ents_list)
             
     
     def do_attack(self, ents_list, id):
@@ -4011,7 +4000,6 @@ class Air_Elemental(Summon):
             my_agl = self.get_attr('agl')
             target_dodge = app.ent_dict[id].get_attr('dodge')
             if to_hit(my_agl, target_dodge) == True:
-                # HIT, SHOW VIS, DO DAMAGE, EXIT
                 my_str = self.get_attr('str')
                 target_end = app.ent_dict[id].get_attr('end')
                 d = damage(my_str, target_end)
@@ -4041,12 +4029,7 @@ class Air_Elemental(Summon):
             self.finish_attack(ents_list)
                     
     def finish_attack(self, ents_list):
-        el = ents_list[1:]
-        if el == []:
-            app.end_turn()
-        else:
-            app.do_ai_loop(el)
-        
+        self.ai_end_turn(ents_list)
         
     def legal_attacks(self):
         sqrs = []
@@ -4066,10 +4049,10 @@ class Air_Elemental(Summon):
                 return
             adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
             for s in adj:
-                mvlist.append(s)
+                if s not in mvlist:
+                    mvlist.append(s)
                 findall(s, start+1, distance)
         findall(loc, 1, 5)
-        mvlist = [list(x) for x in set(tuple(x) for x in mvlist)]
         for f in self.move_effects:
             mvlist = f(mvlist)
         return mvlist
@@ -4328,150 +4311,6 @@ class Water_Mage(Summon):
             root.after(666, lambda el = el : app.do_ai_loop(el))
                 
                 
-                
-                
-            
-#             sqrs = []
-#             for c in app.coords:
-#                 if dist(c, self.loc) <= 3:
-#                     sqrs.append(c)
-#             app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+85-app.moved_down, text = 'Earthquake', font = ('Andale Mono', 16), fill = 'goldenrod1', tags = 'text')
-#             app.vis_dict['Earthquake'] = Vis(name = 'Earthquake', loc = self.loc[:])
-#             app.canvas.create_image(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+50-app.moved_down, image = app.vis_dict['Earthquake'].img, tags = 'Earthquake')
-#             # get all ents in vicinity
-#             ents = [k for k,v in app.ent_dict.items() if v.owner != self.owner and v.loc in sqrs and v.move_type != 'flying']
-#             if ents != []:
-#                 t1,t2,t3 = [],[],[]
-#                 for e in ents:
-#                     if dist(app.ent_dict[e].loc, self.loc) == 3:
-#                         t1.append(e)
-#                     elif dist(app.ent_dict[e].loc, self.loc) == 2:
-#                         t2.append(e)
-#                     elif dist(app.ent_dict[e].loc, self.loc) == 1:
-#                         t3.append(e)
-#                 ents = t1[:] + t2[:] + t3[:]
-#                 # check for dmg and create text object
-#                 # move ents away from mage
-#                 # must do earthquake_loop on each tier, timed
-#                 def earthquake_loop(ents):
-#                     global selected
-#                     app.canvas.delete('text')
-#                     id = ents[0]
-#                     ents = ents[1:]
-#                     app.get_focus(id)
-#                     my_psyche = self.get_attr('psyche')
-#                     target_agl = app.ent_dict[id].get_attr('agl')
-#                     d = damage(my_psyche, target_agl)
-#                     app.ent_dict[id].set_attr('spirit', -d)
-#                     loc = app.ent_dict[id].loc[:]
-#                     app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+75-app.moved_down, text = str(d)+' Spirit', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
-#                     if app.ent_dict[id].spirit <= 0:
-#                         app.canvas.create_text(loc[0]*100-app.moved_right+50, loc[1]*100-app.moved_down+100, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
-#                         result = root.after(1666, lambda id = id : app.kill(id))
-#                         if ents == []:
-#                             root.after(4666, lambda el = ents_list : self.cleanup_attack(el))
-#                         else:
-#                             root.after(4666, lambda e = ents : earthquake_loop(e))
-#                     else: # ENT NOT KILLED, INSERT PSI PUSH
-#                         start_loc = app.ent_dict[id].loc[:]
-#                         # LEFT
-#                         if start_loc[0] < self.loc[0] and abs(start_loc[1] - self.loc[1]) <= 1:
-#                             if [start_loc[0]-1,start_loc[1]] in app.coords and app.grid[start_loc[0]-1][start_loc[1]] == '':
-#                                 if [start_loc[0]-2,start_loc[1]] in app.coords and app.grid[start_loc[0]-2][start_loc[1]] == '':
-#                                     dest = [start_loc[0]-2,start_loc[1]]
-#                                 else:
-#                                     dest = [start_loc[0]-1,start_loc[1]]
-#                             else:
-#                                 dest = start_loc[:]
-#                         # RIGHT
-#                         elif start_loc[0] > self.loc[0] and abs(start_loc[1] - self.loc[1]) <= 1:
-#                             if [start_loc[0]+1,start_loc[1]] in app.coords and app.grid[start_loc[0]+1][start_loc[1]] == '':
-#                                 if [start_loc[0]+2,start_loc[1]] in app.coords and app.grid[start_loc[0]+2][start_loc[1]] == '':
-#                                     dest = [start_loc[0]+2,start_loc[1]]
-#                                 else:
-#                                     dest = [start_loc[0]+1,start_loc[1]]
-#                             else:
-#                                 dest = start_loc[:]
-#                         # UP
-#                         elif abs(start_loc[0] - self.loc[0]) <= 1 and start_loc[1] < self.loc[1]:
-#                             if [start_loc[0],start_loc[1]-1] in app.coords and app.grid[start_loc[0]][start_loc[1]-1] == '':
-#                                 if [start_loc[0],start_loc[1]-2] in app.coords and app.grid[start_loc[0]][start_loc[1]-2] == '':
-#                                     dest = [start_loc[0],start_loc[1]-2]
-#                                 else:
-#                                     dest = [start_loc[0],start_loc[1]-1]
-#                             else:
-#                                 dest = start_loc[:]
-#                         # DOWN
-#                         elif abs(start_loc[0] - self.loc[0]) <= 1 and start_loc[1] > self.loc[1]:
-#                             if [start_loc[0],start_loc[1]+1] in app.coords and app.grid[start_loc[0]][start_loc[1]+1] == '':
-#                                 if [start_loc[0],start_loc[1]+2] in app.coords and app.grid[start_loc[0]][start_loc[1]+2] == '':
-#                                     dest = [start_loc[0],start_loc[1]+2]
-#                                 else:
-#                                     dest = [start_loc[0],start_loc[1]+1]
-#                             else:
-#                                 dest = start_loc[:]
-#                         # end destination logic
-#                         x = start_loc[0]*100+50-app.moved_right
-#                         y = start_loc[1]*100+50-app.moved_down
-#                         endx = dest[0]*100+50-app.moved_right
-#                         endy = dest[1]*100+50-app.moved_down
-#                         if start_loc != dest: # do move then go to next eq loop, else go to next eq loop
-#                             selected = [id]
-#                             def finish_psionic_push(tar, end_loc, start_loc):
-#                                 global selected
-#                                 selected = []
-#                                 app.ent_dict[tar].loc = end_loc[:]
-#                                 app.grid[start_loc[0]][start_loc[1]] = ''
-#                                 app.grid[end_loc[0]][end_loc[1]] = tar
-#                                 if ents == []:
-#                                     root.after(3666, lambda el = ents_list : self.cleanup_attack(el))
-#                                 else:
-#                                     root.after(3666, lambda e = ents : earthquake_loop(e))
-#                                 
-#                             def psi_move_loop(ent, x, y, endx, endy, sqr, start_sqr):
-#                                 if x % 25 == 0 and y % 25 == 0:
-#                                     app.ent_dict[ent].rotate_image()
-#                                     app.canvas.delete(ent)
-#                                     app.canvas.create_image(x, y, image = app.ent_dict[ent].img, tags = app.ent_dict[ent].tags)
-#                                 if x > endx:
-#                                     x -= 10
-#                                     app.canvas.move(ent, -10, 0)
-#                                 elif x < endx: 
-#                                     x += 10
-#                                     app.canvas.move(ent, 10, 0)
-#                                 if y > endy: 
-#                                     y -= 10
-#                                     app.canvas.move(ent, 0, -10)
-#                                 elif y < endy: 
-#                                     y += 10
-#                                     app.canvas.move(ent, 0, 10)
-#                                 try: app.canvas.tag_lower(app.ent_dict[ent].tags, 'large')
-#                                 except: pass
-#                                 app.canvas.tag_lower(app.ent_dict[ent].tags, 'maptop')
-#                                 if x == endx and y == endy:
-#                                     root.after(666, lambda e = ent, s = sqr, ss = start_sqr : finish_psionic_push(e, s, ss))
-#                                 else:
-#                                     root.after(50, lambda id = id, x = x, y = y, endx = endx, endy = endy, s = sqr, s2 = start_sqr : psi_move_loop(id, x, y, endx, endy, s, s2))
-#                             psi_move_loop(id, x, y, endx, endy, dest, start_loc)
-#                             
-#                         elif ents == []:
-#                             root.after(3666, lambda el = ents_list : self.cleanup_attack(el))
-#                         else:
-#                             root.after(3666, lambda e = ents : earthquake_loop(e))
-#                 # first call of eq loop, called if affected ents exist
-#                 root.after(1999, lambda ents = ents : earthquake_loop(ents))
-#             else: # no affected ents, exit
-#                 root.after(3333, lambda el = ents_list : self.cleanup_attack(el))
-        
-        
-#     def legal_attacks(self):
-#         sqrs = []
-#         for coord in app.coords:
-#             if dist(coord, self.loc) <= 3:
-#                 if app.grid[coord[0]][coord[1]] != '' and app.grid[coord[0]][coord[1]] != 'block':
-#                     sqrs.append(coord)
-#         return sqrs
-        
     # not used for movement, kept for purposes of monkey-patching
     def legal_moves(self):
         loc = self.loc[:]
@@ -4483,188 +4322,154 @@ class Water_Mage(Summon):
             mvlist = f(mvlist)
         return mvlist
 
+
+# change to move in straight line, make ranged atk, die when running into obstacle (block, maybe ent)
 class Water_Elemental(Summon):
     def __init__(self, name, img, loc, owner, number, waiting = False):
         self.actions = {'attack':self.do_attack}
         self.attack_used = False
-        self.str = 5
+        self.str = 4
         self.agl = 4
         self.end = 3
         self.dodge = 4
         self.psyche = 4
-        self.spirit = 19
+        self.spirit = 11
         self.waiting = waiting
         self.move_type = 'normal'
+        self.direction = choice(['up','down','left','right'])
+        self.dissipating = False
         super().__init__(name, img, loc, owner, number)
         
     def pass_priority(self, ents_list):
-        ents_list = ents_list[1:]
-        if ents_list == []:
-            app.end_turn()
-        else:
-            app.do_ai_loop(ents_list)
+        self.ai_end_turn(ents_list)
         
-    # FIRE ELEMENTAL AI
-    # change attack to sirocco, small damage to all in area?
+    # change to atk, then try move maybe die
     def do_ai(self, ents_list):
-        if self.waiting == True: # PASSIVE / WAITING
-            self.pass_priority(ents_list)
-        else: # NO TARGET PRIORITY, ATTEMPT ATTACK FROM STARTLOC
-            atk_sqrs = self.legal_attacks()
-            atk_sqrs = [x for x in atk_sqrs if app.ent_dict[app.grid[x[0]][x[1]]].owner == 'p1']
-            if atk_sqrs != []:
-                any = atk_sqrs[0]
-                id = app.grid[any[0]][any[1]]
-                root.after(666, lambda id = id : app.get_focus(id))
-                root.after(1333, lambda el = ents_list, id = id : self.do_attack(el, id)) # ATTACK
-            else: # CANNOT ATTACK FROM START LOC, GET TARGET AND MOVE TOWARDS
-                enemy_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p1']
-                paths = []
-#                 coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-                for el in enemy_ent_locs:
-                # FIND PATH TO SQR WITHIN RANGE OF THIS ENT
-                    goals = [c for c in app.coords if dist(c, el) == 1 and app.grid[c[0]][c[1]] == '']
-                    path = bfs(self.loc[:], goals, app.grid[:])
-                    if path:
-                        paths.append(path)
-                smallpaths = [y for y in paths if len(y) == min(len(y) for y in paths)] # THE SHORTEST PATHS AMONG PATHS
-                if smallpaths != []: # IF ANY PATHS EXIST AT ALL
-                    apath = smallpaths[0]
-                    # FIND FURTHEST SQR ALONG PATH THAT CAN BE MOVED TO
-                    moves = self.legal_moves()
-                    endloc = None
-                    for sqr in apath[::-1]: # START WITH SQRS CLOSEST TO TARGET
-                        if sqr in moves:
-                            endloc = sqr[:] # AMONG SQRS POSSIBLE TO MOVE TO, THIS IS CLOSEST TO GOAL
-                            break
-                    if endloc != None:
-                        root.after(666, lambda sqr = endloc[:] : app.focus_square(sqr))
-                        root.after(1333, lambda el = ents_list, endloc = endloc : self.ai_move(el, endloc))
-                    else:
-                        ents_list = ents_list[1:]
-                        if ents_list == []:
-                            root.after(666, app.end_turn)
-                        else:
-                            root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
-                else: # NO PATHS TO TARGET, MAKE BEST EFFORT MINIMIZE DIST MOVE
-                    # change to 'remove friendly ents', find path, move along path as far as possible
-                    egrid = deepcopy(app.grid)
-                    friendly_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p2']
-                    for eloc in friendly_ent_locs:
-                        egrid[eloc[0]][eloc[1]] = '' # EGRID NOW EMPTIED OF FRIENDLY ENTS
-                    # NOW FIND PATH AND PASS TO MOVE
-#                     coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-                    for el in enemy_ent_locs:
-                        goals = [c for c in app.coords if dist(c, el) == 1 and app.grid[c[0]][c[1]] == '']
-                        path = bfs(self.loc[:], goals, egrid[:]) # BFS ON ALTERED GRID (FRIENDLY ENTS REMOVED)
-                        if path:
-                            paths.append(path)
-                    smallpaths = [y for y in paths if len(y) == min(len(y) for y in paths)]
-                    if smallpaths != []: # MOVE ALONG PATH AS FAR AS POSSIBLE, ATTEMPT ATTACK
-                        apath = smallpaths[0]
-                        # FIND FURTHEST SQR ALONG PATH THAT CAN BE MOVED TO
-                        moves = self.legal_moves()
-                        endloc = None
-                        for sqr in apath[::-1]: # START WITH SQRS CLOSEST TO TARGET
-                            if sqr in moves:
-                                endloc = sqr[:] # AMONG SQRS POSSIBLE TO MOVE TO, THIS IS CLOSEST TO GOAL
-                                break
-                        if endloc != None:
-                            # here need to 'trim path' to prevent moving to square 'through' friendly ents
-                            root.after(666, lambda sqr = endloc[:] : app.focus_square(sqr))
-                            root.after(1333, lambda el = ents_list, endloc = endloc : self.ai_move(el, endloc))
-                        else:
-                            ents_list = ents_list[1:]
-                            if ents_list == []:
-                                root.after(666, app.end_turn)
-                            else:
-                                root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
-                    else:
-                        ents_list = ents_list[1:]
-                        if ents_list == []:
-                            root.after(666, app.end_turn)
-                        else:
-                            root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
-            
+        atk_sqrs = self.legal_attacks()
+        if atk_sqrs != [] and self.attack_used == False:
+            any = atk_sqrs[0]
+            id = app.grid[any[0]][any[1]]
+            root.after(666, lambda t = id : app.get_focus(t))
+            root.after(1333, lambda el = ents_list, id = id : self.do_attack(el, id))
+        else:# just move maybe die
+            moves = self.legal_moves()
+            if len(moves) < 3:
+                self.dissipating = True
+                if moves == []:
+                    self.dissipate(ents_list)
+                else:
+                    move = reduce(lambda a,b : a if dist(self.loc,a) > dist(self.loc,b) else b, moves)
+                    root.after(666, lambda sqr = move : app.focus_square(sqr))
+                    root.after(1333, lambda el = ents_list, sqr = move : self.ai_move(el, sqr))
+            else:# just move
+                sqr = reduce(lambda a,b : a if dist(self.loc,a) > dist(self.loc,b) else b, moves)
+                root.after(666, lambda sqr = sqr : app.focus_square(sqr))
+                root.after(1333, lambda el = ents_list, sqr = sqr : self.ai_move(el, sqr))
+                
+    # called by ai_move instead of trying to attack after moving (unique to this ent)
+    def continue_ai(self, ents_list):
+        if self.dissipating == True:
+            self.dissipate(ents_list)
+        else:
+            self.ai_end_turn(ents_list)
     
-    def do_attack(self, ents_list, id):
-        if self.attack_used == True:
-            self.cleanup_attack(ents_list, id)
-        else:
-            app.get_focus(id)
-    #         self.init_attack_anims()
-            effect1 = mixer.Sound('Sound_Effects/fire_elemental_attack.ogg')
-            effect1.set_volume(1)
-            sound_effects.play(effect1, 0)
-            my_agl = self.get_attr('agl')
-            target_agl = app.ent_dict[id].get_attr('agl')
-            if to_hit(my_agl, target_agl) == True:
-                # HIT, SHOW VIS, DO DAMAGE, EXIT
-                my_str = self.get_attr('str')
-                target_end = app.ent_dict[id].get_attr('end')
-                d = damage(my_str, target_end)
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+70, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Fire Elemental Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-                app.ent_dict[id].set_attr('spirit', -d)
-                if app.ent_dict[id].spirit <= 0:
-                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+90, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-                root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id)) # EXIT THROUGH CLEANUP_ATTACK()
-            else:
-                # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Fire Elemental Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-                root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id))
-        
-        
+    def dissipate(self, ents_list):
+        app.canvas.create_text(self.loc[0]*100-app.moved_right+49, self.loc[1]*100-app.moved_down+74, text = 'Water Elemental crashes into an obstacle...', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+        app.canvas.create_text(self.loc[0]*100-app.moved_right+50, self.loc[1]*100-app.moved_down+75, text = 'Water Elemental crashes into an obstacle...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
+        name = 'dethlok'+str(app.death_count)
+        app.death_count += 1
+        app.dethloks[name] = tk.IntVar(0)
+        root.after(2222, lambda t = 'text' : app.canvas.delete(t))
+        root.after(2333, lambda id = self.number, name = name : app.kill(id, name))
+        root.wait_variable(app.dethloks[name])
+        self.ai_end_turn(ents_list)
             
-    def cleanup_attack(self, ents_list, id):
+            
+    def do_attack(self, ents_list, id):
+        app.get_focus(id)
+        self.attack_used = True
+#             self.init_attack_anims()
+#             effect1 = mixer.Sound('Sound_Effects/water_elemental_attack.ogg')
+#             sound_effects.play(effect1, 0)
+        my_agl = self.get_attr('agl')
+        target_dodge = app.ent_dict[id].get_attr('dodge')
+        if to_hit(my_agl, target_dodge) == True:# HIT
+            my_str = self.get_attr('str')
+            tar_end = app.ent_dict[id].get_attr('end')
+            d = damage(my_str, tar_end)
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
+            app.ent_dict[id].set_attr('spirit', -d)
+            if app.ent_dict[id].spirit <= 0:# HIT, KILL
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+94, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+95, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
+                name = 'dethlok'+str(app.death_count)
+                app.death_count += 1
+                app.dethloks[name] = tk.IntVar(0)
+                root.after(2666, self.cleanup_attack)
+                root.after(2666, lambda id = id, name = name : app.kill(id, name))
+                root.wait_variable(app.dethloks[name])
+                self.finish_attack(ents_list)
+            else:# HIT, NO KILL
+                root.after(2666, lambda e = ents_list : self.finish_attack(e))
+        else:# MISS
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Miss!', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Miss!', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
+            root.after(2666, lambda e = ents_list : self.finish_attack(e))
+        
+    def cleanup_attack(self):
         self.init_normal_anims()
-        try: 
-            app.canvas.delete('text')
-#             del app.vis_dict['Fireblast']
-#             app.canvas.delete('Fireblast')
+        try: app.canvas.delete('text')
         except: pass
-        if app.ent_dict[id].spirit <= 0:
-            name = 'dethlok'+str(app.death_count)
-            app.death_count += 1
-            app.dethloks[name] = tk.IntVar(0)
-            root.after(666, lambda id = id, name = name : app.kill(id, name))
-            root.wait_variable(app.dethloks[name])
-            self.finish_attack(ents_list)
-        else:
-            self.finish_attack(ents_list)
-                    
+            
     def finish_attack(self, ents_list):
-        el = ents_list[1:]
-        if el == []:
-            app.end_turn()
+#         self.init_normal_anims()
+        try: app.canvas.delete('text')
+        except: pass
+        if self.move_used == True:
+            self.ai_end_turn(ents_list)
         else:
-            app.do_ai_loop(el)
+            self.do_ai(ents_list)
         
     def legal_attacks(self):
         sqrs = []
         for c in app.coords:
-            if dist(c, self.loc) == 1:
+            if dist(c, self.loc) <= 4:
                 id = app.grid[c[0]][c[1]]
                 if id != '' and id != 'block':
                     if app.ent_dict[id].owner != self.owner:
                         sqrs.append(c)
         return sqrs
         
+    # get only squares in self.direction, if length is less than 3: is obstructed so kill
     def legal_moves(self):
-        loc = self.loc[:]
+        s = self.loc[:]
         mvlist = []
-        def findall(loc, start, distance):
-            if start > distance:
-                return
-            adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
-            for s in adj:
-                mvlist.append(s)
-                findall(s, start+1, distance)
-        findall(loc, 1, 4)
-        mvlist = [list(x) for x in set(tuple(x) for x in mvlist)]
-        for f in self.move_effects:
-            mvlist = f(mvlist)
+        if self.direction == 'up':
+            for i in range(1,4):
+                if [s[0],s[1]-i] in app.coords and app.grid[s[0]][s[1]-i] == '':
+                    mvlist.append([s[0],s[1]-i])
+                else:
+                    break
+        elif self.direction == 'down':
+            for i in range(1,4):
+                if [s[0],s[1]+i] in app.coords and app.grid[s[0]][s[1]+i] == '':
+                    mvlist.append([s[0],s[1]+i])
+                else:
+                    break
+        elif self.direction == 'left':
+            for i in range(1,4):
+                if [s[0]-i,s[1]] in app.coords and app.grid[s[0]-i][s[1]] == '':
+                    mvlist.append([s[0]-i,s[1]])
+                else:
+                    break
+        elif self.direction == 'right':
+            for i in range(1,4):
+                if [s[0]+i,s[1]] in app.coords and app.grid[s[0]+i][s[1]] == '':
+                    mvlist.append([s[0]+i,s[1]])
+                else:
+                    break
         return mvlist
-
         
 class Earth_Mage(Summon):
     def __init__(self, name, img, loc, owner, number, waiting = False):
@@ -5917,7 +5722,7 @@ class Fire_Elemental(Summon):
                     app.canvas.create_image(startx, starty, image = app.vis_dict['Fire_Elem_Ball'].img, tags = 'Fire_Elem_Ball')
                     app.canvas.tag_raise('Fire_Elem_Ball')
                 elif startx < endx:
-                    startx += ystep
+                    startx += xstep
                     app.canvas.delete('Fire_Elem_Ball')
                     app.canvas.create_image(startx, starty, image = app.vis_dict['Fire_Elem_Ball'].img, tags = 'Fire_Elem_Ball')
                     app.canvas.tag_raise('Fire_Elem_Ball')
@@ -9050,7 +8855,7 @@ class Witch(Entity):
             def cleanup_vis(name):
                 del app.vis_dict[name]
                 app.canvas.delete(name)
-            root.after(3666, lambda n = n : cleanup_vis(n))
+            root.after(2666, lambda n = n : cleanup_vis(n))
             rand_start_anim = randrange(1,7)
             for i in range(rand_start_anim):
                 app.vis_dict[n].rotate_image()
@@ -9072,11 +8877,8 @@ class Witch(Entity):
                 app.dethloks[name] = tk.IntVar(0)
                 root.after(2666, lambda id = id, name = name : app.kill(id, name))
                 app.wait_variable(app.dethloks[name])
-        root.after(3666, lambda  name = 'Pestilence' : self.cleanup_spell(name = name))
+        root.after(2666, lambda  name = 'Pestilence' : self.cleanup_spell(name = name))
     
-    
-    
-        
     # CURSE OF ORIAX
     def curse_of_oriax(self, event = None):
             # Any target is inflicted with 'curse', while cursed takes 2 spirit damage at end of every owner's turn and minus 1 to every stat (not spirit, magick, movement)
@@ -11671,7 +11473,7 @@ class App(tk.Frame):
                 ent.arcane_used = False
                 ent.summon_used = False
             elif isinstance(ent, Warrior):
-                self.leap_used = False
+                ent.leap_used = False
             if isinstance(ent, Summon):
                 ent.attack_used = False
         if self.active_player == 'p1':
