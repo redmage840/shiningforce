@@ -2,11 +2,7 @@
 
 # pestilence wrong resolution order when casting towards 'left' or 'up', not very important just visually inconsistent
 
-# make leap 'free'
-
 # only sometimes does 2nd revenant generate on turn1 in library
-
-# make fireball/fire elem atk move in a straight line
 
 # DO DROP SHADOW
 
@@ -25,14 +21,9 @@
 
 # water_mage handling multiple ent deaths in attack cleanup should be changed to handle one at a time when damaged... should 'concurrent' damage (aoe) that triggers a death_trigger...should that death_trigger 'see' a unit that was killed 'at the same time'
 
-# orc_axeman waits when no goal square, what if no goal squares....
-
 # styling of sizes of stuff, buttons, fonts (mainly fonts, which will fill buttons to their size), make var on start that is screensize and set font as some fraction of that
 
 # beleths command still fighting for image priority with caster
-
-# fuse_trap, guard interaction with new death triggers... guard is kill()ed inside spirit_effect...
-# also need to change AOE to damage one at a time...
 
 # finish elementals
 
@@ -2283,20 +2274,15 @@ class Ghost(Summon):
         super().__init__(name, img, loc, owner, number)
         
     def pass_priority(self, ents_list):
-        ents_list = ents_list[1:]
-        if ents_list == []:
-            app.end_turn()
-        else:
-            app.do_ai_loop(ents_list)
+        self.ai_end_turn(ents_list)
         
     #  GHOST AI
     # 'do not move' just attack within range
     def do_ai(self, ents_list):
         if self.waiting == True: # DO NOT MOVE TOWARDS OR ATTACK UNTIL TRIGGER
             self.pass_priority(ents_list)
-        else: # NO TARGET PRIORITY, ATTEMPT ATTACK FROM STARTLOC
+        else: # ATTEMPT ATTACK FROM STARTLOC
             atk_sqrs = self.legal_attacks()
-            atk_sqrs = [x for x in atk_sqrs if app.ent_dict[app.grid[x[0]][x[1]]].owner == 'p1']
             if atk_sqrs != []:
                 any = atk_sqrs[0]
                 id = app.grid[any[0]][any[1]]
@@ -2305,7 +2291,6 @@ class Ghost(Summon):
             else:# GO TO NEXT ENT
                 self.ai_end_turn(ents_list)
                     
-            
     def do_attack(self, ents_list, id):
         if self.attack_used == True:
             self.cleanup_attack(ents_list, id)
@@ -2323,14 +2308,13 @@ class Ghost(Summon):
             my_psyche = self.get_attr('psyche')
             target_psyche = app.ent_dict[id].get_attr('psyche')
             if to_hit(my_psyche, target_psyche) == True:
-                # HIT, SHOW VIS, DO DAMAGE, EXIT
                 d = damage(my_psyche, target_psyche)
                 app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
                 app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
                 app.ent_dict[id].set_attr('spirit', -d)
                 if app.ent_dict[id].spirit <= 0:
-                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+94, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
-                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+95, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+94, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+95, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
             else:
                 app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Miss!', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
                 app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Miss!', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
@@ -2354,11 +2338,7 @@ class Ghost(Summon):
             self.finish_attack(ents_list)
             
     def finish_attack(self, ents_list):
-        el = ents_list[1:]
-        if ents_list == []:
-            app.end_turn()
-        else:
-            app.do_ai_loop(el)
+        self.ai_end_turn(ents_list)
         
     def legal_attacks(self):
         sqrs = []
@@ -2389,9 +2369,9 @@ class Revenant(Summon):
         
     #  REVENANT AI
     def do_ai(self, ents_list):
-        if self.waiting == True: # GIVEN PRIORITY OVER OTHER ENTS, ONLY TRY TO ATTACK THIS ENT
+        if self.waiting == True: 
             self.pass_priority(ents_list)
-        else: # NO TARGET PRIORITY, ATTEMPT ATTACK FROM STARTLOC
+        else: # ATTEMPT ATTACK FROM STARTLOC
             self.continue_ai(ents_list)
             
     # pathing different than most, egrid has no 'block' sqrs, can move 'through' obstacles
@@ -2430,7 +2410,6 @@ class Revenant(Summon):
         effect1 = mixer.Sound('Sound_Effects/revenant_move.ogg')
         effect1.set_volume(1)
         sound_effects.play(effect1, 0)
-        # FIND SQUARE FURTHEST ALONG PATH THAT IS WITHIN MOVE RANGE
         id = self.number
         x = self.loc[0]*100+50-app.moved_right
         y = self.loc[1]*100+50-app.moved_down
@@ -2893,7 +2872,6 @@ class Kobold_Shaman(Summon):
         my_psyche = self.get_attr('psyche')
         target_dodge = app.ent_dict[id].get_attr('dodge')
         if to_hit(my_psyche, target_dodge) == True:
-            # HIT, SHOW VIS, DO DAMAGE, EXIT
             target_end = app.ent_dict[id].get_attr('end')
             d = damage(my_psyche, target_end)
             app.canvas.create_text(loc[0]*100-app.moved_right+49, loc[1]*100-app.moved_down+74, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
@@ -2957,7 +2935,6 @@ class Kobold_Shaman(Summon):
         return mvlist
         
         
-
 class Undead(Summon):
     def __init__(self, name, img, loc, owner, number, waiting = False):
         self.actions = {'attack':self.do_attack}
@@ -3299,7 +3276,7 @@ class Troll(Summon):
             self.cleanup_attack(ents_list)
         else:
             app.get_focus(id)
-            effect1 = mixer.Sound('Sound_Effects/undead_attack.ogg')
+            effect1 = mixer.Sound('Sound_Effects/troll_attack.ogg')
             sound_effects.play(effect1, 0)
             my_agl = self.get_attr('agl')
             target_agl = app.ent_dict[id].get_attr('agl')
@@ -3368,9 +3345,9 @@ class Warlock(Summon):
         self.actions = {'attack':self.do_attack}
         self.attack_used = False
         self.str = 5
-        self.agl = 7
+        self.agl = 8
         self.end = 7
-        self.dodge = 5
+        self.dodge = 7
         self.psyche = 11
         self.spirit = 89
         self.waiting = waiting
@@ -3378,11 +3355,7 @@ class Warlock(Summon):
         super().__init__(name, img, loc, owner, number)
         
     def pass_priority(self, ents_list):
-        ents_list = ents_list[1:]
-        if ents_list == []:
-            app.end_turn()
-        else:
-            app.do_ai_loop(ents_list)
+        self.ai_end_turn(ents_list)
         
     # make casting anims
     # immune to move_effects
@@ -3593,7 +3566,7 @@ class Air_Mage(Summon):
         self.str = 4
         self.agl = 10
         self.end = 6
-        self.dodge = 8
+        self.dodge = 10
         self.psyche = 8
         self.spirit = 59
         self.waiting = waiting
@@ -3709,11 +3682,7 @@ class Air_Mage(Summon):
         if self.attack_used == False:
             root.after(1333, lambda el = ents_list : self.do_attack(el)) # EXIT THROUGH ATTACK
         else:# CANNOT ATTACK, EXIT FUNC
-            ents_list = ents_list[1:]
-            if ents_list == []:
-                app.end_turn()
-            else:
-                root.after(666, lambda e = ents_list : app.do_ai_loop(e))
+            self.ai_end_turn(ents_list)
     
     def do_attack(self, ents_list):
         if self.attack_used == True:
@@ -3781,9 +3750,11 @@ class Air_Mage(Summon):
                 def take_2(tar):
                     app.get_focus(tar)
                     app.ent_dict[tar].set_attr('spirit', -2)
-                    app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+70-app.moved_down, text = '2 Spirit\nSandstorm', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+                    app.canvas.create_text(app.ent_dict[tar].loc[0]*100+49-app.moved_right, app.ent_dict[tar].loc[1]*100+74-app.moved_down, text = '2 spirit Sandstorm', justify ='center', font = ('Andale Mono', 13), fill = 'black', tags = 'text')
+                    app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+75-app.moved_down, text = '2 spirit Sandstorm', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
                     if app.ent_dict[tar].spirit <= 0:
-                        app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+90-app.moved_down, text = app.ent_dict[tar].name.replace('_',' ') + '\nKilled...', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+                        app.canvas.create_text(app.ent_dict[tar].loc[0]*100+49-app.moved_right, app.ent_dict[tar].loc[1]*100+94-app.moved_down, text = app.ent_dict[tar].name.replace('_',' ') + ' Killed...', justify = 'center', font = ('Andale Mono', 13), fill = 'black', tags = 'text')
+                        app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+95-app.moved_down, text = app.ent_dict[tar].name.replace('_',' ') + ' Killed...', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
                     return 'Not None'
                 eot = partial(take_2, id)
                 n = 'Sandstorm' + str(app.effects_counter)
@@ -3810,23 +3781,23 @@ class Air_Mage(Summon):
             tar_str = app.ent_dict[id].get_attr('str')
             if to_hit(my_psyche, tar_str) == True:
                 d = damage(my_psyche, tar_str)
-                app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+75-app.moved_down, text = 'Cyclone Hit! '+str(d)+' spirit', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+                app.canvas.create_text(loc[0]*100+49-app.moved_right, loc[1]*100+74-app.moved_down, text = 'Hit! '+str(d)+' spirit', justify = 'center', font = ('Andale Mono', 13), fill = 'black', tags = 'text')
+                app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+75-app.moved_down, text = 'Hit! '+str(d)+' spirit', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
                 app.ent_dict[id].set_attr('spirit', -d)
                 if app.ent_dict[id].spirit <= 0:
-                    app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+95-app.moved_down, text = app.ent_dict[id].name+' Killed...', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+                    app.canvas.create_text(loc[0]*100+49-app.moved_right, loc[1]*100+94-app.moved_down, text = app.ent_dict[id].name.replace('_',' ')+' Killed...', justify = 'center', font = ('Andale Mono', 13), fill = 'black', tags = 'text')
+                    app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+95-app.moved_down, text = app.ent_dict[id].name.replace('_',' ')+' Killed...', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
                     root.after(3333, lambda el = ents_list, id = id : self.cleanup_attack(el, id))
                 else:# Teleport to random loc
                     sqrs = [c for c in app.coords if app.grid[c[0]][c[1]] == '']
                     loc = choice(sqrs)
                     root.after(3333, lambda el = ents_list, id = id, loc = loc : self.cyclone_teleport(el, id, loc))
             else:
-                app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+75-app.moved_down, text = 'Cyclone Missed!', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+                app.canvas.create_text(loc[0]*100+49-app.moved_right, loc[1]*100+74-app.moved_down, text = 'Miss!', justify = 'center', font = ('Andale Mono', 13), fill = 'black', tags = 'text')
+                app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+75-app.moved_down, text = 'Miss!', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
                 root.after(3333, lambda el = ents_list : self.cleanup_attack(el))
     
     def cyclone_teleport(self, el, id, loc):
-        # erase old cyclone vis
-        # create new cyclone vis in loc
-        # erase id imgs
         del app.vis_dict['Cyclone']
         app.canvas.delete('Cyclone')
         app.canvas.delete('text')
@@ -3848,12 +3819,12 @@ class Air_Mage(Summon):
         app.canvas.tag_lower((app.ent_dict[id].tags), 'maptop')
         root.after(666, lambda el = el, id = id : self.cleanup_attack(el, id))
         
-        
     # only called when summons exist, heal whatever summons remain for some amount, give them stat boost effect
     def do_breath_of_life(self, ents_list):
         effect1 = mixer.Sound('Sound_Effects/moonlight.ogg')
         effect1.set_volume(1)
         sound_effects.play(effect1, 0)
+        app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+94-app.moved_down, text = 'Breath of Life', justify = 'center', font = ('Andale Mono', 14), fill = 'black', tags = 'text')
         app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+95-app.moved_down, text = 'Breath of Life', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
         app.vis_dict['Breath_of_Life'] = Vis(name = 'Breath_of_Life', loc = self.loc[:])
         app.canvas.create_image(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+50-app.moved_down, image = app.vis_dict['Breath_of_Life'].img, tags = 'Breath_of_Life')
@@ -3868,7 +3839,8 @@ class Air_Mage(Summon):
                 app.focus_square(loc)
                 n = 'Breath_of_Life'+str(app.effects_counter)
                 app.effects_counter += 1
-                app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+75-app.moved_down, text = 'Breath of Life\n+10 spirit, effects removed', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+                app.canvas.create_text(loc[0]*100+49-app.moved_right, loc[1]*100+74-app.moved_down, text = '+10 spirit, effects removed', justify = 'center', font = ('Andale Mono', 13), fill = 'black', tags = 'text')
+                app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+75-app.moved_down, text = '+10 spirit, effects removed', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
                 app.vis_dict[n] = Vis(name = 'Breath_of_Life', loc = loc[:])
                 app.canvas.create_image(loc[0]*100+50-app.moved_right, loc[1]*100+50-app.moved_down, image = app.vis_dict[n].img, tags = 'Breath_of_Life')
                 app.ent_dict[id].set_attr('spirit', 10)
@@ -3925,6 +3897,7 @@ class Air_Mage(Summon):
             mvlist = f(mvlist)
         return mvlist
 
+# need to: update pathing, keep behavior: seek edge of own range
 class Air_Elemental(Summon):
     def __init__(self, name, img, loc, owner, number, waiting = False):
         self.actions = {'attack':self.do_attack}
@@ -6579,6 +6552,7 @@ class Warrior(Summon):
         self.psyche = 2
         self.spirit = 15
         self.move_type = 'charge'
+        self.leap_used = False
         super().__init__(name, img, loc, owner, number)
         
     def init_leap_anims(self):
@@ -6665,7 +6639,7 @@ class Warrior(Summon):
         root.after(2666, lambda e = None: self.cancel_attack(e))
         
     def leap(self, event = None):
-        if self.attack_used == True:
+        if self.leap_used == True:
             return
         root.unbind('<a>')
         root.unbind('<q>')
@@ -6685,7 +6659,7 @@ class Warrior(Summon):
         global selected
         if sqr not in sqrs:
             return
-        self.attack_used = True
+        self.leap_used = True
         self.init_leap_anims()
 #         effect1 = mixer.Sound('Sound_Effects/leap.ogg')
 #         effect1.set_volume(1)
@@ -11696,7 +11670,9 @@ class App(tk.Frame):
                 ent.cantrip_used = False
                 ent.arcane_used = False
                 ent.summon_used = False
-            elif isinstance(ent, Summon):
+            elif isinstance(ent, Warrior):
+                self.leap_used = False
+            if isinstance(ent, Summon):
                 ent.attack_used = False
         if self.active_player == 'p1':
             self.unbind_all()
