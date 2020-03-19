@@ -1,3 +1,9 @@
+# make leap and mortar move in straight line like fireball
+
+# bard gets esuna/harmony, trickster gets mortar, plaguebearer gets paralyze
+
+# change shape of pestilence effect...
+
 # portion of wall 'top' covers orcs head sometimes near exit
 
 # pestilence wrong resolution order when casting towards 'left' or 'up', not very important just visually inconsistent
@@ -721,7 +727,7 @@ class Tomb(Summon):
         
 class Trickster(Summon):
     def __init__(self, name, img, loc, owner, number):
-        self.actions = {'Pyrotechnics':self.pyrotechnics, 'Simulacrum':self.simulacrum,'Gate':self.gate,'Teleport':self.teleport_move}
+        self.actions = {'Pyrotechnics':self.pyrotechnics, 'Simulacrum':self.simulacrum,'Gate':self.gate, 'Mortar':self.mortar, 'Move':self.move}
         self.attack_used = False
         self.str = 2
         self.agl = 4
@@ -731,6 +737,125 @@ class Trickster(Summon):
         self.spirit = 13
         self.move_type = 'teleport'
         super().__init__(name, img, loc, owner, number)
+
+    def mortar(self, event):
+        if self.attack_used == True:
+            return
+        app.depop_context(event = None)
+        root.bind('<q>', self.cleanup_mortar)
+        sqrs = [s for s in app.coords if 6 < dist(self.loc, s) <= 8]
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_mortar(event = e, sqr = s, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Choose Location for Mortar', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_mortar(e, s, sqrs))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+        
+    def do_mortar(self, event, sqr, sqrs):
+        global selected_vis
+        if sqr not in sqrs:
+            return
+#         effect1 = mixer.Sound('Sound_Effects/mortar.ogg')
+#         effect1.set_volume(1)
+#         sound_effects.play(effect1, 0)
+        app.unbind_all()
+        app.depop_context(event = None)
+        app.cleanup_squares()
+#         self.attack_used = True
+        app.vis_dict['Mortar'] = Vis(name = 'Mortar', loc = self.loc)
+        app.canvas.create_image(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+50-app.moved_down, image = app.vis_dict['Mortar'].img, tags = 'Mortar')
+        selected_vis = 'Mortar'
+        x = self.loc[0]*100+50-app.moved_right
+        y = self.loc[1]*100+50-app.moved_down
+        endx = sqr[0]*100+50-app.moved_right
+        endy = sqr[1]*100+50-app.moved_down
+        start_sqr = self.loc[:]
+        end_sqr = sqr[:]
+        total_distance = abs(x - endx) + abs(y - endy)
+        tic = total_distance/7
+        # need to call rotate_image every tic
+        def mortar_arc(x, y, endx, endy, start_sqr, end_sqr, acm, tic):
+            if acm >= tic:
+                acm = 0
+                app.vis_dict['Mortar'].rotate_image()
+                app.canvas.delete('Mortar')
+                app.canvas.create_image(x, y, image = app.vis_dict['Mortar'].img, tags = 'Mortar')
+            if x > endx:
+                acm += 10
+                x -= 10
+                app.canvas.move('Mortar', -10, 0)
+            if x < endx:
+                acm += 10
+                x += 10
+                app.canvas.move('Mortar', 10, 0)
+            if y > endy:
+                acm += 10
+                y -= 10
+                app.canvas.move('Mortar', 0, -10)
+            if y < endy:
+                acm += 10
+                y += 10
+                app.canvas.move('Mortar', 0, 10)
+            if x == endx and y == endy:
+                self.continue_mortar(sqr)
+            else: # CONTINUE LOOP
+                root.after(66, lambda x = x, y = y, e = endx, e2 = endy, s = start_sqr, s2 = end_sqr, acm = acm, tic = tic : mortar_arc(x, y, e, e2, s, s2, acm, tic))
+        mortar_arc(x, y, endx, endy, start_sqr, end_sqr, tic+1, tic)
+        
+        
+    def continue_mortar(self, sqr):
+        global selected_vis
+        app.canvas.delete('text')
+        del app.vis_dict['Mortar']
+        app.canvas.delete('Mortar')
+        selected_vis = ''
+        ents = [k for k,v in app.ent_dict.items() if dist(v.loc, sqr) <= 2]
+        # mortar loop
+        def mortar_loop(ents):
+            if ents == []:
+                self.cleanup_mortar()
+            else:
+                id = ents[0]
+                ents = ents[1:]
+                n = 'Pain_Explode' + str(app.effects_counter)
+                app.effects_counter += 1
+                loc = app.ent_dict[id].loc[:]
+                app.vis_dict[n] = Vis(name = 'Pain_Explode', loc = loc)
+                def cleanup_vis(name):
+                    app.canvas.delete('explode_text')
+                    del app.vis_dict[name]
+                    app.canvas.delete(name)
+                app.canvas.create_image(loc[0]*100+50-app.moved_right, loc[1]*100+50-app.moved_down, image = app.vis_dict[n].img, tags = n)
+                if app.ent_dict[id].attr_check('dodge') == False: # Fail Save
+                    d = choice([1,2,3])
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'explode_text')
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'explode_text')
+                    app.ent_dict[id].set_attr('spirit', -d)
+                    if app.ent_dict[id].spirit <= 0:
+                        app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+94, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'explode_text')
+                        app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+95, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'explode_text')
+                        name = 'dethlok'+str(app.death_count)
+                        app.death_count += 1
+                        app.dethloks[name] = tk.IntVar(0)
+                        root.after(2666, lambda n = n : cleanup_vis(n))
+                        root.after(2999, lambda id = id, name = name : app.kill(id, name))
+                        root.wait_variable(app.dethloks[name])
+                        mortar_loop(ents)
+                    else:
+                        root.after(2666, lambda n = n : cleanup_vis(n))
+                        root.after(2999, lambda ents = ents : mortar_loop(ents))
+                else: # Save
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Dodge Save!', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'explode_text')
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Dodge Save!', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'explode_text')
+                    root.after(2666, lambda n = n : cleanup_vis(n))
+                    root.after(2999, lambda ents = ents : mortar_loop(ents))
+        mortar_loop(ents)
+        
+    def cleanup_mortar(self, event = None):
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        app.canvas.delete('text')
+        app.unbind_all()
+        app.rebind_all()
         
     def pyrotechnics(self, event):
         if self.attack_used == True:
@@ -1001,14 +1126,20 @@ class Trickster(Summon):
         app.rebind_all()
     
     def legal_moves(self):
-        move_list = []
-        for c in app.coords:
-            if dist(c, self.loc) <= 4:
-                if app.grid[c[0]][c[1]] == '':
-                    move_list.append(c)
+        loc = self.loc
+        mvlist = []
+        def findall(loc, start, distance):
+            if start > distance:
+                return
+            adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
+            for s in adj:
+                mvlist.append(s)
+                findall(s, start+1, distance)
+        findall(loc, 1, 4)
+        mvlist = [list(x) for x in set(tuple(x) for x in mvlist)]
         for f in self.move_effects:
-            move_list = f(move_list)
-        return move_list
+            mvlist = f(mvlist)
+        return mvlist
         
 
 class Shadow(Summon):
@@ -1615,7 +1746,7 @@ class Plaguebearer(Summon):
 
 class Bard(Summon):
     def __init__(self, name, img, loc, owner, number):
-        self.actions = {'Unholy Chant':self.unholy_chant, 'Discord' : self.discord, 'Moonlight' : self.moonlight, 'move':self.move}
+        self.actions = {'Unholy Chant':self.unholy_chant, 'Discord' : self.discord, 'Moonlight' : self.moonlight, 'Esuna':self.esuna, 'move':self.move}
         self.attack_used = False
         self.str = 2
         self.agl = 3
@@ -1626,6 +1757,56 @@ class Bard(Summon):
         self.move_type = 'normal'
         super().__init__(name, img, loc, owner, number)
         
+    def esuna(self, event = None):
+        if self.attack_used == True:
+            return
+        root.unbind('<a>')
+        root.unbind('<q>')
+        root.bind('<q>', self.finish_esuna)
+        sqrs = [c for c in app.coords if 1 <= dist(self.loc, c) <= 3]
+        app.animate_squares(sqrs)
+        app.depop_context(event = None)
+        root.bind('<a>', lambda e, sqr = grid_pos, sqrs = sqrs : self.do_esuna(event = e, sqr = sqr, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Confirm Esuna Target', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_esuna(event = e, sqr = sqr, sqrs = sqrs))
+        b.pack(side = 'top')
+        app.context_buttons.append(b)
+        
+        
+    def do_esuna(self, event, sqr, sqrs):
+        if sqr not in sqrs:
+            return
+        id = app.grid[sqr[0]][sqr[1]]
+        if id == '' or id == 'block':
+            return
+        effect1 = mixer.Sound('Sound_Effects/esuna.ogg')
+        effect1.set_volume(.5)
+        sound_effects.play(effect1, 0)
+        app.unbind_all()
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        self.attack_used = True
+        app.canvas.create_text(self.loc[0]*100-app.moved_right+49, self.loc[1]*100-app.moved_down+94, text = 'Esuna', justify = 'center', fill = 'black', font = ('Andale Mono', 16), tags = 'text')
+        app.canvas.create_text(self.loc[0]*100-app.moved_right+50, self.loc[1]*100-app.moved_down+95, text = 'Esuna', justify = 'center', fill = 'ivory', font = ('Andale Mono', 16), tags = 'text')
+        app.vis_dict['Esuna'] = Vis(name = 'Esuna', loc = sqr[:])
+        vis = app.vis_dict['Esuna']
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = vis.img, tags = 'Esuna')
+        app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Effects Removed', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+        app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Effects Removed', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
+        for k,v in app.ent_dict[id].effects_dict.items():
+            v.undo()
+        app.ent_dict[id].effects_dict = {}
+        root.after(2666, self.finish_esuna)
+        
+    def finish_esuna(self, event = None):
+        try: 
+            del app.vis_dict['Esuna']
+            app.canvas.delete('Esuna')
+        except: pass
+        app.depop_context(event = None)
+        app.canvas.delete('text')
+        app.cleanup_squares()
+        app.unbind_all()
+        app.rebind_all()
         
     def moonlight(self, event = None):
         if self.attack_used == True:
@@ -4973,7 +5154,7 @@ class Earth_Elemental(Summon):
         return mvlist
         
 # casts firewall after teleporting randomly within a dist, resummons fire elementals if they all die
-# This unit regains its normal movement (teleport) at the begin of every do_ai() (like Warlock)
+# immune to move_effects, does not use legal_moves
 class Fire_Mage(Summon):
     def __init__(self, name, img, loc, owner, number, waiting = False):
         self.actions = {'attack':self.do_attack}
@@ -4989,20 +5170,13 @@ class Fire_Mage(Summon):
         super().__init__(name, img, loc, owner, number)
         
     def pass_priority(self, ents_list):
-        ents_list = ents_list[1:]
-        if ents_list == []:
-            app.end_turn()
-        else:
-            app.do_ai_loop(ents_list)
+        self.ai_end_turn(ents_list)
     
     # make casting anims
     def do_ai(self, ents_list):
-        p = partial(self.__class__.legal_moves, self) #   PUT BACK CLASS METHOD MOVEMENT
-        self.legal_moves = p
-        if self.waiting == True: # GIVEN PRIORITY OVER OTHER ENTS, ONLY TRY TO ATTACK THIS ENT
+        if self.waiting == True:
             self.pass_priority(ents_list)
-        else: # NO TARGET PRIORITY, ATTEMPT ATTACK FROM STARTLOC
-            # Summon Elementals
+        else: # summon elementals
             root.after(1333, lambda el = ents_list : self.elemental_summon(el))
             
     def elemental_summon(self, ents_list):
@@ -5107,16 +5281,11 @@ class Fire_Mage(Summon):
         app.canvas.tag_lower(self.tags, 'maptop')
         root.after(666, lambda ents_list = ents_list : self.finish_turn(ents_list))
         
-        
     def finish_turn(self, ents_list):
         if self.attack_used == False:
             root.after(1333, lambda el = ents_list : self.do_attack(el)) # EXIT THROUGH ATTACK
         else:# CANNOT ATTACK, EXIT FUNC
-            ents_list = ents_list[1:]
-            if ents_list == []:
-                app.end_turn()
-            else:
-                root.after(666, lambda e = ents_list : app.do_ai_loop(e))
+            self.ai_end_turn(ents_list)
     
     def do_attack(self, ents_list):
         if self.attack_used == True:
@@ -5172,8 +5341,6 @@ class Fire_Mage(Summon):
             else: # cleanup vis / cont ai_loop
                 root.after(2999, lambda el = ents_list : self.cleanup_attack(el))
             
-            
-            
     def cleanup_attack(self, ents_list):
 #         self.init_normal_anims()
         names = [k for k,v in app.vis_dict.items() if v.name == 'Firewall']
@@ -5212,55 +5379,33 @@ class Sorceress(Summon):
         super().__init__(name, img, loc, owner, number)
         
     def pass_priority(self, ents_list):
-        ents_list = ents_list[1:]
-        if ents_list == []:
-            app.end_turn()
-        else:
-            app.do_ai_loop(ents_list)
+        self.ai_end_turn(ents_list)
         
-    # attempt to teleport barbarian, take away summon undead, do not teleport away instead teleport towards barbarian
+    # attempt to teleport barbarian, do not teleport away instead teleport towards barbarian
     #  SORCERESS AI
     def do_ai(self, ents_list):
-        if self.waiting == True: # GIVEN PRIORITY OVER OTHER ENTS, ONLY TRY TO ATTACK THIS ENT
+        if self.waiting == True:
             self.pass_priority(ents_list)
-        else: # NO TARGET PRIORITY, ATTEMPT ATTACK FROM STARTLOC
+        else:
             self.teleport_barbarian(ents_list)
-#             root.after(2333, lambda ents_list = ents_list : self.continue_ai(ents_list))
-            # Summon Undead
-#             root.after(1333, lambda el = ents_list : self.warlock_summon(el))
-    # b2
+    # b2 is barbarian
     def teleport_barbarian(self, ents_list):
-        # if b2 within 5 sqrs teleport it to the nearest enemy ent
-        sqrs = [s for s in app.coords if dist(s, self.loc) <= 5]
-        ents = [app.grid[s[0]][s[1]] for s in sqrs if app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
+        # if b2 within 10 sqrs teleport it to the nearest enemy ent
+        sqrs = [s for s in app.coords if dist(s, self.loc) <= 10]
+        ents = [k for k,v in app.ent_dict.items() if v.loc in sqrs]
         if 'b2' in ents:
             # find nearest enemy ent
-            enemy_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p1']
-            loc = enemy_ent_locs[0] # will always exist
-            min_dist = dist(self.loc, loc)
-            enemy_ent_locs = enemy_ent_locs[1:]
-            if enemy_ent_locs != []:
-                for s in enemy_ent_locs:
-                    if dist(s, self.loc) < min_dist:
-                        min_dist = dist(s, self.loc)
-                        loc = s
-            # find the closest empty sqr that is within teleport range
-            empty_sqrs = [s for s in app.coords if app.grid[s[0]][s[1]] == '' and dist(s, self.loc) < 4]
-            closest_sqr = empty_sqrs[0] # should always exist
-            if closest_sqr != []:
-                min_dist = dist(closest_sqr, loc)
-                for s in empty_sqrs:
-                    if dist(s, loc) < min_dist:
-                        closest_sqr = s
-                        min_dist = dist(s, loc)
-                # teleport b2 to closest_sqr
-                oldloc = app.ent_dict['b2'].loc[:]
-                app.vis_dict['Teleport'] = Vis(name = 'Teleport', loc = oldloc)
-                vis = app.vis_dict['Teleport']
-                app.canvas.create_image(oldloc[0]*100+50-app.moved_right, oldloc[1]*100+50-app.moved_down, image = vis.img, tags = 'Teleport')
-                root.after(2333, lambda ents_list = ents_list, oldloc = oldloc, newloc = closest_sqr : self.cleanup_bar_teleport(ents_list, oldloc, newloc))
-            else:
-                self.continue_ai(ents_list)
+            enemy_ent_locs = [v.loc for k,v in app.ent_dict.items() if v.owner != self.owner]
+            loc = reduce(lambda a,b : a if dist(self.loc,a) < dist(self.loc,b) else b, enemy_ent_locs)
+            # find the closest empty sqr that is within teleport range, debug maybe impossible edge case will not exist
+            empty_sqrs = [s for s in app.coords if app.grid[s[0]][s[1]] == '' and dist(s, self.loc) < 5]
+            closest_sqr = reduce(lambda a,b : a if dist(self.loc,a) < dist(self.loc,b) else b, empty_sqrs)
+            # teleport b2 to closest_sqr
+            oldloc = app.ent_dict[b2].loc[:]
+            app.vis_dict['Teleport'] = Vis(name = 'Teleport', loc = oldloc)
+            vis = app.vis_dict['Teleport']
+            app.canvas.create_image(oldloc[0]*100+50-app.moved_right, oldloc[1]*100+50-app.moved_down, image = vis.img, tags = 'Teleport')
+            root.after(2333, lambda ents_list = ents_list, oldloc = oldloc, newloc = closest_sqr : self.cleanup_bar_teleport(ents_list, oldloc, newloc))
         else:
             self.continue_ai(ents_list)
         
@@ -5283,7 +5428,6 @@ class Sorceress(Summon):
             app.canvas.delete('Teleport')
         except: pass
         atk_sqrs = self.legal_attacks()
-        atk_sqrs = [x for x in atk_sqrs if app.ent_dict[app.grid[x[0]][x[1]]].owner == 'p1']
         if atk_sqrs != []:
             any = atk_sqrs[0]
             id = app.grid[any[0]][any[1]]
@@ -5293,7 +5437,7 @@ class Sorceress(Summon):
             # among legal sqrs, move to sqr within dist of attack or that minimizes dist
             leg_sqrs = self.legal_moves()
             if leg_sqrs != []:
-                enemy_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p1']
+                enemy_ent_locs = [v.loc for k,v in app.ent_dict.items() if v.owner != self.owner]
                 # first try to move to sqr at edge of attack range
                 goals = [c for c in app.coords for e in enemy_ent_locs if dist(c, e) <= 3 and app.grid[c[0]][c[1]] == '']
                 target_sqrs = []
@@ -5311,51 +5455,7 @@ class Sorceress(Summon):
                     root.after(666, lambda sqr = loc : app.focus_square(sqr))
                     root.after(1333, lambda el = ents_list, endloc = loc : self.sorceress_move(el, loc))
             else: # continue ai_loop
-                ents_list = ents_list[1:]
-                if ents_list == []:
-                    root.after(666, app.end_turn)
-                else:
-                    root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
-#         atk_sqrs = self.legal_attacks()
-#         atk_sqrs = [x for x in atk_sqrs if app.ent_dict[app.grid[x[0]][x[1]]].owner == 'p1']
-#         if atk_sqrs != []:
-#             any = atk_sqrs[0]
-#             id = app.grid[any[0]][any[1]]
-#             root.after(666, lambda id = id : app.get_focus(id))
-#             root.after(1333, lambda el = ents_list, id = id : self.do_attack(el, id)) # ATTACK
-#         else: # CANNOT ATTACK FROM START LOC, GET TARGET AND MOVE TOWARDS
-#             enemy_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p1']
-#             paths = []
-# #             coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-#             for el in enemy_ent_locs:
-#             # FIND PATH TO SQR WITHIN RANGE OF THIS ENT
-#             # Need paths 'through' objects
-#             # cannot end move in 'block' or Ent
-#                 goals = [c for c in app.coords if dist(c, el) <= 4 and app.grid[c[0]][c[1]] == '']
-#                 # this can cause 'path-shortening', finds path which is then obstructed on real grid resulting in 'short move'
-#                 egrid = [[''] * (app.map_height//100) for i in range(app.map_width//100)]
-#                 path = bfs(self.loc[:], goals, egrid)
-#                 if path:
-#                     paths.append(path)
-#             smallpaths = [y for y in paths if len(y) == min(len(y) for y in paths)] # THE SHORTEST PATHS AMONG PATHS
-#             if smallpaths != []: # IF ANY PATHS EXIST AT ALL
-#                 apath = smallpaths[0]
-#                 # FIND FURTHEST SQR ALONG PATH THAT CAN BE MOVED TO
-#                 moves = self.legal_moves()
-#                 endloc = None
-#                 for sqr in apath[::-1]: # START WITH SQRS CLOSEST TO TARGET
-#                     if sqr in moves:
-#                         endloc = sqr[:] # AMONG SQRS POSSIBLE TO MOVE TO, THIS IS CLOSEST TO GOAL
-#                         break
-#                 if endloc != None:
-#                     root.after(666, lambda sqr = endloc[:] : app.focus_square(sqr))
-#                     root.after(1333, lambda el = ents_list, endloc = endloc : self.sorceress_move(el, endloc))
-#                 else:
-#                     ents_list = ents_list[1:]
-#                     if ents_list == []:
-#                         root.after(666, app.end_turn)
-#                     else:
-#                         root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
+                self.ai_end_turn(ents_list)
             
     # change to 'teleport move'
     def sorceress_move(self, ents_list, endloc):
@@ -5371,7 +5471,6 @@ class Sorceress(Summon):
         app.grid[self.loc[0]][self.loc[1]] = ''
         app.canvas.delete(self.number)
         self.loc = endloc[:]
-#         app.ent_dict[id].origin = newloc[:]
         app.grid[endloc[0]][endloc[1]] = self.number
         try: 
             del app.vis_dict['Teleport']
@@ -5403,18 +5502,9 @@ class Sorceress(Summon):
                 root.after(666, lambda t = id : app.get_focus(t))
                 root.after(1333, lambda el = ents_list, t = id : self.do_attack(el, t)) # EXIT THROUGH ATTACK
             else: # END TURN
-                ents_list = ents_list[1:]
-                if ents_list == []:
-                    app.end_turn()
-                else:
-                    root.after(666, lambda e = ents_list : app.do_ai_loop(e))
+                self.ai_end_turn(ents_list)
         else:
-        # CANNOT ATTACK, EXIT FUNC
-            ents_list = ents_list[1:]
-            if ents_list == []:
-                app.end_turn()
-            else:
-                root.after(666, lambda e = ents_list : app.do_ai_loop(e))
+            self.ai_end_turn(ents_list)
     
     # change to fireblast
     def do_attack(self, ents_list, id):
@@ -5427,25 +5517,25 @@ class Sorceress(Summon):
             effect1 = mixer.Sound('Sound_Effects/immolate.ogg')
             effect1.set_volume(.7)
             sound_effects.play(effect1, 0)
-            # make range atk vis
             visloc = app.ent_dict[id].loc[:]
             app.vis_dict['Fireblast'] = Vis(name = 'Fireblast', loc = visloc)
             app.canvas.create_image(visloc[0]*100+50-app.moved_right, visloc[1]*100+50-app.moved_down, image = app.vis_dict['Fireblast'].img, tags = 'Fireblast')
-            app.canvas.create_text(visloc[0]*100+50-app.moved_right, visloc[1]*100+10-app.moved_down, text = 'Fireblast', font = ('Andale Mono', 16), fill = 'white', tags = 'text')
+            app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+89-app.moved_down, text = 'Fireblast', font = ('Andale Mono', 16), fill = 'black', tags = 'text')
+            app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+90-app.moved_down, text = 'Fireblast', font = ('Andale Mono', 16), fill = 'brickred', tags = 'text')
             my_psyche = self.get_attr('psyche')
             target_psyche = app.ent_dict[id].get_attr('psyche')
             if to_hit(my_psyche, target_psyche) == True:
-                # HIT, SHOW VIS, DO DAMAGE, EXIT
                 d = damage(my_psyche, target_psyche)
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+80, text = 'Sorceress Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
                 app.ent_dict[id].set_attr('spirit', -d)
                 if app.ent_dict[id].spirit <= 0:
-                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+100, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+94, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+95, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
             else:
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+80, text = 'Sorceress Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 12), tags = 'text')
-
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Miss!', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Miss!', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
             root.after(3666, lambda  el = ents_list, id = id : self.cleanup_attack(el, id))
-        
         
     def cleanup_attack(self, ents_list, id):
         self.init_normal_anims()
@@ -5465,11 +5555,7 @@ class Sorceress(Summon):
             self.finish_attack(ents_list)
                     
     def finish_attack(self, ents_list):
-        el = ents_list[1:]
-        if el == []:
-            app.end_turn()
-        else:
-            app.do_ai_loop(el)
+        self.ai_end_turn(ents_list)
         
     def legal_attacks(self):
         sqrs = []
@@ -5837,145 +5923,98 @@ class Barbarian(Summon):
         super().__init__(name, img, loc, owner, number)
         
     def pass_priority(self, ents_list):
-        ents_list = ents_list[1:]
-        if ents_list == []:
-            app.end_turn()
-        else:
-            app.do_ai_loop(ents_list)
+        self.ai_end_turn(ents_list)
         
-    #  BARBARIAN AI
-    # instead of calling bfs on each potential target, can i walk grid with bfs until any enemy is found?
     def do_ai(self, ents_list):
-        if self.waiting == True: # PASSIVE / WAITING
+        if self.waiting == True:
             self.pass_priority(ents_list)
-        else: # NO TARGET PRIORITY, ATTEMPT ATTACK FROM STARTLOC
-            atk_sqrs = self.legal_attacks()
-            atk_sqrs = [x for x in atk_sqrs if app.ent_dict[app.grid[x[0]][x[1]]].owner == 'p1']
-            if atk_sqrs != []:
-                any = atk_sqrs[0]
-                id = app.grid[any[0]][any[1]]
-                root.after(666, lambda id = id : app.get_focus(id))
-                root.after(1333, lambda el = ents_list, id = id : self.do_attack(el, id)) # ATTACK
-            else: # CANNOT ATTACK FROM START LOC, GET TARGET AND MOVE TOWARDS
-                enemy_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p1']
-                paths = []
-                for el in enemy_ent_locs:
-                # FIND PATH TO SQR WITHIN RANGE OF THIS ENT
-                    goals = [c for c in app.coords if dist(c, el) == 1 and app.grid[c[0]][c[1]] == '']
-                    path = bfs(self.loc[:], goals, app.grid[:])
-                    if path:
-                        paths.append(path)
-                smallpaths = [y for y in paths if len(y) == min(len(y) for y in paths)] # THE SHORTEST PATHS AMONG PATHS
-                if smallpaths != []: # IF ANY PATHS EXIST AT ALL
-                    apath = smallpaths[0]
-                    # FIND FURTHEST SQR ALONG PATH THAT CAN BE MOVED TO
-                    moves = self.legal_moves()
-                    endloc = None
-                    for sqr in apath[::-1]: # START WITH SQRS CLOSEST TO TARGET
-                        if sqr in moves:
-                            endloc = sqr[:] # AMONG SQRS POSSIBLE TO MOVE TO, THIS IS CLOSEST TO GOAL
-                            break
-                    if endloc != None:
-                        root.after(666, lambda sqr = endloc[:] : app.focus_square(sqr))
-                        root.after(1333, lambda el = ents_list, endloc = endloc : self.ai_move(el, endloc))
-                    else:
-                        ents_list = ents_list[1:]
-                        if ents_list == []:
-                            root.after(666, app.end_turn)
-                        else:
-                            root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
-                else: # NO PATHS TO TARGET, MAKE BEST EFFORT MINIMIZE DIST MOVE
-                    # change to 'remove friendly ents', find path, move along path as far as possible
-                    egrid = deepcopy(app.grid)
-                    friendly_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p2']
-                    for eloc in friendly_ent_locs:
-                        egrid[eloc[0]][eloc[1]] = '' # EGRID NOW EMPTIED OF FRIENDLY ENTS
-                    # NOW FIND PATH AND PASS TO MOVE
-#                     coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-                    for el in enemy_ent_locs:
-                        goals = [c for c in app.coords if dist(c, el) == 1 and app.grid[c[0]][c[1]] == '']
-                        path = bfs(self.loc[:], goals, egrid[:]) # BFS ON ALTERED GRID (FRIENDLY ENTS REMOVED)
-                        if path:
-                            paths.append(path)
-                    smallpaths = [y for y in paths if len(y) == min(len(y) for y in paths)]
-                    if smallpaths != []: # MOVE ALONG PATH AS FAR AS POSSIBLE, ATTEMPT ATTACK
-                        apath = smallpaths[0]
-                        # FIND FURTHEST SQR ALONG PATH THAT CAN BE MOVED TO
-                        moves = self.legal_moves()
-                        endloc = None
-                        for sqr in apath[::-1]: # START WITH SQRS CLOSEST TO TARGET
-                            if sqr in moves:
-                                endloc = sqr[:] # AMONG SQRS POSSIBLE TO MOVE TO, THIS IS CLOSEST TO GOAL
-                                break
-                        if endloc != None:
-                            # here need to 'trim path' to prevent moving to square 'through' friendly ents
-                            root.after(666, lambda sqr = endloc[:] : app.focus_square(sqr))
-                            root.after(1333, lambda el = ents_list, endloc = endloc : self.ai_move(el, endloc))
-                        else:
-                            ents_list = ents_list[1:]
-                            if ents_list == []:
-                                root.after(666, app.end_turn)
-                            else:
-                                root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
-                    else:
-                        ents_list = ents_list[1:]
-                        if ents_list == []:
-                            root.after(666, app.end_turn)
-                        else:
-                            root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
+        else:
+            self.continue_ai(ents_list)
             
-    
+    def continue_ai(self, ents_list):
+        atk_sqrs = self.legal_attacks()
+        if atk_sqrs != []: # CAN ATTACK BEFORE MOVING
+            any = atk_sqrs[0]
+            id = app.grid[any[0]][any[1]]
+            root.after(666, lambda id = id : app.get_focus(id))
+            root.after(1333, lambda el = ents_list, id = id : self.do_attack(el, id)) # ATTACK
+        else: # FIND PATH
+            enemy_locs = [v.loc for k,v in app.ent_dict.items() if v.owner != self.owner]
+            friendly_locs = [v.loc for k,v in app.ent_dict.items() if v.owner == self.owner and v != self]
+            egrid = deepcopy(app.grid)
+            for s in friendly_locs:
+                egrid[s[0]][s[1]] = '' # EGRID NOW EMPTIED OF FRIENDLY ENTS
+            # some redundant goals below but currently doesnt matter for bfs()
+            goals = [s for s in app.coords for el in enemy_locs if dist(s, el) == 1 and app.grid[s[0]][s[1]] == '']
+            egoals = [s for s in app.coords for el in enemy_locs if dist(s, el) == 1 and egrid[s[0]][s[1]] == '']
+            path = bfs(self.loc[:], goals, app.grid[:])# there may not be a path
+            epath = bfs(self.loc[:], egoals, egrid[:])# always an epath unls efx make 'block's in future
+            # if path is None or is 'much longer' than epath, use epath
+            if path == None or (len(path) > len(epath)+5):
+                self.move_along_path(epath, ents_list)
+            else:
+                self.move_along_path(path, ents_list)
+                
+    # takes a list of coords, passes an estimate of the 'best' destination coord to self.ai_move
+    def move_along_path(self, path, ents_list):
+        moves = self.legal_moves()
+        if moves == []:
+            self.ai_end_turn(ents_list)
+        else:
+            moves_tups = [tuple(s) for s in moves]
+            path_tups = [tuple(s) for s in path]
+            intersect = list(set(moves_tups) & set(path_tups))
+            if intersect == []:
+                self.ai_end_turn(ents_list)
+            else:
+                move = list(reduce(lambda a,b : a if dist(self.loc, a) > dist(self.loc, b) else b, intersect))
+                root.after(666, lambda sqr = move : app.focus_square(sqr))
+                root.after(1333, lambda el = ents_list, sqr = move : self.ai_move(el, sqr))
+            
     def do_attack(self, ents_list, id):
         if self.attack_used == True:
-            self.cleanup_attack(ents_list, id)
+            self.cleanup_attack(ents_list)
         else:
             app.get_focus(id)
-    #         self.init_attack_anims()
-    #         effect1 = mixer.Sound('Sound_Effects/orc_axeman_attack.ogg')
-    #         effect1.set_volume(1)
-    #         sound_effects.play(effect1, 0)
+            self.init_attack_anims()
+            effect1 = mixer.Sound('Sound_Effects/undead_attack.ogg')
+            sound_effects.play(effect1, 0)
             my_agl = self.get_attr('agl')
             target_agl = app.ent_dict[id].get_attr('agl')
-            if to_hit(my_agl, target_agl) == True:
-                # HIT, SHOW VIS, DO DAMAGE, EXIT
+            if to_hit(my_agl, target_agl) == True:# HIT
                 my_str = self.get_attr('str')
-                target_end = app.ent_dict[id].get_attr('end')
-                d = damage(my_str, target_end)
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Barbarian Attack Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
+                tar_end = app.ent_dict[id].get_attr('end')
+                d = damage(my_str, tar_end)
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
                 app.ent_dict[id].set_attr('spirit', -d)
-                if app.ent_dict[id].spirit <= 0:
-                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-                root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id)) # EXIT THROUGH CLEANUP_ATTACK()
-            else:
-                # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Barbarian Attack Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-                root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id))
+                if app.ent_dict[id].spirit <= 0:# HIT, KILL
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+94, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+95, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
+                    name = 'dethlok'+str(app.death_count)
+                    app.death_count += 1
+                    app.dethloks[name] = tk.IntVar(0)
+                    root.after(2666, self.cleanup_attack)
+                    root.after(2666, lambda id = id, name = name : app.kill(id, name))
+                    root.wait_variable(app.dethloks[name])
+                    self.finish_attack(ents_list)
+                else:# HIT, NO KILL
+                    root.after(2666, lambda e = ents_list : self.finish_attack(e))
+            else:# MISS
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Miss!', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Miss!', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
+                root.after(2666, lambda e = ents_list : self.finish_attack(e))
         
-        
-            
-    def cleanup_attack(self, ents_list, id):
+    def cleanup_attack(self):
         self.init_normal_anims()
-        try: 
-            app.canvas.delete('text')
-#             del app.vis_dict['']
-#             app.canvas.delete('')
+        try: app.canvas.delete('text')
         except: pass
-        if app.ent_dict[id].spirit <= 0:
-            name = 'dethlok'+str(app.death_count)
-            app.death_count += 1
-            app.dethloks[name] = tk.IntVar(0)
-            root.after(666, lambda id = id, name = name : app.kill(id, name))
-            root.wait_variable(app.dethloks[name])
-            self.finish_attack(ents_list)
-        else:
-            self.finish_attack(ents_list)
-                    
+            
     def finish_attack(self, ents_list):
-        el = ents_list[1:]
-        if el == []:
-            app.end_turn()
-        else:
-            app.do_ai_loop(el)
+        self.init_normal_anims()
+        try: app.canvas.delete('text')
+        except: pass
+        self.ai_end_turn(ents_list)
         
     def legal_attacks(self):
         sqrs = []
@@ -5995,14 +6034,13 @@ class Barbarian(Summon):
                 return
             adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
             for s in adj:
-                mvlist.append(s)
+                if s not in mvlist:
+                    mvlist.append(s)
                 findall(s, start+1, distance)
-        findall(loc, 1, 2) 
-        mvlist = [list(x) for x in set(tuple(x) for x in mvlist)]
+        findall(loc, 1, 3)
         for f in self.move_effects:
             mvlist = f(mvlist)
         return mvlist
-        
         
     # if no ent within immediate move/attack range, only move toward witch
 class Minotaur_Top(Summon):
@@ -6041,19 +6079,15 @@ class Minotaur(Summon):
         del app.ent_dict[self.number+'top']
         
     def pass_priority(self, ents_list):
-        ents_list = ents_list[1:]
-        if ents_list == []:
-            app.end_turn()
-        else:
-            app.do_ai_loop(ents_list)
+        self.ai_end_turn()
         
     #  Minotaur AI
+    # if no other enemy is within atk range, will always attempt moving towards witch
     def do_ai(self, ents_list):
-        if self.waiting == True: # PASSIVE / WAITING
+        if self.waiting == True:
             self.pass_priority(ents_list)
-        else: # NO TARGET PRIORITY, ATTEMPT ATTACK FROM STARTLOC
+        else:
             atk_sqrs = self.legal_attacks()
-            atk_sqrs = [x for x in atk_sqrs if app.ent_dict[app.grid[x[0]][x[1]]].owner == 'p1']
             if atk_sqrs != []:
                 any = atk_sqrs[0]
                 id = app.grid[any[0]][any[1]]
@@ -6062,7 +6096,6 @@ class Minotaur(Summon):
             else: # CANNOT ATTACK FROM START LOC, GET TARGET AND MOVE TOWARDS
                 enemy_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p1']
                 paths = []
-#                 coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
                 for el in enemy_ent_locs:
                 # FIND PATH TO SQR WITHIN RANGE OF THIS ENT
                     goals = [c for c in app.coords if dist(c, el) == 1 and app.grid[c[0]][c[1]] == '']
@@ -6084,14 +6117,8 @@ class Minotaur(Summon):
                         if endloc != None:
                             root.after(666, lambda sqr = endloc[:] : app.focus_square(sqr))
                             root.after(1333, lambda el = ents_list, endloc = endloc : self.minotaur_move(el, endloc))
-                        else: #####
-                            print('exit here')
-                            ents_list = ents_list[1:]
-                            if ents_list == []:
-                                root.after(666, app.end_turn)
-                            else:
-                                root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
-                            
+                        else:
+                            self.ai_end_turn(ents_list)
                 # CHANGE TO BEST EFFORT MOVE TOWARDS WITCH EGRID
                 else: # NO PATHS TO TARGET, MAKE BEST EFFORT MINIMIZE DIST MOVE
                     # change to 'remove friendly ents', find path, move along path as far as possible
@@ -6100,7 +6127,6 @@ class Minotaur(Summon):
                     for eloc in friendly_ent_locs:
                         egrid[eloc[0]][eloc[1]] = '' # EGRID NOW EMPTIED OF FRIENDLY ENTS
                     # NOW FIND PATH AND PASS TO MOVE
-#                     coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
                     for el in enemy_ent_locs:
                         goals = [c for c in app.coords if dist(c, el) == 1 and app.grid[c[0]][c[1]] == '']
                         path = bfs(self.loc[:], goals, egrid[:]) # BFS ON ALTERED GRID (FRIENDLY ENTS REMOVED)
@@ -6139,11 +6165,7 @@ class Minotaur(Summon):
                                         root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
                     else: # SHOULD NOT GET HERE ON LABYRINTH LEVEL, GETTING HERE MEANS THAT NO PATH EXISTS TO ANY PLAYER ENT EVEN AFTER REMOVING FRIENDLY ENTS
                         print('got to blocked minotaur AI area')
-                        ents_list = ents_list[1:]
-                        if ents_list == []:
-                            root.after(666, app.end_turn)
-                        else:
-                            root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
+                        self.ai_end_turn(ents_list)
                                 
     # should be improved by first attempting path to witch on regular grid (not egrid)
     # make best effort to move towards witch (move to closest square on potentially blocked paths)
@@ -6352,10 +6374,10 @@ class Warrior(Summon):
         self.attack_used = False
         self.str = 6
         self.agl = 5
-        self.end = 6
+        self.end = 5
         self.dodge = 3
         self.psyche = 2
-        self.spirit = 15
+        self.spirit = 25
         self.move_type = 'charge'
         self.leap_used = False
         super().__init__(name, img, loc, owner, number)
@@ -6482,7 +6504,7 @@ class Warrior(Summon):
         total_distance = abs(x - endx) + abs(y - endy)
         tic = total_distance/6
         # need to call rotate_image every tic
-        def move_loop(x, y, endx, endy, start_sqr, end_sqr, acm, tic):
+        def leap_loop(x, y, endx, endy, start_sqr, end_sqr, acm, tic):
             if acm >= tic:
                 acm = 0
                 self.rotate_image()
@@ -6504,12 +6526,11 @@ class Warrior(Summon):
                 acm += 10
                 y += 10
                 app.canvas.move(self.number, 0, 10)
-            app.canvas.tag_raise('cursor')
             if x == endx and y == endy:
                 self.finish_leap(end_sqr, start_sqr) # EXIT
             else: # CONTINUE LOOP
-                root.after(66, lambda x = x, y = y, e = endx, e2 = endy, s = start_sqr, s2 = end_sqr, acm = acm, tic = tic : move_loop(x, y, e, e2, s, s2, acm, tic))
-        move_loop(x, y, endx, endy, start_sqr, end_sqr, tic+1, tic)
+                root.after(66, lambda x = x, y = y, e = endx, e2 = endy, s = start_sqr, s2 = end_sqr, acm = acm, tic = tic : leap_loop(x, y, e, e2, s, s2, acm, tic))
+        leap_loop(x, y, endx, endy, start_sqr, end_sqr, tic+1, tic)
             
             
     def finish_leap(self, end_sqr, start_sqr):
@@ -9071,14 +9092,14 @@ class Witch(Entity):
                 name = 'Dethlok'+str(app.death_count)
                 app.death_count += 1
                 app.dethloks[name] = tk.IntVar(0)
-                root.after(2666, lambda id = id, name = name : app.kill(id, name))
+                root.after(2666, lambda id = e, name = name : app.kill(id, name))
                 app.wait_variable(app.dethloks[name])
             def clean_beleths_command(n):
                 del app.vis_dict[n]
                 app.canvas.delete(n)
             root.after(3666, lambda n = uniq_name : clean_beleths_command(n))
         # DO Beleth's Command EFFECTS
-        effs = [v.name for k,v in app.ent_dict[id].effects_dict.items()]
+        effs = [v.name for k,v in self.effects_dict.items()]
         if "Beleth's_Command" not in effs:
             def beleths_command_effect(stat):
                 stat += 2
@@ -9088,6 +9109,7 @@ class Witch(Entity):
             app.ent_dict[id].psyche_effects.append(f)
             def beleth_move(sqrs):# REPLACE CLASS MOVEMENT WITH NOTHING
                 return []
+            self.move_effects.append(beleth_move)
             def un(i):
                 app.ent_dict[i].end_effects.remove(beleths_command_effect)
                 app.ent_dict[i].psyche_effects.remove(beleths_command_effect)
@@ -10945,9 +10967,9 @@ class App(tk.Frame):
     
     def open_chest21_1(self):
         loc = app.ent_dict[app.p1_witch].loc[:]
-        app.canvas.create_text(loc[0]*100-app.moved_right, loc[1]*100-app.moved_down+85, text = 'Amulet of Circe\nPermanent +2 Psyche', justify = 'center', font = ('Andale Mono', 16), fill = 'white', tags = 'text')
-        app.ent_dict[app.p1_witch].psyche += 2
-        app.ent_dict[app.p1_witch].base_psyche += 2
+        app.canvas.create_text(loc[0]*100-app.moved_right, loc[1]*100-app.moved_down+85, text = 'Amulet of Circe\nPermanent +1 Psyche', justify = 'center', font = ('Andale Mono', 16), fill = 'white', tags = 'text')
+        app.ent_dict[app.p1_witch].psyche += 1
+        app.ent_dict[app.p1_witch].base_psyche += 1
         root.after(2999, lambda t = 'text' : app.canvas.delete(t))
         root.after(2999, self.cancel_chest1)
         
@@ -12131,7 +12153,7 @@ class App(tk.Frame):
 
         
     def debugger(self, event):
-        print(root.winfo_children())
+        print(app.ent_dict['Agnes_Sampson'])
 #         for b in self.context_buttons:
 #             print(b)
 
