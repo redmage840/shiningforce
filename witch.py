@@ -756,13 +756,13 @@ class Trickster(Summon):
         global selected_vis
         if sqr not in sqrs:
             return
-#         effect1 = mixer.Sound('Sound_Effects/mortar.ogg')
-#         effect1.set_volume(1)
-#         sound_effects.play(effect1, 0)
+        effect1 = mixer.Sound('Sound_Effects/mortar.ogg')
+        effect1.set_volume(1)
+        sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
-#         self.attack_used = True
+        self.attack_used = True
         app.vis_dict['Mortar'] = Vis(name = 'Mortar', loc = self.loc)
         app.canvas.create_image(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+50-app.moved_down, image = app.vis_dict['Mortar'].img, tags = 'Mortar')
         selected_vis = 'Mortar'
@@ -832,6 +832,15 @@ class Trickster(Summon):
         del app.vis_dict['Mortar']
         app.canvas.delete('Mortar')
         selected_vis = ''
+        effect1 = mixer.Sound('Sound_Effects/fuse_explosion.ogg')
+        effect1.set_volume(1)
+        sound_effects.play(effect1, 0)
+        app.vis_dict['Mortar_Exploded'] = Vis(name = 'Mortar_Exploded', loc = sqr)
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Mortar_Exploded'].img, tags = 'Mortar_Exploded')
+        def cleanup_explode():
+            del app.vis_dict['Mortar_Exploded']
+            app.canvas.delete('Mortar_Exploded')
+        root.after(999, cleanup_explode)
         ents = [k for k,v in app.ent_dict.items() if dist(v.loc, sqr) <= 2]
         # mortar loop
         def mortar_loop(ents):
