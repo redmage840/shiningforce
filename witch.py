@@ -1,3 +1,5 @@
+# still effects making use of old legal_moves logic, darkness, meditate, mummify
+
 # make leap and mortar move in straight line like fireball
 
 # bard gets esuna/harmony, trickster gets mortar, plaguebearer gets paralyze
@@ -771,35 +773,57 @@ class Trickster(Summon):
         start_sqr = self.loc[:]
         end_sqr = sqr[:]
         total_distance = abs(x - endx) + abs(y - endy)
-        tic = total_distance/7
+        tic = total_distance/9 # Magic Number debug, number of images for vis
+        if x == endx:
+            xstep = 0
+            ystep = 10
+        elif y == endy:
+            xstep = 10
+            ystep = 0
+        else:
+            slope = Fraction(abs(x - endx), abs(y - endy))
+            # needs to be moving at least 10 pixels, xstep + ystep >= 10
+            xstep = slope.numerator
+            ystep = slope.denominator
+            while xstep + ystep < 10:
+                xstep *= 2
+                ystep *= 2
         # need to call rotate_image every tic
-        def mortar_arc(x, y, endx, endy, start_sqr, end_sqr, acm, tic):
+        def mortar_arc(x, y, endx, endy, start_sqr, end_sqr, acm, tic, xstep, ystep):
             if acm >= tic:
                 acm = 0
                 app.vis_dict['Mortar'].rotate_image()
                 app.canvas.delete('Mortar')
                 app.canvas.create_image(x, y, image = app.vis_dict['Mortar'].img, tags = 'Mortar')
             if x > endx:
-                acm += 10
-                x -= 10
-                app.canvas.move('Mortar', -10, 0)
-            if x < endx:
-                acm += 10
-                x += 10
-                app.canvas.move('Mortar', 10, 0)
+                acm += xstep
+                x -= xstep
+                app.canvas.delete('Mortar')
+                app.canvas.create_image(x, y, image = app.vis_dict['Mortar'].img, tags = 'Mortar')
+                app.canvas.tag_raise('Mortar')
+            elif x < endx:
+                acm += xstep
+                x += xstep
+                app.canvas.delete('Mortar')
+                app.canvas.create_image(x, y, image = app.vis_dict['Mortar'].img, tags = 'Mortar')
+                app.canvas.tag_raise('Mortar')
             if y > endy:
-                acm += 10
-                y -= 10
-                app.canvas.move('Mortar', 0, -10)
-            if y < endy:
-                acm += 10
-                y += 10
-                app.canvas.move('Mortar', 0, 10)
-            if x == endx and y == endy:
+                acm += ystep
+                y -= ystep
+                app.canvas.delete('Mortar')
+                app.canvas.create_image(x, y, image = app.vis_dict['Mortar'].img, tags = 'Mortar')
+                app.canvas.tag_raise('Mortar')
+            elif y < endy:
+                acm += ystep
+                y += ystep
+                app.canvas.delete('Mortar')
+                app.canvas.create_image(x, y, image = app.vis_dict['Mortar'].img, tags = 'Mortar')
+                app.canvas.tag_raise('Mortar')
+            if abs(x - endx) < 13 and abs(y - endy) < 13:
                 self.continue_mortar(sqr)
             else: # CONTINUE LOOP
-                root.after(66, lambda x = x, y = y, e = endx, e2 = endy, s = start_sqr, s2 = end_sqr, acm = acm, tic = tic : mortar_arc(x, y, e, e2, s, s2, acm, tic))
-        mortar_arc(x, y, endx, endy, start_sqr, end_sqr, tic+1, tic)
+                root.after(66, lambda x = x, y = y, e = endx, e2 = endy, s = start_sqr, s2 = end_sqr, acm = acm, tic = tic, xs = xstep, ys = ystep : mortar_arc(x, y, e, e2, s, s2, acm, tic, xs, ys))
+        mortar_arc(x, y, endx, endy, start_sqr, end_sqr, tic+1, tic, xstep, ystep)
         
         
     def continue_mortar(self, sqr):
