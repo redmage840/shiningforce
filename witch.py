@@ -1583,7 +1583,7 @@ class Shadow(Summon):
 # contagion adjacent ents on death
 class Plaguebearer(Summon):
     def __init__(self, name, img, loc, owner, number):
-        self.actions = {'pox':self.pox, 'move':self.move}
+        self.actions = {'Pox':self.pox, 'Paralyze':self.paralyze, 'Move':self.move}
         self.attack_used = False
         self.str = 2
         self.agl = 2
@@ -1651,6 +1651,91 @@ class Plaguebearer(Summon):
             root.after(2333, cleanup_contagion)
         self.death_triggers.append(contagion_trigger)
     # END CLASS INIT
+        
+    def paralyze(self, event = None):
+        if self.attack_used == True:
+            return
+        root.unbind('<a>')
+        root.unbind('<q>')
+        root.bind('<q>', self.finish_paralyze)
+        sqrs = [c for c in app.coords if dist(self.loc, c) == 1]
+        app.animate_squares(sqrs)
+        app.depop_context(event = None)
+        root.bind('<a>', lambda e, sqr = grid_pos, sqrs = sqrs : self.do_paralyze(event = e, sqr = sqr, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Confirm Paralyze Target', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_paralyze(event = e, sqr = sqr, sqrs = sqrs))
+        b.pack(side = 'top')
+        app.context_buttons.append(b)
+        
+    def do_paralyze(self, event, sqr, sqrs):
+        if sqr not in sqrs:
+            return
+        id = app.grid[sqr[0]][sqr[1]]
+        if id == '' or id == 'block':
+            return
+        if app.ent_dict[id].owner == self.owner:
+            return
+        if 'Paralyze' in [v.name for k,v in app.ent_dict[id].effects_dict.items()]:
+            return
+#         effect1 = mixer.Sound('Sound_Effects/paralyze.ogg')
+#         effect1.set_volume(.5)
+#         sound_effects.play(effect1, 0)
+        app.unbind_all()
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        self.attack_used = True
+        app.canvas.create_text(self.loc[0]*100-app.moved_right+49, self.loc[1]*100-app.moved_down+94, text = 'Paralyze', justify = 'center', fill = 'black', font = ('Andale Mono', 16), tags = 'text')
+        app.canvas.create_text(self.loc[0]*100-app.moved_right+50, self.loc[1]*100-app.moved_down+95, text = 'Paralyze', justify = 'center', fill = 'thistle2', font = ('Andale Mono', 16), tags = 'text')
+        app.vis_dict['Paralyze'] = Vis(name = 'Paralyze', loc = sqr[:])
+        vis = app.vis_dict['Paralyze']
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = vis.img, tags = 'Paralyze')
+        # End save, if fail and user-ent: effect stores then overwrites abils, if ai-ent: wrap/overwrite do_ai()
+        if app.ent_dict[id].attr_check('end') == False: # Fail Save
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Stun 1 turn...', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Stun 1 turn...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
+            
+            app.vis_dict['Paralyze'] = Vis(name = 'Paralyze', loc = sqr)
+            app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Paralyze'].img, tags = 'Paralyze')
+            if app.num_players == 2:
+                old_actions = dict(app.ent_dict[id].actions)
+                app.ent_dict[id].actions = {}
+            else:
+                def paralyze_ai(ents_list, id):
+                    app.ent_dict[id].ai_end_turn(ents_list)
+                f = partial(paralyze_ai, id = id)
+                app.ent_dict[id].do_ai = f
+            def un(i, old_actions = None):
+                if app.num_players == 2:
+                    app.ent_dict[i].actions = old_actions
+                else:
+                    p2 = partial(app.ent_dict[i].__class__.do_ai, app.ent_dict[i]) # PUT BACK CLASS MOVES
+                    app.ent_dict[i].do_ai = p2
+                return None
+            if app.num_players == 2:
+                p = partial(un, id, old_actions = old_actions)
+            else:
+                p = partial(un, id)
+            # EOT FUNC
+            def nothing():
+                return None
+            n = 'Paralyze' + str(app.effects_counter)
+            app.ent_dict[id].effects_dict[n] = Effect(name = 'Paralyze', info = 'Paralyze, stun 1 turn', eot_func = nothing, undo = p, duration = 1)
+            root.after(2666, self.finish_paralyze)
+        else:
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Endurance Save', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Endurance Save', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
+            root.after(2666, self.finish_paralyze)
+
+        
+    def finish_paralyze(self, event = None):
+        try: 
+            del app.vis_dict['Paralyze']
+            app.canvas.delete('Paralyze')
+        except: pass
+        app.depop_context(event = None)
+        app.canvas.delete('text')
+        app.cleanup_squares()
+        app.unbind_all()
+        app.rebind_all()
         
     # give all adj units pox Effect if they have no pox effects, causes 3 spirit damage EOT
     def pox(self, event = None):
@@ -1746,7 +1831,7 @@ class Plaguebearer(Summon):
 
 class Bard(Summon):
     def __init__(self, name, img, loc, owner, number):
-        self.actions = {'Unholy Chant':self.unholy_chant, 'Discord' : self.discord, 'Moonlight' : self.moonlight, 'Esuna':self.esuna, 'move':self.move}
+        self.actions = {'Unholy Chant':self.unholy_chant, 'Discord' : self.discord, 'Moonlight' : self.moonlight, 'Esuna':self.esuna, 'Move':self.move}
         self.attack_used = False
         self.str = 2
         self.agl = 3
@@ -6370,7 +6455,7 @@ class Minotaur(Summon):
         
 class Warrior(Summon):
     def __init__(self, name, img, loc, owner, number):
-        self.actions = {'attack':self.warrior_attack, 'leap':self.leap, 'guard':self.guard, 'move':self.move}
+        self.actions = {'Attack':self.warrior_attack, 'Leap':self.leap, 'Guard':self.guard, 'Move':self.move}
         self.attack_used = False
         self.str = 6
         self.agl = 5
