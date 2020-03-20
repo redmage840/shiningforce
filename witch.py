@@ -870,17 +870,17 @@ class Trickster(Summon):
                         app.death_count += 1
                         app.dethloks[name] = tk.IntVar(0)
                         root.after(2666, lambda n = n : cleanup_vis(n))
-                        root.after(2999, lambda id = id, name = name : app.kill(id, name))
+                        root.after(2777, lambda id = id, name = name : app.kill(id, name))
                         root.wait_variable(app.dethloks[name])
                         mortar_loop(ents)
                     else:
                         root.after(2666, lambda n = n : cleanup_vis(n))
-                        root.after(2999, lambda ents = ents : mortar_loop(ents))
+                        root.after(2777, lambda ents = ents : mortar_loop(ents))
                 else: # Save
                     app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Dodge Save!', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'explode_text')
                     app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Dodge Save!', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'explode_text')
                     root.after(2666, lambda n = n : cleanup_vis(n))
-                    root.after(2999, lambda ents = ents : mortar_loop(ents))
+                    root.after(2777, lambda ents = ents : mortar_loop(ents))
         mortar_loop(ents)
         
     def cleanup_mortar(self, event = None):
@@ -3073,38 +3073,38 @@ class Kobold_Shaman(Summon):
                 root.after(666, lambda sqr = move : app.focus_square(sqr))
                 root.after(1333, lambda el = ents_list, sqr = move : self.ai_move(el, sqr))
             
-    def do_attack(self, ents_list, id):
-        if self.attack_used == True:
-            self.cleanup_attack(ents_list)
-        else:
-            app.get_focus(id)
-#             self.init_attack_anims()
-            effect1 = mixer.Sound('Sound_Effects/fire_elemental_attack.ogg')
-            sound_effects.play(effect1, 0)
-            my_psyche = self.get_attr('psyche')
-            tar_dodge = app.ent_dict[id].get_attr('dodge')
-            if to_hit(my_psyche, tar_dodge ) == True:# HIT
-                tar_end = app.ent_dict[id].get_attr('end')
-                d = damage(my_psyche, tar_end)
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
-                app.ent_dict[id].set_attr('spirit', -d)
-                if app.ent_dict[id].spirit <= 0:# HIT, KILL
-                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+94, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
-                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+95, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
-                    name = 'dethlok'+str(app.death_count)
-                    app.death_count += 1
-                    app.dethloks[name] = tk.IntVar(0)
-                    root.after(2666, self.cleanup_attack)
-                    root.after(2666, lambda id = id, name = name : app.kill(id, name))
-                    root.wait_variable(app.dethloks[name])
-                    self.finish_attack(ents_list)
-                else:# HIT, NO KILL
-                    root.after(2666, lambda e = ents_list : self.finish_attack(e))
-            else:# MISS
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Miss!', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Miss!', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
-                root.after(2666, lambda e = ents_list : self.finish_attack(e))
+#     def do_attack(self, ents_list, id):
+#         if self.attack_used == True:
+#             self.cleanup_attack(ents_list)
+#         else:
+#             app.get_focus(id)
+# #             self.init_attack_anims()
+#             effect1 = mixer.Sound('Sound_Effects/fire_elemental_attack.ogg')
+#             sound_effects.play(effect1, 0)
+#             my_psyche = self.get_attr('psyche')
+#             tar_dodge = app.ent_dict[id].get_attr('dodge')
+#             if to_hit(my_psyche, tar_dodge ) == True:# HIT
+#                 tar_end = app.ent_dict[id].get_attr('end')
+#                 d = damage(my_psyche, tar_end)
+#                 app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+#                 app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
+#                 app.ent_dict[id].set_attr('spirit', -d)
+#                 if app.ent_dict[id].spirit <= 0:# HIT, KILL
+#                     app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+94, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+#                     app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+95, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
+#                     name = 'dethlok'+str(app.death_count)
+#                     app.death_count += 1
+#                     app.dethloks[name] = tk.IntVar(0)
+#                     root.after(2666, self.cleanup_attack)
+#                     root.after(2666, lambda id = id, name = name : app.kill(id, name))
+#                     root.wait_variable(app.dethloks[name])
+#                     self.finish_attack(ents_list)
+#                 else:# HIT, NO KILL
+#                     root.after(2666, lambda e = ents_list : self.finish_attack(e))
+#             else:# MISS
+#                 app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Miss!', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+#                 app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Miss!', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
+#                 root.after(2666, lambda e = ents_list : self.finish_attack(e))
             
     def do_attack(self, ents_list, id):
         global selected_vis
@@ -3147,7 +3147,7 @@ class Kobold_Shaman(Summon):
                 if abs(starty - endy) < 13 and abs(startx - endx) < 13:
                     root.after(333, lambda el = ents_list, id = id : self.continue_attack(el, id))
                 else:
-                    root.after(66, lambda sx = startx, ex = endx, sy = starty, ey = endy, xs = xstep, ys = ystep  : fireball_loop(sx, ex, sy, ey, xs, ys))
+                    root.after(40, lambda sx = startx, ex = endx, sy = starty, ey = endy, xs = xstep, ys = ystep  : fireball_loop(sx, ex, sy, ey, xs, ys))
             startx = self.loc[0]*100+50-app.moved_right
             starty = self.loc[1]*100+50-app.moved_down
             endx = loc[0]*100+50-app.moved_right
@@ -3179,7 +3179,7 @@ class Kobold_Shaman(Summon):
             app.canvas.create_text(loc[0]*100-app.moved_right+50, loc[1]*100-app.moved_down+75, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
             app.ent_dict[id].set_attr('spirit', -d)
             if app.ent_dict[id].spirit <= 0:
-                app.canvas.create_text(loc[0]*100-app.moved_right+49, loc[1]*100-app.moved_down+94, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
+                app.canvas.create_text(loc[0]*100-app.moved_right+49, loc[1]*100-app.moved_down+94, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
                 app.canvas.create_text(loc[0]*100-app.moved_right+50, loc[1]*100-app.moved_down+95, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
             root.after(2666, lambda e = ents_list, id = id : self.cleanup_attack(e, id))
         else:# MISS
@@ -5935,7 +5935,7 @@ class Fire_Elemental(Summon):
                 if abs(starty - endy) < 13 and abs(startx - endx) < 13:
                     root.after(333, lambda el = ents_list, id = id : self.continue_attack(el, id))
                 else:
-                    root.after(66, lambda sx = startx, ex = endx, sy = starty, ey = endy, xs = xstep, ys = ystep  : fireball_loop(sx, ex, sy, ey, xs, ys))
+                    root.after(40, lambda sx = startx, ex = endx, sy = starty, ey = endy, xs = xstep, ys = ystep  : fireball_loop(sx, ex, sy, ey, xs, ys))
             startx = self.loc[0]*100+50-app.moved_right
             starty = self.loc[1]*100+50-app.moved_down
             endx = loc[0]*100+50-app.moved_right
@@ -6491,7 +6491,7 @@ class Warrior(Summon):
         self.actions = {'Attack':self.warrior_attack, 'Leap':self.leap, 'Guard':self.guard, 'Move':self.move}
         self.attack_used = False
         self.str = 6
-        self.agl = 5
+        self.agl = 6
         self.end = 5
         self.dodge = 3
         self.psyche = 2
@@ -6621,34 +6621,56 @@ class Warrior(Summon):
         selected = [self.number]
         total_distance = abs(x - endx) + abs(y - endy)
         tic = total_distance/6
+        if x == endx:
+            xstep = 0
+            ystep = 10
+        elif y == endy:
+            xstep = 10
+            ystep = 0
+        else:
+            slope = Fraction(abs(x - endx), abs(y - endy))
+            # needs to be moving at least 10 pixels, xstep + ystep >= 10
+            xstep = slope.numerator
+            ystep = slope.denominator
+            while xstep + ystep < 10:
+                xstep *= 2
+                ystep *= 2
         # need to call rotate_image every tic
-        def leap_loop(x, y, endx, endy, start_sqr, end_sqr, acm, tic):
+        def leap_loop(x, y, endx, endy, start_sqr, end_sqr, acm, tic, xstep, ystep):
             if acm >= tic:
                 acm = 0
                 self.rotate_image()
                 app.canvas.delete(self.number)
                 app.canvas.create_image(x, y, image = self.img, tags = self.tags)
             if x > endx:
-                acm += 10
-                x -= 10
-                app.canvas.move(self.number, -10, 0)
-            if x < endx:
-                acm += 10
-                x += 10
-                app.canvas.move(self.number, 10, 0)
+                acm += xstep
+                x -= xstep
+                app.canvas.delete(self.number)
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+                app.canvas.tag_raise(self.number)
+            elif x < endx:
+                acm += xstep
+                x += xstep
+                app.canvas.delete(self.number)
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+                app.canvas.tag_raise(self.number)
             if y > endy:
-                acm += 10
-                y -= 10
-                app.canvas.move(self.number, 0, -10)
-            if y < endy:
-                acm += 10
-                y += 10
-                app.canvas.move(self.number, 0, 10)
-            if x == endx and y == endy:
+                acm += ystep
+                y -= ystep
+                app.canvas.delete(self.number)
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+                app.canvas.tag_raise(self.number)
+            elif y < endy:
+                acm += ystep
+                y += ystep
+                app.canvas.delete(self.number)
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+                app.canvas.tag_raise(self.number)
+            if abs(x - endx) < 13 and abs(y - endy) < 13:
                 self.finish_leap(end_sqr, start_sqr) # EXIT
             else: # CONTINUE LOOP
-                root.after(66, lambda x = x, y = y, e = endx, e2 = endy, s = start_sqr, s2 = end_sqr, acm = acm, tic = tic : leap_loop(x, y, e, e2, s, s2, acm, tic))
-        leap_loop(x, y, endx, endy, start_sqr, end_sqr, tic+1, tic)
+                root.after(43, lambda x = x, y = y, e = endx, e2 = endy, s = start_sqr, s2 = end_sqr, acm = acm, tic = tic, xs = xstep, ys = ystep : leap_loop(x, y, e, e2, s, s2, acm, tic, xs, ys))
+        leap_loop(x, y, endx, endy, start_sqr, end_sqr, tic+1, tic, xstep, ystep)
             
             
     def finish_leap(self, end_sqr, start_sqr):
