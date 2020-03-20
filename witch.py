@@ -8183,22 +8183,61 @@ class Witch(Entity):
         app.unbind_all()
         app.rebind_all()
         
-    def legal_moves(self):
-        loc = self.loc[:]
-        mvlist = []
-        def findall(loc, start, distance):
-            if start > distance:
-                return
-            adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
-            for s in adj:
-                if s not in mvlist:
-                    mvlist.append(s)
-                    findall(s, start+1, distance)
-        findall(loc, 1, 3)
-        for f in self.move_effects:
-            mvlist = f(mvlist)
-        return mvlist
+    # how to eliminate redundant paths... debug
+#     def legal_moves(self):
+#         loc = self.loc[:]
+#         mvlist = []
+#         q = [loc]
+#         v = [loc]
+#         while q:
+#             last = q[0]
+#             q = q[1:]
+#             if dist(last, self.loc) > 3:
+#                 pass
+#             else:
+#                 if last not in mvlist:
+#                     mvlist.append(last)
+#                 adj = [c for c in app.coords if dist(c, last) == 1 and app.grid[c[0]][c[1]] == '']
+#                 for s in adj:
+#                     if s not in v:
+#                         q.append(s)
+#                         v.append(s)
+#         return mvlist
         
+#         def findall(loc, start, distance):
+#             if start > distance:
+#                 return
+#             adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
+#             for s in adj:
+#                 if s not in mvlist:
+#                     mvlist.append(s)
+#                 findall(s, start+1, distance)
+#         findall(loc, 1, 3)
+#         for f in self.move_effects:
+#             mvlist = f(mvlist)
+#         return mvlist
+#         
+    def legal_moves(self):
+        path = []
+        q = [[c] for c in app.coords if dist(self.loc, c) == 1 and app.grid[c[0]][c[1]] == '']
+#         visited = [self.loc[:]]
+        mvlist = []
+        while q:
+            path = q[0]
+            q = q[1:]
+            if len(path) > 3:
+                continue
+            else:
+                last = path[-1]
+                if last not in mvlist:
+                    mvlist.append(last)
+    #             if last in goal:
+    #                 return path
+                adj = [c for c in app.coords if dist(c, last) == 1 and app.grid[c[0]][c[1]] == '']
+                for s in adj:
+                    q.append(path + [s])
+#                     visited.append(s)
+        return mvlist
         
         
     def spell(self, event = None):
