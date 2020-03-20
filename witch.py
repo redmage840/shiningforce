@@ -3718,17 +3718,49 @@ class Troll(Summon):
                         sqrs.append(c)
         return sqrs
         
+    
+#     def legal_moves(self):
+#         path = []
+#         q = [[c] for c in app.coords if dist(self.loc, c) == 1 and app.grid[c[0]][c[1]] == '']
+#         visited = [q[:]]
+#         mvlist = []
+#         while q:
+#             path = q[0]
+#             q = q[1:]
+#             if len(path) > 8 or path in visited:
+#                 continue
+#             else:
+#                 visited.append(path)
+#                 last = path[-1]
+#                 if last not in mvlist:
+#                     mvlist.append(last)
+#     #             if last in goal:
+#     #                 return path
+#                 adj = [c for c in app.coords if dist(c, last) == 1 and app.grid[c[0]][c[1]] == '']
+#                 for s in adj:
+#                     q.append(path + [s])
+# #                     visited.append(s)
+#         return mvlist
+        
+        
+    # every square has a 'cost', which is the number of moves required to reach
+    # if you reach a square with equal or lower cost than your own associated with it, return
     def legal_moves(self):
         loc = self.loc[:]
         mvlist = []
+        sqr_cost_map = {}
         def findall(loc, start, distance):
             if start > distance:
                 return
             adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
             for s in adj:
+                if tuple(s) in sqr_cost_map:
+                    if sqr_cost_map[tuple(s)] < start:
+                        continue
+                sqr_cost_map[tuple(s)] = start
                 if s not in mvlist:
                     mvlist.append(s)
-                    findall(s, start+1, distance)
+                findall(s, start+1, distance)
         findall(loc, 1, 8)
         for f in self.move_effects:
             mvlist = f(mvlist)
@@ -8217,28 +8249,49 @@ class Witch(Entity):
 #             mvlist = f(mvlist)
 #         return mvlist
 #         
+#     def legal_moves(self):
+#         path = []
+#         q = [[c] for c in app.coords if dist(self.loc, c) == 1 and app.grid[c[0]][c[1]] == '']
+# #         visited = [self.loc[:]]
+#         mvlist = []
+#         while q:
+#             path = q[0]
+#             q = q[1:]
+#             if len(path) > 3:
+#                 continue
+#             else:
+#                 last = path[-1]
+#                 if last not in mvlist:
+#                     mvlist.append(last)
+#     #             if last in goal:
+#     #                 return path
+#                 adj = [c for c in app.coords if dist(c, last) == 1 and app.grid[c[0]][c[1]] == '']
+#                 for s in adj:
+#                     q.append(path + [s])
+# #                     visited.append(s)
+#         return mvlist
+    # every square has a 'cost', which is the number of moves required to reach
+    # if you reach a square with equal or lower cost than your own associated with it, return
     def legal_moves(self):
-        path = []
-        q = [[c] for c in app.coords if dist(self.loc, c) == 1 and app.grid[c[0]][c[1]] == '']
-#         visited = [self.loc[:]]
+        loc = self.loc[:]
         mvlist = []
-        while q:
-            path = q[0]
-            q = q[1:]
-            if len(path) > 3:
-                continue
-            else:
-                last = path[-1]
-                if last not in mvlist:
-                    mvlist.append(last)
-    #             if last in goal:
-    #                 return path
-                adj = [c for c in app.coords if dist(c, last) == 1 and app.grid[c[0]][c[1]] == '']
-                for s in adj:
-                    q.append(path + [s])
-#                     visited.append(s)
+        sqr_cost_map = {}
+        def findall(loc, start, distance):
+            if start > distance:
+                return
+            adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
+            for s in adj:
+                if tuple(s) in sqr_cost_map:
+                    if sqr_cost_map[tuple(s)] < start:
+                        continue
+                sqr_cost_map[tuple(s)] = start
+                if s not in mvlist:
+                    mvlist.append(s)
+                findall(s, start+1, distance)
+        findall(loc, 1, 3)
+        for f in self.move_effects:
+            mvlist = f(mvlist)
         return mvlist
-        
         
     def spell(self, event = None):
 #         if self.spell_used == True:
