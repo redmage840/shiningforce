@@ -1,10 +1,14 @@
-# still effects making use of old legal_moves logic, darkness, meditate, mummify
+# button cycle through units
 
-# make leap and mortar move in straight line like fireball
+# dark sun visual
 
-# bard gets esuna/harmony, trickster gets mortar, plaguebearer gets paralyze
+# ai tactics, target low hp esp witch
+
+# still effects making use of old legal_moves logic, mummify
 
 # change shape of pestilence effect...
+
+# p = partial(app.ent_dict[i].__class__.legal_moves, app.ent_dict[i]) #   PUT BACK CLASS METHOD MOVEMENT, old but useful pass self/obj
 
 # portion of wall 'top' covers orcs head sometimes near exit
 
@@ -276,6 +280,7 @@ class Entity():
         self.immovable = False
         if isinstance(self, Witch):
             self.tags = self.name
+            self.number = self.name
         elif self.type == 'large':
             self.tags = ('large', self.number)
         elif isinstance(self, Summon):
@@ -421,14 +426,14 @@ class Entity():
         root.bind('<q>', self.cleanup_move)
         sqrs = self.legal_moves()
         app.animate_squares(sqrs)
-        b = tk.Button(app.context_menu, text = 'Confirm Move Square', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = sqrs : self.do_move(e, s))
+        b = tk.Button(app.context_menu, text = 'Confirm Move Square', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_move(e, sqr, sqrs))
         b.pack(side = 'top', pady = 3)
         app.context_buttons.append(b)
-        root.bind('<a>', lambda e, s = sqrs : self.do_move(e, s))
+        root.bind('<a>', lambda e, sqr = grid_pos, sqrs = sqrs : self.do_move(e, sqr, sqrs))
         
-    def do_move(self, event, sqrs):
+    def do_move(self, event, sqr, sqrs):
         global selected
-        if grid_pos not in sqrs:
+        if sqr not in sqrs:
             return
         app.unbind_all()
         app.cleanup_squares()
@@ -456,7 +461,7 @@ class Entity():
         else:
             id = self.number
         start_sqr = self.loc[:]
-        end_sqr = grid_pos[:]
+        end_sqr = sqr
         selected = [id]
         # get path and move_loop over each sqr until path consumed
         path = bfs(start_sqr, [end_sqr], app.grid) # end_sqr must be in list
@@ -501,6 +506,88 @@ class Entity():
             else: # CONTINUE LOOP
                 root.after(66, lambda id = id, x = x, y = y, ex = endx, ey = endy, s = start_sqr, s2 = end_sqr, p = path : move_loop(id, x, y, ex, ey, s, s2, p))
         move_loop(id, x, y, endx, endy, start_sqr, end_sqr, path)
+        
+    def flying_move(self, event = None):
+        if self.move_used == True:
+            return
+        app.depop_context(event = None)
+        root.unbind('<a>')
+        root.unbind('<q>')
+        root.bind('<q>', self.cleanup_move)
+        sqrs = self.legal_moves()
+        app.animate_squares(sqrs)
+        b = tk.Button(app.context_menu, text = 'Confirm Move Square', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_flying_move(e, sqr, sqrs))
+        b.pack(side = 'top', pady = 3)
+        app.context_buttons.append(b)
+        root.bind('<a>', lambda e, sqr = grid_pos, sqrs = sqrs : self.do_flying_move(e, sqr, sqrs))
+        
+    def do_flying_move(self, event, sqr, sqrs):
+        global selected
+        if sqr not in sqrs:
+            return
+        app.unbind_all()
+        app.cleanup_squares()
+        app.depop_context(event = None)
+        selected = [self.number]
+        x = self.loc[0]*100+50-app.moved_right
+        y = self.loc[1]*100+50-app.moved_down
+        endx = sqr[0]*100+50-app.moved_right
+        endy = sqr[1]*100+50-app.moved_down
+        start_sqr = self.loc[:]
+        end_sqr = sqr[:]
+        total_distance = abs(x - endx) + abs(y - endy)
+        # tic doesnt matter for circular image loop, would need to make flying_anims and switch to
+        tic = 30 #total_distance/9 # Magic Number debug, number of images for vis
+        if x == endx:
+            xstep = 0
+            ystep = 10
+        elif y == endy:
+            xstep = 10
+            ystep = 0
+        else:
+            slope = Fraction(abs(x - endx), abs(y - endy))
+            # needs to be moving at least 10 pixels, xstep + ystep >= 10
+            xstep = slope.numerator
+            ystep = slope.denominator
+            while xstep + ystep < 10:
+                xstep *= 2
+                ystep *= 2
+        def flying_arc(x, y, endx, endy, start_sqr, end_sqr, acm, tic, xstep, ystep):
+            if acm >= tic:
+                acm = 0
+                self.rotate_image()
+                app.canvas.delete(self.tags)
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+            if x > endx:
+                acm += xstep
+                x -= xstep
+                self.rotate_image()
+                app.canvas.delete(self.tags)
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+            elif x < endx:
+                acm += xstep
+                x += xstep
+                self.rotate_image()
+                app.canvas.delete(self.tags)
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+            if y > endy:
+                acm += ystep
+                y -= ystep
+                self.rotate_image()
+                app.canvas.delete(self.tags)
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+            elif y < endy:
+                acm += ystep
+                y += ystep
+                self.rotate_image()
+                app.canvas.delete(self.tags)
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+            if abs(x - endx) < 13 and abs(y - endy) < 13:
+                self.finish_move(self.number, end_sqr, start_sqr)
+            else: # CONTINUE LOOP
+                root.after(66, lambda x = x, y = y, e = endx, e2 = endy, s = start_sqr, s2 = end_sqr, acm = acm, tic = tic, xs = xstep, ys = ystep : flying_arc(x, y, e, e2, s, s2, acm, tic, xs, ys))
+        flying_arc(x, y, endx, endy, start_sqr, end_sqr, tic+1, tic, xstep, ystep)
+        
         
     # used by trickster, shadow, ...
     def teleport_move(self, event = None):
@@ -593,12 +680,8 @@ class Entity():
         oldloc = start
         newloc = end
         self.loc = newloc[:]
-        self.origin = newloc[:]
         app.grid[oldloc[0]][oldloc[1]] = ''
-        if isinstance(self, Witch):
-            app.grid[newloc[0]][newloc[1]] = self.name
-        elif isinstance(self, Summon):
-            app.grid[newloc[0]][newloc[1]] = self.number
+        app.grid[newloc[0]][newloc[1]] = self.number
         self.move_used = True
         self.cleanup_move()
         
@@ -852,6 +935,7 @@ class Trickster(Summon):
                 n = 'Pain_Explode' + str(app.effects_counter)
                 app.effects_counter += 1
                 loc = app.ent_dict[id].loc[:]
+                app.focus_square(loc)
                 app.vis_dict[n] = Vis(name = 'Pain_Explode', loc = loc)
                 def cleanup_vis(name):
                     app.canvas.delete('explode_text')
@@ -1505,6 +1589,9 @@ class Shadow(Summon):
                     if app.ent_dict[id].spirit <= 0:
                         app.canvas.create_text(app.ent_dict[id].loc[0]*100+49-app.moved_right, app.ent_dict[id].loc[1]*100+94-app.moved_down, text = app.ent_dict[id].name.replace('_',' ') + '\nKilled...', justify = 'center', font = ('Andale Mono', 13), fill = 'black', tags = 'text')
                         app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+95-app.moved_down, text = app.ent_dict[id].name.replace('_',' ') + '\nKilled...', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+                else:
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100+49-app.moved_right, app.ent_dict[id].loc[1]*100+74-app.moved_down, text = 'Muddle miss...', justify ='center', font = ('Andale Mono', 13), fill = 'black', tags = 'text')
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+75-app.moved_down, text = 'Muddle miss...', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
                 return 'Not None'
             eot = partial(attack_self, id)
             n = 'Muddle' + str(app.effects_counter)
@@ -2150,11 +2237,12 @@ class Bard(Summon):
                 return
             adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
             for s in adj:
-                mvlist.append(s)
+                if s not in mvlist:
+                    mvlist.append(s)
                 findall(s, start+1, distance)
         findall(loc, 1, 5) 
-        mvlist = [list(x) for x in set(tuple(x) for x in mvlist)]
         for f in self.move_effects:
+            print(f)
             mvlist = f(mvlist)
         return mvlist
         
@@ -5450,9 +5538,10 @@ class Fire_Mage(Summon):
                             name = 'dethlok'+str(app.death_count)
                             app.death_count += 1
                             app.dethloks[name] = tk.IntVar(0)
-                            root.after(666, lambda id = id, name = name : app.kill(id, name))
+                            root.after(2222, lambda t = 'text' : app.canvas.delete('text'))
+                            root.after(2333, lambda id = id, name = name : app.kill(id, name))
                             root.wait_variable(app.dethloks[name])
-                            root.after(time, lambda ents = ents : firewall_loop(ents))
+                            firewall_loop(ents)
                         else:
                             root.after(3666, lambda ents = ents : firewall_loop(ents))
                 root.after(1666, lambda e = ents : firewall_loop(e))
@@ -7661,7 +7750,7 @@ class Cenobite(Summon):
     # poison sting, agl versus dodge to hit check, on success target gets 'poison' effect, -1 str 2 dmg for 3 turns, stackable, range 2
 class Familiar_Imp(Summon):
     def __init__(self, name, img, loc, owner, number):
-        self.actions = {'Poison Sting':self.poison_sting, 'Darkness':self.darkness, 'move':self.move}
+        self.actions = {'Poison Sting':self.poison_sting, 'Darkness':self.darkness, 'Flying Move':self.flying_move}
         self.attack_used = False
         self.str = 2
         self.agl = 6
@@ -7721,7 +7810,8 @@ class Familiar_Imp(Summon):
         effect1.set_volume(1)
         sound_effects.play(effect1, 0)
         self.attack_used = True
-        app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+75-app.moved_down, text = 'Darkness', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+        app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+94-app.moved_down, text = 'Darkness', font = ('Andale Mono', 14), fill = 'black', tags = 'text')
+        app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+95-app.moved_down, text = 'Darkness', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
         # create vis on every sqr within distance 3 from sqr
         affected_sqrs = []
         for c in app.coords:
@@ -7740,32 +7830,29 @@ class Familiar_Imp(Summon):
             for x in range(rand_num):
                 app.vis_dict[uniq_name].rotate_image()
             app.canvas.create_image(s[0]*100+50-app.moved_right, s[1]*100+50-app.moved_down, image = app.vis_dict[uniq_name].img, tags = uniq_name)
-            
         def darkness_effect(sqrs):
             # find all ents with locs in sqrs
             ents = [k for k,v in app.ent_dict.items() if v.loc in sqrs]
             # blind effect
             for id in ents:
                 effs = [v.name for k,v in app.ent_dict[id].effects_dict.items()]
-                if 'Blind' in effs:
+                if 'Blind' in effs or app.ent_dict[id].move_type != 'normal':
                     continue
                 else:
                     def blind_effect(): # EOT effect (nothing)
                         pass
                     # SOT effect (at begin of turn, if ent is within affected sqrs)
-                    def blind(i):# REPLACE CLASS MOVEMENT WITH MOVE dist 2 if movement type == normal
-                        mvlist = []
-                        for c in app.coords:
-                            if dist(c, app.ent_dict[i].loc) <= 2:
-                                mvlist.append(c)
-                        return mvlist
-                    if app.ent_dict[id].move_type == 'normal':
-                        blind_p = partial(blind, id)
-                        app.ent_dict[id].legal_moves = blind_p
-                    def un(i):
-                        p = partial(app.ent_dict[i].__class__.legal_moves, app.ent_dict[i]) # PUT BACK CLASS MOVES
-                        app.ent_dict[i].legal_moves = p
-                    p = partial(un, id)
+                    def blind_moves(mvlist, obj = None):# REPLACE CLASS MOVEMENT WITH MOVE dist 2 if movement type == normal
+                        m = []
+                        for c in mvlist:
+                            if dist(c, obj.loc) <= 2:
+                                m.append(c)
+                        return m
+                    p2 = partial(blind_moves, obj = app.ent_dict[id])
+                    app.ent_dict[id].move_effects.append(p2)
+                    def un(i, func):
+                        app.ent_dict[i].move_effects.remove(func)
+                    p = partial(un, id, p2)
                     # EOT FUNC
                     def nothing():
                         return None
@@ -7779,8 +7866,8 @@ class Familiar_Imp(Summon):
                 app.canvas.delete(name)
             return None
         eot_p = partial(darkness_effect, affected_sqrs)
-        p = partial(un, uniq_names)
-        app.global_effects_dict[darkness_group] = Effect(name = 'Darkness', info = 'darkness limits movement', eot_func = eot_p, undo = p, duration = 6)
+        p3 = partial(un, uniq_names)
+        app.global_effects_dict[darkness_group] = Effect(name = 'Darkness', info = 'darkness limits movement', eot_func = eot_p, undo = p3, duration = 6)
         root.after(1666, self.cleanup_darkness)
             
     def cleanup_darkness(self, event = None):
@@ -7885,7 +7972,6 @@ class Familiar_Imp(Summon):
 class Witch(Entity):
     def __init__(self, name, img, loc, owner):
         self.actions = {'spell':self.spell, 'summon':self.summon, 'move':self.move}
-#         self.spell_used = False
         self.summon_cap = 6
         self.summon_count = 0
         self.cantrip_used = False
@@ -7893,10 +7979,8 @@ class Witch(Entity):
         self.summon_used = False
         self.arcane_dict = {}
         self.cantrip_dict = {}
-#         self.summon_dict = {}
         self.summon_ids = 0
         self.move_type = 'normal'
-        
         if name == 'Agnes_Sampson':
             self.cantrip_dict['Psionic_Push'] = (self.psionic_push)
             self.cantrip_dict['Scrye'] = (self.scrye)
@@ -7946,9 +8030,7 @@ class Witch(Entity):
         super().__init__(name, img, loc, owner, type = 'normal')
         
     def reset_transient_vars(self):
-#         self.summon_dict = {}
         self.summon_ids = 0
-#         self.spell_used = False
         self.cantrip_used = False
         self.arcane_used = False
         self.summon_used = False
@@ -9269,9 +9351,6 @@ class Witch(Entity):
     def meditate(self, event = None):
         app.depop_context(event = None)
         root.bind('<q>', lambda name = 'Meditate' : self.cleanup_spell(name = name))
-#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
-#         sqrs = [s for s in coords if dist(self.loc, s) <= 4]
-#         app.animate_squares(sqrs)
         root.bind('<a>', self.do_meditate)
         b = tk.Button(app.context_menu, text = 'Confirm Meditate', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None : self.do_meditate(e))
         b.pack(side = 'top', pady = 2)
@@ -9289,6 +9368,7 @@ class Witch(Entity):
         sqr = self.loc[:]
         app.vis_dict['Meditate'] = Vis(name = 'Meditate', loc = sqr)
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Meditate'].img, tags = 'Meditate')
+        app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+84-app.moved_down, text = 'Meditate', justify = 'center', font = ('Andale Mono', 13), fill = 'black', tags = 'text')
         app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+85-app.moved_down, text = 'Meditate', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
         # DO Meditate EFFECTS
         def meditate_effect(stat):
@@ -9297,24 +9377,26 @@ class Witch(Entity):
         f = meditate_effect
         app.ent_dict[id].psyche_effects.append(f)
 ############################################
-        def meditate_move():# REPLACE CLASS MOVEMENT
-            loc = self.loc
-            mvlist = []
-            def findall(loc, start, distance):
-                if start > distance:
-                    return
-                adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
-                for s in adj:
-                    mvlist.append(s)
-                    findall(s, start+1, distance)
-            findall(loc, 1, 5)
-            return [list(x) for x in set(tuple(x) for x in mvlist)]
+        def meditate_move(mvlist):
+            locs = mvlist
+            m = mvlist[:]
+            for loc in locs:
+                def findall(loc, start, distance):
+                    if start > distance:
+                        return
+                    adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
+                    for s in adj:
+                        if s not in m:
+                            m.append(s)
+                        findall(s, start+1, distance)
+                findall(loc, 1, 2)
+            return m
 #####################################
-        app.ent_dict[id].legal_moves = meditate_move
+        app.ent_dict[id].move_effects.append(meditate_move)
+            
         def un(i):
             app.ent_dict[i].psyche_effects.remove(meditate_effect)
-            p = partial(app.ent_dict[i].__class__.legal_moves, app.ent_dict[i]) #   PUT BACK CLASS METHOD MOVEMENT
-            app.ent_dict[i].legal_moves = p
+            app.ent_dict[i].move_effects.remove(meditate_move)
             return None
         p = partial(un, id)
         # EOT FUNC
@@ -9500,11 +9582,10 @@ class Witch(Entity):
         dark_sun_loop(locy, locy-90, locx)
         
         
+    # change mummify, too good with leap still make useful combo, disable leap
     def mummify(self, event = None):
-        # +9 to endurance and target cannot move any target 3 turns
         app.depop_context(event = None)
         root.bind('<q>', self.cleanup_spell)
-#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         sqrs = [s for s in app.coords if dist(self.loc, s) <= 3]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_mummify(event = e, sqr = s, sqrs = sqrs))
@@ -9513,11 +9594,11 @@ class Witch(Entity):
         app.context_buttons.append(b)
         
     def do_mummify(self, event, sqr, sqrs):
-        if app.current_pos() == '' or app.current_pos() == 'block':
-            return
         if sqr not in sqrs:
             return
         id = app.grid[sqr[0]][sqr[1]]
+        if id == '' or id == 'block':
+            return
         effs = [v.name for k,v in app.ent_dict[id].effects_dict.items()]
         if 'Mummify' in effs:
             return
@@ -9532,24 +9613,28 @@ class Witch(Entity):
         self.arcane_used = True
         app.vis_dict['Mummify'] = Vis(name = 'Mummify', loc = sqr[:])
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Mummify'].img, tags = 'Mummify')
-        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+95-app.moved_down, text = 'Mummify', justify = 'center', font = ('Andale Mono', 14), fill = 'darkgoldenrod', tags = 'text')
+        app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+94-app.moved_down, text = 'Mummify', justify = 'center', font = ('Andale Mono', 14), fill = 'black', tags = 'text')
+        app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+95-app.moved_down, text = 'Mummify', justify = 'center', font = ('Andale Mono', 14), fill = 'darkgoldenrod', tags = 'text')
         # DO Mummify EFFECTS
         def mummify_effect(stat):
-            stat += 9
+            stat += 5
             return stat
         f = mummify_effect
         app.ent_dict[id].end_effects.append(f)
-        def un(i):
-            for ef in app.ent_dict[i].end_effects[:]:
-                    if ef.__name__ == 'mummify_effect':
-                        app.ent_dict[i].end_effects.remove(ef)
-            p = partial(app.ent_dict[i].__class__.legal_moves, app.ent_dict[i]) #   PUT BACK CLASS METHOD MOVEMENT
-            app.ent_dict[i].legal_moves = p
+        def mummy_moves(mvlist, obj = None):
+            m = []
+            for c in mvlist:
+                if dist(c, obj.loc) == 1:
+                    m.append(c)
+            return m
+        p2 = partial(mummy_moves, obj = app.ent_dict[id])
+        app.ent_dict[id].move_effects.append(p2)
+        
+        def un(i, f):
+            app.ent_dict[i].end_effects.remove(mummify_effect)
+            app.ent_dict[i].move_effects.remove(f)
             return None
-        def mummifier():# REPLACE CLASS MOVEMENT WITH NOTHING
-            return []
-        app.ent_dict[id].legal_moves = mummifier
-        p = partial(un, id)
+        p = partial(un, id, p2)
         # EOT FUNC
         def nothing():
             return None
@@ -9928,6 +10013,7 @@ class App(tk.Frame):
         self.help_buttons = []
         self.dethloks = {}
         self.death_count = 0
+        self.cycle_q = []
         # list to hold entity that is being animated as 'attacking'
         self.attacking = []
         self.effects_counter = 0 # used for uniquely naming Effects with the same prefix/name
@@ -12228,6 +12314,7 @@ class App(tk.Frame):
         root.unbind('<Down>')
         root.unbind('<a>')
         root.unbind('<q>')
+        root.bind('<space>', app.cycle_units)
 #         root.unbind('<Escape>')
 
     def rebind_all(self):
@@ -12237,6 +12324,7 @@ class App(tk.Frame):
         root.bind('<Down>', app.move_curs)
         root.bind('<a>', app.populate_context)
         root.bind('<q>', app.depop_context)
+        root.bind('<space>', app.cycle_units)
 #         root.bind('<Escape>', app.exit_fullscreen)
         # DEBUG ####
 #         root.bind('<d>', app.debugger)
@@ -12290,10 +12378,23 @@ class App(tk.Frame):
         from os import execl
         python = executable
         execl(python, python, * argv)
-
+        
+    # cycle through units on your turn with SpaceBar
+    def cycle_units(self, event = None):
+        app.unbind_all()
+        app.depop_context(event = None)
+        my_ents = [k for k,v in app.ent_dict.items() if v.owner == app.active_player]
+        for id in my_ents: # if ents has changed, reset the cycle order
+            if id not in app.cycle_q:
+                app.cycle_q = my_ents[:]
+                break
+        id = app.cycle_q[0] # after possible reset, grab first in line to focus
+        app.cycle_q = app.cycle_q[1:]+[app.cycle_q[0]] # move to back of q
+        app.focus_square(app.ent_dict[id].loc)
+        app.rebind_all()
         
     def debugger(self, event):
-        print(app.ent_dict['Agnes_Sampson'])
+        print(app.ent_dict.keys())
 #         for b in self.context_buttons:
 #             print(b)
 
@@ -12306,6 +12407,7 @@ root.bind('<Up>', app.move_curs)
 root.bind('<Down>', app.move_curs)
 root.bind('<a>', app.populate_context)
 root.bind('<q>', app.depop_context)
+root.bind('<space>', app.cycle_units)
 app.unbind_all()
 # root.bind('<Escape>', app.exit_fullscreen)
 #### DEBUG ####
