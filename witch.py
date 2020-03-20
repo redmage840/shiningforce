@@ -1126,7 +1126,7 @@ class Trickster(Summon):
         
         
     def cleanup_simulacrum(self, event = None):
-        app.unbind_all()
+#         app.unbind_all()
         app.rebind_all()
         app.cleanup_squares()
         app.depop_context(event = None)
@@ -1142,36 +1142,35 @@ class Trickster(Summon):
     def gate(self, event = None):
         if self.attack_used == True:# or self.magick < 3:
             return
-        root.unbind('<q>')
+#         root.unbind('<q>')
+#         root.unbind('<a>')
+        app.unbind_nonarrows()
         root.bind('<q>', self.cleanup_gate)
-        root.unbind('<a>')
         sqrs = []
         for c in app.coords:
             if dist(c, self.loc) <= 2:
                 sqrs.append(c)
         app.animate_squares(sqrs)
         app.depop_context(event = None)
-        root.bind('<a>', lambda e, s = sqrs : self.choose_target(e, sqrs = s))
-        b = tk.Button(app.context_menu, text = 'Choose Target', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, s = sqrs : self.choose_target(event = e, sqrs = s))
+        root.bind('<a>', lambda e, sqr = grid_pos, sqrs = sqrs : self.choose_target(e, sqr = sqr, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Choose Target', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.choose_target(event = e, sqr = sqr, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
         
         
-    def choose_target(self, event = None, sqrs = None):
-        if grid_pos not in sqrs:
+    def choose_target(self, event = None, sqr = None, sqrs = None):
+        if sqr not in sqrs:
             return
-        if app.current_pos() == '' or app.current_pos() == 'block':
+        id = app.grid[sqr[0]][sqr[1]]
+        if id == '' or id == 'block':
             return
-        id = app.current_pos()
         if app.ent_dict[id].type == 'large':
             return
         if app.ent_dict[id].immovable == True:
             return
         app.depop_context(event = None)
         app.unbind_all()
-        app.rebind_all()
-        root.unbind('<q>')
-        root.unbind('<a>')
+        app.rebind_arrows()
         root.bind('<q>', self.cleanup_gate)
         distance = 5
         app.cleanup_squares()
@@ -1182,13 +1181,13 @@ class Trickster(Summon):
             root.after(999, self.cleanup_gate)
         else:
             app.animate_squares(sqrs)
-            root.bind('<a>', lambda e, id = id, sqrs = sqrs : self.do_gate(e, id = id, sqrs = sqrs))
-            b = tk.Button(app.context_menu, text = 'Choose Location', font = ('chalkduster', 24), fg = 'tan3', wraplength = 190, highlightbackground = 'tan3', command = lambda e = None, id = id, s = sqrs : self.do_gate(e, id, s))
+            root.bind('<a>', lambda e, id = id, sqr = grid_pos, sqrs = sqrs : self.do_gate(e, id = id, sqr = sqr, sqrs = sqrs))
+            b = tk.Button(app.context_menu, text = 'Choose Location', font = ('chalkduster', 24), fg = 'tan3', wraplength = 190, highlightbackground = 'tan3', command = lambda e = None, id = id, sqr = grid_pos, sqrs = sqrs : self.do_gate(e, id, sqr, sqrs))
             b.pack(side = 'top')
             app.context_buttons.append(b)
     
-    def do_gate(self, event = None, id = None, sqrs = None):
-        if grid_pos not in sqrs:
+    def do_gate(self, event = None, id = None, sqr = None, sqrs = None):
+        if sqr not in sqrs:
             return
         self.attack_used = True
         app.unbind_all()
@@ -1198,7 +1197,7 @@ class Trickster(Summon):
         effect1.set_volume(.7)
         sound_effects.play(effect1, 0)
         oldloc = app.ent_dict[id].loc[:]
-        newloc = grid_pos[:]
+        newloc = sqr[:]
         app.vis_dict['Gate'] = Vis(name = 'Gate', loc = oldloc[:])
         vis = app.vis_dict['Gate']
         app.canvas.create_image(oldloc[0]*100+50-app.moved_right, oldloc[1]*100+50-app.moved_down, image = vis.img, tags = 'Gateway')
@@ -1252,10 +1251,10 @@ class Trickster(Summon):
                 return
             adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
             for s in adj:
-                mvlist.append(s)
-                findall(s, start+1, distance)
+                if s not in mvlist:
+                    mvlist.append(s)
+                    findall(s, start+1, distance)
         findall(loc, 1, 4)
-        mvlist = [list(x) for x in set(tuple(x) for x in mvlist)]
         for f in self.move_effects:
             mvlist = f(mvlist)
         return mvlist
@@ -1294,9 +1293,10 @@ class Shadow(Summon):
     def phase_shift(self, event = None):
         if self.attack_used == True:
             return
-        root.unbind('<q>')
+#         root.unbind('<q>')
+#         root.unbind('<a>')
+        app.unbind_nonarrows()
         root.bind('<q>', self.cancel_phase_shift)
-        root.unbind('<a>')
         sqrs = [self.loc[:]]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e : self.do_phase_shift(e))
@@ -1356,10 +1356,10 @@ class Shadow(Summon):
                         return
                     adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
                     for s in adj:
-                        mvlist.append(s)
-                        findall(s, start+1, distance)
+                        if s not in mvlist:
+                            mvlist.append(s)
+                            findall(s, start+1, distance)
                 findall(loc, 1, 4)
-                mvlist = [list(x) for x in set(tuple(x) for x in mvlist)]
                 for f in self.move_effects:
                     mvlist = f(mvlist)
                 return mvlist
@@ -1382,8 +1382,9 @@ class Shadow(Summon):
     def dark_shroud(self, event = None):
         if self.attack_used == True:
             return
-        root.unbind('<a>')
-        root.unbind('<q>')
+#         root.unbind('<a>')
+#         root.unbind('<q>')
+        app.unbind_nonarrows()
         root.bind('<q>', self.finish_dark_shroud)
         sqrs = [c for c in app.coords if 1 <= dist(self.loc, c) <= 3]
         app.animate_squares(sqrs)
@@ -1457,7 +1458,7 @@ class Shadow(Summon):
             app.canvas.delete('Dark_Shroud')
         except: pass
         app.cleanup_squares()
-        app.unbind_all()
+#         app.unbind_all()
         app.rebind_all()
         app.canvas.delete('text')
         app.depop_context(event = None)
@@ -1466,8 +1467,9 @@ class Shadow(Summon):
     def drain_life(self, event = None):
         if self.attack_used == True:
             return
-        root.unbind('<a>')
-        root.unbind('<q>')
+#         root.unbind('<a>')
+#         root.unbind('<q>')
+        app.unbind_nonarrows()
         root.bind('<q>', self.finish_drain_life)
         sqrs = [c for c in app.coords if 2 <= dist(self.loc, c) <= 5]
         app.animate_squares(sqrs)
@@ -1531,15 +1533,16 @@ class Shadow(Summon):
                 app.dethloks[name] = tk.IntVar(0)
                 root.after(666, lambda id = id, name = name : app.kill(id, name))
                 app.wait_variable(app.dethloks[name])
-        app.unbind_all()
+#         app.unbind_all()
         app.rebind_all()
         
     def muddle(self, event = None):
         if self.attack_used == True:
             return
-        root.unbind('<q>')
+#         root.unbind('<q>')
+#         root.unbind('<a>')
+        app.unbind_nonarrows()
         root.bind('<q>', self.finish_muddle)
-        root.unbind('<a>')
         sqrs = []
         for coord in app.coords:
             if 1 <= dist(coord, self.loc) <= 4:
@@ -1618,9 +1621,10 @@ class Shadow(Summon):
     def shadow_strike(self, event = None):
         if self.attack_used == True:
             return
-        root.unbind('<q>')
+#         root.unbind('<q>')
+#         root.unbind('<a>')
+        app.unbind_nonarrows()
         root.bind('<q>', self.finish_shadow_strike)
-        root.unbind('<a>')
         sqrs = []
         for coord in app.coords:
             if 1 < dist(coord, self.loc) <= 4:
@@ -1682,7 +1686,7 @@ class Shadow(Summon):
                 app.dethloks[name] = tk.IntVar(0)
                 root.after(666, lambda id = id, name = name : app.kill(id, name))
                 app.wait_variable(app.dethloks[name])
-        app.unbind_all()
+#         app.unbind_all()
         app.rebind_all()
     
     def legal_moves(self):
@@ -1693,10 +1697,10 @@ class Shadow(Summon):
                 return
             adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
             for s in adj:
-                mvlist.append(s)
-                findall(s, start+1, distance)
+                if s not in mvlist:
+                    mvlist.append(s)
+                    findall(s, start+1, distance)
         findall(loc, 1, 4)
-        mvlist = [list(x) for x in set(tuple(x) for x in mvlist)]
         for f in self.move_effects:
             mvlist = f(mvlist)
         return mvlist
@@ -1941,10 +1945,10 @@ class Plaguebearer(Summon):
                 return
             adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
             for s in adj:
-                mvlist.append(s)
-                findall(s, start+1, distance)
+                if s not in mvlist:
+                    mvlist.append(s)
+                    findall(s, start+1, distance)
         findall(loc, 1, 2)
-        mvlist = [list(x) for x in set(tuple(x) for x in mvlist)]
         for f in self.move_effects:
             mvlist = f(mvlist)
         return mvlist
@@ -2241,7 +2245,7 @@ class Bard(Summon):
             for s in adj:
                 if s not in mvlist:
                     mvlist.append(s)
-                findall(s, start+1, distance)
+                    findall(s, start+1, distance)
         findall(loc, 1, 5) 
         for f in self.move_effects:
             print(f)
@@ -2643,7 +2647,7 @@ class Tortured_Soul(Summon):
             for s in adj:
                 if s not in mvlist:
                     mvlist.append(s)
-                findall(s, start+1, distance)
+                    findall(s, start+1, distance)
         findall(loc, 1, 6)
         for f in self.move_effects:
             mvlist = f(mvlist)
@@ -3094,7 +3098,7 @@ class Kensai(Summon):
             for s in adj:
                 if s not in mvlist:
                     mvlist.append(s)
-                findall(s, start+1, distance)
+                    findall(s, start+1, distance)
         findall(loc, 1, 3)
         for f in self.move_effects:
             mvlist = f(mvlist)
@@ -3319,7 +3323,7 @@ class Kobold_Shaman(Summon):
             for s in adj:
                 if s not in mvlist:
                     mvlist.append(s)
-                findall(s, start+1, distance)
+                    findall(s, start+1, distance)
         findall(loc, 1, 4)
         for f in self.move_effects:
             mvlist = f(mvlist)
@@ -3454,7 +3458,7 @@ class Undead(Summon):
             for s in adj:
                 if s not in mvlist:
                     mvlist.append(s)
-                findall(s, start+1, distance)
+                    findall(s, start+1, distance)
         findall(loc, 1, 4)
         for f in self.move_effects:
             mvlist = f(mvlist)
@@ -3585,7 +3589,7 @@ class Undead_Knight(Summon):
             for s in adj:
                 if s not in mvlist:
                     mvlist.append(s)
-                findall(s, start+1, distance)
+                    findall(s, start+1, distance)
         findall(loc, 1, 4)
         for f in self.move_effects:
             mvlist = f(mvlist)
@@ -3724,7 +3728,7 @@ class Troll(Summon):
             for s in adj:
                 if s not in mvlist:
                     mvlist.append(s)
-                findall(s, start+1, distance)
+                    findall(s, start+1, distance)
         findall(loc, 1, 8)
         for f in self.move_effects:
             mvlist = f(mvlist)
@@ -4440,7 +4444,7 @@ class Air_Elemental(Summon):
             for s in adj:
                 if s not in mvlist:
                     mvlist.append(s)
-                findall(s, start+1, distance)
+                    findall(s, start+1, distance)
         findall(loc, 1, 5)
         for f in self.move_effects:
             mvlist = f(mvlist)
@@ -5353,10 +5357,10 @@ class Earth_Elemental(Summon):
                 return
             adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
             for s in adj:
-                mvlist.append(s)
-                findall(s, start+1, distance)
+                if s not in mvlist:
+                    mvlist.append(s)
+                    findall(s, start+1, distance)
         findall(loc, 1, 6)
-        mvlist = [list(x) for x in set(tuple(x) for x in mvlist)]
         for f in self.move_effects:
             mvlist = f(mvlist)
         return mvlist
@@ -5915,7 +5919,7 @@ class Orc_Axeman(Summon):
             for s in adj:
                 if s not in mvlist:
                     mvlist.append(s)
-                findall(s, start+1, distance)
+                    findall(s, start+1, distance)
         findall(loc, 1, 4)
         for f in self.move_effects:
             mvlist = f(mvlist)
@@ -6110,7 +6114,7 @@ class Fire_Elemental(Summon):
             for s in adj:
                 if s not in mvlist:
                     mvlist.append(s)
-                findall(s, start+1, distance)
+                    findall(s, start+1, distance)
         findall(loc, 1, 4)
         for f in self.move_effects:
             mvlist = f(mvlist)
@@ -6245,7 +6249,7 @@ class Barbarian(Summon):
             for s in adj:
                 if s not in mvlist:
                     mvlist.append(s)
-                findall(s, start+1, distance)
+                    findall(s, start+1, distance)
         findall(loc, 1, 3)
         for f in self.move_effects:
             mvlist = f(mvlist)
@@ -6568,10 +6572,10 @@ class Minotaur(Summon):
                 return
             adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
             for s in adj:
-                mvlist.append(s)
-                findall(s, start+1, distance)
+                if s not in mvlist:
+                    mvlist.append(s)
+                    findall(s, start+1, distance)
         findall(loc, 1, 5)
-        mvlist = [list(x) for x in set(tuple(x) for x in mvlist)]
         for f in self.move_effects:
             mvlist = f(mvlist)
         return mvlist
@@ -7112,11 +7116,17 @@ class Familiar_Homonculus(Summon):
         except: pass
                     
     def legal_moves(self):
-        loc = self.loc
+        loc = self.loc[:]
         mvlist = []
-        for c in app.coords:
-            if dist(c, loc) <= 5 and app.grid[c[0]][c[1]] == '':
-                mvlist.append(c)
+        def findall(loc, start, distance):
+            if start > distance:
+                return
+            adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
+            for s in adj:
+                if s not in mvlist:
+                    mvlist.append(s)
+                    findall(s, start+1, distance)
+        findall(loc, 1, 5)
         for f in self.move_effects:
             mvlist = f(mvlist)
         return mvlist
@@ -7142,10 +7152,10 @@ class Lesser_Demon(Summon):
                 return
             adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
             for s in adj:
-                mvlist.append(s)
-                findall(s, start+1, distance)
+                if s not in mvlist:
+                    mvlist.append(s)
+                    findall(s, start+1, distance)
         findall(loc, 1, 4) 
-        mvlist = [list(x) for x in set(tuple(x) for x in mvlist)]
         for f in self.move_effects:
             mvlist = f(mvlist)
         return mvlist
@@ -7740,10 +7750,10 @@ class Cenobite(Summon):
                 return
             adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
             for s in adj:
-                mvlist.append(s)
-                findall(s, start+1, distance)
+                if s not in mvlist:
+                    mvlist.append(s)
+                    findall(s, start+1, distance)
         findall(loc, 1, 4) 
-        mvlist = [list(x) for x in set(tuple(x) for x in mvlist)]
         for f in self.move_effects:
             mvlist = f(mvlist)
         return mvlist
@@ -8174,7 +8184,7 @@ class Witch(Entity):
         app.rebind_all()
         
     def legal_moves(self):
-        loc = self.loc
+        loc = self.loc[:]
         mvlist = []
         def findall(loc, start, distance):
             if start > distance:
@@ -8183,11 +8193,13 @@ class Witch(Entity):
             for s in adj:
                 if s not in mvlist:
                     mvlist.append(s)
-                findall(s, start+1, distance)
+                    findall(s, start+1, distance)
         findall(loc, 1, 3)
         for f in self.move_effects:
             mvlist = f(mvlist)
         return mvlist
+        
+        
         
     def spell(self, event = None):
 #         if self.spell_used == True:
