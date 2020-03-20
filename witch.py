@@ -4,8 +4,6 @@
 
 # ai tactics, target low hp esp witch
 
-# still effects making use of old legal_moves logic, mummify
-
 # change shape of pestilence effect...
 
 # p = partial(app.ent_dict[i].__class__.legal_moves, app.ent_dict[i]) #   PUT BACK CLASS METHOD MOVEMENT, old but useful pass self/obj
@@ -421,8 +419,9 @@ class Entity():
         if self.move_used == True:
             return
         app.depop_context(event = None)
-        root.unbind('<a>')
-        root.unbind('<q>')
+#         root.unbind('<a>')
+#         root.unbind('<q>')
+        app.unbind_nonarrows()
         root.bind('<q>', self.cleanup_move)
         sqrs = self.legal_moves()
         app.animate_squares(sqrs)
@@ -511,8 +510,9 @@ class Entity():
         if self.move_used == True:
             return
         app.depop_context(event = None)
-        root.unbind('<a>')
-        root.unbind('<q>')
+#         root.unbind('<a>')
+#         root.unbind('<q>')
+        app.unbind_nonarrows()
         root.bind('<q>', self.cleanup_move)
         sqrs = self.legal_moves()
         app.animate_squares(sqrs)
@@ -593,10 +593,10 @@ class Entity():
     def teleport_move(self, event = None):
         if self.move_used == True:
             return
-        # depop context, unbind, bind 'a' do move, bind 'q' cancel move, get/animate sqrs, make confirm / cancel button
         app.depop_context(event = None)
-        root.unbind('<a>')
-        root.unbind('<q>')
+#         root.unbind('<a>')
+#         root.unbind('<q>')
+        app.unbind_nonarrows()
         root.bind('<q>', self.cleanup_move)
         sqrs = self.legal_moves()
         app.animate_squares(sqrs)
@@ -655,6 +655,7 @@ class Entity():
         root.after(1999, lambda endloc = endloc : self.cleanup_teleport(endloc))
         
     def cleanup_teleport(self, endloc):
+        app.cleanup_squares()
         try: 
             del app.vis_dict['Teleport']
             app.canvas.delete('Teleport')
@@ -670,7 +671,6 @@ class Entity():
         app.depop_context(event = None)
         app.unbind_all()
         app.rebind_all()
-        app.cleanup_squares()
             
             
     def finish_move(self, id, end, start):
@@ -687,9 +687,9 @@ class Entity():
         
     def cleanup_move(self, event = None):
         app.depop_context(event = None)
+        app.cleanup_squares()
         app.unbind_all()
         app.rebind_all()
-        app.cleanup_squares()
     
 
 class Summon(Entity):
@@ -971,12 +971,13 @@ class Trickster(Summon):
         app.depop_context(event = None)
         app.cleanup_squares()
         app.canvas.delete('text')
-        app.unbind_all()
+#         app.unbind_all()
         app.rebind_all()
         
     def pyrotechnics(self, event):
         if self.attack_used == True:
             return
+        app.unbind_nonarrows()
         app.depop_context(event = None)
         root.bind('<q>', self.cleanup_pyrotechnics)
         sqrs = [s for s in app.coords if dist(self.loc, s) <= 3]
@@ -987,15 +988,15 @@ class Trickster(Summon):
         app.context_buttons.append(b)
         
     def do_pyrotechnics(self, event, sqr, sqrs):
-        if app.current_pos() == '' or app.current_pos() == 'block':
-            return
         if sqr not in sqrs:
             return
+        id = app.grid[sqr[0]][sqr[1]]
+        if id == '' or id == 'block':
+            return
+        app.unbind_all()
         effect1 = mixer.Sound('Sound_Effects/pyrotechnics.ogg')
         effect1.set_volume(1)
         sound_effects.play(effect1, 0)
-        id = app.current_pos()
-        app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
         self.attack_used = True
@@ -1006,8 +1007,8 @@ class Trickster(Summon):
         app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Pyrotechnics\n2 Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
         app.ent_dict[id].set_attr('spirit', -2)
         if app.ent_dict[id].spirit <= 0:
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+94, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+95, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+94, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+95, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
         root.after(1666, lambda e = None, id = id : self.cleanup_pyrotechnics(event = e, id = id))
         
     def cleanup_pyrotechnics(self, event = None, id = None):
@@ -1025,14 +1026,15 @@ class Trickster(Summon):
                 app.dethloks[name] = tk.IntVar(0)
                 root.after(666, lambda id = id, name = name : app.kill(id, name))
                 app.wait_variable(app.dethloks[name])
-        app.unbind_all()
+#         app.unbind_all()
         app.rebind_all()
         
         
     def simulacrum(self, event):
-        if self.attack_used == True:# or self.magick < 3:
+        if self.attack_used == True:
             return
         app.depop_context(event = None)
+        app.unbind_nonarrows()
         root.bind('<q>', self.cleanup_simulacrum)
         sqrs = [s for s in app.coords if dist(self.loc, s) <= 4]
         app.animate_squares(sqrs)
@@ -1042,21 +1044,21 @@ class Trickster(Summon):
         app.context_buttons.append(b)
         
     def do_simulacrum(self, event, sqr, sqrs):
-        if app.current_pos() == '' or app.current_pos() == 'block':
-            return
         if sqr not in sqrs:
             return
         # target must be Summon, Witch, (future type...)
-        id = app.current_pos()
+        id = app.grid[sqr[0]][sqr[1]]
+        if id == '' or id == 'block':
+            return
         if not isinstance(app.ent_dict[id], Witch) and not isinstance(app.ent_dict[id], Summon):
              return
         # PREVENT STACKING OF SIMULACRUM
         if 'Simulacrum' in app.ent_dict[id].effects_dict.keys():
             return
+        app.unbind_all()
         effect1 = mixer.Sound('Sound_Effects/simulacrum.ogg')
         effect1.set_volume(1)
         sound_effects.play(effect1, 0)
-        app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
         self.attack_used = True
@@ -6601,8 +6603,9 @@ class Warrior(Summon):
     def guard(self, event = None):
         if self.attack_used == True:
             return
-        root.unbind('<a>')
-        root.unbind('<q>')
+#         root.unbind('<a>')
+#         root.unbind('<q>')
+        app.unbind_nonarrows()
         root.bind('<q>', self.cancel_attack)
         sqrs = []
         for c in app.coords:
@@ -6675,8 +6678,9 @@ class Warrior(Summon):
     def leap(self, event = None):
         if self.leap_used == True:
             return
-        root.unbind('<a>')
-        root.unbind('<q>')
+#         root.unbind('<a>')
+#         root.unbind('<q>')
+        app.unbind_nonarrows()
         root.bind('<q>', self.cancel_attack)
         sqrs = []
         for c in app.coords:
@@ -7971,7 +7975,7 @@ class Familiar_Imp(Summon):
                     
 class Witch(Entity):
     def __init__(self, name, img, loc, owner):
-        self.actions = {'spell':self.spell, 'summon':self.summon, 'move':self.move}
+        self.actions = {'Spell':self.spell, 'Summon':self.summon, 'Move':self.move}
         self.summon_cap = 6
         self.summon_count = 0
         self.cantrip_used = False
@@ -8048,7 +8052,6 @@ class Witch(Entity):
         self.summon_count = 0
     
     def summon(self, event = None):
-                # show vis in context_menu, summon used? eventually DEBUG fine for now
         if self.summon_used == True:
             return
         app.depop_context(event = None)
@@ -8079,21 +8082,24 @@ class Witch(Entity):
     def cancel_placement(self, event = None):
         app.depop_context(event = None)
         app.cleanup_squares()
-        for x in range(1,4):
-            root.unbind(str(x))
-        root.unbind('<q>')
-        root.bind('<q>', app.depop_context)
-        root.unbind('<a>')
-        root.bind('<a>', app.populate_context)
+        app.unbind_all()
+        app.rebind_all()
+#         for x in range(1,4):
+#             root.unbind(str(x))
+#         root.unbind('<q>')
+#         root.bind('<q>', app.depop_context)
+#         root.unbind('<a>')
+#         root.bind('<a>', app.populate_context)
 
     
     def place_summon(self, event, type):
         if self.summon_count >= self.summon_cap:
             return
-        root.unbind('<q>')
-        root.unbind('<a>')
-        for x in range(1,4):
-            root.unbind(str(x))
+#         root.unbind('<q>')
+#         root.unbind('<a>')
+#         for x in range(1,4):
+#             root.unbind(str(x))
+        app.unbind_nonarrows()
         root.bind('<q>', self.cancel_placement)
         app.depop_context(event = None)
         sqrs = [c for c in app.coords if dist(c, self.loc) == 1 and app.grid[c[0]][c[1]] == '']
@@ -8119,9 +8125,7 @@ class Witch(Entity):
         if sqr not in sqrs:
             return
         app.unbind_all()
-        root.unbind('<q>')
         root.bind('<q>', app.depop_context)
-        root.unbind('<a>')
         root.bind('<a>', app.populate_context)
         # SOUND
         effect1 = mixer.Sound('Sound_Effects/summon.ogg')
@@ -8163,11 +8167,11 @@ class Witch(Entity):
         app.ent_dict[id] = summon
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = summon.img, tags = summon.tags)
         app.grid[sqr[0]][sqr[1]] = id
-        app.unbind_all()
-        app.rebind_all()
         self.summon_used = True
         app.canvas.delete('Summon')
         del app.vis_dict['Summon']
+        app.unbind_all()
+        app.rebind_all()
         
     def legal_moves(self):
         loc = self.loc
@@ -8177,10 +8181,10 @@ class Witch(Entity):
                 return
             adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
             for s in adj:
-                mvlist.append(s)
+                if s not in mvlist:
+                    mvlist.append(s)
                 findall(s, start+1, distance)
         findall(loc, 1, 3)
-        mvlist = [list(x) for x in set(tuple(x) for x in mvlist)]
         for f in self.move_effects:
             mvlist = f(mvlist)
         return mvlist
@@ -8189,8 +8193,9 @@ class Witch(Entity):
 #         if self.spell_used == True:
 #             return
         app.depop_context(event = None)
-        root.unbind('<a>')
-        root.unbind('<q>')
+#         root.unbind('<a>')
+#         root.unbind('<q>')
+        app.unbind_nonarrows()
         root.bind('<q>', self.cleanup_spell)
         b1 = tk.Button(app.context_menu, wraplength = 190, text = 'Cantrip', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = self.cantrip)
         b1.pack(side = 'top', pady = 2)
@@ -8204,10 +8209,10 @@ class Witch(Entity):
     def cantrip(self, event = None):
         if self.cantrip_used == True:
             return
-#         app.unbind_all()
         app.depop_context(event = None)
-        root.unbind('<q>')
-        root.unbind('<a>')
+#         root.unbind('<q>')
+#         root.unbind('<a>')
+        app.unbind_nonarrows()
         root.bind('<q>', self.cleanup_spell)
         for i, item in enumerate(self.cantrip_dict.items()):
             name = item[0]
@@ -8226,8 +8231,9 @@ class Witch(Entity):
         if self.arcane_used == True:
             return
         app.depop_context(event = None)
-        root.unbind('<q>')
-        root.unbind('<a>')
+#         root.unbind('<q>')
+#         root.unbind('<a>')
+        app.unbind_nonarrows()
         root.bind('<q>', self.cleanup_spell)
         # change: if screenheight>num_spells*30, divide spells into number of 'pages', create 'next page' button DEBUG
         # FOR NOW: just grab seven spells at a time, with room for a 'next' and 'back/prev' button (for hotkeys)
@@ -8273,9 +8279,8 @@ class Witch(Entity):
     
     def cleanup_spell(self, event = None, name = None):
         global selected, selected_vis
-        self.init_normal_anims()
         app.unbind_all()
-        app.rebind_all()
+        self.init_normal_anims()
         app.cleanup_squares()
         app.depop_context(event = None)
         try: 
@@ -8286,6 +8291,7 @@ class Witch(Entity):
         except: pass
         selected = []
         selected_vis = ''
+        app.rebind_all()
         
         
         # SPELLS
@@ -12062,7 +12068,7 @@ class App(tk.Frame):
     def depop_context(self, event):
         # unbind any potential numeric keys bound to relative actions
         try:
-            for x in range(1, 13):
+            for x in range(1, 10):
                 root.unbind(str(x))
         except: pass
         for b in self.context_buttons:
@@ -12286,7 +12292,6 @@ class App(tk.Frame):
 #             app.rebind_all()
         app.dethloks[lockname].set(1)
 
-
     def unbind_arrows(self):
         root.unbind('<Right>')
         root.unbind('<Left>')
@@ -12302,6 +12307,7 @@ class App(tk.Frame):
     def unbind_nonarrows(self):
         root.unbind('<a>')
         root.unbind('<q>')
+        root.unbind('<space>')
         for x in range(10):
             root.unbind(str(x))
             
