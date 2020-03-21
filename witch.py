@@ -12518,7 +12518,7 @@ class App(tk.Frame):
         root.unbind('<Down>')
         root.unbind('<a>')
         root.unbind('<q>')
-        root.bind('<space>', app.cycle_units)
+        root.unbind('<space>')
 #         root.unbind('<Escape>')
 
     def rebind_all(self):
