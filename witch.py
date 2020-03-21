@@ -1,4 +1,4 @@
-# button cycle through units
+# legal_moves improved, maybe can use same on bfs()
 
 # dark sun visual
 
@@ -1244,16 +1244,21 @@ class Trickster(Summon):
         app.rebind_all()
     
     def legal_moves(self):
-        loc = self.loc
+        loc = self.loc[:]
         mvlist = []
+        sqr_cost_map = {}
         def findall(loc, start, distance):
             if start > distance:
                 return
             adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
             for s in adj:
+                if tuple(s) in sqr_cost_map:
+                    if sqr_cost_map[tuple(s)] < start:
+                        continue
+                sqr_cost_map[tuple(s)] = start
                 if s not in mvlist:
                     mvlist.append(s)
-                    findall(s, start+1, distance)
+                findall(s, start+1, distance)
         findall(loc, 1, 4)
         for f in self.move_effects:
             mvlist = f(mvlist)
@@ -1334,7 +1339,7 @@ class Shadow(Summon):
                     if app.grid[c[0]][c[1]] == '':
                         if dist(obj.loc, c) <= 5:
                             move_list.append(c)
-                for f in self.move_effects:
+                for f in obj.move_effects:
                     move_list = f(move_list)
                 return move_list
             p = partial(legal_moves, self)
@@ -1349,18 +1354,23 @@ class Shadow(Summon):
             self.move_type = 'normal'
             self.actions = {'Shadow Strike':self.shadow_strike, 'Dark Shroud':self.dark_shroud, 'Move':self.move, 'Phase Shift':self.phase_shift}
             def legal_moves(obj):
-                loc = obj.loc
+                loc = obj.loc[:]
                 mvlist = []
+                sqr_cost_map = {}
                 def findall(loc, start, distance):
                     if start > distance:
                         return
                     adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
                     for s in adj:
+                        if tuple(s) in sqr_cost_map:
+                            if sqr_cost_map[tuple(s)] < start:
+                                continue
+                        sqr_cost_map[tuple(s)] = start
                         if s not in mvlist:
                             mvlist.append(s)
-                            findall(s, start+1, distance)
+                        findall(s, start+1, distance)
                 findall(loc, 1, 4)
-                for f in self.move_effects:
+                for f in obj.move_effects:
                     mvlist = f(mvlist)
                 return mvlist
             p = partial(legal_moves, self)
@@ -1690,16 +1700,21 @@ class Shadow(Summon):
         app.rebind_all()
     
     def legal_moves(self):
-        loc = self.loc
+        loc = self.loc[:]
         mvlist = []
+        sqr_cost_map = {}
         def findall(loc, start, distance):
             if start > distance:
                 return
             adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
             for s in adj:
+                if tuple(s) in sqr_cost_map:
+                    if sqr_cost_map[tuple(s)] < start:
+                        continue
+                sqr_cost_map[tuple(s)] = start
                 if s not in mvlist:
                     mvlist.append(s)
-                    findall(s, start+1, distance)
+                findall(s, start+1, distance)
         findall(loc, 1, 4)
         for f in self.move_effects:
             mvlist = f(mvlist)
@@ -1938,16 +1953,21 @@ class Plaguebearer(Summon):
     
     
     def legal_moves(self):
-        loc = self.loc
+        loc = self.loc[:]
         mvlist = []
+        sqr_cost_map = {}
         def findall(loc, start, distance):
             if start > distance:
                 return
             adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
             for s in adj:
+                if tuple(s) in sqr_cost_map:
+                    if sqr_cost_map[tuple(s)] < start:
+                        continue
+                sqr_cost_map[tuple(s)] = start
                 if s not in mvlist:
                     mvlist.append(s)
-                    findall(s, start+1, distance)
+                findall(s, start+1, distance)
         findall(loc, 1, 2)
         for f in self.move_effects:
             mvlist = f(mvlist)
@@ -2236,19 +2256,23 @@ class Bard(Summon):
         app.rebind_all()
         
     def legal_moves(self):
-        loc = self.loc
+        loc = self.loc[:]
         mvlist = []
+        sqr_cost_map = {}
         def findall(loc, start, distance):
             if start > distance:
                 return
             adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
             for s in adj:
+                if tuple(s) in sqr_cost_map:
+                    if sqr_cost_map[tuple(s)] < start:
+                        continue
+                sqr_cost_map[tuple(s)] = start
                 if s not in mvlist:
                     mvlist.append(s)
-                    findall(s, start+1, distance)
-        findall(loc, 1, 5) 
+                findall(s, start+1, distance)
+        findall(loc, 1, 5)
         for f in self.move_effects:
-            print(f)
             mvlist = f(mvlist)
         return mvlist
         
@@ -2640,14 +2664,19 @@ class Tortured_Soul(Summon):
     def legal_moves(self):
         loc = self.loc[:]
         mvlist = []
+        sqr_cost_map = {}
         def findall(loc, start, distance):
             if start > distance:
                 return
             adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
             for s in adj:
+                if tuple(s) in sqr_cost_map:
+                    if sqr_cost_map[tuple(s)] < start:
+                        continue
+                sqr_cost_map[tuple(s)] = start
                 if s not in mvlist:
                     mvlist.append(s)
-                    findall(s, start+1, distance)
+                findall(s, start+1, distance)
         findall(loc, 1, 6)
         for f in self.move_effects:
             mvlist = f(mvlist)
@@ -3091,14 +3120,19 @@ class Kensai(Summon):
     def legal_moves(self):
         loc = self.loc[:]
         mvlist = []
+        sqr_cost_map = {}
         def findall(loc, start, distance):
             if start > distance:
                 return
             adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
             for s in adj:
+                if tuple(s) in sqr_cost_map:
+                    if sqr_cost_map[tuple(s)] < start:
+                        continue
+                sqr_cost_map[tuple(s)] = start
                 if s not in mvlist:
                     mvlist.append(s)
-                    findall(s, start+1, distance)
+                findall(s, start+1, distance)
         findall(loc, 1, 3)
         for f in self.move_effects:
             mvlist = f(mvlist)
@@ -3316,14 +3350,19 @@ class Kobold_Shaman(Summon):
     def legal_moves(self):
         loc = self.loc[:]
         mvlist = []
+        sqr_cost_map = {}
         def findall(loc, start, distance):
             if start > distance:
                 return
             adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
             for s in adj:
+                if tuple(s) in sqr_cost_map:
+                    if sqr_cost_map[tuple(s)] < start:
+                        continue
+                sqr_cost_map[tuple(s)] = start
                 if s not in mvlist:
                     mvlist.append(s)
-                    findall(s, start+1, distance)
+                findall(s, start+1, distance)
         findall(loc, 1, 4)
         for f in self.move_effects:
             mvlist = f(mvlist)
@@ -3451,14 +3490,19 @@ class Undead(Summon):
     def legal_moves(self):
         loc = self.loc[:]
         mvlist = []
+        sqr_cost_map = {}
         def findall(loc, start, distance):
             if start > distance:
                 return
             adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
             for s in adj:
+                if tuple(s) in sqr_cost_map:
+                    if sqr_cost_map[tuple(s)] < start:
+                        continue
+                sqr_cost_map[tuple(s)] = start
                 if s not in mvlist:
                     mvlist.append(s)
-                    findall(s, start+1, distance)
+                findall(s, start+1, distance)
         findall(loc, 1, 4)
         for f in self.move_effects:
             mvlist = f(mvlist)
@@ -3582,14 +3626,19 @@ class Undead_Knight(Summon):
     def legal_moves(self):
         loc = self.loc[:]
         mvlist = []
+        sqr_cost_map = {}
         def findall(loc, start, distance):
             if start > distance:
                 return
             adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
             for s in adj:
+                if tuple(s) in sqr_cost_map:
+                    if sqr_cost_map[tuple(s)] < start:
+                        continue
+                sqr_cost_map[tuple(s)] = start
                 if s not in mvlist:
                     mvlist.append(s)
-                    findall(s, start+1, distance)
+                findall(s, start+1, distance)
         findall(loc, 1, 4)
         for f in self.move_effects:
             mvlist = f(mvlist)
@@ -4469,14 +4518,19 @@ class Air_Elemental(Summon):
     def legal_moves(self):
         loc = self.loc[:]
         mvlist = []
+        sqr_cost_map = {}
         def findall(loc, start, distance):
             if start > distance:
                 return
             adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
             for s in adj:
+                if tuple(s) in sqr_cost_map:
+                    if sqr_cost_map[tuple(s)] < start:
+                        continue
+                sqr_cost_map[tuple(s)] = start
                 if s not in mvlist:
                     mvlist.append(s)
-                    findall(s, start+1, distance)
+                findall(s, start+1, distance)
         findall(loc, 1, 5)
         for f in self.move_effects:
             mvlist = f(mvlist)
@@ -5384,14 +5438,19 @@ class Earth_Elemental(Summon):
     def legal_moves(self):
         loc = self.loc[:]
         mvlist = []
+        sqr_cost_map = {}
         def findall(loc, start, distance):
             if start > distance:
                 return
             adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
             for s in adj:
+                if tuple(s) in sqr_cost_map:
+                    if sqr_cost_map[tuple(s)] < start:
+                        continue
+                sqr_cost_map[tuple(s)] = start
                 if s not in mvlist:
                     mvlist.append(s)
-                    findall(s, start+1, distance)
+                findall(s, start+1, distance)
         findall(loc, 1, 6)
         for f in self.move_effects:
             mvlist = f(mvlist)
@@ -5944,14 +6003,19 @@ class Orc_Axeman(Summon):
     def legal_moves(self):
         loc = self.loc[:]
         mvlist = []
+        sqr_cost_map = {}
         def findall(loc, start, distance):
             if start > distance:
                 return
             adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
             for s in adj:
+                if tuple(s) in sqr_cost_map:
+                    if sqr_cost_map[tuple(s)] < start:
+                        continue
+                sqr_cost_map[tuple(s)] = start
                 if s not in mvlist:
                     mvlist.append(s)
-                    findall(s, start+1, distance)
+                findall(s, start+1, distance)
         findall(loc, 1, 4)
         for f in self.move_effects:
             mvlist = f(mvlist)
@@ -6139,14 +6203,19 @@ class Fire_Elemental(Summon):
     def legal_moves(self):
         loc = self.loc[:]
         mvlist = []
+        sqr_cost_map = {}
         def findall(loc, start, distance):
             if start > distance:
                 return
             adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
             for s in adj:
+                if tuple(s) in sqr_cost_map:
+                    if sqr_cost_map[tuple(s)] < start:
+                        continue
+                sqr_cost_map[tuple(s)] = start
                 if s not in mvlist:
                     mvlist.append(s)
-                    findall(s, start+1, distance)
+                findall(s, start+1, distance)
         findall(loc, 1, 4)
         for f in self.move_effects:
             mvlist = f(mvlist)
@@ -6274,14 +6343,19 @@ class Barbarian(Summon):
     def legal_moves(self):
         loc = self.loc[:]
         mvlist = []
+        sqr_cost_map = {}
         def findall(loc, start, distance):
             if start > distance:
                 return
             adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
             for s in adj:
+                if tuple(s) in sqr_cost_map:
+                    if sqr_cost_map[tuple(s)] < start:
+                        continue
+                sqr_cost_map[tuple(s)] = start
                 if s not in mvlist:
                     mvlist.append(s)
-                    findall(s, start+1, distance)
+                findall(s, start+1, distance)
         findall(loc, 1, 3)
         for f in self.move_effects:
             mvlist = f(mvlist)
@@ -6599,14 +6673,19 @@ class Minotaur(Summon):
     def legal_moves(self):
         loc = self.loc[:]
         mvlist = []
+        sqr_cost_map = {}
         def findall(loc, start, distance):
             if start > distance:
                 return
             adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
             for s in adj:
+                if tuple(s) in sqr_cost_map:
+                    if sqr_cost_map[tuple(s)] < start:
+                        continue
+                sqr_cost_map[tuple(s)] = start
                 if s not in mvlist:
                     mvlist.append(s)
-                    findall(s, start+1, distance)
+                findall(s, start+1, distance)
         findall(loc, 1, 5)
         for f in self.move_effects:
             mvlist = f(mvlist)
@@ -6822,8 +6901,9 @@ class Warrior(Summon):
     def warrior_attack(self, event = None):
         if self.attack_used == True:
             return
-        root.unbind('<a>')
-        root.unbind('<q>')
+#         root.unbind('<a>')
+#         root.unbind('<q>')
+        app.unbind_nonarrows()
         root.bind('<q>', self.cancel_attack)
         sqrs = []
         for c in app.coords:
@@ -7150,14 +7230,19 @@ class Familiar_Homonculus(Summon):
     def legal_moves(self):
         loc = self.loc[:]
         mvlist = []
+        sqr_cost_map = {}
         def findall(loc, start, distance):
             if start > distance:
                 return
             adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
             for s in adj:
+                if tuple(s) in sqr_cost_map:
+                    if sqr_cost_map[tuple(s)] < start:
+                        continue
+                sqr_cost_map[tuple(s)] = start
                 if s not in mvlist:
                     mvlist.append(s)
-                    findall(s, start+1, distance)
+                findall(s, start+1, distance)
         findall(loc, 1, 5)
         for f in self.move_effects:
             mvlist = f(mvlist)
@@ -7177,17 +7262,22 @@ class Lesser_Demon(Summon):
         super().__init__(name, img, loc, owner, number)
         
     def legal_moves(self):
-        loc = self.loc
+        loc = self.loc[:]
         mvlist = []
+        sqr_cost_map = {}
         def findall(loc, start, distance):
             if start > distance:
                 return
             adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
             for s in adj:
+                if tuple(s) in sqr_cost_map:
+                    if sqr_cost_map[tuple(s)] < start:
+                        continue
+                sqr_cost_map[tuple(s)] = start
                 if s not in mvlist:
                     mvlist.append(s)
-                    findall(s, start+1, distance)
-        findall(loc, 1, 4) 
+                findall(s, start+1, distance)
+        findall(loc, 1, 4)
         for f in self.move_effects:
             mvlist = f(mvlist)
         return mvlist
@@ -7775,17 +7865,22 @@ class Cenobite(Summon):
         app.cleanup_squares()
         
     def legal_moves(self):
-        loc = self.loc
+        loc = self.loc[:]
         mvlist = []
+        sqr_cost_map = {}
         def findall(loc, start, distance):
             if start > distance:
                 return
             adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
             for s in adj:
+                if tuple(s) in sqr_cost_map:
+                    if sqr_cost_map[tuple(s)] < start:
+                        continue
+                sqr_cost_map[tuple(s)] = start
                 if s not in mvlist:
                     mvlist.append(s)
-                    findall(s, start+1, distance)
-        findall(loc, 1, 4) 
+                findall(s, start+1, distance)
+        findall(loc, 1, 4)
         for f in self.move_effects:
             mvlist = f(mvlist)
         return mvlist
@@ -9578,12 +9673,11 @@ class Witch(Entity):
         
         
     def boiling_blood(self, event = None):
-        ##
         app.depop_context(event = None)
-        root.unbind('<a>')
-        root.unbind('<q>')
+#         root.unbind('<a>')
+#         root.unbind('<q>')
+        app.unbind_nonarrows()
         root.bind('<q>', lambda name = 'Boiling_Blood' : self.cleanup_spell(name = name))
-#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         sqrs = [s for s in app.coords if dist(self.loc, s) == 1]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_boiling_blood(event = e, sqr = s, sqrs = sqrs))
@@ -9644,10 +9738,10 @@ class Witch(Entity):
     def dark_sun(self, event = None):
         # Any one 'shadow' summon within range 2 gets an extra attack if they have already attacked once this turn
         app.depop_context(event = None)
-        root.unbind('<a>')
-        root.unbind('<q>')
+#         root.unbind('<a>')
+#         root.unbind('<q>')
+        app.unbind_nonarrows()
         root.bind('<q>', lambda name = 'Dark_Sun' : self.cleanup_spell(name = name))
-#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         sqrs = [s for s in app.coords if dist(self.loc, s) <= 2]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_dark_sun(event = e, sqr = s, sqrs = sqrs))
@@ -12471,7 +12565,7 @@ class App(tk.Frame):
         
     def open_menu(self):
         self.depop_context(event = None)
-        self.unbind_all()    
+        self.unbind_all()
         quit_button = tk.Button(self.context_menu, text="QUIT", font = ('chalkduster', 24), fg='indianred', highlightbackground = 'tan3', command=self.confirm_quit)
         quit_button.pack(side = 'bottom')
         self.context_buttons.append(quit_button)
