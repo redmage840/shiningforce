@@ -1,4 +1,20 @@
-# undead killed by pestil eot trigger did not pass death trigger...
+# redo FA spells...
+
+# text horrid wilting
+
+# mummify, make warrior lose leap
+
+# death popup...
+
+# added 'start_level_popup' that can use app.map_number to populate text
+
+# added victory popup, use map.number to populate text
+
+# text end of level one
+
+# sound effect deal damage
+
+# if an ent gains an eot effect during the resolution of another eot effect, will that effect happen during the same phase? does it depend on order? do i make a copy of the effects_dict at start so as to avoid resolution of newly gained effects until the next phase? (should do this last one...)
 
 # make sure attack/defense effects actually work
 # shocking-strike (+2 dmg and stun chance) for attack effects (make sure works with some kind of damage reduction defense effects and guard
@@ -248,17 +264,17 @@ def defense_loop(effects_list, attacker, defender, amount, type, lockname):
         amount = ef(attacker, defender, amount, type)
         root.after(1999, lambda el = effects_list, at = attacker, de = defender, am = amount, ty = type, ln = lockname : defense_loop(el, at, de, ty, ln))
         
-def finish_lock(apply_damage, attacker, defender, amount, type, lockname):
+def finish_lock(apply_damage, attacker, defender, amount, type, lockname = None):
     defender.spirit += amount
     if defender.spirit > defender.base_spirit:
         defender.spirit = defender.base_spirit
     app.dethloks[lockname].set(1)
     
-def lock(func, *args):
+def lock(func, *args, **kwargs):
     name = 'dethlok'+str(app.death_count)
     app.death_count += 1
     app.dethloks[name] = tk.IntVar(0)
-    func(*args, name)
+    func(*args, **kwargs, lockname = name)
     app.wait_variable(app.dethloks[name])
 
         
@@ -2029,7 +2045,6 @@ class Plaguebearer(Summon):
                         app.get_focus(tar)
 #                         app.ent_dict[tar].set_attr('spirit', -3)
                         lock(apply_damage, self, app.ent_dict[tar], -3, 'poison')
-                        print(self)
                         app.canvas.create_text(app.ent_dict[tar].loc[0]*100+49-app.moved_right, app.ent_dict[tar].loc[1]*100+59-app.moved_down, text = '3 spirit Pox', justify ='center', font = ('Andale Mono', 13), fill = 'black', tags = 'text')
                         app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+60-app.moved_down, text = '3 spirit Pox', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
                         if app.ent_dict[tar].spirit <= 0:
@@ -3370,8 +3385,31 @@ class Kobold_Cleric(Summon):
             
     # change to cast either hex, chant, or harm
     # hex is stat effects to enemies, chant buff friendly, harm basic psy atk fallback
-    
     def continue_ai(self, ents_list):
+        # first check for hex or warcry cast, 
+        hex_tars = [k for k,v in app.ent_dict.items() if dist(v.loc, self.loc) <= 4 and 'Hex' not in [j.name for i,j in v.effects_dict.items()]]
+        warcry_tars = [k for k, v in app.ent_dict.items() if 'Warcry' not in [j.name for i,j in v.effects_dict.items()]]
+        if len(hex_tars) >= 2:
+            tar = choice(hex_tars)
+            ents = [k for k,v in app.ent_dict.items() if dist(v.loc, tar.loc) <= 2 and 'Hex' not in [j.name for i,j in v.effects_dict.items()]]
+            def hex_loop(ents):
+                if ents == []:
+                    self.finish_ai(ents_list)
+                else:
+                    id = ents[0]
+                    ents = ents[1:]
+                    app.get_focus(id)
+                    visloc = app.ent_dict[id].loc[:]
+                    app.vis_dict['Kensai_Cut'] = Vis(name = 'Kensai_Cut', loc = visloc)
+                    app.canvas.create_image(visloc[0]*100+50-app.moved_right, visloc[1]*100+50-app.moved_down, image = app.vis_dict['Kensai_Cut'].img, tags = 'Kensai_Cut')
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
+            # cast hex, then continue melee ai
+        elif len(warcry_tars) >= 2:
+            pass
+            # cast warcry , then continue melee ai
+            
+            
+            
         atk_sqrs = self.legal_attacks()
         if atk_sqrs != []: # CAN ATTACK BEFORE MOVING
             any = atk_sqrs[0]
@@ -3588,7 +3626,7 @@ class Kobold_Shaman(Summon):
         self.agl = 5
         self.end = 3
         self.dodge = 5
-        self.psyche = 6
+        self.psyche = 4
         self.spirit = 15
         self.waiting = waiting
         self.move_type = 'normal'
@@ -3642,39 +3680,6 @@ class Kobold_Shaman(Summon):
                 move = list(reduce(lambda a,b : a if dist(self.loc, a) > dist(self.loc, b) else b, intersect))
                 root.after(666, lambda sqr = move : app.focus_square(sqr))
                 root.after(1333, lambda el = ents_list, sqr = move : self.ai_move(el, sqr))
-            
-#     def do_attack(self, ents_list, id):
-#         if self.attack_used == True:
-#             self.cleanup_attack(ents_list)
-#         else:
-#             app.get_focus(id)
-# #             self.init_attack_anims()
-#             effect1 = mixer.Sound('Sound_Effects/fire_elemental_attack.ogg')
-#             sound_effects.play(effect1, 0)
-#             my_psyche = self.get_attr('psyche')
-#             tar_dodge = app.ent_dict[id].get_attr('dodge')
-#             if to_hit(my_psyche, tar_dodge ) == True:# HIT
-#                 tar_end = app.ent_dict[id].get_attr('end')
-#                 d = damage(my_psyche, tar_end)
-#                 app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
-#                 app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
-#                 app.ent_dict[id].set_attr('spirit', -d)
-#                 if app.ent_dict[id].spirit <= 0:# HIT, KILL
-#                     app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+94, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
-#                     app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+95, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
-#                     name = 'dethlok'+str(app.death_count)
-#                     app.death_count += 1
-#                     app.dethloks[name] = tk.IntVar(0)
-#                     root.after(2666, self.cleanup_attack)
-#                     root.after(2666, lambda id = id, name = name : app.kill(id, name))
-#                     root.wait_variable(app.dethloks[name])
-#                     self.finish_attack(ents_list)
-#                 else:# HIT, NO KILL
-#                     root.after(2666, lambda e = ents_list : self.finish_attack(e))
-#             else:# MISS
-#                 app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Miss!', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
-#                 app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Miss!', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
-#                 root.after(2666, lambda e = ents_list : self.finish_attack(e))
             
     def do_attack(self, ents_list, id):
         global selected_vis
@@ -3934,7 +3939,7 @@ class Ghoul(Summon):
                             app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+95-app.moved_down, text = app.ent_dict[tar].name.replace('_',' ') + ' Killed...', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
                         return 'Not None'
                     eot = partial(take_2, id)
-                    app.ent_dict[id].effects_dict['Ghoul_Venom'] = Effect(name = 'Ghoul_Venom', info = 'Ghoul_Venom str end reduced by 1 for 4 turns 2 spirit per turn', eot_func = eot, undo = p, duration = 4)
+                    app.ent_dict[id].effects_dict['Ghoul_Venom'] = Effect(name = 'Ghoul_Venom', info = 'Ghoul_Venom str end reduced by 1 for 4 turns 2 spirit per turn', eot_func = eot, undo = p, duration = 9)
                     root.after(2666, lambda e = ents_list : self.finish_attack(e))
                 else:
                     root.after(2666, lambda e = ents_list : self.finish_attack(e))
@@ -9686,7 +9691,7 @@ class Witch(Entity):
     def plague(self, event = None):
         app.depop_context(event = None)
         root.bind('<q>', lambda name = 'Plague' : self.cleanup_spell(name = name))
-        sqrs = [s for s in app.coords if dist(self.loc, s) <= 3]
+        sqrs = [s for s in app.coords if dist(self.loc, s) <= 5]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_plague(event = e, sqr = s, sqrs = sqrs))
         b = tk.Button(app.context_menu, text = 'Choose Target For Plague', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_plague(e, s, sqrs))
@@ -9857,7 +9862,8 @@ class Witch(Entity):
         start_loc = app.ent_dict[id].loc[:]
         app.vis_dict['Psionic_Push'] = Vis(name = 'Psionic_Push', loc = start_loc)
         app.canvas.create_image(start_loc[0]*100+50-app.moved_right, start_loc[1]*100+50-app.moved_down, image = app.vis_dict['Psionic_Push'].img, tags = 'Psionic_Push')
-        app.canvas.create_text(start_loc[0]*100+50-app.moved_right, start_loc[1]*100+95-app.moved_down, text = 'Psionic Push', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
+        app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+94-app.moved_down, text = 'Psionic Push', font = ('Andale Mono', 14), fill = 'black', tags = 'text')
+        app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+95-app.moved_down, text = 'Psionic Push', font = ('Andale Mono', 14), fill = 'lightgreen', tags = 'text')
         x = start_loc[0]*100+50-app.moved_right
         y = start_loc[1]*100+50-app.moved_down
         endx = sqr[0]*100+50-app.moved_right
@@ -10018,10 +10024,7 @@ class Witch(Entity):
                     app.wait_variable(app.dethloks[name])
                 elif app.ent_dict[id].loc == sqr and 'Pestilence' not in [v.name for k,v in app.ent_dict[id].effects_dict.items()]:
                     def pestil_death_trigger(obj = None):
-                        print('inside pestil death trig')
-                        print('obj is ', obj)
-                        adj = [k for k,v in app.ent_dict.items() if dist(v.loc, obj.loc) == 1] #and 'Pestilence' not in [v.name for k,v in obj.effects_dict.items()]]
-                        print('adj is ', adj)
+                        adj = [k for k,v in app.ent_dict.items() if dist(v.loc, obj.loc) == 1 and 'Pestilence' not in [j.name for i,j in v.effects_dict.items()]]
                         for id,s in [(k,v.loc) for k,v in app.ent_dict.items() if k in adj]:
                             n = 'Pestilence' + str(app.effects_counter) # not an effect, just need unique int
                             app.effects_counter += 1 # that is why this is incr manually here, no Effect init
@@ -10080,7 +10083,7 @@ class Witch(Entity):
         # Any target is inflicted with 'curse', while cursed takes 2 spirit damage at end of every owner's turn and minus 1 to every stat (not spirit, magick, movement)
         app.depop_context(event = None)
         root.bind('<q>', self.cleanup_spell)
-        sqrs = [s for s in app.coords if dist(self.loc, s) <= 3]
+        sqrs = [s for s in app.coords if dist(self.loc, s) <= 4]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_curse_of_oriax(event = e, sqr = s, sqrs = sqrs))
         b = tk.Button(app.context_menu, text = 'Choose Target For Curse of Oriax', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_curse_of_oriax(e, s, sqrs = sqrs))
@@ -11208,13 +11211,13 @@ class App(tk.Frame):
     def load_map_triggers(self, map_number, witch = None, protaganist_object = None):
         background_music.stop()
         if map_number == 0: # FIRST AREA, NO 'CONTINUATION from previous level' BY PASSING PROTAG OBJECT
-            sound1 = mixer.Sound('Music/heroic_demise.ogg')
-            background_music.play(sound1, -1)
-            sound1.set_volume(0.4)
             # CLEANUP FROM CHOOSE_WITCH
             self.avatar_popup.destroy()
             del self.wrapped_funcs
             self.p1_witch = witch
+            sound1 = mixer.Sound('Music/heroic_demise.ogg')
+            background_music.play(sound1, -1)
+            sound1.set_volume(0.4)
             self.map_triggers = []
             def self_death():
                 if app.p1_witch not in app.ent_dict.keys():
@@ -12531,6 +12534,9 @@ class App(tk.Frame):
             root.after(999, self.start_turn)
             root.after(999, self.rebind_all)
             self.animate()
+            
+            self.start_level_popup()
+            
             self.map_trigger_loop()
         # CHOOSE SECOND PLAYER WITCH
         elif self.num_players == 2 and player_num == 1:# and self.p2_witch == '':
@@ -12540,6 +12546,25 @@ class App(tk.Frame):
         else: #self.num_players == 2 and self.p2_witch != '':
             self.start_turn()
             self.animate()
+        
+    def start_level_popup(self):
+        name = 'dethlok'+str(app.death_count)
+        app.death_count += 1
+        app.dethloks[name] = tk.IntVar(0)
+        def end(window, lockname):
+            self.destroy_release(window)
+            app.dethloks[lockname].set(1)
+        self.start_popup = tk.Toplevel()
+        self.start_popup.grab_set()
+        self.start_popup.attributes('-topmost', 'true')
+        start_text = '''
+        Defeat all the enemies...\n
+        '''
+        self.text = tk.Label(self.start_popup, text = start_text, font = ('chalkduster', 24), fg='indianred', bg = 'black')
+        self.text.pack()
+        self.close = tk.Button(self.start_popup, text = 'OK', font = ('chalkduster', 24), fg='tan3', command = lambda win = self.start_popup, ln = name : end(win, ln))
+        self.close.pack()
+        root.wait_variable(app.dethloks[name])
         
             
     def start_turn(self):
@@ -12867,13 +12892,30 @@ class App(tk.Frame):
         # ALL MAP TRIGGERS ARE FUNCTIONS THAT CHECK FOR CONDITIONS AND EITHER DO STUFF IN RESPONSE
         # OR IF THEY RETURN 'victory', END LEVEL
     # need to make specific for each level
+    
+    def victory_popup(self, lockname, alt_route = None):
+        def end(window):
+            self.destroy_release(window)
+            app.dethloks[lockname].set(1)
+            self.end_level(alt_route = alt_route)
+        self.vic_popup = tk.Toplevel()
+        self.vic_popup.grab_set()
+        self.vic_popup.attributes('-topmost', 'true')
+        vic_text = '''
+        Victory Achieved, for now...\n
+        '''
+        self.text = tk.Label(self.vic_popup, text = vic_text, font = ('chalkduster', 24), fg='indianred', bg = 'black')
+        self.text.pack()
+        self.close = tk.Button(self.vic_popup, text = 'OK', font = ('chalkduster', 24), fg='tan3', command = lambda win = self.vic_popup : end(win))
+        self.close.pack()
+    
     def map_trigger_loop(self):
         if self.map_number == 0:
             for mt in self.map_triggers:
                 result = mt()
                 if result == 'victory':
                     app.unbind_all()
-                    self.end_level()
+                    lock(app.victory_popup)
                     break
                 elif result == 'game over':
                     self.reset()
@@ -12885,7 +12927,7 @@ class App(tk.Frame):
                 result = mt()
                 if result == 'victory':
                     app.unbind_all()
-                    self.end_level()
+                    lock(app.victory_popup)
                     break
                 elif result == 'game over':
                     self.reset()
@@ -12897,11 +12939,11 @@ class App(tk.Frame):
                 result = mt()
                 if result == 'stairway':
                     app.unbind_all()
-                    self.end_level(alt_route = 21)
+                    lock(app.victory_popup, alt_route = 21)
                     break
                 elif result == 'door':
                     app.unbind_all()
-                    self.end_level(alt_route = 121)
+                    lock(app.victory_popup, alt_route = 121)
                     break
                 elif result == 'game over':
                     self.reset()
@@ -12913,7 +12955,7 @@ class App(tk.Frame):
                 result = mt()
                 if result == 'victory':
                     app.unbind_all()
-                    self.end_level() # next map is 122 on this route
+                    lock(app.victory_popup)
                     break
                 elif result == 'game over':
                     self.reset()
@@ -12925,7 +12967,7 @@ class App(tk.Frame):
                 result = mt()
                 if result == 'victory':
                     app.unbind_all()
-                    self.end_level() # next map is 22 on this route
+                    lock(app.victory_popup)
                     break
                 elif result == 'game over':
                     self.reset()
@@ -12937,7 +12979,7 @@ class App(tk.Frame):
                 result = mt()
                 if result == 'victory':
                     app.unbind_all()
-                    self.end_level(alt_route = 3) 
+                    lock(app.victory_popup, alt_route = 3) 
                     break
                 elif result == 'game over':
                     self.reset()
@@ -12949,7 +12991,7 @@ class App(tk.Frame):
                 result = mt()
                 if result == 'victory':
                     app.unbind_all()
-                    self.end_level(alt_route = 3) 
+                    lock(app.victory_popup, alt_route = 3) 
                     break
                 elif result == 'game over':
                     self.reset()
@@ -12961,7 +13003,7 @@ class App(tk.Frame):
                 result = mt()
                 if result == 'victory':
                     app.unbind_all()
-                    self.end_level()
+                    lock(app.victory_popup)
                     break
                 elif result == 'game over':
                     self.reset()
@@ -12973,7 +13015,7 @@ class App(tk.Frame):
                 result = mt()
                 if result == 'victory':
                     app.unbind_all()
-                    self.end_level()
+                    lock(app.victory_popup)
                     break
                 elif result == 'game over':
                     self.reset()
@@ -13253,10 +13295,11 @@ class App(tk.Frame):
         help_text = '''
         Arrow keys move cursor around map\n
         Cursor over an object you control and press 'a' to see action options\n
-        Press 'q' to cancel the context menu for a selected object\n
+        Press 'q' to cancel the context menu for a selected object/action\n
         Cursor over enemy controlled object and press 'a' for available info\n
         Your witch can cast one arcane spell AND one cantrip AND use one summon AND move once per turn\n
-        Your summons can move AND use one action per turn\n
+        Your summons can move AND use one action per turn in most cases\n
+        Except, for example, Warriors may move, attack or guard, and use leap to move again in one turn\n
         '''
         self.text = tk.Label(self.help_popup, text = help_text, font = ('chalkduster', 24), fg='indianred', bg = 'black')
         self.text.pack()
