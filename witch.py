@@ -1,3 +1,6 @@
+# minotaur, when pursuing witch and path to witch is blocked by enemy (player controlled) units (no goal sqrs only) (path block is fine) (even one goal sqr when it is closest, natural goal sqr)
+# gravity affects minotaur
+
 # redo FA spells...
 
 # text horrid wilting
@@ -1309,7 +1312,7 @@ class Trickster(Summon):
         app.depop_context(event = None)
         app.cleanup_squares()
         effect1 = mixer.Sound('Sound_Effects/gate.ogg')
-        effect1.set_volume(.7)
+        effect1.set_volume(.4)
         sound_effects.play(effect1, 0)
         oldloc = app.ent_dict[id].loc[:]
         newloc = sqr[:]
@@ -7346,7 +7349,7 @@ class Minotaur(Summon):
         else:
             effect1 = mixer.Sound('Sound_Effects/minotaur_attack.ogg')
             effect1.set_volume(1)
-            sound_effects.play(effect1, -1)
+            sound_effects.play(effect1, 0)
             app.get_focus(id)
             app.ent_dict[self.number+'top'].init_attack_anims()
             my_agl = self.get_attr('agl')
@@ -11532,9 +11535,120 @@ class App(tk.Frame):
                 if app.p1_witch not in app.ent_dict.keys():
                     return 'game over'
             self.map_triggers.append(self_death)
-            def area_eleven():
-                if app.ent_dict[app.p1_witch].loc in [[20,18],[21,18],[22,18]]:
-                    coords = [[24,18],[25,18],[26,18],[27,18],[28,18],[24,17],[25,17],[26,17],[24,16],[25,16],[26,16],[22,15],[23,15],[24,15],[25,15],[26,15],[27,15],[28,15],[22,14],[22,13],[22,12],[22,11],[22,10],[22,9],[23,14],[23,13],[23,12],[23,11],[23,10],[23,9],[20,9],[21,9],[20,10],[21,10],[25,14],[26,14],[27,14],[28,14],[25,13],[26,13],[25,12],[26,12],[28,13],[23,18]]
+            
+            def area_sixteen():
+                if app.ent_dict[app.p1_witch].loc in [[13,16],[13,17],[13,18],[13,19],[13,20]]:
+                    coords = [[14,16],[14,17],[15,16],[15,17],[16, 16], [17, 16], [18, 16], [19, 16], [20, 16], [21, 16], [22, 16], [23, 16], [24, 16], [25, 16], [26, 16], [27, 16],[27,17],[27,18],[27,19],[27,20],[27,21],[26,21],[25,21],[25,20],[25,19],[17, 19], [18, 19], [19, 19], [20, 19], [21, 19], [22, 19], [23, 19], [24, 19],[14, 20], [15, 20], [16, 20], [17, 20], [18, 20], [19, 20]]
+                    for c in coords:
+                        app.grid[c[0]][c[1]] = ''
+                    top = Image.open('1_player_map_fog/map21/16_top.png')
+                    bot = Image.open('1_player_map_fog/map21/16.png')
+                    newbot = self.map_bottom_image
+                    newtop = self.map_top_image
+                    newbot = Image.alpha_composite(newbot, bot)
+                    newtop = Image.alpha_composite(newtop, top)
+                    self.map_bottom_image = newbot
+                    self.map_top_image = newtop
+                    self.map_bottom = ImageTk.PhotoImage(self.map_bottom_image)
+                    self.map_top = ImageTk.PhotoImage(self.map_top_image)
+                    self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_bottom, tags = ('map','mapbottom'))
+                    self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_top, tags = ('map','maptop'))
+                    app.canvas.tag_lower('mapbottom')
+                    self.map_triggers.remove(area_sixteen)
+
+            
+            def area_fifteen():
+                if app.ent_dict[app.p1_witch].loc in [[5,37],[4,37]]:
+                    coords = [[6, 37], [7, 37], [8, 37], [9, 37], [10, 37], [11, 37], [12, 37], [13, 37], [14, 37], [15, 37], [16, 37], [17, 37], [18, 37], [19, 37], [20, 37], [21, 37], [22, 37], [23, 37], [24, 37], [25, 37], [26, 37], [27, 37], [28, 37], [29, 37], [30, 37], [31, 37], [32, 37],[24, 36], [25, 36], [26, 36], [27, 36], [28, 36], [29, 36], [30, 36], [31, 36], [32, 36], [33, 36], [34, 36], [35, 36], [36, 36], [37, 36], [38, 36],[24, 35], [25, 35], [26, 35], [27, 35], [28, 35], [29, 35], [30, 35], [31, 35], [32, 35], [33, 35], [34, 35], [35, 35], [36, 35], [37, 35], [38, 35],[24, 34], [25, 34], [26, 34], [27, 34], [28, 34], [29, 34], [30, 34], [31, 34], [32, 34]]
+                    for c in coords:
+                        app.grid[c[0]][c[1]] = ''
+                    top = Image.open('1_player_map_fog/map21/15_top.png')
+                    bot = Image.open('1_player_map_fog/map21/15.png')
+                    newbot = self.map_bottom_image
+                    newtop = self.map_top_image
+                    newbot = Image.alpha_composite(newbot, bot)
+                    newtop = Image.alpha_composite(newtop, top)
+                    self.map_bottom_image = newbot
+                    self.map_top_image = newtop
+                    self.map_bottom = ImageTk.PhotoImage(self.map_bottom_image)
+                    self.map_top = ImageTk.PhotoImage(self.map_top_image)
+                    self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_bottom, tags = ('map','mapbottom'))
+                    self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_top, tags = ('map','maptop'))
+                    app.canvas.tag_lower('mapbottom')
+                    self.map_triggers.remove(area_fifteen)
+            
+            def area_fourteen():
+                if app.ent_dict[app.p1_witch].loc in [[7,24],[6,24]]:
+                    coords = [[7,25],[7, 26], [7, 27], [7, 28], [7, 29], [7, 30], [7, 31],[8, 30], [9, 30], [10, 30], [11, 30], [12, 30], [13, 30], [14, 30], [15, 30], [16, 30], [17, 30], [18, 30], [19, 30], [20, 30], [21, 30], [22, 30], [23, 30], [24, 30],[8, 31], [9, 31], [10, 31], [11, 31], [12, 31], [13, 31], [14, 31], [15, 31], [16, 31], [17, 31], [18, 31], [19, 31], [20, 31], [21, 31], [22, 31], [23, 31], [24, 31],[22,32],[22,33],[7, 34], [8, 34], [9, 34], [10, 34], [11, 34], [12, 34], [13, 34], [14, 34], [15, 34], [16, 34], [17, 34], [18, 34], [19, 34], [20, 34], [21, 34], [22, 34]]
+                    for c in coords:
+                        app.grid[c[0]][c[1]] = ''
+                    top = Image.open('1_player_map_fog/map21/14_top.png')
+                    bot = Image.open('1_player_map_fog/map21/14.png')
+                    newbot = self.map_bottom_image
+                    newtop = self.map_top_image
+                    newbot = Image.alpha_composite(newbot, bot)
+                    newtop = Image.alpha_composite(newtop, top)
+                    self.map_bottom_image = newbot
+                    self.map_top_image = newtop
+                    self.map_bottom = ImageTk.PhotoImage(self.map_bottom_image)
+                    self.map_top = ImageTk.PhotoImage(self.map_top_image)
+                    self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_bottom, tags = ('map','mapbottom'))
+                    self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_top, tags = ('map','maptop'))
+                    app.canvas.tag_lower('mapbottom')
+                    self.map_triggers.remove(area_fourteen)
+
+            
+            def area_thirteen():
+                if app.ent_dict[app.p1_witch].loc in [[1,24],[1,23]]:
+                    self.map_triggers.append(area_fifteen)
+                    coords = [[1,25],[1,26],[1,27],[1,28],[2,27],[2,28],[3,27],[3,28],[4,27],[4,28],[5,27],[5,28],[5, 29], [5, 30], [5, 31], [5, 32], [5, 33], [5, 34], [5, 35], [5, 36], [5, 37],[4, 33], [4, 34], [4, 35], [4, 36], [4, 37],[3, 31], [3, 32], [3, 33], [3, 34], [3, 35], [3, 36], [3, 37],[2, 31], [2, 32], [2, 33], [2, 34], [2, 35], [2, 36], [2, 37],[1, 31], [1, 32], [1, 33], [1, 34], [1, 35], [1, 36], [1, 37]]
+                    for c in coords:
+                        app.grid[c[0]][c[1]] = ''
+                    top = Image.open('1_player_map_fog/map21/13_top.png')
+                    bot = Image.open('1_player_map_fog/map21/13.png')
+                    newbot = self.map_bottom_image
+                    newtop = self.map_top_image
+                    newbot = Image.alpha_composite(newbot, bot)
+                    newtop = Image.alpha_composite(newtop, top)
+                    self.map_bottom_image = newbot
+                    self.map_top_image = newtop
+                    self.map_bottom = ImageTk.PhotoImage(self.map_bottom_image)
+                    self.map_top = ImageTk.PhotoImage(self.map_top_image)
+                    self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_bottom, tags = ('map','mapbottom'))
+                    self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_top, tags = ('map','maptop'))
+                    app.canvas.tag_lower('mapbottom')
+                    self.map_triggers.remove(area_thirteen)
+            self.map_triggers.append(area_thirteen)
+            
+            def area_twelve():
+                if app.ent_dict[app.p1_witch].loc in [[12,20],[11,20],[5,19],[6,19],[5,13],[5,12]]:
+                    self.map_triggers.append(area_fourteen)
+                    coords = [[4,13],[3,13],[2,13],[1,13],[1, 14], [1, 15], [1, 16], [1, 17], [1, 18], [1, 19], [1, 20], [1, 21], [1, 22], [1, 23], [1, 24],[3, 13], [3, 14], [3, 15], [3, 16], [3, 17], [3, 18], [3, 19], [3, 20], [3, 21], [3, 22], [3, 23], [3, 24],[4,24],[5,24],[5,23],[5,22],[6,22],[6,23],[6,24],[7,22],[7,23],[7,24],[8,23],[8,22],[9,23],[9,22],[10,23],[10,22],[11,23],[11,22],[12,23],[12,22],[11,21],[12,21]]
+                    for c in coords:
+                        app.grid[c[0]][c[1]] = ''
+                    top = Image.open('1_player_map_fog/map21/12_top.png')
+                    bot = Image.open('1_player_map_fog/map21/12.png')
+                    newbot = self.map_bottom_image
+                    newtop = self.map_top_image
+                    newbot = Image.alpha_composite(newbot, bot)
+                    newtop = Image.alpha_composite(newtop, top)
+                    self.map_bottom_image = newbot
+                    self.map_top_image = newtop
+                    self.map_bottom = ImageTk.PhotoImage(self.map_bottom_image)
+                    self.map_top = ImageTk.PhotoImage(self.map_top_image)
+                    self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_bottom, tags = ('map','mapbottom'))
+                    self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_top, tags = ('map','maptop'))
+                    app.canvas.tag_lower('mapbottom')
+                    self.map_triggers.remove(area_twelve)
+                    # when revealing 12, if 11 not revealed then reveal it
+                    if area_eleven in self.map_triggers:
+                        area_eleven(alt = True)
+            self.map_triggers.append(area_twelve)
+            
+            def area_eleven(alt = False):
+                if app.ent_dict[app.p1_witch].loc in [[14,11],[14,12],[14,13]] or alt == True:
+                    self.map_triggers.append(area_sixteen)
+                    coords = [[13,11],[13,12],[13,13],[12,11],[12,12],[12,13],[11,11],[11,12],[11,13],[11, 14], [11, 15], [11, 16], [11, 17], [11, 18], [11, 19], [11, 20],[12,18],[12,19],[12,20],[13,16],[13,17],[13,18],[13,19],[13,20],[10,15],[9,15],[9,16],[9,17],[9,18],[9,19],[8,19],[7,19],[6,19],[5,19],[10,11],[10,12],[9,11],[9,12],[8,11],[8,12],[7,11],[7,12],[7,13],[7,14],[7,15],[7,16],[6,16],[5,16],[4,19]]
                     for c in coords:
                         app.grid[c[0]][c[1]] = ''
                     top = Image.open('1_player_map_fog/map21/11_top.png')
@@ -11552,10 +11666,10 @@ class App(tk.Frame):
                     app.canvas.tag_lower('mapbottom')
                     self.map_triggers.remove(area_eleven)
             self.map_triggers.append(area_eleven)
-            
+#             
             def area_ten():
-                if app.ent_dict[app.p1_witch].loc in [[25,13],[26,13],[25,12],[26,12]]:
-                    coords = [[25,5],[25,6],[25,7],[25,8],[25,9],[25,10],[25,11],[26,5],[26,6],[26,7],[26,8],[26,9],[26,10],[26,11]]
+                if app.ent_dict[app.p1_witch].loc in [[16,9],[16,10],[4,13],[3,13]]:
+                    coords = [[5, 8], [6, 8], [7, 8], [8, 8], [9, 8], [10, 8], [11, 8], [12, 8], [13, 8], [14, 8], [15, 8], [16, 8],[5,9],[5,10],[5,11],[5,12],[5,13]]
                     for c in coords:
                         app.grid[c[0]][c[1]] = ''
                     top = Image.open('1_player_map_fog/map21/10_top.png')
@@ -11573,10 +11687,10 @@ class App(tk.Frame):
                     app.canvas.tag_lower('mapbottom')
                     self.map_triggers.remove(area_ten)
             self.map_triggers.append(area_ten)
-            
+#             
             def area_nine():
-                if app.ent_dict[app.p1_witch].loc in [[25,5],[25,6],[26,5],[26,6]]:
-                    coords = [[20,5],[21,5],[22,5],[23,5],[24,5],[20,6],[21,6],[22,6],[23,6],[24,6]]
+                if app.ent_dict[app.p1_witch].loc in [[3,5],[4,5]]:
+                    coords = [[3,6],[3,7],[3,8],[3,9],[3,10],[2,10],[1,10],[1,2],[1,3],[1,4],[1,5],[1,6],[1,7],[1,8],[1,9],[2,2],[3,2],[4,2]]
                     for c in coords:
                         app.grid[c[0]][c[1]] = ''
                     top = Image.open('1_player_map_fog/map21/9_top.png')
@@ -11593,16 +11707,16 @@ class App(tk.Frame):
                     self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_top, tags = ('map','maptop'))
                     app.canvas.tag_lower('mapbottom')
                     self.map_triggers.remove(area_nine)
-                    img = ImageTk.PhotoImage(Image.open('summon_imgs/Revenant.png'))
-                    app.ent_dict['b7'] = Revenant(name = 'Revenant', img = img, loc =[21,5], owner = 'p2', number = 'b7')
-                    app.grid[21][5] = 'b7'
-                    app.ent_dict['b8'] = Revenant(name = 'Revenant', img = img, loc =[20,6], owner = 'p2', number = 'b8')
-                    app.grid[20][6] = 'b8'
-            self.map_triggers.append(area_nine)
-            
+#                     img = ImageTk.PhotoImage(Image.open('summon_imgs/Revenant.png'))
+#                     app.ent_dict['b7'] = Revenant(name = 'Revenant', img = img, loc =[21,5], owner = 'p2', number = 'b7')
+#                     app.grid[21][5] = 'b7'
+#                     app.ent_dict['b8'] = Revenant(name = 'Revenant', img = img, loc =[20,6], owner = 'p2', number = 'b8')
+#                     app.grid[20][6] = 'b8'
+#             
             def area_eight():
-                if app.ent_dict[app.p1_witch].loc in [[20,9],[21,9],[20,10],[21,10]]:
-                    coords = [[19,9],[19,10],[18,6],[18,7],[18,8],[18,9],[18,10],[17,6],[17,7],[17,8],[16,8],[15,8],[14,8],[13,8],[12,8],[11,8],[10,8],[9,8],[8,8],[7,8],[7,9],[8,9],[9,9],[10,9],[11,9],[12,9]]
+                if app.ent_dict[app.p1_witch].loc in [[24,9],[24,10]]:
+                    self.map_triggers.append(area_nine)
+                    coords = [[18, 8], [19, 8], [20, 8], [21, 8], [22, 8], [23, 8], [24, 8],[18,7],[18,6],[18,5],[3, 5], [4, 5], [5, 5], [6, 5], [7, 5], [8, 5], [9, 5], [10, 5], [11, 5], [12, 5], [13, 5], [14, 5], [15, 5], [16, 5],[17,5]]
                     for c in coords:
                         app.grid[c[0]][c[1]] = ''
                     top = Image.open('1_player_map_fog/map21/8_top.png')
@@ -11619,14 +11733,14 @@ class App(tk.Frame):
                     self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_top, tags = ('map','maptop'))
                     app.canvas.tag_lower('mapbottom')
                     self.map_triggers.remove(area_eight)
-                    img = ImageTk.PhotoImage(Image.open('summon_imgs/Revenant.png'))
-                    app.ent_dict['b5'] = Revenant(name = 'Revenant', img = img, loc =[9,8], owner = 'p2', number = 'b5')
-                    app.grid[9][8] = 'b5'
-            self.map_triggers.append(area_eight)
-            
+#                     img = ImageTk.PhotoImage(Image.open('summon_imgs/Revenant.png'))
+#                     app.ent_dict['b5'] = Revenant(name = 'Revenant', img = img, loc =[9,8], owner = 'p2', number = 'b5')
+#                     app.grid[9][8] = 'b5'
+
+#             
             def area_seven():
-                if app.ent_dict[app.p1_witch].loc in [[8,8],[7,8],[7,9],[8,9]]:
-                    coords = [[6,8],[6,9],[5,8],[5,9],[5,10],[5,11],[5,12],[4,12],[3,12]]
+                if app.ent_dict[app.p1_witch].loc in [[26,9],[26,10]]:
+                    coords = [[26,8],[26,7],[26,6],[26,5],[25,5],[24,5],[23,5],[22,5],[21,5],[20,5]]
                     for c in coords:
                         app.grid[c[0]][c[1]] = ''
                     top = Image.open('1_player_map_fog/map21/7_top.png')
@@ -11643,11 +11757,10 @@ class App(tk.Frame):
                     self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_top, tags = ('map','maptop'))
                     app.canvas.tag_lower('mapbottom')
                     self.map_triggers.remove(area_seven)
-            self.map_triggers.append(area_seven)
-            
+#             
             def area_six():
-                if app.ent_dict[app.p1_witch].loc in [[5,12],[4,12],[3,12]]:
-                    coords = [[2,12],[1,12],[1,13],[1,14],[1,15],[1,16],[1,17],[1,18]]
+                if app.ent_dict[app.p1_witch].loc in [[38,2],[37,2]]:
+                    coords = [[6, 2], [7, 2], [8, 2], [9, 2], [10, 2], [11, 2], [12, 2], [13, 2], [14, 2], [15, 2], [16, 2], [17, 2], [18, 2], [19, 2], [20, 2], [21, 2], [22, 2], [23, 2], [24, 2], [25, 2], [26, 2], [27, 2], [28, 2], [29, 2], [30, 2], [31, 2], [32, 2], [33, 2], [34, 2], [35, 2], [36, 2]]
                     for c in coords:
                         app.grid[c[0]][c[1]] = ''
                     top = Image.open('1_player_map_fog/map21/6_top.png')
@@ -11664,11 +11777,11 @@ class App(tk.Frame):
                     self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_top, tags = ('map','maptop'))
                     app.canvas.tag_lower('mapbottom')
                     self.map_triggers.remove(area_six)
-            self.map_triggers.append(area_six)
-            
+#             
             def area_five():
-                if app.ent_dict[app.p1_witch].loc in [[1,17],[1,18]]:
-                    coords = [[2,18],[3,18],[4,18],[5,18],[6,18],[7,18],[8,18],[9,18],[10,18],[11,18],[12,18],[13,18],[14,18],[15,18],[16,18]]
+                if app.ent_dict[app.p1_witch].loc in [[38,22],[38,23]]:
+                    self.map_triggers.append(area_six)
+                    coords = [[38, 2], [38, 3], [38, 4], [38, 5], [38, 6], [38, 7], [38, 8], [38, 9], [38, 10], [38, 11], [38, 12], [38, 13], [38, 14], [38, 15], [38, 16], [38, 17], [38, 18], [38, 19], [38, 20], [38, 21],[37,2]]
                     for c in coords:
                         app.grid[c[0]][c[1]] = ''
                     top = Image.open('1_player_map_fog/map21/5_top.png')
@@ -11685,33 +11798,33 @@ class App(tk.Frame):
                     self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_top, tags = ('map','maptop'))
                     app.canvas.tag_lower('mapbottom')
                     self.map_triggers.remove(area_five)
-                    img = ImageTk.PhotoImage(Image.open('summon_imgs/Revenant.png'))
-                    app.ent_dict['b6'] = Revenant(name = 'Revenant', img = img, loc =[16,8], owner = 'p2', number = 'b6')
-                    app.grid[16][8] = 'b6'
+#                     img = ImageTk.PhotoImage(Image.open('summon_imgs/Revenant.png'))
+#                     app.ent_dict['b6'] = Revenant(name = 'Revenant', img = img, loc =[16,8], owner = 'p2', number = 'b6')
+#                     app.grid[16][8] = 'b6'
                     # SPARKLE
-                    def create_sparkle2():
-                        app.vis_dict['Sparkle2'] = Vis(name = 'Sparkle', loc = [17,18])
-                        app.canvas.create_image(1700+50-app.moved_right, 1800+50-app.moved_down, image = app.vis_dict['Sparkle2'].img, tags = 'Sparkle2')
-                        self.map_triggers.remove(create_sparkle2)
-                    self.map_triggers.append(create_sparkle2)
-                    # BOOK TRIGGER
-                    def read_book():
-                        loc = app.ent_dict[app.p1_witch].loc[:]
-                        if loc == [16,18]:
-                            del app.vis_dict['Sparkle2']
-                            app.canvas.delete('Sparkle2')
-                            app.unbind_all()
-                            self.book21 = tk.Button(root, text = 'Read Book', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.read_21_book)
-                            app.canvas.create_window(1600-app.moved_right, 1800-app.moved_down, window = self.book21)
-                            self.book21_cancel = tk.Button(root, text = 'Leave Alone', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.cancel_21_book)
-                            app.canvas.create_window(1600-app.moved_right+25, 1800-app.moved_down+33, window = self.book21_cancel)
-                            self.map_triggers.remove(read_book)
-                    self.map_triggers.append(read_book)
+#                     def create_sparkle2():
+#                         app.vis_dict['Sparkle2'] = Vis(name = 'Sparkle', loc = [17,18])
+#                         app.canvas.create_image(1700+50-app.moved_right, 1800+50-app.moved_down, image = app.vis_dict['Sparkle2'].img, tags = 'Sparkle2')
+#                         self.map_triggers.remove(create_sparkle2)
+#                     self.map_triggers.append(create_sparkle2)
+#                     # BOOK TRIGGER
+#                     def read_book():
+#                         loc = app.ent_dict[app.p1_witch].loc[:]
+#                         if loc == [16,18]:
+#                             del app.vis_dict['Sparkle2']
+#                             app.canvas.delete('Sparkle2')
+#                             app.unbind_all()
+#                             self.book21 = tk.Button(root, text = 'Read Book', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.read_21_book)
+#                             app.canvas.create_window(1600-app.moved_right, 1800-app.moved_down, window = self.book21)
+#                             self.book21_cancel = tk.Button(root, text = 'Leave Alone', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.cancel_21_book)
+#                             app.canvas.create_window(1600-app.moved_right+25, 1800-app.moved_down+33, window = self.book21_cancel)
+#                             self.map_triggers.remove(read_book)
+#                     self.map_triggers.append(read_book)
             self.map_triggers.append(area_five)
-            
+#             
             def area_four():
-                if app.ent_dict[app.p1_witch].loc in [[17,6],[18,6]]:
-                    coords = [[5,5],[6,5],[7,5],[8,5],[9,5],[10,5],[11,5],[12,5],[13,5],[14,5],[15,5],[16,5],[17,5],[18,5]]
+                if app.ent_dict[app.p1_witch].loc in [[35,22],[35,23]]:
+                    coords = [[35, 7], [35, 8], [35, 9], [35, 10], [35, 11], [35, 12], [35, 13], [35, 14], [35, 15], [35, 16], [35, 17], [35, 18], [35, 19], [35, 20], [35, 21],[29,7],[30,7],[31,7],[32,7],[33,7],[34,7],[29,8],[30,8],[31,8],[32,8],[33,8],[34,8]]
                     for c in coords:
                         app.grid[c[0]][c[1]] = ''
                     top = Image.open('1_player_map_fog/map21/4_top.png')
@@ -11728,14 +11841,14 @@ class App(tk.Frame):
                     self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_top, tags = ('map','maptop'))
                     app.canvas.tag_lower('mapbottom')
                     self.map_triggers.remove(area_four)
-                    img = ImageTk.PhotoImage(Image.open('summon_imgs/Revenant.png'))
-                    app.ent_dict['b4'] = Revenant(name = 'Revenant', img = img, loc =[9,5], owner = 'p2', number = 'b4')
-                    app.grid[9][5] = 'b4'
+#                     img = ImageTk.PhotoImage(Image.open('summon_imgs/Revenant.png'))
+#                     app.ent_dict['b4'] = Revenant(name = 'Revenant', img = img, loc =[9,5], owner = 'p2', number = 'b4')
+#                     app.grid[9][5] = 'b4'
             self.map_triggers.append(area_four)
-            
+#             
             def area_three():
-                if app.ent_dict[app.p1_witch].loc in [[5,5],[6,5]]:
-                    coords = [[4,5],[3,5],[3,6],[3,7],[3,8],[3,9],[3,10]]
+                if app.ent_dict[app.p1_witch].loc in [[33,22],[33,23]]:
+                    coords = [[33,21],[33,20],[33,19],[33,18],[33,17],[33,16],[33,15],[33,14],[33,13],[33,12]]
                     for c in coords:
                         app.grid[c[0]][c[1]] = ''
                     top = Image.open('1_player_map_fog/map21/3_top.png')
@@ -11754,9 +11867,12 @@ class App(tk.Frame):
                     self.map_triggers.remove(area_three)
             self.map_triggers.append(area_three)
             
+
             def area_two():
-                if app.ent_dict[app.p1_witch].loc in [[28,13],[28,14]]:
-                    coords = [[28,4],[28,5],[28,6],[28,7],[28,8],[28,9],[28,10],[28,11],[28,12]]
+                if app.ent_dict[app.p1_witch].loc in [[29,22],[30,22],[31,22]]:
+                    self.map_triggers.append(area_seven)
+                    self.map_triggers.append(area_eight)
+                    coords = [[29,21],[30,21],[31,21],[29,20],[30,20],[31,20],[29,19],[30,19],[31,19],[29,18],[30,18],[31,18],[29,17],[30,17],[31,17],[29,16],[30,16],[31,16],[29,15],[30,15],[31,15],[29,14],[30,14],[31,14],[29,13],[30,13],[31,13],[29,12],[30,12],[31,12],[28,12],[28,13],[27,12],[27,13],[26,12],[26,13],[25,12],[25,13],[24,12],[24,13],[23,12],[23,13],[22,12],[22,13],[21,12],[21,13],[20,12],[20,13],[19,12],[19,13],[18,12],[18,13],[17,12],[17,13],[16,12],[16,13],[15,12],[15,13],[14,12],[14,13],[16,11],[17,11],[18,11],[19,11],[20,11],[21,11],[22,11],[16,10],[16,9],[14,11],[24,11],[24,10],[24,9],[26,11],[26,10],[26,9]]
                     for c in coords:
                         app.grid[c[0]][c[1]] = ''
                     top = Image.open('1_player_map_fog/map21/2_top.png')
@@ -11773,79 +11889,58 @@ class App(tk.Frame):
                     self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_top, tags = ('map','maptop'))
                     app.canvas.tag_lower('mapbottom')
                     self.map_triggers.remove(area_two)
+                    # Place chest trigger and revenant
+#                     img = ImageTk.PhotoImage(Image.open('summon_imgs/Revenant.png'))
+#                     app.ent_dict['b2'] = Revenant(name = 'Revenant', img = img, loc =[7,2], owner = 'p2', number = 'b2')
+#                     app.grid[7][2] = 'b2'
+#                     # SPARKLE
+#                     def create_sparkle1():
+#                         app.vis_dict['Sparkle1'] = Vis(name = 'Sparkle', loc = [6,2])
+#                         app.canvas.create_image(600+50-app.moved_right, 200+50-app.moved_down, image = app.vis_dict['Sparkle1'].img, tags = 'Sparkle1')
+#                         self.map_triggers.remove(create_sparkle1)
+#                     self.map_triggers.append(create_sparkle1)
+#                     # CHEST
+#                     def chest1():
+#                         loc = app.ent_dict[app.p1_witch].loc[:]
+#                         if loc == [7,2]:
+#                             del app.vis_dict['Sparkle1']
+#                             app.canvas.delete('Sparkle1')
+#                             app.unbind_all()
+#                             self.chest21_1 = tk.Button(root, text = 'Open Chest', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.open_chest21_1)
+#                             app.canvas.create_window(700-app.moved_right, 200-app.moved_down, window = self.chest21_1)
+#                             self.chest21_1_cancel = tk.Button(root, text = 'Leave Alone', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.cancel_chest1)
+#                             app.canvas.create_window(700-app.moved_right+25, 200-app.moved_down+34, window = self.chest21_1_cancel)
+#                             self.map_triggers.remove(chest1)
+#                     self.map_triggers.append(chest1)
             self.map_triggers.append(area_two)
             
-            def area_one():
-                if app.ent_dict[app.p1_witch].loc in [[28,4]]:
-                    coords = [[28,3],[7,2],[8,2],[9,2],[10,2],[11,2],[12,2],[13,2],[14,2],[15,2],[16,2],[17,2],[18,2],[19,2],[20,2],[21,2],[22,2],[23,2],[24,2],[25,2],[26,2],[27,2],[28,2]]
-                    for c in coords:
-                        app.grid[c[0]][c[1]] = ''
-                    top = Image.open('1_player_map_fog/map21/1_top.png')
-                    bot = Image.open('1_player_map_fog/map21/1.png')
-                    newbot = self.map_bottom_image
-                    newtop = self.map_top_image
-                    newbot = Image.alpha_composite(newbot, bot)
-                    newtop = Image.alpha_composite(newtop, top)
-                    self.map_bottom_image = newbot
-                    self.map_top_image = newtop
-                    self.map_bottom = ImageTk.PhotoImage(self.map_bottom_image)
-                    self.map_top = ImageTk.PhotoImage(self.map_top_image)
-                    self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_bottom, tags = ('map','mapbottom'))
-                    self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_top, tags = ('map','maptop'))
-                    app.canvas.tag_lower('mapbottom')
-                    self.map_triggers.remove(area_one)
-                    # Place chest trigger and revenant
-                    img = ImageTk.PhotoImage(Image.open('summon_imgs/Revenant.png'))
-                    app.ent_dict['b2'] = Revenant(name = 'Revenant', img = img, loc =[7,2], owner = 'p2', number = 'b2')
-                    app.grid[7][2] = 'b2'
-                    # SPARKLE
-                    def create_sparkle1():
-                        app.vis_dict['Sparkle1'] = Vis(name = 'Sparkle', loc = [6,2])
-                        app.canvas.create_image(600+50-app.moved_right, 200+50-app.moved_down, image = app.vis_dict['Sparkle1'].img, tags = 'Sparkle1')
-                        self.map_triggers.remove(create_sparkle1)
-                    self.map_triggers.append(create_sparkle1)
-                    # CHEST
-                    def chest1():
-                        loc = app.ent_dict[app.p1_witch].loc[:]
-                        if loc == [7,2]:
-                            del app.vis_dict['Sparkle1']
-                            app.canvas.delete('Sparkle1')
-                            app.unbind_all()
-                            self.chest21_1 = tk.Button(root, text = 'Open Chest', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.open_chest21_1)
-                            app.canvas.create_window(700-app.moved_right, 200-app.moved_down, window = self.chest21_1)
-                            self.chest21_1_cancel = tk.Button(root, text = 'Leave Alone', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.cancel_chest1)
-                            app.canvas.create_window(700-app.moved_right+25, 200-app.moved_down+34, window = self.chest21_1_cancel)
-                            self.map_triggers.remove(chest1)
-                    self.map_triggers.append(chest1)
-            self.map_triggers.append(area_one)
-            
-            def area_zero():
-                if app.ent_dict[app.p1_witch].loc in [[3,10]]:
-                    coords = [[2,10],[1,10],[1,9],[1,8],[1,7],[1,6],[1,5],[1,4],[1,3],[1,2],[2,2],[3,2],[4,2],[3,1]]
-                    for c in coords:
-                        app.grid[c[0]][c[1]] = ''
-                    top = Image.open('1_player_map_fog/map21/0_top.png')
-                    bot = Image.open('1_player_map_fog/map21/0.png')
-                    newbot = self.map_bottom_image
-                    newtop = self.map_top_image
-                    newbot = Image.alpha_composite(newbot, bot)
-                    newtop = Image.alpha_composite(newtop, top)
-                    self.map_bottom_image = newbot
-                    self.map_top_image = newtop
-                    self.map_bottom = ImageTk.PhotoImage(self.map_bottom_image)
-                    self.map_top = ImageTk.PhotoImage(self.map_top_image)
-                    self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_bottom, tags = ('map','mapbottom'))
-                    self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_top, tags = ('map','maptop'))
-                    app.canvas.tag_lower('mapbottom')
-                    self.map_triggers.remove(area_zero)
-                    img = ImageTk.PhotoImage(Image.open('summon_imgs/Ghost.png'))
-                    app.ent_dict['b3'] = Ghost(name = 'Ghost', img = img, loc =[1,2], owner = 'p2', number = 'b3')
-                    app.grid[1][2] = 'b3'
-                    def ghost_death():
-                        if 'b3' not in [k for k in app.ent_dict.keys()]:
-                            return 'victory'
-                    self.map_triggers.append(ghost_death)
-            self.map_triggers.append(area_zero)
+#             def area_zero():
+#                 if app.ent_dict[app.p1_witch].loc in [[3,10]]:
+#                     coords = [[2,10],[1,10],[1,9],[1,8],[1,7],[1,6],[1,5],[1,4],[1,3],[1,2],[2,2],[3,2],[4,2],[3,1]]
+#                     for c in coords:
+#                         app.grid[c[0]][c[1]] = ''
+#                     top = Image.open('1_player_map_fog/map21/0_top.png')
+#                     bot = Image.open('1_player_map_fog/map21/0.png')
+#                     newbot = self.map_bottom_image
+#                     newtop = self.map_top_image
+#                     newbot = Image.alpha_composite(newbot, bot)
+#                     newtop = Image.alpha_composite(newtop, top)
+#                     self.map_bottom_image = newbot
+#                     self.map_top_image = newtop
+#                     self.map_bottom = ImageTk.PhotoImage(self.map_bottom_image)
+#                     self.map_top = ImageTk.PhotoImage(self.map_top_image)
+#                     self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_bottom, tags = ('map','mapbottom'))
+#                     self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_top, tags = ('map','maptop'))
+#                     app.canvas.tag_lower('mapbottom')
+#                     self.map_triggers.remove(area_zero)
+#                     img = ImageTk.PhotoImage(Image.open('summon_imgs/Ghost.png'))
+#                     app.ent_dict['b3'] = Ghost(name = 'Ghost', img = img, loc =[1,2], owner = 'p2', number = 'b3')
+#                     app.grid[1][2] = 'b3'
+#                     def ghost_death():
+#                         if 'b3' not in [k for k in app.ent_dict.keys()]:
+#                             return 'victory'
+#                     self.map_triggers.append(ghost_death)
+#             self.map_triggers.append(area_zero)
             
             self.load_intro_scene(map_number, protaganist_object = protaganist_object)
         elif map_number == 22:
