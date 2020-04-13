@@ -1,7 +1,7 @@
 '''
 astar draft for multiple goals (precompute/save goal dist later)
 # takes start coord ([x,y]), list of goals ([[x,y],[x2,y2],...]), grid (copy of app.grid or egrid)
-# returns a list of coords ([x,y],[x2,y2],...) the path from start to a goal sqr OR None if no path
+# returns a list of coords ([x,y],[x2,y2],...) the path from start to a goal sqr OR None if no pathi
 def astar(start, goals, grid):
     open = [nodify(c) for c in app.coords if dist(c, start) == 1]
     closed = [nodify(start)]
@@ -350,6 +350,13 @@ def apply_heal(healer, target, amount):
     target.spirit += amount
     if target.spirit > target.base_spirit:
         target.spirit = target.base_spirit
+        
+# takes two lists of lists (lists of coords, [[x,y],[x2,y2],...])
+# returns a list of their intersect or []
+def intersect(lx,ly):
+    tx = [tuple(s) for s in lx]
+    ty = [tuple(s) for s in ly]
+    return list(set(tx) & set(ty))
 
 # GLOBALS
 curs_pos = [0, 0]
@@ -2666,9 +2673,7 @@ class White_Dragon(Summon):
                 id = ents[0]
                 do_iceblast(ents_list, id)
         else:
-            moves_tups = [tuple(s) for s in moves]
-            path_tups = [tuple(s) for s in path]
-            intersect = list(set(moves_tups) & set(path_tups))
+            intersect = intersect(moves, path)
             if intersect == []:
                 self.ai_end_turn(ents_list)
             else:
@@ -7365,8 +7370,11 @@ class Minotaur(Summon):
             elif charge_ents != []:
                 tar = choice(charge_ents)
                 self.charge_attack(ents_list, tar)
-            else:
+            elif intersect(self.legal_moves(), [c for c in app.coords for k,v in app.ent_dict.items() if v.owner != self.owner and dist(c, v.loc) == 1 and app.grid[c[0]][c[1]] == '']) != []: # Can move to and atk an ent
                 goals = [c for c in app.coords for k,v in app.ent_dict.items() if v.owner != self.owner and dist(c, v.loc) == 1 and app.grid[c[0]][c[1]] == '']
+                path = bfs(self.loc[:], goals, app.grid)
+                self.minotaur_move(ents_list, path[-1])
+                
             
             # move toward and atk any within range, stomp after
             
@@ -7492,131 +7500,128 @@ class Minotaur(Summon):
 #             else:
 #                 root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
 #             
-#     def minotaur_move(self, ents_list, endloc):
-#         global selected
-#         effect1 = mixer.Sound('Sound_Effects/minotaur_move.ogg')
-#         effect1.set_volume(1)
-#         sound_effects.play(effect1, -1)
-#         selected = [self.number, self.number+'top']
-#         id = self.number
-#         start_sqr = self.loc[:]
-#         end_sqr = endloc[:] # redundant naming of vars
-#         path = bfs(start_sqr, [end_sqr], app.grid) # end_sqr must be put in list
-#         begin = path[0]
-#         end = path[1]
-#         x = begin[0]*100+50-app.moved_right
-#         y = begin[1]*100+50-app.moved_down
-#         endx = end[0]*100+50-app.moved_right
-#         endy = end[1]*100+50-app.moved_down
-#         def move_loop(id, x, y, endx, endy, start_sqr, end_sqr, path):
-#             if x % 20 == 0 or y % 20 == 0:
-#                 app.ent_dict[id+'top'].rotate_image()
-#                 app.canvas.delete(id)
-#                 app.canvas.create_image(x, y, image = self.img, tags = self.tags)
-#                 app.canvas.delete(id+'top')
-#                 app.canvas.create_image(x, y, image = app.ent_dict[id+'top'].img, tags = (id+'top','large'))
-#             if x > endx:
-#                 x -= 10
-#                 app.canvas.move(id, -10, 0)
-#                 app.canvas.move(id+'top', -10, 0)
-#             if x < endx: 
-#                 x += 10
-#                 app.canvas.move(id, 10, 0)
-#                 app.canvas.move(id+'top', 10, 0)
-#             if y > endy: 
-#                 y -= 10
-#                 app.canvas.move(id, 0, -10)
-#                 app.canvas.move(id+'top', 0, -10)
-#             if y < endy: 
-#                 y += 10
-#                 app.canvas.move(id, 0, 10)
-#                 app.canvas.move(id+'top', 0, 10)
-#             try: app.canvas.tag_lower((self.tags), 'large')
-#             except: pass
-#             app.canvas.tag_lower((self.tags), 'maptop')
-#             app.canvas.tag_raise('cursor')
-#             if x == end_sqr[0]*100+50-app.moved_right and y == end_sqr[1]*100+50-app.moved_down: # END WHOLE MOVE
-#                 self.finish_move(end_sqr, start_sqr, ents_list)
-#             elif x == endx and y == endy: # END PORTION OF PATH
-#                 path = path[1:]
-#                 begin = path[0]
-#                 end = path[1]
-#                 x = begin[0]*100+50-app.moved_right
-#                 y = begin[1]*100+50-app.moved_down
-#                 endx = end[0]*100+50-app.moved_right
-#                 endy = end[1]*100+50-app.moved_down
-#                 move_loop(id, x, y, endx, endy, start_sqr, end_sqr, path)
-#             else: # CONTINUE LOOP
-#                 root.after(66, lambda id = id, x = x, y = y, ex = endx, ey = endy, s = start_sqr, s2 = end_sqr, p = path : move_loop(id, x, y, ex, ey, s, s2, p))
-#         move_loop(id, x, y, endx, endy, start_sqr, end_sqr, path)
-#         
-#     def finish_move(self, end_sqr, start_sqr, ents_list):
-#         global selected
-#         sound_effects.stop()
-#         selected = []
-#         self.loc = end_sqr[:]
-#         self.origin = end_sqr[:]
-#         app.grid[start_sqr[0]][start_sqr[1]] = ''
-#         app.grid[end_sqr[0]][end_sqr[1]] = self.number
-#         app.ent_dict[self.number+'top'].loc = [end_sqr[0],end_sqr[1]]
-#         # MAKE ATTACK ON ANY ENEMY ENT WITHIN RANGE
-#         atk_sqrs = self.legal_attacks()
-#         ents_near = [e for e in atk_sqrs if app.grid[e[0]][e[1]] != '' and app.grid[e[0]][e[1]] != 'block']
-# #         enemy_ents = [e for e in ents_near if app.ent_dict[app.grid[e[0]][e[1]]].owner == 'p1']
-#         if ents_near != []:
-#             any = ents_near[0]
-#             id = app.grid[any[0]][any[1]]
-#             root.after(666, lambda t = id : app.get_focus(t))
-#             root.after(1333, lambda el = ents_list, t = id : self.do_attack(el, t)) # EXIT THROUGH ATTACK
-#         else:
-#         # CANNOT ATTACK, EXIT FUNC
-#             self.ai_end_turn()
+    def minotaur_move(self, ents_list, endloc):
+        global selected
+        effect1 = mixer.Sound('Sound_Effects/minotaur_move.ogg')
+        effect1.set_volume(1)
+        sound_effects.play(effect1, -1)
+        selected = [self.number, self.number+'top']
+        id = self.number
+        start_sqr = self.loc[:]
+        end_sqr = endloc[:] # redundant naming of vars
+        path = bfs(start_sqr, [end_sqr], app.grid) # end_sqr must be put in list
+        begin = path[0]
+        end = path[1]
+        x = begin[0]*100+50-app.moved_right
+        y = begin[1]*100+50-app.moved_down
+        endx = end[0]*100+50-app.moved_right
+        endy = end[1]*100+50-app.moved_down
+        def move_loop(id, x, y, endx, endy, start_sqr, end_sqr, path):
+            if x % 20 == 0 or y % 20 == 0:
+                app.ent_dict[id+'top'].rotate_image()
+                app.canvas.delete(id)
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+                app.canvas.delete(id+'top')
+                app.canvas.create_image(x, y, image = app.ent_dict[id+'top'].img, tags = (id+'top','large'))
+            if x > endx:
+                x -= 10
+                app.canvas.move(id, -10, 0)
+                app.canvas.move(id+'top', -10, 0)
+            elif x < endx: 
+                x += 10
+                app.canvas.move(id, 10, 0)
+                app.canvas.move(id+'top', 10, 0)
+            if y > endy: 
+                y -= 10
+                app.canvas.move(id, 0, -10)
+                app.canvas.move(id+'top', 0, -10)
+            elif y < endy: 
+                y += 10
+                app.canvas.move(id, 0, 10)
+                app.canvas.move(id+'top', 0, 10)
+            try: app.canvas.tag_lower((self.tags), 'large')
+            except: pass
+            app.canvas.tag_lower((self.tags), 'maptop')
+            app.canvas.tag_raise('cursor')
+            if x == end_sqr[0]*100+50-app.moved_right and y == end_sqr[1]*100+50-app.moved_down: # END WHOLE MOVE
+                self.finish_move(end_sqr, start_sqr, ents_list)
+            elif x == endx and y == endy: # END PORTION OF PATH
+                path = path[1:]
+                begin = path[0]
+                end = path[1]
+                x = begin[0]*100+50-app.moved_right
+                y = begin[1]*100+50-app.moved_down
+                endx = end[0]*100+50-app.moved_right
+                endy = end[1]*100+50-app.moved_down
+                move_loop(id, x, y, endx, endy, start_sqr, end_sqr, path)
+            else: # CONTINUE LOOP
+                root.after(66, lambda id = id, x = x, y = y, ex = endx, ey = endy, s = start_sqr, s2 = end_sqr, p = path : move_loop(id, x, y, ex, ey, s, s2, p))
+        move_loop(id, x, y, endx, endy, start_sqr, end_sqr, path)
+        
+    def finish_move(self, end_sqr, start_sqr, ents_list):
+        global selected
+        sound_effects.stop()
+        selected = []
+        self.loc = end_sqr[:]
+        app.grid[start_sqr[0]][start_sqr[1]] = ''
+        app.grid[end_sqr[0]][end_sqr[1]] = self.number
+        app.ent_dict[self.number+'top'].loc = [end_sqr[0],end_sqr[1]]
+        # MAKE ATTACK ON ANY ENEMY ENT WITHIN RANGE
+        atk_sqrs = self.legal_attacks()
+        if atk_sqrs != []:
+            any = atk_sqrs[0]
+            id = app.grid[any[0]][any[1]]
+            root.after(666, lambda t = id : app.get_focus(t))
+            root.after(1333, lambda el = ents_list, t = id : self.do_attack(el, t)) # EXIT THROUGH ATTACK
+        else:
+            self.ai_end_turn()
 #     
-#     def do_attack(self, ents_list, id):
-#         if self.attack_used == True:
-#             self.cleanup_attack(ents_list, id)
-#         else:
-#             effect1 = mixer.Sound('Sound_Effects/minotaur_attack.ogg')
-#             effect1.set_volume(1)
-#             sound_effects.play(effect1, 0)
-#             app.get_focus(id)
-#             app.ent_dict[self.number+'top'].init_attack_anims()
-#             my_agl = self.get_attr('agl')
-#             target_agl = app.ent_dict[id].get_attr('agl')
-#             if to_hit(my_agl, target_agl) == True:
-#                 # HIT, SHOW VIS, DO DAMAGE, EXIT
-#                 my_str = self.get_attr('str')
-#                 target_end = app.ent_dict[id].get_attr('end')
-#                 d = damage(my_str, target_end)
-#                 app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Minotaur Attack Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-# #                 app.ent_dict[id].set_attr('spirit', -d)
-#                 lock(apply_damage, self, app.ent_dict[id], -d, 'melee')
-#                 if app.ent_dict[id].spirit <= 0:
-#                     app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-#                 root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id)) # EXIT THROUGH CLEANUP_ATTACK()
-#             else:
-#                 # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
-#                 app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Minotaur Attack Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
-#                 root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id))
-#         
-#             
-#     def cleanup_attack(self, ents_list, id):
-# #         self.init_normal_anims()
-#         app.ent_dict[self.number+'top'].init_normal_anims()
-#         try: 
-#             app.canvas.delete('text')
-# #             del app.vis_dict['']
-# #             app.canvas.delete('')
-#         except: pass
-#         if app.ent_dict[id].spirit <= 0:
+    def do_attack(self, ents_list, id):
+        if self.attack_used == True:
+            self.cleanup_attack(ents_list, id)
+        else:
+            effect1 = mixer.Sound('Sound_Effects/minotaur_attack.ogg')
+            effect1.set_volume(1)
+            sound_effects.play(effect1, 0)
+            app.get_focus(id)
+            app.ent_dict[self.number+'top'].init_attack_anims()
+            my_agl = self.get_attr('agl')
+            target_agl = app.ent_dict[id].get_attr('agl')
+            if to_hit(my_agl, target_agl) == True:
+                my_str = self.get_attr('str')
+                target_end = app.ent_dict[id].get_attr('end')
+                d = damage(my_str, target_end)
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
+                lock(apply_damage, self, app.ent_dict[id], -d, 'melee')
+                if app.ent_dict[id].spirit <= 0:
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+94, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+95, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
+                root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id)) # EXIT THROUGH CLEANUP_ATTACK()
+            else:
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Miss!', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Miss!', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
+                root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id))
+        
+            
+    def cleanup_attack(self, ents_list, id):
+#         self.init_normal_anims()
+        app.ent_dict[self.number+'top'].init_normal_anims()
+        try: 
+            app.canvas.delete('text')
+#             del app.vis_dict['']
+#             app.canvas.delete('')
+        except: pass
+        if app.ent_dict[id].spirit <= 0:
 #             name = 'dethlok'+str(app.death_count)
 #             app.death_count += 1
 #             app.dethloks[name] = tk.IntVar(0)
 #             root.after(666, lambda id = id, name = name : app.kill(id, name))
+            lock(app.kill, id)
 #             root.wait_variable(app.dethloks[name])
-#             self.finish_attack(ents_list)
-#         else:
-#             self.finish_attack(ents_list)
+            self.ai_end_turn(ents_list)
+        else:
+            self.ai_end_turn(ents_list)
 #                     
 #     def finish_attack(self, ents_list):
 #         el = ents_list[1:]
