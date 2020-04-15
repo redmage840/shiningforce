@@ -1,3 +1,5 @@
+# make stomp only psi push if it would reduce the dist btwn minotaur and tar, possibly always make a move that reduces dist
+# timing on stomp, get_focus timing for minotaur in general, when start turn, when start stomp
 # add stomp anims/vis/sound, also charge anims
 
 '''
@@ -7183,6 +7185,16 @@ class Minotaur_Top(Summon):
         super().__init__(name, img, loc, owner, number, type = 'large')
         self.move_type = 'normal'
         self.immovable = True
+        
+    def init_stomp_anims(self):
+        self.anim_dict = {}
+        self.anim_counter = 0
+        anims = [a for r,d,a in walk('./animations/Minotaur_Stomp_Top/')][0]
+        anims = [a for a in anims[:] if a[-3:] == 'png']
+        for i, anim in enumerate(anims):
+            a = ImageTk.PhotoImage(Image.open('animations/Minotaur_Stomp_Top/' + anim))
+            self.anim_dict[i] = a
+            
     # 'tall' ent, bigger than 100 pixels height, needs to be split into 2 images so the 'top' image is 'large' (raised above 'maptop', bottom part of ent is hidden behind 'maptop'
 class Minotaur(Summon):
     def __init__(self, name, img, loc, owner, number, waiting = False):
@@ -7205,6 +7217,15 @@ class Minotaur(Summon):
     def large_undo(self):
         app.canvas.delete(self.number+'top')
         del app.ent_dict[self.number+'top']
+        
+    def init_stomp_anims(self):
+        self.anim_dict = {}
+        self.anim_counter = 0
+        anims = [a for r,d,a in walk('./animations/Minotaur_Stomp_Bot/')][0]
+        anims = [a for a in anims[:] if a[-3:] == 'png']
+        for i, anim in enumerate(anims):
+            a = ImageTk.PhotoImage(Image.open('animations/Minotaur_Stomp_Bot/' + anim))
+            self.anim_dict[i] = a
         
     # takes 2 locs that share 1 axis, returns True if all sqrs between are empty ('')
     def clear_path(self, myloc, enloc):
@@ -7526,10 +7547,14 @@ class Minotaur(Summon):
         
     # all non-flying ents w/i range 8 take 8-dist(self.loc,id.loc) and are moved randomly (psi-push)
     def stomp(self, ents_list):
-#         effect1 = mixer.Sound('Sound_Effects/minotaur_stomp.ogg')
-#         effect1.set_volume(1)
-#         sound_effects.play(effect1, 0)
+        app.focus_square(self.loc)
+        def stomp_sound():
+            effect1 = mixer.Sound('Sound_Effects/minotaur_stomp.ogg')
+            effect1.set_volume(1)
+            sound_effects.play(effect1, 0)
         # insert start_stomp_anims() here
+        self.init_stomp_anims()
+        app.ent_dict[self.number+'top'].init_stomp_anims()
         # insert stomp vis
         def earthquake_loop(ents_list, ids):
             global selected
@@ -7540,7 +7565,9 @@ class Minotaur(Summon):
                 ids = ids[1:]
                 app.get_focus(id)
                 loc = app.ent_dict[id].loc[:]
-                d = 8-dist(self.loc, loc)
+                d = 6-dist(self.loc, loc)
+                if d < 0:
+                    d = 0
                 lock(apply_damage, self, app.ent_dict[id], -d, 'ranged')
                 app.canvas.create_text(loc[0]*100+49-app.moved_right, loc[1]*100+74-app.moved_down, text = str(d)+' spirit', font = ('Andale Mono', 13), fill = 'black', tags = 'text')
                 app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+75-app.moved_down, text = str(d)+' spirit', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
@@ -7633,8 +7660,11 @@ class Minotaur(Summon):
                     else:
                         root.after(3666, lambda el = ents_list, ids = ids : earthquake_loop(el, ids))
             # first call of eq loop, called if affected ents exist
-        ents = [k for k,v in app.ent_dict.items() if dist(v.loc, self.loc) <= 8 and v.immovable != True and v.move_type != 'flying']
-        root.after(1999, lambda el = ents_list, ids = ents : earthquake_loop(el, ids))
+        ents = [k for k,v in app.ent_dict.items() if v.immovable != True and v.move_type != 'flying']
+        root.after(2333, self.init_normal_anims)
+        root.after(2333, app.ent_dict[self.number+'top'].init_normal_anims)
+        root.after(2333, stomp_sound)
+        root.after(2555, lambda el = ents_list, ids = ents : earthquake_loop(el, ids))
         
     def cleanup_stomp(self, ents_list):
         app.canvas.delete('text')
