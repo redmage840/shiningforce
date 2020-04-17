@@ -1,3 +1,4 @@
+# cleanup minotaur stomp dmg txt indv
 # make stomp only psi push if it would reduce the dist btwn minotaur and tar, possibly always make a move that reduces dist
 # timing on stomp, get_focus timing for minotaur in general, when start turn, when start stomp
 # add stomp anims/vis/sound, also charge anims
@@ -7195,6 +7196,15 @@ class Minotaur_Top(Summon):
             a = ImageTk.PhotoImage(Image.open('animations/Minotaur_Stomp_Top/' + anim))
             self.anim_dict[i] = a
             
+    def init_move_anims(self):
+        self.anim_dict = {}
+        self.anim_counter = 0
+        anims = [a for r,d,a in walk('./animations/Minotaur_Move_Top/')][0]
+        anims = [a for a in anims[:] if a[-3:] == 'png']
+        for i, anim in enumerate(anims):
+            a = ImageTk.PhotoImage(Image.open('animations/Minotaur_Move_Top/' + anim))
+            self.anim_dict[i] = a
+            
     # 'tall' ent, bigger than 100 pixels height, needs to be split into 2 images so the 'top' image is 'large' (raised above 'maptop', bottom part of ent is hidden behind 'maptop'
 class Minotaur(Summon):
     def __init__(self, name, img, loc, owner, number, waiting = False):
@@ -7225,6 +7235,15 @@ class Minotaur(Summon):
         anims = [a for a in anims[:] if a[-3:] == 'png']
         for i, anim in enumerate(anims):
             a = ImageTk.PhotoImage(Image.open('animations/Minotaur_Stomp_Bot/' + anim))
+            self.anim_dict[i] = a
+            
+    def init_move_anims(self):
+        self.anim_dict = {}
+        self.anim_counter = 0
+        anims = [a for r,d,a in walk('./animations/Minotaur_Move_Bot/')][0]
+        anims = [a for a in anims[:] if a[-3:] == 'png']
+        for i, anim in enumerate(anims):
+            a = ImageTk.PhotoImage(Image.open('animations/Minotaur_Move_Bot/' + anim))
             self.anim_dict[i] = a
         
     # takes 2 locs that share 1 axis, returns True if all sqrs between are empty ('')
@@ -7276,9 +7295,11 @@ class Minotaur(Summon):
             
     def charge_attack(self, ents_list, tar):
         global selected
-#         effect1 = mixer.Sound('Sound_Effects/minotaur_charge_attack.ogg')
-#         effect1.set_volume(1)
-#         sound_effects.play(effect1, -1)
+        effect1 = mixer.Sound('Sound_Effects/minotaur_charge_attack.ogg')
+        effect1.set_volume(1)
+        sound_effects.play(effect1, -1)
+        self.init_move_anims()
+        app.ent_dict[self.number+'top'].init_move_anims()
         selected = [self.number, self.number+'top']
         id = self.number
         start_sqr = self.loc[:]
@@ -7291,29 +7312,36 @@ class Minotaur(Summon):
         y = begin[1]*100+50-app.moved_down
         endx = end[0]*100+50-app.moved_right
         endy = end[1]*100+50-app.moved_down
-        def move_loop(id, x, y, endx, endy, start_sqr, end_sqr, path):
-            if x % 20 == 0 or y % 20 == 0:
+        def move_loop(id, x, y, endx, endy, start_sqr, end_sqr, path, acm):
+            acm += 10
+            if acm >= 40:
                 app.ent_dict[id+'top'].rotate_image()
+                self.rotate_image()
+                acm = 0
+            if x > endx:
+                x -= 10
                 app.canvas.delete(id)
                 app.canvas.create_image(x, y, image = self.img, tags = self.tags)
                 app.canvas.delete(id+'top')
                 app.canvas.create_image(x, y, image = app.ent_dict[id+'top'].img, tags = (id+'top','large'))
-            if x > endx:
-                x -= 10
-                app.canvas.move(id, -10, 0)
-                app.canvas.move(id+'top', -10, 0)
             if x < endx: 
                 x += 10
-                app.canvas.move(id, 10, 0)
-                app.canvas.move(id+'top', 10, 0)
+                app.canvas.delete(id)
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+                app.canvas.delete(id+'top')
+                app.canvas.create_image(x, y, image = app.ent_dict[id+'top'].img, tags = (id+'top','large'))
             if y > endy: 
                 y -= 10
-                app.canvas.move(id, 0, -10)
-                app.canvas.move(id+'top', 0, -10)
+                app.canvas.delete(id)
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+                app.canvas.delete(id+'top')
+                app.canvas.create_image(x, y, image = app.ent_dict[id+'top'].img, tags = (id+'top','large'))
             if y < endy: 
                 y += 10
-                app.canvas.move(id, 0, 10)
-                app.canvas.move(id+'top', 0, 10)
+                app.canvas.delete(id)
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+                app.canvas.delete(id+'top')
+                app.canvas.create_image(x, y, image = app.ent_dict[id+'top'].img, tags = (id+'top','large'))
             try: app.canvas.tag_lower((self.tags), 'large')
             except: pass
             app.canvas.tag_lower((self.tags), 'maptop')
@@ -7328,14 +7356,16 @@ class Minotaur(Summon):
                 y = begin[1]*100+50-app.moved_down
                 endx = end[0]*100+50-app.moved_right
                 endy = end[1]*100+50-app.moved_down
-                move_loop(id, x, y, endx, endy, start_sqr, end_sqr, path)
+                move_loop(id, x, y, endx, endy, start_sqr, end_sqr, path, acm)
             else: # CONTINUE LOOP
-                root.after(33, lambda id = id, x = x, y = y, ex = endx, ey = endy, s = start_sqr, s2 = end_sqr, p = path : move_loop(id, x, y, ex, ey, s, s2, p))
-        move_loop(id, x, y, endx, endy, start_sqr, end_sqr, path)
+                root.after(33, lambda id = id, x = x, y = y, ex = endx, ey = endy, s = start_sqr, s2 = end_sqr, p = path, acm = acm : move_loop(id, x, y, ex, ey, s, s2, p, acm))
+        move_loop(id, x, y, endx, endy, start_sqr, end_sqr, path, 0)
         
     def finish_charge(self, end_sqr, start_sqr, tar, ents_list):
         global selected
         sound_effects.stop()
+        self.init_normal_anims()
+        app.ent_dict[self.number+'top'].init_normal_anims()
         selected = []
         self.loc = end_sqr[:]
         app.grid[start_sqr[0]][start_sqr[1]] = ''
@@ -7422,6 +7452,8 @@ class Minotaur(Summon):
         effect1 = mixer.Sound('Sound_Effects/minotaur_move.ogg')
         effect1.set_volume(1)
         sound_effects.play(effect1, -1)
+        self.init_move_anims()
+        app.ent_dict[self.number+'top'].init_move_anims()
         selected = [self.number, self.number+'top']
         id = self.number
         end_sqr = endloc[:] # redundant naming of vars
@@ -7432,29 +7464,36 @@ class Minotaur(Summon):
         y = begin[1]*100+50-app.moved_down
         endx = end[0]*100+50-app.moved_right
         endy = end[1]*100+50-app.moved_down
-        def move_loop(id, x, y, endx, endy, start_sqr, end_sqr, path):
-            if x % 20 == 0 or y % 20 == 0:
+        def move_loop(id, x, y, endx, endy, start_sqr, end_sqr, path, acm):
+            acm += 10
+            if acm >= 40:
                 app.ent_dict[id+'top'].rotate_image()
+                self.rotate_image()
+                acm = 0
+            if x > endx:
+                x -= 10
                 app.canvas.delete(id)
                 app.canvas.create_image(x, y, image = self.img, tags = self.tags)
                 app.canvas.delete(id+'top')
                 app.canvas.create_image(x, y, image = app.ent_dict[id+'top'].img, tags = (id+'top','large'))
-            if x > endx:
-                x -= 10
-                app.canvas.move(id, -10, 0)
-                app.canvas.move(id+'top', -10, 0)
             elif x < endx: 
                 x += 10
-                app.canvas.move(id, 10, 0)
-                app.canvas.move(id+'top', 10, 0)
+                app.canvas.delete(id)
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+                app.canvas.delete(id+'top')
+                app.canvas.create_image(x, y, image = app.ent_dict[id+'top'].img, tags = (id+'top','large'))
             if y > endy: 
                 y -= 10
-                app.canvas.move(id, 0, -10)
-                app.canvas.move(id+'top', 0, -10)
+                app.canvas.delete(id)
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+                app.canvas.delete(id+'top')
+                app.canvas.create_image(x, y, image = app.ent_dict[id+'top'].img, tags = (id+'top','large'))
             elif y < endy: 
                 y += 10
-                app.canvas.move(id, 0, 10)
-                app.canvas.move(id+'top', 0, 10)
+                app.canvas.delete(id)
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+                app.canvas.delete(id+'top')
+                app.canvas.create_image(x, y, image = app.ent_dict[id+'top'].img, tags = (id+'top','large'))
             try: app.canvas.tag_lower((self.tags), 'large')
             except: pass
             app.canvas.tag_lower((self.tags), 'maptop')
@@ -7469,14 +7508,16 @@ class Minotaur(Summon):
                 y = begin[1]*100+50-app.moved_down
                 endx = end[0]*100+50-app.moved_right
                 endy = end[1]*100+50-app.moved_down
-                move_loop(id, x, y, endx, endy, start_sqr, end_sqr, path)
+                move_loop(id, x, y, endx, endy, start_sqr, end_sqr, path, acm)
             else: # CONTINUE LOOP
-                root.after(66, lambda id = id, x = x, y = y, ex = endx, ey = endy, s = start_sqr, s2 = end_sqr, p = path : move_loop(id, x, y, ex, ey, s, s2, p))
-        move_loop(id, x, y, endx, endy, self.loc, end_sqr, path)
+                root.after(66, lambda id = id, x = x, y = y, ex = endx, ey = endy, s = start_sqr, s2 = end_sqr, p = path, acm = acm : move_loop(id, x, y, ex, ey, s, s2, p, acm))
+        move_loop(id, x, y, endx, endy, self.loc, end_sqr, path, 0)
         
     def finish_move(self, end_sqr, start_sqr, ents_list, stomp):
         global selected
         sound_effects.stop()
+        self.init_normal_anims()
+        app.ent_dict[self.number+'top'].init_normal_anims()
         selected = []
         self.loc = end_sqr[:]
         app.grid[start_sqr[0]][start_sqr[1]] = ''
