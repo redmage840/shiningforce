@@ -318,7 +318,7 @@ def los(start, end):
             xstep *= 2
             ystep *= 2
     def los_loop(sx, sy, ex, ey, xstep, ystep):
-        if abs(sx - ex) < 15 and abs(sy - ey) < 15:
+        if abs(sx - ex) < 15 and abs(sy - ey) < 15:# close enough to goal sqr
             return True
         if sx > ex:
             sx -= xstep
@@ -330,7 +330,6 @@ def los(start, end):
             sy += ystep
         cx = round_100(sx)
         cy = round_100(sy)
-        print([cx, cy])
         if [cx,cy] in blocked:
             return False
         else:
@@ -341,11 +340,9 @@ def los(start, end):
 def dist(loc1, loc2):
     return abs(loc1[0] - loc2[0]) + abs(loc1[1] - loc2[1])
 
-# CHANGE TO 'GOAL IS LIST OF GOALS'
 # start is coord like [2,3], goal is list of coords like [[2,4],[4,5]...], grid is list of lists where each list is a 'row'
 # 'row' holds strings ('', 'EntityID', or 'block')
 # returns path from start to goal (list of coords)
-
 def bfs(start, goal, grid):
     path = []
     q = [[start]]
@@ -392,7 +389,7 @@ def atk_loop(effects_list, attacker, defender, amount, type, lockname):
         ef = effects_list[0]
         effects_list = effects_list[1:]
         amount = ef(attacker, defender, amount, type)
-        root.after(1999, lambda el = effects_list, at = attacker, de = defender, am = amount, ty = type, ln = lockname : atk_loop(el, at, de, ty, ln))
+        root.after(1999, lambda el = effects_list, at = attacker, de = defender, am = amount, ty = type, ln = lockname : atk_loop(el, at, de, am, ty, ln))
         
 def defense_loop(effects_list, attacker, defender, amount, type, lockname):
     if effects_list == []:
@@ -403,13 +400,7 @@ def defense_loop(effects_list, attacker, defender, amount, type, lockname):
         effects_list = effects_list[1:]
         amount = ef(attacker, defender, amount, type)
         root.after(1999, lambda el = effects_list, at = attacker, de = defender, am = amount, ty = type, ln = lockname : defense_loop(el, at, de, am, ty, ln))
-        
-def finish_lock(apply_damage, attacker, defender, amount, type, lockname = None):
-    defender.spirit += amount
-    if defender.spirit > defender.base_spirit:
-        defender.spirit = defender.base_spirit
-    app.dethloks[lockname].set(1)
-    
+
 def lock(func, *args, **kwargs):
     name = 'dethlok'+str(app.death_count)
     app.death_count += 1
@@ -417,6 +408,11 @@ def lock(func, *args, **kwargs):
     func(*args, **kwargs, lockname = name)
     app.wait_variable(app.dethloks[name])
 
+def finish_lock(apply_damage, attacker, defender, amount, type, lockname = None):
+    defender.spirit += amount
+    if defender.spirit > defender.base_spirit:
+        defender.spirit = defender.base_spirit
+    app.dethloks[lockname].set(1)
         
 # takes 2 ent objects, positive int amount
 def apply_heal(healer, target, amount):
@@ -434,12 +430,10 @@ def intersect(lx,ly):
 
 # GLOBALS
 curs_pos = [0, 0]
-is_object_selected = False
+# is_object_selected = False
 selected = []
 selected_vis = []
-
 map_pos = [0, 0]
-
 grid_pos = [0,0]
 
 
@@ -14036,11 +14030,10 @@ class App(tk.Frame):
                 self.map_trigger_id = root.after(1666, self.map_trigger_loop)
         
     def end_level(self, alt_route = None):
-        global curs_pos, is_object_selected, selected, selected_vis, map_pos, grid_pos
+        global curs_pos, selected, selected_vis, map_pos, grid_pos#, is_object_selected
         root.after_cancel(self.animate_id)
         root.after_cancel(self.map_trigger_id)
         # for each effect in witch and global, call its undo
-        
         protaganist_object  = app.ent_dict[self.p1_witch]
         protaganist_object.reset_transient_vars()
         if alt_route:
@@ -14054,7 +14047,7 @@ class App(tk.Frame):
         # THIS WORKS, JUST NEED TO CLEAN ALL VARS LIKE GRID, SELF.STUFF, GLOBALS
         # GLOBALS
         curs_pos = [2, 2]
-        is_object_selected = False
+        # is_object_selected = False
         selected = []
         selected_vis = []
         map_pos = [0, 0]
