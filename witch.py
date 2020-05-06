@@ -14424,6 +14424,8 @@ class App(tk.Frame):
         root.unbind('<.>')
         root.unbind('<l>')
         root.unbind('<;>')
+        try: app.canvas.unbind('<Button-1>')
+        except: pass
 #         root.unbind('<Escape>')
 
     def rebind_all(self):
@@ -14437,6 +14439,7 @@ class App(tk.Frame):
         root.bind('<l>', app.de_cycle_friendly_units)
         root.bind('<.>', app.cycle_enemy_units)
         root.bind('<;>', app.de_cycle_enemy_units)
+        app.canvas.bind('<Button-1>', app.jump_to_square)
 #         root.bind('<Escape>', app.exit_fullscreen)
         # DEBUG ####
 #         root.bind('<d>', app.debugger)
@@ -14543,6 +14546,19 @@ class App(tk.Frame):
         app.focus_square(app.ent_dict[id].loc)
         
         
+    def jump_to_square(self, event):
+        print(event.x)
+        print(app.moved_right)
+        print(event.y)
+        print(app.moved_down)
+        x = (event.x + app.moved_right)//100
+        y = (event.y + app.moved_down)//100
+        if (app.map_width//100)-1 <= x or (app.map_height//100)-1 <= y:
+            return
+        if x < 1 or y < 1:
+            return
+        app.focus_square([x,y])
+        
     def debugger(self, event):
         print(los([2,2],[18,18]))
         print(los([2,2],[5,5]))
@@ -14565,7 +14581,7 @@ root.bind('<.>', app.cycle_enemy_units)
 app.unbind_all()
 # root.bind('<Escape>', app.exit_fullscreen)
 #### DEBUG ####
-root.bind('<d>', app.debugger)
+# root.bind('<d>', app.debugger)
 
 
 root.configure(background = 'black')
