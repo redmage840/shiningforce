@@ -12257,7 +12257,6 @@ class App(tk.Frame):
             def ghost_teleport1():
                 if app.ent_dict['b2'].spirit < 50:
                     if app.grid[7][2] != '':
-#                         coords = [[x,y] for x in range(self.map_width//100) for y in range(self.map_height//100)]
                         empt_coords = [c for c in app.coords if app.grid[c[0]][c[1]] == '']
                         sqr = choice(empt_coords)
                     else:
@@ -12273,7 +12272,6 @@ class App(tk.Frame):
             def ghost_teleport2():
                 if app.ent_dict['b2'].spirit < 30:
                     if app.grid[26][17] != '':
-#                         coords = [[x,y] for x in range(self.map_width//100) for y in range(self.map_height//100)]
                         empt_coords = [c for c in app.coords if app.grid[c[0]][c[1]] == '']
                         sqr = choice(empt_coords)
                     else:
@@ -12354,7 +12352,7 @@ class App(tk.Frame):
                     app.canvas.tag_lower('mapbottom')
                     self.map_triggers.remove(area_sixteen)
 
-            # Ghost area 1, add ghost to coord 35,35
+            # Ghost place 1, add ghost to coord 35,35
             # when ghost below N hp, move to final spot at 2,2 in area 9 which should only be revealed after area 8
             # add revenants or revenant generation...
             # 29,26 and 31,30 add trig to summon revs on turn 2
@@ -12379,6 +12377,15 @@ class App(tk.Frame):
                     self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_top, tags = ('map','maptop'))
                     app.canvas.tag_lower('mapbottom')
                     self.map_triggers.remove(area_fifteen)
+                    
+                    img = ImageTk.PhotoImage(Image.open('summon_imgs/Ghost.png'))
+                    counter = self.effects_counter
+                    self.effects_counter += 1
+                    id = 'b' + str(counter)
+                    app.grid[35][35] = id
+                    app.ent_dict[id] = Ghost(name = 'Ghost', img = img, loc = [35,35], owner = 'p2', number = id)
+                    def ghost_2():
+                        pass
             
             def area_fourteen():
                 if app.ent_dict[app.p1_witch].loc in [[7,24],[6,24]]:
