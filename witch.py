@@ -10695,7 +10695,7 @@ class Witch(Entity):
                     return None
                 eot = nothing
                 n = 'Plague' + str(app.effects_counter)
-                app.ent_dict[id].effects_dict['Plague'] = Effect(name = 'Plague', info = 'Plague\n Stats reduced by 2 for 3 turns', eot_func = eot, undo = p_undo, duration = 4, level = self.get_attr('psyche'))
+                app.ent_dict[id].effects_dict['Plague'] = Effect(name = 'Plague', info = 'Plague\n Stats reduced by 2 for 3 turns', eot_func = eot, undo = p_undo, duration = 6, level = self.get_attr('psyche'))
                 # get adj
                 adj = [k for k,v in app.ent_dict.items() if dist(v.loc, loc) == 1 and k not in visited and v.type != 'large']
                 adj = [id for id in adj if 'Plague' not in [v.name for k,v in app.ent_dict[id].effects_dict.items()]]
@@ -10840,7 +10840,6 @@ class Witch(Entity):
             for ent in adj_ents:
                 if app.ent_dict[ent].attr_check('agl') == False:
                     d = damage(tar_str, app.ent_dict[ent].get_attr('end'))
-#                     app.ent_dict[ent].set_attr('spirit', -d)
                     lock(apply_damage, self, app.ent_dict[ent], -d, 'melee')
                     app.canvas.create_text(app.ent_dict[ent].loc[0]*100+49-app.moved_right, app.ent_dict[ent].loc[1]*100+74-app.moved_down, text = str(d) + ' spirit', justify = 'center', font = ('Andale Mono', 13), fill = 'black', tags = 'text')
                     app.canvas.create_text(app.ent_dict[ent].loc[0]*100+50-app.moved_right, app.ent_dict[ent].loc[1]*100+75-app.moved_down, text = str(d) + ' spirit', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
@@ -10987,7 +10986,6 @@ class Witch(Entity):
                     # EOT FUNC
                     def take_1(tar):
                         app.get_focus(tar)
-#                         app.ent_dict[tar].set_attr('spirit', -1)
                         lock(apply_damage, self, app.ent_dict[tar], -1, 'poison')
                         app.canvas.create_text(app.ent_dict[tar].loc[0]*100+49-app.moved_right, app.ent_dict[tar].loc[1]*100+74-app.moved_down, text = '1 spirit Pestilence', justify ='center', font = ('Andale Mono', 13), fill = 'black', tags = 'text')
                         app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+75-app.moved_down, text = '1 spirit Pestilence', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
@@ -11176,6 +11174,7 @@ class Witch(Entity):
         app.depop_context(event = None)
         app.cleanup_squares()
         self.arcane_used = True
+        self.move_used = True
         app.focus_square(self.loc)
         app.vis_dict["Beleth's_Command"] = Vis(name = "Beleth's_Command", loc = self.loc)
         app.canvas.create_image(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+50-app.moved_down, image = app.vis_dict["Beleth's_Command"].img, tags = "Beleth's_Command")
@@ -11227,7 +11226,6 @@ class Witch(Entity):
         amt = (tar_psyche + tar_end) // 2
         d1 = damage(my_psyche, amt)
         s1 = app.ent_dict[id].loc[:]
-#         app.ent_dict[id].set_attr('spirit', -d1)
         lock(apply_damage, self, app.ent_dict[id], -d1, 'magick')
         app.canvas.create_text(s1[0]*100+49-app.moved_right, s1[1]*100+74-app.moved_down, text = str(d1)+' spirit', justify = 'center', font = ('Andale Mono', 13), fill = 'black', tags = 'text')
         app.canvas.create_text(s1[0]*100+50-app.moved_right, s1[1]*100+75-app.moved_down, text = str(d1)+' spirit', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
@@ -11333,7 +11331,7 @@ class Witch(Entity):
             def nothing():
                 return None
             eot = nothing
-            self.effects_dict["Beleth's_Command"] = Effect(name = "Beleth's_Command", info = 'Cannot move, +3 psyche and end', eot_func = eot, undo = p, duration = 3, level = self.get_attr('psyche'))
+            self.effects_dict["Beleth's_Command"] = Effect(name = "Beleth's_Command", info = '+1 psyche and end', eot_func = eot, undo = p, duration = 5, level = self.get_attr('psyche'))
         root.after(3666, lambda  name = "Beleth's_Command" : self.cleanup_spell(name = name))
         
         
