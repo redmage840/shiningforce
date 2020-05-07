@@ -1,5 +1,7 @@
 # ghost area 1 trig, line 12351
 
+# test ghost move reducers more, fear/slow
+
 # move reducers (fear, slow) work, but see max move range among current (not ideal) legal_moves
 # can give each Ent .move_range but how would this interact with for example meditate...
 
@@ -1204,8 +1206,8 @@ class Trickster(Summon):
 #                     app.dethloks[name] = tk.IntVar(0)
 #                     root.wait_variable(app.dethloks[name])
                     if app.ent_dict[id].spirit <= 0:
-                        app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+94, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'explode_text')
-                        app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+95, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'explode_text')
+                        app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+94, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'explode_text')
+                        app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+95, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'explode_text')
                         name = 'dethlok'+str(app.death_count)
                         app.death_count += 1
                         app.dethloks[name] = tk.IntVar(0)
@@ -2302,6 +2304,8 @@ class Bard(Summon):
         app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Dispel Attempt\nAll Effects', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
         to_remove = []
         for k,v in app.ent_dict[id].effects_dict.items():
+            print('effect : ', k)
+            print('level : ', v.level)
             if v.dispel(0) == True:
                 to_remove.append(k)
         for k in to_remove:
@@ -11290,6 +11294,8 @@ class Witch(Entity):
     def finish_beleths(self, ents):
         for e in ents:
             s = app.ent_dict[e].loc[:]
+            app.focus_square(s)
+            app.canvas.delete('text')
             lock(apply_damage, self, app.ent_dict[e], -9, 'magick')
             uniq_name = 'Immolate'+str(app.effects_counter)
             app.effects_counter += 1
@@ -14402,6 +14408,7 @@ class App(tk.Frame):
         root.bind('<Left>', app.move_curs)
         root.bind('<Up>', app.move_curs)
         root.bind('<Down>', app.move_curs)
+        app.canvas.bind('<Button-1>', app.jump_to_square)
         
     def unbind_nonarrows(self):
         root.unbind('<a>')
@@ -14547,10 +14554,6 @@ class App(tk.Frame):
         
         
     def jump_to_square(self, event):
-        print(event.x)
-        print(app.moved_right)
-        print(event.y)
-        print(app.moved_down)
         x = (event.x + app.moved_right)//100
         y = (event.y + app.moved_down)//100
         if (app.map_width//100)-1 <= x or (app.map_height//100)-1 <= y:
