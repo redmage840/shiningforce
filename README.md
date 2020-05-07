@@ -181,14 +181,14 @@ Bard: Unholy Chant: All other friendly units within range 2 get +1 to all stats 
 level 4.<br>
 Bard: Discord: Target within range 5 is attacked using psyche versus psyche to-hit. Damage is psyche versus psyche<br>
 divided by 2 rounded down and added to 1 (about half normal formula, minimum 2). Type magick.<br>
-Bard: Esuna: Target within range 4 has each effect attempted to dispel/remove with no modifier.<b>
-Bard: Moonlight: Target Warrior, Shadow, Plaguebearer, or Trickster is healed 4 spirit up to its max spirit.<b>
-Plaguebearer: Pox: Each adjacent, non-plaguebearer, unit gets pox effect if it does not already have it. Effect<b>
-causes 3 poison damage at end of turn. Lasts 4 turns at level 6.<b>
-Plaguebearer: Paralyze: Target adjacent unit makes endurance save or is stunned (has no actions or move) until<b>
-its next end of turn.<b>
-Plaguebearer: Contagion: Plaguebearers have an innate death effect that gives each adjacent unit a contagion effect<b>
-if it does not already have one. Contagion gives -3 to strength, endurance, agility, and dodge. Lasts 3 turns at<b>
-level 7. This is triggered the moment a plaguebearer is reduced to zero spirit.<b>
-<b>
+Bard: Esuna: Target within range 4 has each effect attempted to dispel/remove with no modifier.<br>
+Bard: Moonlight: Target Warrior, Shadow, Plaguebearer, or Trickster is healed 4 spirit up to its max spirit.<br>
+Plaguebearer: Pox: Each adjacent, non-plaguebearer, unit gets pox effect if it does not already have it. Effect<br>
+causes 3 poison damage at end of turn. Lasts 4 turns at level 6.<br>
+Plaguebearer: Paralyze: Target adjacent unit makes endurance save or is stunned (has no actions or move) until<br>
+its next end of turn.<br>
+Plaguebearer: Contagion: Plaguebearers have an innate death effect that gives each adjacent unit a contagion effect<br>
+if it does not already have one. Contagion gives -3 to strength, endurance, agility, and dodge. Lasts 3 turns at<br>
+level 7. This is triggered the moment a plaguebearer is reduced to zero spirit.<br>
+<br>
 Coming soon: descriptions of powerup spells/summons and Fakir Ali's spells already in game...
