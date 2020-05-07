@@ -33,6 +33,7 @@ Morgan LeFay is not yet implemented.
 and can be used once per turn, allowing the warrior to both move, leap, and attack in one turn<br>
 -Most units that are not 'flying' type or not using a teleport-type movement action (or leap) are impeded<br>
 by other units and walls and obstacles, meaning that they must move 'around' obstacles and cannot necessarily<br>
+move to any empty square within their 'maximum range'.<b>
 -Can use 2 player mode but networking not yet implemented. Test out concept by battling 2 witches against each<br>
 other on the same machine. Only can currently use basic summons/spells for 2 player mode. Upgrades (new spells,<br>
 stat and summon cap changes) are gained in 1 player mode. Multiplayer ideally will support networked play and<br>
@@ -42,13 +43,16 @@ No current plans of level editors or 'use-map-settings' type goals for multiplay
 <b>Stat Descriptions:</b><br>
 -Attacks/spells determine what stats are used, (melee attacks often used strength, but not necessarily)<br>
 -Relative value/use of stats is determined by what attacks you are using and what is being used against you<br>
--For example, some enemies may check your units psyche in order 'to hit' and then check your endurance<br>
+-For example, some enemies may check your unit's psyche in order 'to hit' and then check your endurance<br>
 to determine damage<br>
 -In general, strength is used for determining damage, endurance is used for resisting damage or poison, agility<br>
 determines 'to hit' for melee and ranged attacks or evading melee attacks, dodge is used for evading ranged attacks,<br>
 psyche is often used for magick-based attacks (either using or resisting), spirit is like hit-points with<br>
-reduction to zero being instant death with no resurrection, magick are finite magick points spent on arcane<br>
+reduction to zero being instant death with no resurrection, magick are finite magick points spent on arcane spells<br>
 -Some spells/abilities allow for 'saves' that check a stat (with optional modifier)<br>
+-The save formula is simply the stat value times 10 equals probability of success. For example, a unit with a dodge<br>
+stat of 7 will have a 70 percent chance of succeeding the save. Units with stats of 10 or greater will always<br>
+succeed an unmodified save. Stats cannot be reduced below 1, but modifiers can push a save to below 10 percent.<br>
 <br>
 <b>Game Concepts:</b><br>
 -Anything causing damage has a type, 'melee', 'ranged', 'poison', or 'magick'<br>
@@ -59,15 +63,15 @@ reduction to zero being instant death with no resurrection, magick are finite ma
 or they could gain a bonus to movement range at the start-of-turn<br>
 -Global effects are not tied to a unit, but have some effect on the environment.<br>
 -Global effects currently changing to being tied to locations. Only a cantrip gained later (Foul Familiar)<br>
-grants access to the units implementing global effects, but expect them to change.
+grants access to the units implementing global effects, but expect them to change.<b>
 -All effects have a 'level' determined by their caster that determine the difficulty of undoing them (dispel-like)<br>
 -Effects accumulated by a unit will be noted by name in the unit's context menu<br>
--Damage formula: damage = 5+attacker-stat minus defender-stat with minimum 1. So equal stats tend to do 5 damage.<br>
+-Damage formula: damage = 5+attacker_stat minus defender_stat with minimum 1. So equal stats tend to do 5 damage.<br>
 -Distributions of stats average around 5 for most units, with 10 being a soft limit of common units. Stats over 10<br>
 happen with exceptional/'boss' units and after stat boosting. This means that damage for most units ranges from<br>
 many 1's as weaker units try to damage exceptional units, 3-7 as fairly equal units trade damage, and 9-14 as<br>
 exceptional units attack normal units. There is no random factor for most damaging effects.<br>
--To hit formula: 50 plus (attacker-stat minus defender-stat) times five = probability of chance<br>
+-To hit formula: 50 plus (attacker_stat minus defender_stat) times five = probability of chance<br>
 -This means equal stats have 50 percent chance of hitting, with each point of difference in stats contributes 5<br>
 percent difference probability. To hit draws a random number to determine this probability of hitting. The stat<br>
 distributions of units means that many attacks center around a 50 percent chance of hitting, with extremes near<br>
@@ -145,9 +149,9 @@ Cannot cast if caster has used her normal move this turn. Caster cannot use norm
 caster psyche and defender stat is (defender-psyche+defender-endurance)divided by 2 rounded down. If target fails<br>
 strength save, they are stunned until their next end-of-turn (cannot make any actions/moves). If target is not<br>
 already affected by Beleth's Command, it gets -1 to psyche and endurance for 5 turns at level equal to caster<br>
-psyche on cast. Beleth's Command then does 9 magick damage (magick-type damage to spirt) to each unit adjacent<br>
-to caster. After other effects, if caster does not already have Beleth's Command Effect, caster gets +1 to<br>
-endurance and psyche for 5 turns at level equal to caster psyche (on cast).<br>
+psyche on cast. Beleth's Command then does 9 magick damage to each unit adjacent to caster. After other effects,<b>
+if caster does not already have Beleth's Command Effect, caster gets +1 to endurance and psyche for 5 turns at<b>
+level equal to caster psyche (on cast).<br>
 <br>
 <b>Summon Abilities</b><br>
 Warrior: Guard: Friendly unit gets effect that redirects all damage to this Warrior. Warrior's death removes<br>
@@ -176,12 +180,15 @@ random amount of ranged damage between 1-3.<br>
 Bard: Unholy Chant: All other friendly units within range 2 get +1 to all stats for the remainder of the turn at<br>
 level 4.<br>
 Bard: Discord: Target within range 5 is attacked using psyche versus psyche to-hit. Damage is psyche versus psyche<br>
-divided by 2 rounded down and added to 1 (about half normal formula, minimum 2). Type magick.<b>
+divided by 2 rounded down and added to 1 (about half normal formula, minimum 2). Type magick.<br>
 Bard: Esuna: Target within range 4 has each effect attempted to dispel/remove with no modifier.<b>
 Bard: Moonlight: Target Warrior, Shadow, Plaguebearer, or Trickster is healed 4 spirit up to its max spirit.<b>
 Plaguebearer: Pox: Each adjacent, non-plaguebearer, unit gets pox effect if it does not already have it. Effect<b>
 causes 3 poison damage at end of turn. Lasts 4 turns at level 6.<b>
 Plaguebearer: Paralyze: Target adjacent unit makes endurance save or is stunned (has no actions or move) until<b>
 its next end of turn.<b>
+Plaguebearer: Contagion: Plaguebearers have an innate death effect that gives each adjacent unit a contagion effect<b>
+if it does not already have one. Contagion gives -3 to strength, endurance, agility, and dodge. Lasts 3 turns at<b>
+level 7. This is triggered the moment a plaguebearer is reduced to zero spirit.<b>
 <b>
 Coming soon: descriptions of powerup spells/summons and Fakir Ali's spells already in game...
