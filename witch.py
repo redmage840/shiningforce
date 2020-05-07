@@ -11266,25 +11266,25 @@ class Witch(Entity):
             if 'Paralyze' not in [v.name for k,v in app.ent_dict[id].effects_dict.items()]:
                 n = 'Paralyze' + str(app.effects_counter)
                 app.ent_dict[id].effects_dict[n] = Effect(name = 'Paralyze', info = 'Paralyze, stun 1 turn', eot_func = nothing, undo = p, duration = 1, level = self.get_attr('psyche'))
-        # -1 -1 to tar
-        def b_command_effect(stat):
-            stat -= 1
-            if stat < 1:
-                return 1
-            else:
-                return stat
-        app.ent_dict[id].end_effects.append(b_command_effect)
-        app.ent_dict[id].psyche_effects.append(b_command_effect)
-        def un(i):
-            app.ent_dict[i].end_effects.remove(b_command_effect)
-            app.ent_dict[i].psyche_effects.remove(b_command_effect)
-            return None
-        p = partial(un, id)
-        if "Beleth's_Command" not in [v.name for k,v in app.ent_dict[id].effects_dict.items()]:
-            n = "Beleth's_Command" + str(app.effects_counter)
-            def nothing():
+            # -1 -1 to tar
+            def b_command_effect(stat):
+                stat -= 1
+                if stat < 1:
+                    return 1
+                else:
+                    return stat
+            app.ent_dict[id].end_effects.append(b_command_effect)
+            app.ent_dict[id].psyche_effects.append(b_command_effect)
+            def un(i):
+                app.ent_dict[i].end_effects.remove(b_command_effect)
+                app.ent_dict[i].psyche_effects.remove(b_command_effect)
                 return None
-            app.ent_dict[id].effects_dict[n] = Effect(name = "Beleth's_Command", info = 'Beleths command Stats reduced by 1 for 5 turns', eot_func = nothing, undo = p, duration = 5, level = self.get_attr('psyche'))
+            p = partial(un, id)
+            if "Beleth's_Command" not in [v.name for k,v in app.ent_dict[id].effects_dict.items()]:
+                n = "Beleth's_Command" + str(app.effects_counter)
+                def nothing():
+                    return None
+                app.ent_dict[id].effects_dict[n] = Effect(name = "Beleth's_Command", info = 'Beleths command Stats reduced by 1 for 5 turns', eot_func = nothing, undo = p, duration = 5, level = self.get_attr('psyche'))
         ents = [k for k,v in app.ent_dict.items() if dist(v.loc, self.loc) == 1 and v.type != 'large']
         root.after(2555, lambda t = 'text' : app.canvas.delete(t))
         root.after(2666, lambda ents = ents : self.finish_beleths(ents))
