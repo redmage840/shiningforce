@@ -63,7 +63,7 @@ succeed an unmodified save. Stats cannot be reduced below 1, but modifiers can p
 or they could gain a bonus to movement range at the start-of-turn<br>
 -Global effects are not tied to a unit, but have some effect on the environment.<br>
 -Global effects currently changing to being tied to locations. Only a cantrip gained later (Foul Familiar)<br>
-grants access to the units implementing global effects, but expect them to change.<b>
+grants access to the units implementing global effects, but expect them to change.<br>
 -All effects have a 'level' determined by their caster that determine the difficulty of undoing them (dispel-like)<br>
 -Effects accumulated by a unit will be noted by name in the unit's context menu<br>
 -Damage formula: damage = 5+attacker_stat minus defender_stat with minimum 1. So equal stats tend to do 5 damage.<br>
