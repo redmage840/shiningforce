@@ -33,7 +33,7 @@ Morgan LeFay is not yet implemented.
 and can be used once per turn, allowing the warrior to both move, leap, and attack in one turn<br>
 -Most units that are not 'flying' type or not using a teleport-type movement action (or leap) are impeded<br>
 by other units and walls and obstacles, meaning that they must move 'around' obstacles and cannot necessarily<br>
-move to any empty square within their 'maximum range'.<b>
+move to any empty square within their 'maximum range'.<br>
 -Can use 2 player mode but networking not yet implemented. Test out concept by battling 2 witches against each<br>
 other on the same machine. Only can currently use basic summons/spells for 2 player mode. Upgrades (new spells,<br>
 stat and summon cap changes) are gained in 1 player mode. Multiplayer ideally will support networked play and<br>
