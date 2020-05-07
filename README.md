@@ -149,8 +149,8 @@ Cannot cast if caster has used her normal move this turn. Caster cannot use norm
 caster psyche and defender stat is (defender-psyche+defender-endurance)divided by 2 rounded down. If target fails<br>
 strength save, they are stunned until their next end-of-turn (cannot make any actions/moves). If target is not<br>
 already affected by Beleth's Command, it gets -1 to psyche and endurance for 5 turns at level equal to caster<br>
-psyche on cast. Beleth's Command then does 9 magick damage to each unit adjacent to caster. After other effects,<b>
-if caster does not already have Beleth's Command Effect, caster gets +1 to endurance and psyche for 5 turns at<b>
+psyche on cast. Beleth's Command then does 9 magick damage to each unit adjacent to caster. After other effects,<br>
+if caster does not already have Beleth's Command Effect, caster gets +1 to endurance and psyche for 5 turns at<br>
 level equal to caster psyche (on cast).<br>
 <br>
 <b>Summon Abilities</b><br>
