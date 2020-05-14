@@ -159,10 +159,11 @@ Effect. Lasts 3 turns at level 8.<br>
 Warrior: Attack: Agility versus agility to-hit. Strength versus endurance determines damage. Range 1, type melee.<br>
 Warrior: Leap: Move over obstacles to any square within range 3. Movement effects do not affect the range of Leap<br>
 unless specifically noted. Does not count as either an action or a move. Can only be used once per turn.<br>
-Shadow: Shadow Strike: Range 2-8. Agility versus dodge to-hit. Strength versus endurance determines damage. Type is<br> ranged.<br>
-Shadow: Dark Shroud: Target Warrior, Bard, Trickster, or Plaguebearer and all of the same within range 3 of the<br>
-target heal 2 spirit up to their max spirit and receive +1 dodge if they do not already have the effect. Lasts<br>
-3 turns at level 3.<br>
+Shadow: Shadow Strike: Range 2-8. Agility versus dodge to-hit. Strength versus endurance determines damage.<br>
+Type is ranged.<br>
+Shadow: Dark Shroud: Target Warrior, Bard, Trickster, or Plaguebearer and all other of all these types within range<br>
+of the target heal 2 spirit up to their max spirit and receive +1 dodge if they do not already have the effect.<br>
+Lasts 3 turns at level 3.<br>
 Shadow: Muddle: If target within range 4 fails psyche save, it gets muddle effect for 3 turns. At the end of turn,<br>
 the affected unit attacks itself using its own agility versus its own agility to-hit and its own strength and<br>
 endurance for determining damage with type of melee. Level 5.<br>
@@ -191,4 +192,12 @@ Plaguebearer: Contagion: Plaguebearers have an innate death effect that gives ea
 if it does not already have one. Contagion gives -3 to strength, endurance, agility, and dodge. Lasts 3 turns at<br>
 level 7. This is triggered the moment a plaguebearer is reduced to zero spirit.<br>
 <br>
-Coming soon: descriptions of enemy abilities, powerup spells/summons and Fakir Ali's spells already in game...
+Coming soon: descriptions of enemy abilities, powerup spells/summons and Fakir Ali's spells already in game...<br>
+<b>Fakir Ali Spells:<b><br>
+Cantrips:<b>
+Meditate: Caster gets +2 psyche and increase legal moves by range of 2 until next end of turn.<br>
+Boiling Blood: Target Warrior gets +5 strength and endurance reduced to 1 for 4 turns at level of caster psyche<br>
+(on cast). Later effects may increase endurance beyond 1.<br>
+Dark Sun: Target Shadow may use an action again if it already used an action this turn.<br>
+Arcane:<br>
+Mummify: 
