@@ -1,32 +1,29 @@
-# keep rev gen rate high but make them less powerful
+# make minotaur stomp movement always attempt to minimize dist between moved target and minotaur
 
-# check revenant ai, rev generation rate, rev move like flight
-# revs getting stuck because pathing follows blocked sqrs (path goes through blocked squares, starts in blocked squares)
+# continuously paralyzing ghost until kill on area 1 labyrinth will cause it to skip 2nd area / final death trigger
+
+# ghost willowisp kills an already burned ent, kill text flashes briefly, normal length +2 burn text
+
+# minotaur stomp dmg text, moves / not cleaned in time...
+
+# gravity affects minotaur
+
+# in minotaur move, lower legs below maptop...
+
+# minotaur shadow
 
 # dragon fix bottom on move, (bottom becomes large)
 # dragon level, at some point, lose the ability to click down on map, what coord is left click registering on bottom edge? probably hinges on moved_down/moved_right...
 
-# labyrinth, for every area that has been revealed, increase revenant generation rate
-
-# continuously paralyzing ghost until kill on area 1 labyrinth will cause it to skip 2nd area / final death trigger
-
-# summon with debuff spells, move atk def effects
-
-# pb gets more death trigger specialties, poison spines also?
-
 # speed up map melds (labyrinth)
-
-# ghost willowisp kills an already burned ent, kill text flashes briefly, normal length +2 burn text
-
-# stomp/earthquake, focus_square() on moved-to square
-
-# minotaur stomp dmg text, moves / not cleaned in time...
-
-# in minotaur move, lower legs below maptop...
 
 # drain life sound
 
 # save modifiers
+
+# summon with debuff spells, move atk def effects
+
+# pb gets more death trigger specialties, poison spines also?
 
 # enemy to dispel stuff...
 
@@ -34,21 +31,7 @@
 
 # pestilence, level on inner effects?
 
-# dragon follow retreat move
-# dragon move, make bot top
-# orc placement near entry?
-# effects see large ents, pestil etc...
-# dragon did not do iceblast after move then melee, cleanup melee text
-# after retreat dragon only moves a little...?
-
-# shadow strike vis, make wolf shadow
-
 # Global Effects change darkness global effects to resolve on legal_moves() and during apply_damage()
-
-# minotaur shadow
-# make stomp only psi push if it would reduce the dist btwn minotaur and tar, possibly always make a move that reduces dist
-# timing on stomp, get_focus timing for minotaur in general, when start turn, when start stomp
-# add stomp anims/vis/sound, also charge anims
 
 '''
 astar draft for multiple goals (precompute/save goal dist later)
@@ -108,14 +91,11 @@ def pathify(node):
     return path[::-1]
 '''
 
-# precompute distance between each point for each map...
+# precompute distance between each point for each map...?
 
 # astar needs to convert coords to nodes, choose f-vals among multiple goals...
 
 # multiple 'layers' of pathfinding starting with dist to each other, 
-
-# minotaur, when pursuing witch and path to witch is blocked by enemy (player controlled) units (no goal sqrs only) (path block is fine) (even one goal sqr when it is closest, natural goal sqr)
-# gravity affects minotaur
 
 # redo FA spells...
 
@@ -3643,6 +3623,7 @@ class Revenant(Summon):
     def revenant_move(self, ents_list, sqr):
         global selected
         selected = [self.number]
+        app.focus_square(sqr)
         effect1 = mixer.Sound('Sound_Effects/revenant_move.ogg')
         effect1.set_volume(1)
         sound_effects.play(effect1, 0)
@@ -3654,7 +3635,7 @@ class Revenant(Summon):
         end_sqr = sqr[:]
         total_distance = abs(x - endx) + abs(y - endy)
         # tic doesnt matter for circular image loop, would need to make flying_anims and switch to
-        tic = 30 #total_distance/9 # Magic Number debug, number of images for vis
+        tic = 60 #total_distance/9 # Magic Number debug, number of images for vis
         if x == endx:
             xstep = 0
             ystep = 10
@@ -3721,7 +3702,7 @@ class Revenant(Summon):
             root.after(1333, lambda el = ents_list, t = id : self.do_attack(el, t)) # EXIT THROUGH ATTACK
         else:
         # CANNOT ATTACK, EXIT FUNC
-            self.ai_end_turn(ents_list)
+            root.after(1333, lambda el = ents_list : self.ai_end_turn(el))
     
     def do_attack(self, ents_list, id):
         if self.attack_used == True:
