@@ -1,3 +1,8 @@
+# keep rev gen rate high but make them less powerful
+
+# check revenant ai, rev generation rate, rev move like flight
+# revs getting stuck because pathing follows blocked sqrs (path goes through blocked squares, starts in blocked squares)
+
 # dragon fix bottom on move, (bottom becomes large)
 # dragon level, at some point, lose the ability to click down on map, what coord is left click registering on bottom edge? probably hinges on moved_down/moved_right...
 
@@ -18,19 +23,6 @@
 # minotaur stomp dmg text, moves / not cleaned in time...
 
 # in minotaur move, lower legs below maptop...
-
-# minotaur move has cracks...
-
-# unbind all during map redraws... labyrinth
-
-# ghost area 1 trig, line 12351
-
-# test ghost move reducers more, fear/slow
-
-# move reducers (fear, slow) work, but see max move range among current (not ideal) legal_moves
-# can give each Ent .move_range but how would this interact with for example meditate...
-
-# wail can make something move farther than 2 if path exists to sqr w/i 2 but obstructed...prob fine
 
 # drain life sound
 
@@ -804,8 +796,6 @@ class Entity():
         if self.move_used == True:
             return
         app.depop_context(event = None)
-#         root.unbind('<a>')
-#         root.unbind('<q>')
         app.unbind_nonarrows()
         root.bind('<q>', self.cleanup_move)
         sqrs = self.legal_moves()
@@ -2333,8 +2323,6 @@ class Bard(Summon):
         app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Dispel Attempt\nAll Effects', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
         to_remove = []
         for k,v in app.ent_dict[id].effects_dict.items():
-            print('effect : ', k)
-            print('level : ', v.level)
             if v.dispel(0) == True:
                 to_remove.append(k)
         for k in to_remove:
@@ -2824,7 +2812,7 @@ class White_Dragon(Summon):
                 x -= 10
                 app.canvas.move(id, -10, 0)
                 app.canvas.move(id+'top', -10, 0)
-            if x < endx: 
+            elif x < endx: 
                 x += 10
                 app.canvas.move(id, 10, 0)
                 app.canvas.move(id+'top', 10, 0)
@@ -2832,7 +2820,7 @@ class White_Dragon(Summon):
                 y -= 10
                 app.canvas.move(id, 0, -10)
                 app.canvas.move(id+'top', 0, -10)
-            if y < endy: 
+            elif y < endy: 
                 y += 10
                 app.canvas.move(id, 0, 10)
                 app.canvas.move(id+'top', 0, 10)
@@ -3612,11 +3600,11 @@ class Revenant(Summon):
         self.actions = {'attack':self.do_attack}
         self.attack_used = False
         self.str = 4
-        self.agl = 6
-        self.end = 6
-        self.dodge = 6
+        self.agl = 5
+        self.end = 5
+        self.dodge = 5
         self.psyche = 7
-        self.spirit = 29
+        self.spirit = 16
         self.waiting = waiting
         self.move_type = 'ethereal'
         super().__init__(name, img, loc, owner, number)
@@ -3631,7 +3619,7 @@ class Revenant(Summon):
         else: # ATTEMPT ATTACK FROM STARTLOC
             self.continue_ai(ents_list)
             
-    # pathing different than most, egrid has no 'block' sqrs, can move 'through' obstacles
+    # has flight/ethereal move through obstacles
     def continue_ai(self, ents_list):
         atk_sqrs = self.legal_attacks()
         if atk_sqrs != []: # CAN ATTACK BEFORE MOVING
@@ -3639,68 +3627,84 @@ class Revenant(Summon):
             id = app.grid[any[0]][any[1]]
             root.after(666, lambda id = id : app.get_focus(id))
             root.after(1333, lambda el = ents_list, id = id : self.do_attack(el, id)) # ATTACK
-        else: # FIND PATH
+        else: # MOVE THEN TRY ATTACK
             enemy_locs = [v.loc for k,v in app.ent_dict.items() if v.owner != self.owner]
-            goals = [c for c in app.coords for el in enemy_locs if dist(c, el) <= 2 and app.grid[c[0]][c[1]] == '']
-            egrid = [[''] * (app.map_height//100) for i in range(app.map_width//100)]
-            path = bfs(self.loc[:], goals, egrid[:])
-            self.move_along_path(path, ents_list)
-                
-    # takes a list of coords, passes an estimate of the 'best' destination coord to self.ai_move
-    def move_along_path(self, path, ents_list):
-        moves = self.legal_moves()
-        if moves == []:
-            self.ai_end_turn(ents_list)
-        else:
-            moves_tups = [tuple(s) for s in moves]
-            path_tups = [tuple(s) for s in path]
-            intrsct = list(set(moves_tups) & set(path_tups))
-            if intrsct == []:
+            goals = [c for c in app.coords for el in enemy_locs if dist(c, el) <= 2]
+            # get closest goal sqr
+            goal = reduce(lambda a,b : a if dist(a, self.loc) < dist(b, self.loc) else b, goals)
+            moves = self.legal_moves()
+            if moves == []:
                 self.ai_end_turn(ents_list)
             else:
-                move = list(reduce(lambda a,b : a if dist(self.loc, a) > dist(self.loc, b) else b, intrsct))
-                root.after(666, lambda sqr = move : app.focus_square(sqr))
-                root.after(1333, lambda el = ents_list, sqr = move : self.revenant_move(el, sqr))
-    
-    def revenant_move(self, ents_list, endloc):
+                # get legal move sqr that minimizes dist to goal
+                move = reduce(lambda a,b : a if dist(a, goal) < dist(b, goal) else b, moves)
+                self.revenant_move(ents_list, move)
+            
+    def revenant_move(self, ents_list, sqr):
         global selected
+        selected = [self.number]
         effect1 = mixer.Sound('Sound_Effects/revenant_move.ogg')
         effect1.set_volume(1)
         sound_effects.play(effect1, 0)
-        id = self.number
         x = self.loc[0]*100+50-app.moved_right
         y = self.loc[1]*100+50-app.moved_down
-        endx = endloc[0]*100+50-app.moved_right
-        endy = endloc[1]*100+50-app.moved_down
+        endx = sqr[0]*100+50-app.moved_right
+        endy = sqr[1]*100+50-app.moved_down
         start_sqr = self.loc[:]
-        end_sqr = endloc[:]
-        selected = [self.number]
-        def move_loop(id, x, y, endx, endy, start_sqr, end_sqr):
-            if x % 25 == 0 or y % 25 == 0:
+        end_sqr = sqr[:]
+        total_distance = abs(x - endx) + abs(y - endy)
+        # tic doesnt matter for circular image loop, would need to make flying_anims and switch to
+        tic = 30 #total_distance/9 # Magic Number debug, number of images for vis
+        if x == endx:
+            xstep = 0
+            ystep = 10
+        elif y == endy:
+            xstep = 10
+            ystep = 0
+        else:
+            slope = Fraction(abs(x - endx), abs(y - endy))
+            # needs to be moving at least 10 pixels, xstep + ystep >= 10
+            xstep = slope.numerator
+            ystep = slope.denominator
+            while xstep + ystep < 10:
+                xstep *= 2
+                ystep *= 2
+        def flying_arc(x, y, endx, endy, start_sqr, end_sqr, acm, tic, xstep, ystep):
+            if acm >= tic:
+                acm = 0
                 self.rotate_image()
-                app.canvas.delete(id)
+                app.canvas.delete(self.tags)
                 app.canvas.create_image(x, y, image = self.img, tags = self.tags)
-                app.canvas.tag_lower((self.tags), 'maptop')
-                try: app.canvas.tag_lower((self.tags), 'large')
-                except: pass
             if x > endx:
-                x -= 10
-                app.canvas.move(id, -10, 0)
-            if x < endx: 
-                x += 10
-                app.canvas.move(id, 10, 0)
-            if y > endy: 
-                y -= 10
-                app.canvas.move(id, 0, -10)
-            if y < endy: 
-                y += 10
-                app.canvas.move(id, 0, 10)
-            app.canvas.tag_raise('cursor')
-            if x == endx and y == endy:
-                self.finish_move(id, end_sqr, start_sqr, ents_list) # EXIT
+                acm += xstep
+                x -= xstep
+                self.rotate_image()
+                app.canvas.delete(self.tags)
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+            elif x < endx:
+                acm += xstep
+                x += xstep
+                self.rotate_image()
+                app.canvas.delete(self.tags)
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+            if y > endy:
+                acm += ystep
+                y -= ystep
+                self.rotate_image()
+                app.canvas.delete(self.tags)
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+            elif y < endy:
+                acm += ystep
+                y += ystep
+                self.rotate_image()
+                app.canvas.delete(self.tags)
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+            if abs(x - endx) < 13 and abs(y - endy) < 13:
+                self.finish_move(self.number, end_sqr, start_sqr, ents_list)
             else: # CONTINUE LOOP
-                root.after(66, lambda id = id, x = x, y = y, e = endx, e2 = endy, s = start_sqr, s2 = end_sqr : move_loop(id, x, y, e, e2, s, s2))
-        move_loop(id, x, y, endx, endy, start_sqr, end_sqr)
+                root.after(66, lambda x = x, y = y, e = endx, e2 = endy, s = start_sqr, s2 = end_sqr, acm = acm, tic = tic, xs = xstep, ys = ystep : flying_arc(x, y, e, e2, s, s2, acm, tic, xs, ys))
+        flying_arc(x, y, endx, endy, start_sqr, end_sqr, tic+1, tic, xstep, ystep)
+            
             
     def finish_move(self, id, end_sqr, start_sqr, ents_list):
         global selected
@@ -12286,13 +12290,8 @@ class App(tk.Frame):
             # DEBUG should not be map trigger, happen only once per turn
             def generate_revenants():
                 if self.turn_counter % 4 == 0:
-                    # get empty sqr near
-#                     empty_sqrs = [s for s in app.coords if app.grid[s[0]][s[1]] == '' and dist([24,4], s) <= 3]
-#                     if empty_sqrs != []:
-#                         loc = choice(empty_sqrs)
                     if app.grid[24][4] == '':
                         img = ImageTk.PhotoImage(Image.open('summon_imgs/Revenant.png'))
-#                         enemy_ents = [k for k,v in app.ent_dict.items() if v.owner == 'p2']
                         # needs to be unique number
                         counter = self.effects_counter+3 # seed with 3 to prevent collision existing Ents
                         self.effects_counter += 3
@@ -12384,6 +12383,7 @@ class App(tk.Frame):
             background_music.play(sound1, -1)
             sound1.set_volume(0.3)
             self.map_triggers = []
+            self.revenant_rate = 0
 #             def summon_trick():
 #                 all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
 #                 if 'Bard' in all:
@@ -12399,6 +12399,7 @@ class App(tk.Frame):
             def area_sixteen():
                 if app.ent_dict[app.p1_witch].loc in [[13,16],[13,17],[13,18],[13,19],[13,20]]:
                     app.unbind_all()
+                    self.revenant_rate += 1
                     coords = [[14,16],[14,17],[15,16],[15,17],[16, 16], [17, 16], [18, 16], [19, 16], [20, 16], [21, 16], [22, 16], [23, 16], [24, 16], [25, 16], [26, 16], [27, 16],[27,17],[27,18],[27,19],[27,20],[27,21],[26,21],[25,21],[25,20],[25,19],[17, 19], [18, 19], [19, 19], [20, 19], [21, 19], [22, 19], [23, 19], [24, 19],[14, 20], [15, 20], [16, 20], [17, 20], [18, 20], [19, 20]]
                     for c in coords:
                         app.grid[c[0]][c[1]] = ''
@@ -12424,10 +12425,10 @@ class App(tk.Frame):
             # add revenants or revenant generation...
             # 29,26 and 31,30 add trig to summon revs on turn 2
             # certain areas, once revealed, generate revenants every N turns, area 1 (start area), area 4 at 30,8, area 15 at 30, 34 and 32, 24, other revs are only placed and not generated/summoned
-            # revs at 
             def area_fifteen():
                 if app.ent_dict[app.p1_witch].loc in [[5,37],[4,37]]:
                     app.unbind_all()
+                    self.revenant_rate += 1
                     coords = [[6, 37], [7, 37], [8, 37], [9, 37], [10, 37], [11, 37], [12, 37], [13, 37], [14, 37], [15, 37], [16, 37], [17, 37], [18, 37], [19, 37], [20, 37], [21, 37], [22, 37], [23, 37], [24, 37], [25, 37], [26, 37], [27, 37], [28, 37], [29, 37], [30, 37], [31, 37], [32, 37],[24, 36], [25, 36], [26, 36], [27, 36], [28, 36], [29, 36], [30, 36], [31, 36], [32, 36], [33, 36], [34, 36], [35, 36], [36, 36], [37, 36], [38, 36],[24, 35], [25, 35], [26, 35], [27, 35], [28, 35], [29, 35], [30, 35], [31, 35], [32, 35], [33, 35], [34, 35], [34, 34], [34, 37], [35, 34], [36, 34], [36, 37], [35, 37], [38, 34], [38, 37], [35, 35], [36, 35], [37, 35], [38, 35],[24, 34], [25, 34], [26, 34], [27, 34], [28, 34], [29, 34], [30, 34], [31, 34], [32, 34]]
                     for c in coords:
                         app.grid[c[0]][c[1]] = ''
@@ -12450,12 +12451,28 @@ class App(tk.Frame):
                     app.grid[35][35] = 'b2'
                     app.ent_dict['b2'] = Ghost(name = 'Ghost', img = img, loc = [35,35], owner = 'p2', number = 'b2')
                     app.canvas.create_image(3550-app.moved_right, 3550-app.moved_down, image = app.ent_dict['b2'].img, tags = 'b2')
+                    # PLACE SPARKLE
+                    app.vis_dict['Sparkle1'] = Vis(name = 'Sparkle', loc = [35,34])
+                    app.canvas.create_image(3500+50-app.moved_right, 3400+50-app.moved_down, image = app.vis_dict['Sparkle1'].img, tags = 'Sparkle1')
+                    def read_book():
+                        loc = app.ent_dict[app.p1_witch].loc[:]
+                        if loc == [35,34]:
+                            del app.vis_dict['Sparkle1']
+                            app.canvas.delete('Sparkle1')
+                            app.unbind_all()
+                            self.book21 = tk.Button(root, text = 'Read Book', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.read_21_book)
+                            app.canvas.create_window(3500-app.moved_right, 3400-app.moved_down, window = self.book21)
+                            self.book21_cancel = tk.Button(root, text = 'Leave Alone', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.cancel_21_book)
+                            app.canvas.create_window(3500-app.moved_right+25, 3400-app.moved_down+33, window = self.book21_cancel)
+                            self.map_triggers.remove(read_book)
+                    self.map_triggers.append(read_book)
                     if app.active_player == 'p1':
                         app.rebind_all()
             
             def area_fourteen():
                 if app.ent_dict[app.p1_witch].loc in [[7,24],[6,24]]:
                     app.unbind_all()
+                    self.revenant_rate += 1
                     coords = [[7,25],[7, 26], [7, 27], [7, 28], [7, 29], [7, 30], [7, 31],[8, 30], [9, 30], [10, 30], [11, 30], [12, 30], [13, 30], [14, 30], [15, 30], [16, 30], [17, 30], [18, 30], [19, 30], [20, 30], [21, 30], [22, 30], [23, 30], [24, 30],[8, 31], [9, 31], [10, 31], [11, 31], [12, 31], [13, 31], [14, 31], [15, 31], [16, 31], [17, 31], [18, 31], [19, 31], [20, 31], [21, 31], [22, 31], [23, 31], [24, 31],[22,32],[22,33],[7, 34], [8, 34], [9, 34], [10, 34], [11, 34], [12, 34], [13, 34], [14, 34], [15, 34], [16, 34], [17, 34], [18, 34], [19, 34], [20, 34], [21, 34], [22, 34]]
                     for c in coords:
                         app.grid[c[0]][c[1]] = ''
@@ -12480,6 +12497,7 @@ class App(tk.Frame):
             def area_thirteen():
                 if app.ent_dict[app.p1_witch].loc in [[1,24],[1,23]]:
                     app.unbind_all()
+                    self.revenant_rate += 1
                     self.map_triggers.append(area_fifteen)
                     coords = [[1,25],[1,26],[1,27],[1,28],[2,27],[2,28],[3,27],[3,28],[4,27],[4,28],[5,27],[5,28],[5, 29], [5, 30], [5, 31], [5, 32], [5, 33], [5, 34], [5, 35], [5, 36], [5, 37],[4, 33], [4, 34], [4, 35], [4, 36], [4, 37],[3, 31], [3, 32], [3, 33], [3, 34], [3, 35], [3, 36], [3, 37],[2, 31], [2, 32], [2, 33], [2, 34], [2, 35], [2, 36], [2, 37],[1, 31], [1, 32], [1, 33], [1, 34], [1, 35], [1, 36], [1, 37]]
                     for c in coords:
@@ -12505,6 +12523,7 @@ class App(tk.Frame):
             def area_twelve():
                 if app.ent_dict[app.p1_witch].loc in [[12,20],[11,20],[4,19],[5,19],[6,19],[5,13],[5,12]]:
                     app.unbind_all()
+                    self.revenant_rate += 1
                     self.map_triggers.append(area_fourteen)
                     coords = [[4,13],[3,13],[2,13],[1,13],[1, 14], [1, 15], [1, 16], [1, 17], [1, 18], [1, 19], [1, 20], [1, 21], [1, 22], [1, 23], [1, 24],[3, 13], [3, 14], [3, 15], [3, 16], [3, 17], [3, 18], [3, 19], [3, 20], [3, 21], [3, 22], [3, 23], [3, 24],[4,24],[5,24],[5,23],[5,22],[6,22],[6,23],[6,24],[7,22],[7,23],[7,24],[8,23],[8,22],[9,23],[9,22],[10,23],[10,22],[11,23],[11,22],[12,23],[12,22],[11,21],[12,21]]
                     for c in coords:
@@ -12533,6 +12552,7 @@ class App(tk.Frame):
             def area_eleven(alt = False):
                 if app.ent_dict[app.p1_witch].loc in [[14,11],[14,12],[14,13]] or alt == True:
                     app.unbind_all()
+                    self.revenant_rate += 1
                     self.map_triggers.append(area_sixteen)
                     coords = [[13,11],[13,12],[13,13],[12,11],[12,12],[12,13],[11,11],[11,12],[11,13],[11, 14], [11, 15], [11, 16], [11, 17], [11, 18], [11, 19], [11, 20],[12,18],[12,19],[12,20],[13,16],[13,17],[13,18],[13,19],[13,20],[10,15],[9,15],[9,16],[9,17],[9,18],[9,19],[8,19],[7,19],[6,19],[5,19],[10,11],[10,12],[9,11],[9,12],[8,11],[8,12],[7,11],[7,12],[7,13],[7,14],[7,15],[7,16],[6,16],[5,16],[4,19]]
                     for c in coords:
@@ -12558,6 +12578,7 @@ class App(tk.Frame):
             def area_ten():
                 if app.ent_dict[app.p1_witch].loc in [[16,9],[16,10],[4,13],[3,13]]:
                     app.unbind_all()
+                    self.revenant_rate += 1
                     coords = [[5, 8], [6, 8], [7, 8], [8, 8], [9, 8], [10, 8], [11, 8], [12, 8], [13, 8], [14, 8], [15, 8], [16, 8],[5,9],[5,10],[5,11],[5,12],[5,13]]
                     for c in coords:
                         app.grid[c[0]][c[1]] = ''
@@ -12582,6 +12603,7 @@ class App(tk.Frame):
             def area_nine():
                 if app.ent_dict[app.p1_witch].loc in [[3,5],[4,5]]:
                     app.unbind_all()
+                    self.revenant_rate += 1
                     coords = [[3,6],[3,7],[3,8],[3,9],[3,10],[2,10],[1,10],[1,2],[1,3],[1,4],[1,5],[1,6],[1,7],[1,8],[1,9],[2,2],[3,2],[4,2]]
                     for c in coords:
                         app.grid[c[0]][c[1]] = ''
@@ -12599,17 +12621,13 @@ class App(tk.Frame):
                     self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_top, tags = ('map','maptop'))
                     app.canvas.tag_lower('mapbottom')
                     self.map_triggers.remove(area_nine)
-#                     img = ImageTk.PhotoImage(Image.open('summon_imgs/Revenant.png'))
-#                     app.ent_dict['b7'] = Revenant(name = 'Revenant', img = img, loc =[21,5], owner = 'p2', number = 'b7')
-#                     app.grid[21][5] = 'b7'
-#                     app.ent_dict['b8'] = Revenant(name = 'Revenant', img = img, loc =[20,6], owner = 'p2', number = 'b8')
-#                     app.grid[20][6] = 'b8'
                     if app.active_player == 'p1':
                         app.rebind_all()
 #             
             def area_eight():
                 if app.ent_dict[app.p1_witch].loc in [[24,9],[24,10]]:
                     app.unbind_all()
+                    self.revenant_rate += 1
                     self.map_triggers.append(area_nine)
                     coords = [[18, 8], [19, 8], [20, 8], [21, 8], [22, 8], [23, 8], [24, 8],[18,7],[18,6],[18,5],[3, 5], [4, 5], [5, 5], [6, 5], [7, 5], [8, 5], [9, 5], [10, 5], [11, 5], [12, 5], [13, 5], [14, 5], [15, 5], [16, 5],[17,5]]
                     for c in coords:
@@ -12628,16 +12646,13 @@ class App(tk.Frame):
                     self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_top, tags = ('map','maptop'))
                     app.canvas.tag_lower('mapbottom')
                     self.map_triggers.remove(area_eight)
-#                     img = ImageTk.PhotoImage(Image.open('summon_imgs/Revenant.png'))
-#                     app.ent_dict['b5'] = Revenant(name = 'Revenant', img = img, loc =[9,8], owner = 'p2', number = 'b5')
-#                     app.grid[9][8] = 'b5'
                     if app.active_player == 'p1':
                         app.rebind_all()
-
-#             
+                        
             def area_seven():
                 if app.ent_dict[app.p1_witch].loc in [[26,9],[26,10]]:
                     app.unbind_all()
+                    self.revenant_rate += 1
                     coords = [[26,8],[26,7],[26,6],[26,5],[25,5],[24,5],[23,5],[22,5],[21,5],[20,5]]
                     for c in coords:
                         app.grid[c[0]][c[1]] = ''
@@ -12661,7 +12676,8 @@ class App(tk.Frame):
             def area_six():
                 if app.ent_dict[app.p1_witch].loc in [[38,2],[37,2]]:
                     app.unbind_all()
-                    coords = [[6, 2], [7, 2], [8, 2], [9, 2], [10, 2], [11, 2], [12, 2], [13, 2], [14, 2], [15, 2], [16, 2], [17, 2], [18, 2], [19, 2], [20, 2], [21, 2], [22, 2], [23, 2], [24, 2], [25, 2], [26, 2], [27, 2], [28, 2], [29, 2], [30, 2], [31, 2], [32, 2], [33, 2], [34, 2], [35, 2], [36, 2]]
+                    self.revenant_rate += 1
+                    coords = [[7, 2], [8, 2], [9, 2], [10, 2], [11, 2], [12, 2], [13, 2], [14, 2], [15, 2], [16, 2], [17, 2], [18, 2], [19, 2], [20, 2], [21, 2], [22, 2], [23, 2], [24, 2], [25, 2], [26, 2], [27, 2], [28, 2], [29, 2], [30, 2], [31, 2], [32, 2], [33, 2], [34, 2], [35, 2], [36, 2]]
                     for c in coords:
                         app.grid[c[0]][c[1]] = ''
                     top = Image.open('1_player_map_fog/map21/6_top.png')
@@ -12677,6 +12693,21 @@ class App(tk.Frame):
                     self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_bottom, tags = ('map','mapbottom'))
                     self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_top, tags = ('map','maptop'))
                     app.canvas.tag_lower('mapbottom')
+                    # PLACE SPARKLE
+                    app.vis_dict['Sparkle2'] = Vis(name = 'Sparkle', loc = [7,2])
+                    app.canvas.create_image(700+50-app.moved_right, 200+50-app.moved_down, image = app.vis_dict['Sparkle2'].img, tags = 'Sparkle2')
+                    def open_chest():
+                        loc = app.ent_dict[app.p1_witch].loc[:]
+                        if loc == [7,2]:
+                            del app.vis_dict['Sparkle2']
+                            app.canvas.delete('Sparkle2')
+                            app.unbind_all()
+                            self.chest21 = tk.Button(root, text = 'Open Chest', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.open_21_chest)
+                            app.canvas.create_window(700-app.moved_right, 200-app.moved_down, window = self.chest21)
+                            self.chest21_cancel = tk.Button(root, text = 'Leave Alone', font = ('chalkduster', 18), highlightbackground = 'black', fg = 'indianred', command = self.cancel_21_chest)
+                            app.canvas.create_window(700-app.moved_right+25, 200-app.moved_down+33, window = self.chest21_cancel)
+                            self.map_triggers.remove(open_chest)
+                    self.map_triggers.append(open_chest)
                     self.map_triggers.remove(area_six)
                     if app.active_player == 'p1':
                         app.rebind_all()
@@ -12684,6 +12715,7 @@ class App(tk.Frame):
             def area_five():
                 if app.ent_dict[app.p1_witch].loc in [[38,22],[38,23]]:
                     app.unbind_all()
+                    self.revenant_rate += 1
                     self.map_triggers.append(area_six)
                     coords = [[38, 2], [38, 3], [38, 4], [38, 5], [38, 6], [38, 7], [38, 8], [38, 9], [38, 10], [38, 11], [38, 12], [38, 13], [38, 14], [38, 15], [38, 16], [38, 17], [38, 18], [38, 19], [38, 20], [38, 21],[37,2]]
                     for c in coords:
@@ -12709,6 +12741,7 @@ class App(tk.Frame):
             def area_four():
                 if app.ent_dict[app.p1_witch].loc in [[35,22],[35,23]]:
                     app.unbind_all()
+                    self.revenant_rate += 1
                     coords = [[35, 7], [35, 8], [35, 9], [35, 10], [35, 11], [35, 12], [35, 13], [35, 14], [35, 15], [35, 16], [35, 17], [35, 18], [35, 19], [35, 20], [35, 21],[29,7],[30,7],[31,7],[32,7],[33,7],[34,7],[29,8],[30,8],[31,8],[32,8],[33,8],[34,8]]
                     for c in coords:
                         app.grid[c[0]][c[1]] = ''
@@ -12726,9 +12759,6 @@ class App(tk.Frame):
                     self.canvas.create_image(0-app.moved_right, 0-app.moved_down, anchor = 'nw', image = self.map_top, tags = ('map','maptop'))
                     app.canvas.tag_lower('mapbottom')
                     self.map_triggers.remove(area_four)
-#                     img = ImageTk.PhotoImage(Image.open('summon_imgs/Revenant.png'))
-#                     app.ent_dict['b4'] = Revenant(name = 'Revenant', img = img, loc =[9,5], owner = 'p2', number = 'b4')
-#                     app.grid[9][5] = 'b4'
                     if app.active_player == 'p1':
                         app.rebind_all()
             self.map_triggers.append(area_four)
@@ -12736,6 +12766,7 @@ class App(tk.Frame):
             def area_three():
                 if app.ent_dict[app.p1_witch].loc in [[33,22],[33,23]]:
                     app.unbind_all()
+                    self.revenant_rate += 1
                     coords = [[33,21],[33,20],[33,19],[33,18],[33,17],[33,16],[33,15],[33,14],[33,13],[33,12]]
                     for c in coords:
                         app.grid[c[0]][c[1]] = ''
@@ -12760,6 +12791,7 @@ class App(tk.Frame):
             def area_two():
                 if app.ent_dict[app.p1_witch].loc in [[29,22],[30,22],[31,22]]:
                     app.unbind_all()
+                    self.revenant_rate += 1
                     self.map_triggers.append(area_seven)
                     self.map_triggers.append(area_eight)
                     coords = [[29,21],[30,21],[31,21],[29,20],[30,20],[31,20],[29,19],[30,19],[31,19],[29,18],[30,18],[31,18],[29,17],[30,17],[31,17],[29,16],[30,16],[31,16],[29,15],[30,15],[31,15],[29,14],[30,14],[31,14],[29,13],[30,13],[31,13],[29,12],[30,12],[31,12],[28,12],[28,13],[27,12],[27,13],[26,12],[26,13],[25,12],[25,13],[24,12],[24,13],[23,12],[23,13],[22,12],[22,13],[21,12],[21,13],[20,12],[20,13],[19,12],[19,13],[18,12],[18,13],[17,12],[17,13],[16,12],[16,13],[15,12],[15,13],[14,12],[14,13],[16,11],[17,11],[18,11],[19,11],[20,11],[21,11],[22,11],[16,10],[16,9],[14,11],[24,11],[24,10],[24,9],[26,11],[26,10],[26,9]]
@@ -12784,6 +12816,7 @@ class App(tk.Frame):
             self.map_triggers.append(area_two)
             
             self.load_intro_scene(map_number, protaganist_object = protaganist_object)
+            
         elif map_number == 22:
             sound1 = mixer.Sound('Music/Dark_Amulet.ogg')
             background_music.play(sound1, -1)
@@ -13288,7 +13321,8 @@ class App(tk.Frame):
     def read_21_book(self):
         loc = app.ent_dict[app.p1_witch].loc[:]
         app.ent_dict[app.p1_witch].arcane_dict['Vengeance'] = (app.ent_dict[app.p1_witch].vengeance, 13)
-        app.canvas.create_text(loc[0]*100-app.moved_right, loc[1]*100-app.moved_down+85, text = 'Arcane Spell\n-VENGEANCE-\nLearned', justify = 'center', font = ('Andale Mono', 16), fill = 'white', tags = 'text')
+        app.canvas.create_text(loc[0]*100-app.moved_right-1, loc[1]*100-app.moved_down+84, text = 'Arcane Spell\n-VENGEANCE-\nLearned', justify = 'center', font = ('Andale Mono', 16), fill = 'black', tags = 'text')
+        app.canvas.create_text(loc[0]*100-app.moved_right, loc[1]*100-app.moved_down+85, text = 'Arcane Spell\n-VENGEANCE-\nLearned', justify = 'center', font = ('Andale Mono', 16), fill = 'antiquewhite3', tags = 'text')
         root.after(2999, lambda t = 'text' : app.canvas.delete(t))
         self.cancel_21_book()
         
@@ -13297,17 +13331,18 @@ class App(tk.Frame):
         self.book21_cancel.destroy()
         app.rebind_all()
     
-    def open_chest21_1(self):
+    def open_21_chest(self):
         loc = app.ent_dict[app.p1_witch].loc[:]
-        app.canvas.create_text(loc[0]*100-app.moved_right, loc[1]*100-app.moved_down+85, text = 'Amulet of Circe\nPermanent +1 Psyche', justify = 'center', font = ('Andale Mono', 16), fill = 'white', tags = 'text')
+        app.canvas.create_text(loc[0]*100-app.moved_right-1, loc[1]*100-app.moved_down+84, text = 'Amulet of Circe\nPermanent +1 Psyche', justify = 'center', font = ('Andale Mono', 16), fill = 'black', tags = 'text')
+        app.canvas.create_text(loc[0]*100-app.moved_right, loc[1]*100-app.moved_down+85, text = 'Amulet of Circe\nPermanent +1 Psyche', justify = 'center', font = ('Andale Mono', 16), fill = 'antiquewhite3', tags = 'text')
         app.ent_dict[app.p1_witch].psyche += 1
         app.ent_dict[app.p1_witch].base_psyche += 1
         root.after(2999, lambda t = 'text' : app.canvas.delete(t))
-        self.cancel_chest1()
+        self.cancel_21_chest()
         
-    def cancel_chest1(self):
-        self.chest21_1.destroy()
-        self.chest21_1_cancel.destroy()
+    def cancel_21_chest(self):
+        self.chest21.destroy()
+        self.chest21_cancel.destroy()
         app.rebind_all()
     
     def read_121_book(self):
@@ -13726,9 +13761,28 @@ class App(tk.Frame):
                     else:
                         self.ent_dict[ent].do_ai(ents)
         
+    # adding end of turn effects for LEVELS for 1 player...
     def end_turn(self):
         self.unbind_all()
         self.depop_context(event = None)
+        # ADD EOT effects for single player levels
+        if app.num_players == 1:
+            if app.ent_dict[app.p1_witch].current_area == 21: #LABYRINTH
+                # generate revenants based on app.revenant_rate, starts at 2
+                if app.active_player == 'p1':
+                    for i in range(min(2, app.revenant_rate//2)):
+                        img = ImageTk.PhotoImage(Image.open('summon_imgs/Revenant.png'))
+                        if self.effects_counter < 3: # prevent collision with existing ents
+                            self.effects_counter += 3
+                        counter = self.effects_counter
+                        self.effects_counter += 1
+                        id = 'b' + str(counter)
+                        # get rand empty sqr
+                        sqrs = [s for s in app.coords if app.grid[s[0]][s[1]] == '']
+                        sqr = choice(sqrs)
+                        app.grid[sqr[0]][sqr[1]] = id
+                        app.ent_dict[id] = Revenant(name = 'Revenant', img = img, loc = sqr[:], owner = 'p2', number = id)
+        
         # first do EOT loop, rest of this becomes finish_end_turn()
         # get list of all ents, pass in first ent, loop pops front and calls 
         # handle global effects
@@ -14600,7 +14654,6 @@ class App(tk.Frame):
         app.focus_square([x,y])
         
     def debugger(self, event):
-        print(app.ent_dict[app.p1_witch].current_area)
         app.ent_dict[app.p1_witch].move_used = False
 #         for b in self.context_buttons:
 #             print(b)
