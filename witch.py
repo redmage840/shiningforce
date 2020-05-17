@@ -1,10 +1,4 @@
-# make minotaur stomp movement always attempt to minimize dist between moved target and minotaur
-
-# continuously paralyzing ghost until kill on area 1 labyrinth will cause it to skip 2nd area / final death trigger
-
 # ghost willowisp kills an already burned ent, kill text flashes briefly, normal length +2 burn text
-
-# minotaur stomp dmg text, moves / not cleaned in time...
 
 # minotaur shadow
 
@@ -8134,6 +8128,7 @@ class Minotaur(Summon):
         return sqrs
         
     # all non-flying ents w/i range 8 take 8-dist(self.loc,id.loc) and are moved randomly (psi-push)
+    # changing to 'pull' ents towards minotaur, move to sqr that minimizes dist between
     def stomp(self, ents_list):
         app.focus_square(self.loc)
         def stomp_sound():
@@ -8174,42 +8169,16 @@ class Minotaur(Summon):
                     earthquake_loop(ents_list, ids)
                 else: # ENT NOT KILLED, INSERT PSI PUSH
                     start_loc = app.ent_dict[id].loc[:]
-                    rando = randrange(1,5)
-                    if rando == 1:
-                        if [start_loc[0]-1,start_loc[1]] in app.coords and app.grid[start_loc[0]-1][start_loc[1]] == '':
-                            if [start_loc[0]-2,start_loc[1]] in app.coords and app.grid[start_loc[0]-2][start_loc[1]] == '':
-                                dest = [start_loc[0]-2,start_loc[1]]
-                            else:
-                                dest = [start_loc[0]-1,start_loc[1]]
+                    # recursively check adj sqr of ent that minimizes dist from minotaur
+                    sqr = reduce(lambda a,b : a if dist(a, self.loc) < dist(b, self.loc) else b, [s for s in app.coords if dist(start_loc, s) == 1])
+                    if app.grid[sqr[0]][sqr[1]] == '':
+                        sqr2 = reduce(lambda a,b : a if dist(a, self.loc) < dist(b, self.loc) else b, [s for s in app.coords if dist(sqr, s) == 1])
+                        if app.grid[sqr2[0]][sqr[1]] == '':
+                            dest = sqr2
                         else:
-                            dest = start_loc[:]
-                    # RIGHT
-                    elif rando == 2:
-                        if [start_loc[0]+1,start_loc[1]] in app.coords and app.grid[start_loc[0]+1][start_loc[1]] == '':
-                            if [start_loc[0]+2,start_loc[1]] in app.coords and app.grid[start_loc[0]+2][start_loc[1]] == '':
-                                dest = [start_loc[0]+2,start_loc[1]]
-                            else:
-                                dest = [start_loc[0]+1,start_loc[1]]
-                        else:
-                            dest = start_loc[:]
-                    # UP
-                    elif rando == 3:
-                        if [start_loc[0],start_loc[1]-1] in app.coords and app.grid[start_loc[0]][start_loc[1]-1] == '':
-                            if [start_loc[0],start_loc[1]-2] in app.coords and app.grid[start_loc[0]][start_loc[1]-2] == '':
-                                dest = [start_loc[0],start_loc[1]-2]
-                            else:
-                                dest = [start_loc[0],start_loc[1]-1]
-                        else:
-                            dest = start_loc[:]
-                    # DOWN
-                    elif rando == 4:
-                        if [start_loc[0],start_loc[1]+1] in app.coords and app.grid[start_loc[0]][start_loc[1]+1] == '':
-                            if [start_loc[0],start_loc[1]+2] in app.coords and app.grid[start_loc[0]][start_loc[1]+2] == '':
-                                dest = [start_loc[0],start_loc[1]+2]
-                            else:
-                                dest = [start_loc[0],start_loc[1]+1]
-                        else:
-                            dest = start_loc[:]
+                            dest = sqr
+                    else:
+                        dest = start_loc[:]
                     # end destination logic
                     x = start_loc[0]*100+50-app.moved_right
                     y = start_loc[1]*100+50-app.moved_down
@@ -8223,6 +8192,7 @@ class Minotaur(Summon):
                             app.ent_dict[tar].loc = end_loc[:]
                             app.grid[start_loc[0]][start_loc[1]] = ''
                             app.grid[end_loc[0]][end_loc[1]] = tar
+                            root.after(1888, lambda t = 'text' : app.canvas.delete(t))
                             root.after(1999, lambda el = ents_list, ids = ids : earthquake_loop(el, ids))
                         def psi_move_loop(ent, x, y, endx, endy, sqr, start_sqr):
                             if x % 25 == 0 and y % 25 == 0:
