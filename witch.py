@@ -6,10 +6,6 @@
 
 # minotaur stomp dmg text, moves / not cleaned in time...
 
-# gravity affects minotaur
-
-# in minotaur move, lower legs below maptop...
-
 # minotaur shadow
 
 # dragon fix bottom on move, (bottom becomes large)
@@ -20,6 +16,8 @@
 # drain life sound
 
 # save modifiers
+
+# turn off music/animations
 
 # summon with debuff spells, move atk def effects
 
@@ -377,7 +375,7 @@ def to_hit(a1, a2):
         
 # add random element?
 def damage(a1, a2):
-    base = 5
+    base = 4
     dif = a1 - a2
     if base + dif < 1: return 1 
     else: return base + dif
@@ -2325,7 +2323,7 @@ class Bard(Summon):
             return
         app.depop_context(event = None)
         root.bind('<q>', self.cleanup_moonlight)
-        sqrs = [s for s in app.coords if dist(self.loc, s) <= 2]
+        sqrs = [s for s in app.coords if 1 <= dist(self.loc, s) <= 3]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_moonlight(event = e, s = s, sqrs = sqrs))
         b = tk.Button(app.context_menu, text = 'Choose Target For Moonlight', wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_moonlight(e, s, sqrs))
@@ -3276,6 +3274,7 @@ class Ghost(Summon):
         if self.waiting == True: # DO NOT MOVE TOWARDS OR ATTACK UNTIL TRIGGER
             self.pass_priority(ents_list)
         elif app.ent_dict[app.p1_witch].current_area == 21 and self.times_retreated == 0 and self.spirit < 50:
+            app.map_triggers.remove(ghost_death)
             self.times_retreated += 1
             # erase from map / ent_dict, place map_trigger to watch 1,2 2,2 3,2
             for k,v in app.ent_dict['b2'].effects_dict.items():
@@ -3303,10 +3302,10 @@ class Ghost(Summon):
                     app.grid[loc[0]][loc[1]] = 'b2'
                     app.canvas.create_image(loc[0]*100+50-app.moved_right, loc[1]*100+50-app.moved_down, image = app.ent_dict['b2'].img, tags = 'b2')
                     # create ghost death/victory trigger
-                    def ghost_death():
+                    def ghost_death2():
                         if 'b2' not in app.ent_dict.keys():
                             return 'victory'
-                    app.map_triggers.append(ghost_death)
+                    app.map_triggers.append(ghost_death2)
                     app.map_triggers.remove(ghosty)
             ghosty = partial(ghost_area2, ghost)
             app.map_triggers.append(ghosty)
@@ -8294,7 +8293,7 @@ class Warrior(Summon):
         self.agl = 6
         self.end = 5
         self.dodge = 3
-        self.psyche = 2
+        self.psyche = 3
         self.spirit = 25
         self.move_type = 'charge'
         self.leap_used = False
@@ -11146,6 +11145,8 @@ class Witch(Entity):
         effs = [v.name for k,v in app.ent_dict[id].effects_dict.items()]
         if 'Gravity' in effs:
             return
+        if app.ent_dict[id].immovable == True:
+            return
         self.magick -= self.arcane_dict['Gravity'][1]
         effect1 = mixer.Sound('Sound_Effects/gravity.ogg')
         effect1.set_volume(.9)
@@ -12432,6 +12433,12 @@ class App(tk.Frame):
                     app.grid[35][35] = 'b2'
                     app.ent_dict['b2'] = Ghost(name = 'Ghost', img = img, loc = [35,35], owner = 'p2', number = 'b2')
                     app.canvas.create_image(3550-app.moved_right, 3550-app.moved_down, image = app.ent_dict['b2'].img, tags = 'b2')
+                    # FIRST GHOST DEATH TRIG, in case it dies before teleporting (should be removed before
+                    # second area routine in ghost ai 
+                    def ghost_death():
+                        if 'b2' not in app.ent_dict.keys():
+                            return 'victory'
+                    app.map_triggers.append(ghost_death)
                     # PLACE SPARKLE
                     app.vis_dict['Sparkle1'] = Vis(name = 'Sparkle', loc = [35,34])
                     app.canvas.create_image(3500+50-app.moved_right, 3400+50-app.moved_down, image = app.vis_dict['Sparkle1'].img, tags = 'Sparkle1')
@@ -13751,7 +13758,7 @@ class App(tk.Frame):
             if app.ent_dict[app.p1_witch].current_area == 21: #LABYRINTH
                 # generate revenants based on app.revenant_rate, starts at 2
                 if app.active_player == 'p1':
-                    for i in range(min(2, app.revenant_rate//2)):
+                    for i in range(min(2, app.revenant_rate//3)):
                         img = ImageTk.PhotoImage(Image.open('summon_imgs/Revenant.png'))
                         if self.effects_counter < 3: # prevent collision with existing ents
                             self.effects_counter += 3
