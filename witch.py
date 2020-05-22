@@ -1,9 +1,17 @@
-# ghost willowisp kills an already burned ent, kill text flashes briefly, normal length +2 burn text
+# update elementals / mages pathing/ai
+
+# move reducers (fear, slow), debug when max range is inhibited by obstacles
+
+# white dragon flight anims, ascend flight descend
+# dragon level, at some point, lose the ability to click down on map, what coord is left click registering on bottom edge? probably hinges on moved_down/moved_right...
+
+# every text object not tagged as 'text' is not raised above cursor
+
+# all text objects should be changed, tags should be tuple with unique name and 'text' like ('burn', 'text')
+# this way they can all be raised above other objects in animate(), but cleaned up specifically by name (each creation handles its 
+# own cleanup
 
 # minotaur shadow
-
-# dragon fix bottom on move, (bottom becomes large)
-# dragon level, at some point, lose the ability to click down on map, what coord is left click registering on bottom edge? probably hinges on moved_down/moved_right...
 
 # speed up map melds (labyrinth)
 
@@ -124,23 +132,11 @@ def pathify(node):
 
 # will also need to detect/wrap overflow of effects text in context menu...
 
-# faster revenant gen in library
-
-# all size 13 text may shrink to 12
-
 # hook attack vis, make attack hooks smaller
-
-# fix library generate second revenant sometimes
-
-# kobold elder
 
 # lesser demon, straighten and shrink wings
 
 # ghost attack vis
-
-# mortar damage text is somewhat obscured by vis...
-
-# when pestil 'take 1' kills, free variable id ref before assgn, prob fixed now in list comp 'id to obj'
 
 # wrap text in context menu for effects names / get_info_text() size and wrap?
 
@@ -220,15 +216,13 @@ def pathify(node):
 # revenant attack, taking focus on target?
 # ghost attack better
 
-# scrye, hatred, sound effect inaudible
-
 # more buff/defensive spells
 
 # psi push impact sound
 
 # save during level, write all ents and map number, write globals like curs_pos, write all map_triggers still in effect, write app.attrs like vis_dict effects_counter global_effects_dict, on load call create_map_curs() with protag object, empty and repopulate map_triggers, replace app.attrs
 
-# kensai cut sound effect, barbarian attack anim and sounds, dragon sounds, orc attack anim, 
+# kensai cut sound effect, barbarian attack anim and sounds, dragon sounds, orc attack anim,
 
 # entomb handle 'all sqrs occupied' edge case, may not be possible to even reach this state with current levels...?
 
@@ -238,17 +232,11 @@ def pathify(node):
 
 # teleport or psi pushing on to sqr with trigger (sparkle), pressing button before cleanup of spell happens will cause spell cleanup to destroy text object if button clicked quickly, no logical problems only visual destroying of text object early
 
-# when dragon 'flies' make bottom portion 'large'
-
 # menu options to adjust music, sound effects volume
 
 # make sure ownership checks also work  for 2player mode
 
-# make sure to_hit range has a min/max of 5/95 percent
-
 # both need some damaging cantrip when runs out of magick and summons
-
-# level 41, should be able to occupy spawn square to prevent spawns?
 
 # add death of protag scenes
 
@@ -258,17 +246,11 @@ def pathify(node):
 
 # make popups into fullscreen toplevels
 
-# victory condition happens too fast, need to freeze screen and show 'confirm' or 'notice'
-
 # death anims, at least delay before something like contagion
 
 # would it be possible to 'pause' in the middle of a move_loop or to keep text object on screen
 
 # make walking/movement animations
-
-# magick regen rate or squares on maps that regen?, maybe for some levels, include in intent/design
-
-# show victory conditions on map start
 
 # animate titlescreen
 
@@ -611,9 +593,9 @@ class Entity():
         elif attr == 'psyche':
             q = self.psyche_effects
             base = self.psyche
-#         elif attr == 'spirit':
-#             q = self.spirit_effects
-#             base = self.spirit
+        elif attr == 'move_range':
+            q = self.move_effects
+            base = self.move_range
         for func in q:
             base = func(base)
         return base
@@ -1047,6 +1029,7 @@ class Tomb(Summon):
         self.dodge = 1
         self.psyche = 5
         self.spirit = 20
+        self.move_range = 0
         self.move_type = 'immobile'
         super().__init__(name, img, loc, owner, number)
         
@@ -1060,6 +1043,7 @@ class Trickster(Summon):
         self.dodge = 5
         self.psyche = 5
         self.spirit = 13
+        self.move_range = 4
         self.move_type = 'teleport'
         super().__init__(name, img, loc, owner, number)
 
@@ -1512,9 +1496,7 @@ class Trickster(Summon):
                 if s not in mvlist:
                     mvlist.append(s)
                 findall(s, start+1, distance)
-        findall(loc, 1, 4)
-        for f in self.move_effects:
-            mvlist = f(mvlist)
+        findall(loc, 1, self.get_attr('move_range'))
         return mvlist
         
 
@@ -1528,6 +1510,7 @@ class Shadow(Summon):
         self.dodge = 6
         self.psyche = 4
         self.spirit = 15
+        self.move_range = 4
         self.move_type = 'normal'
         self.form = 'shadow_wolf'
         super().__init__(name, img, loc, owner, number)
@@ -1584,16 +1567,15 @@ class Shadow(Summon):
             self.end = 3
             self.dodge = 6
             self.psyche = 6
+            self.move_range = 5
             self.move_type = 'teleport'
             self.actions = {'Drain Life':self.drain_life, 'Muddle':self.muddle, 'Mist Move':self.teleport_move, 'Phase Shift':self.phase_shift}
             def legal_moves(obj):
                 move_list = []
                 for c in app.coords:
                     if app.grid[c[0]][c[1]] == '':
-                        if dist(obj.loc, c) <= 5:
+                        if dist(obj.loc, c) <= self.get_attr('move_range'):
                             move_list.append(c)
-                for f in obj.move_effects:
-                    move_list = f(move_list)
                 return move_list
             p = partial(legal_moves, self)
             self.legal_moves = p
@@ -1604,6 +1586,7 @@ class Shadow(Summon):
             self.end = 4
             self.dodge = 6
             self.psyche = 4
+            self.move_range = 4
             self.move_type = 'normal'
             self.actions = {'Shadow Strike':self.shadow_strike, 'Dark Shroud':self.dark_shroud, 'Move':self.move, 'Phase Shift':self.phase_shift}
             def legal_moves(obj):
@@ -1622,9 +1605,7 @@ class Shadow(Summon):
                         if s not in mvlist:
                             mvlist.append(s)
                         findall(s, start+1, distance)
-                findall(loc, 1, 4)
-                for f in obj.move_effects:
-                    mvlist = f(mvlist)
+                findall(loc, 1, self.get_attr('move_range'))
                 return mvlist
             p = partial(legal_moves, self)
             self.legal_moves = p
@@ -1982,9 +1963,7 @@ class Shadow(Summon):
                 if s not in mvlist:
                     mvlist.append(s)
                 findall(s, start+1, distance)
-        findall(loc, 1, 4)
-        for f in self.move_effects:
-            mvlist = f(mvlist)
+        findall(loc, 1, self.get_attr('move_range'))
         return mvlist
 
 
@@ -1999,6 +1978,7 @@ class Plaguebearer(Summon):
         self.dodge = 2
         self.psyche = 5
         self.spirit = 15
+        self.move_range = 2
         self.move_type = 'normal'
         super().__init__(name, img, loc, owner, number)
         # not a method, below function appended to death_triggers
@@ -2238,9 +2218,7 @@ class Plaguebearer(Summon):
                 if s not in mvlist:
                     mvlist.append(s)
                 findall(s, start+1, distance)
-        findall(loc, 1, 2)
-        for f in self.move_effects:
-            mvlist = f(mvlist)
+        findall(loc, 1, self.get_attr('move_range'))
         return mvlist
 
 
@@ -2255,6 +2233,7 @@ class Bard(Summon):
         self.dodge = 5
         self.psyche = 5
         self.spirit = 15
+        self.move_range = 5
         self.move_type = 'normal'
         super().__init__(name, img, loc, owner, number)
         
@@ -2550,9 +2529,7 @@ class Bard(Summon):
                 if s not in mvlist:
                     mvlist.append(s)
                 findall(s, start+1, distance)
-        findall(loc, 1, 5)
-        for f in self.move_effects:
-            mvlist = f(mvlist)
+        findall(loc, 1, self.get_attr('move_range'))
         return mvlist
         
         
@@ -2579,6 +2556,7 @@ class White_Dragon(Summon):
         self.dodge = 7
         self.psyche = 9
         self.spirit = 157
+        self.move_range = 7
         self.waiting = waiting
         self.summoned_kobolds = False
         self.retreated_once = False
@@ -2760,9 +2738,13 @@ class White_Dragon(Summon):
                 root.after(666, lambda sqr = move : app.focus_square(sqr))
                 root.after(1333, lambda el = ents_list, sqr = move : self.white_dragon_move(el, sqr))
             
+    # before making move: enlarge and move 'up' whitedragon images
+    # 1 switch to 'ascend' anims, move up in loop while rotating through 'ascend' anims
+    # 2 switch to 'flight' anims, move to goal
+    # 3 switch to 'descend' anims, move down to normal orientation
+    # 4 switch to normal anims
     def white_dragon_move(self, ents_list, endloc, go_to_sleep = None):
         global selected
-        # FIND SQUARE FURTHEST ALONG PATH THAT IS WITHIN MOVE RANGE
         id = self.number
         x = self.loc[0]*100+50-app.moved_right
         y = self.loc[1]*100+50-app.moved_down
@@ -2771,6 +2753,8 @@ class White_Dragon(Summon):
         start_sqr = self.loc[:]
         end_sqr = endloc[:]
         selected = [self.number,self.number+'top']
+        self.type == 'large'
+        self.tags = (self.number, 'large')
         # MOVE LOOP
         def move_loop(id, x, y, endx, endy, start_sqr, end_sqr):
             if x % 25 == 0 or y % 25 == 0:
@@ -2819,6 +2803,8 @@ class White_Dragon(Summon):
     # DONE MOVING, Go back to finish_melee_move()
     def finish_move(self, id, end_sqr, start_sqr, ents_list):
         global selected
+        self.type == 'large_bottom'
+        self.tags = self.number
         selected = []
         self.loc = end_sqr[:]
         app.ent_dict[id+'top'].loc = [end_sqr[0],end_sqr[1]]
@@ -2898,10 +2884,8 @@ class White_Dragon(Summon):
         loc = self.loc[:]
         mvlist = []
         for c in app.coords:
-            if app.grid[c[0]][c[1]] == '' and 1 <= dist(loc, c) <= 7:
+            if app.grid[c[0]][c[1]] == '' and 1 <= dist(loc, c) <= self.get_attr('move_range'):
                 mvlist.append(c)
-        for f in self.move_effects:
-            mvlist = f(mvlist)
         return mvlist
         
         
@@ -2915,6 +2899,7 @@ class Tortured_Soul(Summon):
         self.dodge = 4
         self.psyche = 2
         self.spirit = 25
+        self.move_range = 6
         self.waiting = waiting
         self.move_type = 'normal'
         super().__init__(name, img, loc, owner, number)
@@ -3063,9 +3048,7 @@ class Tortured_Soul(Summon):
                 if s not in mvlist:
                     mvlist.append(s)
                 findall(s, start+1, distance)
-        findall(loc, 1, 6)
-        for f in self.move_effects:
-            mvlist = f(mvlist)
+        findall(loc, 1, self.get_attr('move_range'))
         return mvlist
         
         
@@ -3079,6 +3062,7 @@ class Undead_Archer(Summon):
         self.dodge = 4
         self.psyche = 3
         self.spirit = 13
+        self.move_range = 3
         self.waiting = waiting
         self.move_type = 'normal'
         super().__init__(name, img, loc, owner, number)
@@ -3238,9 +3222,7 @@ class Undead_Archer(Summon):
                 if s not in mvlist:
                     mvlist.append(s)
                 findall(s, start+1, distance)
-        findall(loc, 1, 3)
-        for f in self.move_effects:
-            mvlist = f(mvlist)
+        findall(loc, 1, self.get_attr('move_range'))
         return mvlist
         
 class Ghost(Summon):
@@ -3253,6 +3235,7 @@ class Ghost(Summon):
         self.dodge = 9
         self.psyche = 8
         self.spirit = 75
+        self.move_range = 4
         self.times_retreated = 0
         self.waiting = waiting
         self.move_type = 'ethereal'
@@ -3267,7 +3250,7 @@ class Ghost(Summon):
     def do_ai(self, ents_list):
         if self.waiting == True: # DO NOT MOVE TOWARDS OR ATTACK UNTIL TRIGGER
             self.pass_priority(ents_list)
-        elif app.ent_dict[app.p1_witch].current_area == 21 and self.times_retreated == 0 and self.spirit < 50:
+        elif app.map_number == 21 and self.times_retreated == 0 and self.spirit < 50:
             app.map_triggers.remove(ghost_death)
             self.times_retreated += 1
             # erase from map / ent_dict, place map_trigger to watch 1,2 2,2 3,2
@@ -3367,20 +3350,21 @@ class Ghost(Summon):
                         fear_loop(ents)
                     else:
                         if 'Fear' not in [v.name for k,v in app.ent_dict[id].effects_dict.items()]:
-                            def fear_move(sqrs, obj = None):
-                                rng = dist(obj.loc, reduce(lambda a,b : a if dist(a, obj.loc) > dist(b, obj.loc) else b, sqrs))
-                                rng = max(0, rng-1)
-                                return [s for s in sqrs if dist(s, obj.loc) <= rng]
-                            p = partial(fear_move, obj = app.ent_dict[id])
-                            app.ent_dict[id].move_effects.append(p)
+                            def fear_move(move_range):
+                                move_range -= 1
+                                if move_range < 0:
+                                    return 0
+                                else:
+                                    return move_range
+                            app.ent_dict[id].move_effects.append(fear_move)
                             def fear_effect(stat):
                                 stat -= 1
                                 return max(1, stat)
                             app.ent_dict[id].psyche_effects.append(fear_effect)
-                            def undo(tar, fm, fe):
-                                app.ent_dict[tar].move_effects.remove(fm)
+                            def undo(tar, fe):
+                                app.ent_dict[tar].move_effects.remove(fear_move)
                                 app.ent_dict[tar].psyche_effects.remove(fe)
-                            u = partial(undo, id, p, fear_effect)
+                            u = partial(undo, id, fear_effect)
                             n = 'Fear'+str(app.effects_counter)
                             app.effects_counter += 1
                             def nothing():
@@ -3416,26 +3400,30 @@ class Ghost(Summon):
                 if 'Slow' not in [v.name for k,v in app.ent_dict[id].effects_dict.items()]:
                     app.get_focus(id)
                     loc = app.ent_dict[id].loc[:]
-                    def slow_move(sqrs, obj = None):
-                        rng = dist(obj.loc, reduce(lambda a,b : a if dist(a, obj.loc) > dist(b, obj.loc) else b, sqrs))
-                        rng = max(0, rng-2)
-                        return [s for s in sqrs if dist(s, obj.loc) <= rng]
-                    p = partial(slow_move, obj = app.ent_dict[id])
-                    app.ent_dict[id].move_effects.append(p)
+                    def slow_move(move_range):
+                        move_range -= 2
+                        if move_range < 0:
+                            return 0
+                        else:
+                            return move_range
+                    app.ent_dict[id].move_effects.append(slow_move)
                     def slow_atk(atkr, dfndr, dmg, type):
                         loc = atkr.loc[:]
                         if type == 'melee' or type == 'ranged':
                             app.canvas.create_text(loc[0]*100-app.moved_right+49, loc[1]*100-app.moved_down+74, text = 'Attack Slowed...', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'slow_attack_text')
                             app.canvas.create_text(loc[0]*100-app.moved_right+50, loc[1]*100-app.moved_down+75, text = 'Attack Slowed...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'slow_attack_text')
                             root.after(1888, lambda t = 'slow_attack_text' : app.canvas.delete(t))
-                            return min(-1, dmg//2)
+                            if dmg < 0:
+                                return min(-1, dmg//2)
+                            else:
+                                return dmg
                         else:
                             return dmg
                     app.ent_dict[id].attack_effects.append(slow_atk)
-                    def undo(tar, sm, sa):
-                        app.ent_dict[tar].move_effects.remove(sm)
+                    def undo(tar, sa):
+                        app.ent_dict[tar].move_effects.remove(slow_move)
                         app.ent_dict[tar].attack_effects.remove(sa)
-                    u = partial(undo, id, p, slow_atk)
+                    u = partial(undo, id, slow_atk)
                     n = 'Slow'+str(app.effects_counter)
                     app.effects_counter += 1
                     def nothing():
@@ -3453,9 +3441,9 @@ class Ghost(Summon):
 
     # psy v end dmg, end save at -2 or get burn effect, move target to rand sqr w/i rang 4 (use normal move pathing)
     def willowisp(self, id, ents_list):
-        app.canvas.create_text(self.loc[0]*100-app.moved_right+49, self.loc[1]*100-app.moved_down+94, text = "Will o'Wisp", justify = 'center', fill = 'black', font = ('Andale Mono', 15), tags = 'text')
-        app.canvas.create_text(self.loc[0]*100-app.moved_right+50, self.loc[1]*100-app.moved_down+95, text = "Will o'Wisp", justify = 'center', fill = 'bisque2', font = ('Andale Mono', 15), tags = 'text')
-        root.after(2555, lambda t = 'text' : app.canvas.delete(t))
+        app.canvas.create_text(self.loc[0]*100-app.moved_right+49, self.loc[1]*100-app.moved_down+94, text = "Will o'Wisp", justify = 'center', fill = 'black', font = ('Andale Mono', 15), tags = 'wisp_text')
+        app.canvas.create_text(self.loc[0]*100-app.moved_right+50, self.loc[1]*100-app.moved_down+95, text = "Will o'Wisp", justify = 'center', fill = 'bisque2', font = ('Andale Mono', 15), tags = 'wisp_text')
+        root.after(2555, lambda t = 'wisp_text' : app.canvas.delete(t))
         my_psy = self.get_attr('psyche')
         tar_end = app.ent_dict[id].get_attr('end')
         d = damage(my_psy, tar_end)+2
@@ -3482,7 +3470,7 @@ class Ghost(Summon):
                 app.canvas.create_text(loc[0]*100-app.moved_right+50, loc[1]*100-app.moved_down+55, text = 'Burned...', justify = 'center', fill = 'orangered2', font = ('Andale Mono', 14), tags = 'text')
                 root.after(2555, lambda t = 'text' : app.canvas.delete(t))
                 def burn_effect(attacker, defender, amount, type):
-                    if amount < 0:
+                    if amount < 0 and (type == 'melee' or type == 'ranged'):
                         app.canvas.create_text(defender.loc[0]*100+49-app.moved_right, defender.loc[1]*100+54-app.moved_down, text = '+2 spirit burn', justify ='center', font = ('Andale Mono', 13), fill = 'black', tags = 'burn_text')
                         app.canvas.create_text(defender.loc[0]*100+50-app.moved_right, defender.loc[1]*100+55-app.moved_down, text = '+2 spirit burn', justify ='center', font = ('Andale Mono', 13), fill = 'orangered2', tags = 'burn_text')
                         root.after(1888, lambda t = 'burn_text' : app.canvas.delete(t))
@@ -3549,7 +3537,7 @@ class Ghost(Summon):
         root.after(2666, lambda ents = ents : wail_loop(ents))
         
     def wander(self, ents_list):
-        sqrs = [s for s in app.coords if dist(self.loc, s) <= 4 and app.grid[s[0]][s[1]] == '']
+        sqrs = [s for s in app.coords if dist(self.loc, s) <= self.get_attr('move_range') and app.grid[s[0]][s[1]] == '']
         if sqrs == []:
             self.ai_end_turn(ents_list)
         else:
@@ -3578,6 +3566,7 @@ class Revenant(Summon):
         self.dodge = 5
         self.psyche = 7
         self.spirit = 16
+        self.move_range = 5
         self.waiting = waiting
         self.move_type = 'ethereal'
         super().__init__(name, img, loc, owner, number)
@@ -3602,7 +3591,7 @@ class Revenant(Summon):
             root.after(1333, lambda el = ents_list, id = id : self.do_attack(el, id)) # ATTACK
         else: # MOVE THEN TRY ATTACK
             enemy_locs = [v.loc for k,v in app.ent_dict.items() if v.owner != self.owner]
-            goals = [c for c in app.coords for el in enemy_locs if dist(c, el) <= 2]
+            goals = [c for c in app.coords for el in enemy_locs if 1 <= dist(c, el) <= 2]
             # get closest goal sqr
             goal = reduce(lambda a,b : a if dist(a, self.loc) < dist(b, self.loc) else b, goals)
             moves = self.legal_moves()
@@ -3722,8 +3711,8 @@ class Revenant(Summon):
                 app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
                 app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
                 if app.ent_dict[id].spirit <= 0:
-                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+94, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
-                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+95, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+94, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+95, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
             else:
                 app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Miss!', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
                 app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Miss!', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
@@ -3760,10 +3749,8 @@ class Revenant(Summon):
         loc = self.loc[:]
         mvlist = []
         for c in app.coords:
-            if dist(loc, c) <= 5 and app.grid[c[0]][c[1]] == '':
+            if dist(loc, c) <= self.get_attr('move_range') and app.grid[c[0]][c[1]] == '':
                 mvlist.append(c)
-        for f in self.move_effects:
-            mvlist = f(mvlist)
         return mvlist
         
 # make cut attack against numerous ents, cannot have stats altered
@@ -3777,6 +3764,7 @@ class Kensai(Summon):
         self.dodge = 9
         self.psyche = 8
         self.spirit = 59
+        self.move_range = 4
         self.times_attacked = 0
         self.attacked_ids = []
         self.waiting = waiting
@@ -3795,7 +3783,6 @@ class Kensai(Summon):
         elif attr == 'psyche':
             return self.base_psyche
         
-    
     def pass_priority(self, ents_list):
         self.ai_end_turn(ents_list)
         
@@ -3950,9 +3937,7 @@ class Kensai(Summon):
                 if s not in mvlist:
                     mvlist.append(s)
                 findall(s, start+1, distance)
-        findall(loc, 1, 3)
-        for f in self.move_effects:
-            mvlist = f(mvlist)
+        findall(loc, 1, self.get_attr('move_range'))
         return mvlist
 
 class Kobold_Cleric(Summon):
@@ -3965,6 +3950,7 @@ class Kobold_Cleric(Summon):
         self.dodge = 4
         self.psyche = 5
         self.spirit = 19
+        self.move_range = 4
         self.waiting = waiting
         self.move_type = 'normal'
         super().__init__(name, img, loc, owner, number)
@@ -4167,7 +4153,7 @@ class Kobold_Cleric(Summon):
                     root.after(2555, cleanup_attack)
                     root.after(2666, lambda id = id, name = name : app.kill(id, name))
                     root.wait_variable(app.dethloks[name])
-                    self.finish_attack(ents_list)
+                    self.ai_end_turn(ents_list)
                 else:# HIT, NO KILL
                     root.after(2555, cleanup_attack)
                     root.after(2666, lambda e = ents_list : self.ai_end_turn(e))
@@ -4215,9 +4201,7 @@ class Kobold_Cleric(Summon):
                 if s not in mvlist:
                     mvlist.append(s)
                 findall(s, start+1, distance)
-        findall(loc, 1, 4)
-        for f in self.move_effects:
-            mvlist = f(mvlist)
+        findall(loc, 1, self.get_attr('move_range'))
         return mvlist
 
 
@@ -4231,6 +4215,7 @@ class Kobold_Shaman(Summon):
         self.dodge = 5
         self.psyche = 4
         self.spirit = 15
+        self.move_range = 4
         self.waiting = waiting
         self.move_type = 'normal'
         super().__init__(name, img, loc, owner, number)
@@ -4427,9 +4412,7 @@ class Kobold_Shaman(Summon):
                 if s not in mvlist:
                     mvlist.append(s)
                 findall(s, start+1, distance)
-        findall(loc, 1, 4)
-        for f in self.move_effects:
-            mvlist = f(mvlist)
+        findall(loc, 1, self.get_attr('move_range'))
         return mvlist
         
 
@@ -4443,6 +4426,7 @@ class Ghoul(Summon):
         self.dodge = 2
         self.psyche = 3
         self.spirit = 13
+        self.move_range = 3
         self.waiting = waiting
         self.move_type = 'normal'
         super().__init__(name, img, loc, owner, number)
@@ -4616,9 +4600,7 @@ class Ghoul(Summon):
                 if s not in mvlist:
                     mvlist.append(s)
                 findall(s, start+1, distance)
-        findall(loc, 1, 3)
-        for f in self.move_effects:
-            mvlist = f(mvlist)
+        findall(loc, 1, self.get_attr('move_range'))
         return mvlist
 
         
@@ -4632,6 +4614,7 @@ class Undead(Summon):
         self.dodge = 2
         self.psyche = 2
         self.spirit = 9
+        self.move_range = 3
         self.waiting = waiting
         self.move_type = 'normal'
         super().__init__(name, img, loc, owner, number)
@@ -4770,9 +4753,7 @@ class Undead(Summon):
                 if s not in mvlist:
                     mvlist.append(s)
                 findall(s, start+1, distance)
-        findall(loc, 1, 3)
-        for f in self.move_effects:
-            mvlist = f(mvlist)
+        findall(loc, 1, self.get_attr('move_range'))
         return mvlist
         
 class Undead_Knight(Summon):
@@ -4785,6 +4766,7 @@ class Undead_Knight(Summon):
         self.dodge = 8
         self.psyche = 6
         self.spirit = 86
+        self.move_range = 4
         self.waiting = waiting
         self.move_type = 'normal'
         super().__init__(name, img, loc, owner, number)
@@ -4920,9 +4902,7 @@ class Undead_Knight(Summon):
                 if s not in mvlist:
                     mvlist.append(s)
                 findall(s, start+1, distance)
-        findall(loc, 1, 4)
-        for f in self.move_effects:
-            mvlist = f(mvlist)
+        findall(loc, 1, self.get_attr('move_range'))
         return mvlist
         
 class Troll(Summon):
@@ -4935,6 +4915,7 @@ class Troll(Summon):
         self.dodge = 5
         self.psyche = 2
         self.spirit = 35
+        self.move_range = 8
         self.waiting = waiting
         self.move_type = 'normal'
         super().__init__(name, img, loc, owner, number)
@@ -5105,9 +5086,7 @@ class Troll(Summon):
                 if s not in mvlist:
                     mvlist.append(s)
                 findall(s, start+1, distance)
-        findall(loc, 1, 8)
-        for f in self.move_effects:
-            mvlist = f(mvlist)
+        findall(loc, 1, self.get_attr('move_range'))
         return mvlist
         
         
@@ -5121,9 +5100,33 @@ class Warlock(Summon):
         self.dodge = 7
         self.psyche = 11
         self.spirit = 89
+        self.move_range = 5
         self.waiting = waiting
         self.move_type = 'teleport'
         super().__init__(name, img, loc, owner, number)
+        
+    def get_attr(self, attr):
+        if attr == 'str':
+            q = self.str_effects
+            base = self.str
+        elif attr == 'agl':
+            q = self.agl_effects
+            base = self.agl
+        elif attr == 'end':
+            q = self.end_effects
+            base = self.end
+        elif attr == 'dodge':
+            q = self.dodge_effects
+            base = self.dodge
+        elif attr == 'psyche':
+            q = self.psyche_effects
+            base = self.psyche
+        elif attr == 'move_range':# WARLOCK MOVE RANGE NOT AFFECTED BY MOVE EFFECTS
+            q = []
+            base = self.move_range
+        for func in q:
+            base = func(base)
+        return base
         
     def pass_priority(self, ents_list):
         self.ai_end_turn(ents_list)
@@ -5327,10 +5330,8 @@ class Warlock(Summon):
         loc = self.loc[:]
         mvlist = []
         for c in app.coords:
-            if dist(loc, c) <= 5 and app.grid[c[0]][c[1]] == '':
+            if dist(loc, c) <= self.get_attr('move_range') and app.grid[c[0]][c[1]] == '':
                 mvlist.append(c)
-        for f in self.move_effects:
-            mvlist = f(mvlist)
         return mvlist
         
 class Air_Mage(Summon):
@@ -5343,6 +5344,7 @@ class Air_Mage(Summon):
         self.dodge = 10
         self.psyche = 8
         self.spirit = 59
+        self.move_range = 9
         self.waiting = waiting
         self.move_type = 'teleport'
         self.summons_used = False
@@ -5672,10 +5674,8 @@ class Air_Mage(Summon):
         loc = self.loc[:]
         mvlist = []
         for c in app.coords:
-            if dist(loc, c) <= 5 and app.grid[c[0]][c[1]] == '':
+            if dist(loc, c) <= self.get_attr('move_range') and app.grid[c[0]][c[1]] == '':
                 mvlist.append(c)
-        for f in self.move_effects:
-            mvlist = f(mvlist)
         return mvlist
 
 # need to: update pathing, keep behavior: seek edge of own range
@@ -5684,99 +5684,131 @@ class Air_Elemental(Summon):
     def __init__(self, name, img, loc, owner, number, waiting = False):
         self.actions = {'attack':self.do_attack}
         self.attack_used = False
-        self.str = 5
+        self.str = 4
         self.agl = 7
-        self.end = 4
+        self.end = 3
         self.dodge = 7
-        self.psyche = 5
-        self.spirit = 29
+        self.psyche = 3
+        self.spirit = 19
+        self.move_range = 4
         self.waiting = waiting
-        self.move_type = 'normal'
+        self.move_type = 'flying'
         super().__init__(name, img, loc, owner, number)
         
     def pass_priority(self, ents_list):
         self.ai_end_turn(ents_list)
         
     def do_ai(self, ents_list):
-        if self.waiting == True: # PASSIVE / WAITING
+        if self.waiting == True: 
             self.pass_priority(ents_list)
-        else: # NO TARGET PRIORITY, ATTEMPT ATTACK FROM STARTLOC
-            atk_sqrs = self.legal_attacks()
-            if atk_sqrs != []:
-                any = atk_sqrs[0]
-                id = app.grid[any[0]][any[1]]
-                root.after(666, lambda id = id : app.get_focus(id))
-                root.after(1333, lambda el = ents_list, id = id : self.do_attack(el, id)) # ATTACK
-            else: # CANNOT ATTACK FROM START LOC, GET TARGET AND MOVE TOWARDS
-                enemy_ent_locs = [v.loc for k,v in app.ent_dict.items() if v.owner != self.owner]
-                paths = []
-                for el in enemy_ent_locs:
-                # FIND PATH TO SQR WITHIN RANGE OF THIS ENT
-                    goals = [c for c in app.coords if dist(c, el) == 4 and app.grid[c[0]][c[1]] == '']
-                    path = bfs(self.loc[:], goals, app.grid[:])
-                    if path:
-                        paths.append(path)
-                smallpaths = [y for y in paths if len(y) == min(len(y) for y in paths)] # THE SHORTEST PATHS AMONG PATHS
-                if smallpaths != []: # IF ANY PATHS EXIST AT ALL
-                    apath = smallpaths[0]
-                    # FIND FURTHEST SQR ALONG PATH THAT CAN BE MOVED TO
-                    moves = self.legal_moves()
-                    endloc = None
-                    for sqr in apath[::-1]: # START WITH SQRS CLOSEST TO TARGET
-                        if sqr in moves:
-                            endloc = sqr[:] # AMONG SQRS POSSIBLE TO MOVE TO, THIS IS CLOSEST TO GOAL
-                            break
-                    if endloc != None:
-                        root.after(666, lambda sqr = endloc[:] : app.focus_square(sqr))
-                        root.after(1333, lambda el = ents_list, endloc = endloc : self.ai_move(el, endloc))
-                    else:
-                        ents_list = ents_list[1:]
-                        if ents_list == []:
-                            root.after(666, app.end_turn)
-                        else:
-                            root.after(1666, lambda e = ents_list : app.do_ai_loop(e))
-                else: # NO PATHS TO TARGET, MAKE BEST EFFORT MINIMIZE DIST MOVE
-                    # change to 'remove friendly ents', find path, move along path as far as possible
-                    egrid = deepcopy(app.grid)
-                    friendly_ent_locs = [app.ent_dict[x].loc for x in app.ent_dict.keys() if app.ent_dict[x].owner == 'p2']
-                    for eloc in friendly_ent_locs:
-                        egrid[eloc[0]][eloc[1]] = '' # EGRID NOW EMPTIED OF FRIENDLY ENTS
-                    # NOW FIND PATH AND PASS TO MOVE
-                    for el in enemy_ent_locs:
-                        goals = [c for c in app.coords if dist(c, el) == 4 and app.grid[c[0]][c[1]] == '']
-                        path = bfs(self.loc[:], goals, egrid[:]) # BFS ON ALTERED GRID (FRIENDLY ENTS REMOVED)
-                        if path:
-                            paths.append(path)
-                    smallpaths = [y for y in paths if len(y) == min(len(y) for y in paths)]
-                    if smallpaths != []: # MOVE ALONG PATH AS FAR AS POSSIBLE, ATTEMPT ATTACK
-                        apath = smallpaths[0]
-                        # FIND FURTHEST SQR ALONG PATH THAT CAN BE MOVED TO
-                        moves = self.legal_moves()
-                        endloc = None
-                        for sqr in apath[::-1]: # START WITH SQRS CLOSEST TO TARGET
-                            if sqr in moves:
-                                endloc = sqr[:] # AMONG SQRS POSSIBLE TO MOVE TO, THIS IS CLOSEST TO GOAL
-                                break
-                        if endloc != None:
-                            # here need to 'trim path' to prevent moving to square 'through' friendly ents
-                            root.after(666, lambda sqr = endloc[:] : app.focus_square(sqr))
-                            root.after(1333, lambda el = ents_list, endloc = endloc : self.ai_move(el, endloc))
-                        else:
-                            self.ai_end_turn(ents_list)
-                    else:
-                        self.ai_end_turn(ents_list)
+        else: # ATTEMPT ATTACK FROM STARTLOC
+            self.continue_ai(ents_list)
             
-    def ai_finish_turn(self, ents_list):
-        if self.attack_used == False:
-            atk_sqrs = self.legal_attacks()
-            if atk_sqrs != []:
-                any = atk_sqrs[0]
-                id = app.grid[any[0]][any[1]]
-                root.after(666, lambda t = id : app.get_focus(t))
-                root.after(999, lambda el = ents_list, t = id : self.do_attack(el, t))
-            else:
+    # has flight/ethereal move through obstacles
+    def continue_ai(self, ents_list):
+        atk_sqrs = self.legal_attacks()
+        if atk_sqrs != []: # CAN ATTACK BEFORE MOVING
+            any = atk_sqrs[0]
+            id = app.grid[any[0]][any[1]]
+            root.after(666, lambda id = id : app.get_focus(id))
+            root.after(1333, lambda el = ents_list, id = id : self.do_attack(el, id)) # ATTACK
+        else: # MOVE THEN TRY ATTACK
+            enemy_locs = [v.loc for k,v in app.ent_dict.items() if v.owner != self.owner]
+            goals = [c for c in app.coords for el in enemy_locs if 3 <= dist(c, el) <= 4]
+            # get furthest goal sqr
+            goal = reduce(lambda a,b : a if dist(a, self.loc) < dist(b, self.loc) else b, goals)
+            moves = self.legal_moves()
+            if moves == []:
                 self.ai_end_turn(ents_list)
+            else:
+                # get legal move sqr that minimizes dist to goal
+                move = reduce(lambda a,b : a if dist(a, goal) < dist(b, goal) else b, moves)
+                self.air_elemental_move(ents_list, move)
             
+    def air_elemental_move(self, ents_list, sqr):
+        global selected
+        self.move_used = True
+        selected = [self.number]
+        app.focus_square(sqr)
+#         effect1 = mixer.Sound('Sound_Effects/revenant_move.ogg')
+#         effect1.set_volume(1)
+#         sound_effects.play(effect1, 0)
+        x = self.loc[0]*100+50-app.moved_right
+        y = self.loc[1]*100+50-app.moved_down
+        endx = sqr[0]*100+50-app.moved_right
+        endy = sqr[1]*100+50-app.moved_down
+        start_sqr = self.loc[:]
+        end_sqr = sqr[:]
+        total_distance = abs(x - endx) + abs(y - endy)
+        # tic doesnt matter for circular image loop, would need to make flying_anims and switch to
+        tic = 60 #total_distance/9 # Magic Number debug, number of images for vis
+        if x == endx:
+            xstep = 0
+            ystep = 10
+        elif y == endy:
+            xstep = 10
+            ystep = 0
+        else:
+            slope = Fraction(abs(x - endx), abs(y - endy))
+            # needs to be moving at least 10 pixels, xstep + ystep >= 10
+            xstep = slope.numerator
+            ystep = slope.denominator
+            while xstep + ystep < 10:
+                xstep *= 2
+                ystep *= 2
+        def flying_arc(x, y, endx, endy, start_sqr, end_sqr, acm, tic, xstep, ystep):
+            if acm >= tic:
+                acm = 0
+                self.rotate_image()
+                app.canvas.delete(self.tags)
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+            if x > endx:
+                acm += xstep
+                x -= xstep
+                self.rotate_image()
+                app.canvas.delete(self.tags)
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+            elif x < endx:
+                acm += xstep
+                x += xstep
+                self.rotate_image()
+                app.canvas.delete(self.tags)
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+            if y > endy:
+                acm += ystep
+                y -= ystep
+                self.rotate_image()
+                app.canvas.delete(self.tags)
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+            elif y < endy:
+                acm += ystep
+                y += ystep
+                self.rotate_image()
+                app.canvas.delete(self.tags)
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+            if abs(x - endx) < 13 and abs(y - endy) < 13:
+                self.finish_move(self.number, end_sqr, start_sqr, ents_list)
+            else: # CONTINUE LOOP
+                root.after(66, lambda x = x, y = y, e = endx, e2 = endy, s = start_sqr, s2 = end_sqr, acm = acm, tic = tic, xs = xstep, ys = ystep : flying_arc(x, y, e, e2, s, s2, acm, tic, xs, ys))
+        flying_arc(x, y, endx, endy, start_sqr, end_sqr, tic+1, tic, xstep, ystep)
+            
+            
+    def finish_move(self, id, end_sqr, start_sqr, ents_list):
+        global selected
+        selected = []
+        self.loc = end_sqr[:]
+        app.grid[start_sqr[0]][start_sqr[1]] = ''
+        app.grid[end_sqr[0]][end_sqr[1]] = self.number
+        # MAKE ATTACK ON ANY ENEMY ENT WITHIN RANGE
+        atk_sqrs = self.legal_attacks()
+        if atk_sqrs != []:
+            any = atk_sqrs[0]
+            id = app.grid[any[0]][any[1]]
+            root.after(666, lambda t = id : app.get_focus(t))
+            root.after(1333, lambda el = ents_list, t = id : self.do_attack(el, t)) # EXIT THROUGH ATTACK
+        else:
+        # CANNOT ATTACK, EXIT FUNC
+            root.after(1333, lambda el = ents_list : self.ai_end_turn(el))
     
     def do_attack(self, ents_list, id):
         if self.attack_used == True:
@@ -5784,32 +5816,40 @@ class Air_Elemental(Summon):
         else:
             app.get_focus(id)
     #         self.init_attack_anims()
-#             effect1 = mixer.Sound('Sound_Effects/air_elemental_attack.ogg')
+#             effect1 = mixer.Sound('Sound_Effects/revenant_terror.ogg')
 #             effect1.set_volume(1)
 #             sound_effects.play(effect1, 0)
+#             visloc = app.ent_dict[id].loc[:]
+#             app.vis_dict['Revenant_Terror'] = Vis(name = 'Revenant_Terror', loc = visloc)
+#             app.canvas.create_image(visloc[0]*100+50-app.moved_right, visloc[1]*100+50-app.moved_down, image = app.vis_dict['Revenant_Terror'].img, tags = 'Revenant_Terror')
+#             app.canvas.create_text(visloc[0]*100+49-app.moved_right, visloc[1]*100+104-app.moved_down, text = 'Terror', font = ('Andale Mono', 16), fill = 'black', tags = 'text')
+#             app.canvas.create_text(visloc[0]*100+50-app.moved_right, visloc[1]*100+105-app.moved_down, text = 'Terror', font = ('Andale Mono', 16), fill = 'gray77', tags = 'text')
             my_agl = self.get_attr('agl')
             target_dodge = app.ent_dict[id].get_attr('dodge')
             if to_hit(my_agl, target_dodge) == True:
                 my_str = self.get_attr('str')
-                target_end = app.ent_dict[id].get_attr('end')
-                d = damage(my_str, target_end)
+                tar_end = app.ent_dict[id].get_attr('end')
+                d = damage(my_str, tar_end)
                 pre = app.ent_dict[id].spirit
                 lock(apply_damage, self, app.ent_dict[id], -d, 'ranged')
                 post = app.ent_dict[id].spirit
                 d = pre - post
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+70, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Air Elemental Hit!\n' + str(d) + ' Spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
                 if app.ent_dict[id].spirit <= 0:
-                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+90, text = app.ent_dict[id].name + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
-                root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id)) # EXIT THROUGH CLEANUP_ATTACK()
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+94, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+95, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
             else:
-                # MISSED, SHOW VIS, EXIT THROUGH CLEANUP_ATTACK()
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+50, text = 'Air Elemental Missed!', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
-                root.after(2666, lambda e = ents_list, i = id : self.cleanup_attack(e, id))
-                
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Miss!', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Miss!', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
+            root.after(3666, lambda  el = ents_list, id = id : self.cleanup_attack(el, id))
+            
     def cleanup_attack(self, ents_list, id):
-        self.init_normal_anims()
+#         self.init_normal_anims()
         try: 
             app.canvas.delete('text')
+#             del app.vis_dict['Revenant_Terror']
+#             app.canvas.delete('Revenant_Terror')
         except: pass
         if app.ent_dict[id].spirit <= 0:
             name = 'dethlok'+str(app.death_count)
@@ -5817,12 +5857,20 @@ class Air_Elemental(Summon):
             app.dethloks[name] = tk.IntVar(0)
             root.after(666, lambda id = id, name = name : app.kill(id, name))
             root.wait_variable(app.dethloks[name])
-            self.finish_attack(ents_list)
+        if self.move_used == False:
+            enemy_locs = [v.loc for k,v in app.ent_dict.items() if v.owner != self.owner]
+            goals = [c for c in app.coords for el in enemy_locs if 3 <= dist(c, el) <= 4]
+            # get furthest goal sqr
+            goal = reduce(lambda a,b : a if dist(a, self.loc) > dist(b, self.loc) else b, goals)
+            moves = self.legal_moves()
+            if moves == []:
+                self.ai_end_turn(ents_list)
+            else:
+                # get legal move sqr that minimizes dist to goal
+                move = reduce(lambda a,b : a if dist(a, goal) < dist(b, goal) else b, moves)
+                self.air_elemental_move(ents_list, move)
         else:
-            self.finish_attack(ents_list)
-                    
-    def finish_attack(self, ents_list):
-        self.ai_end_turn(ents_list)
+            self.ai_end_turn(ents_list)
         
     def legal_attacks(self):
         sqrs = []
@@ -5837,25 +5885,12 @@ class Air_Elemental(Summon):
     def legal_moves(self):
         loc = self.loc[:]
         mvlist = []
-        sqr_cost_map = {}
-        def findall(loc, start, distance):
-            if start > distance:
-                return
-            adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
-            for s in adj:
-                if tuple(s) in sqr_cost_map:
-                    if sqr_cost_map[tuple(s)] < start:
-                        continue
-                sqr_cost_map[tuple(s)] = start
-                if s not in mvlist:
-                    mvlist.append(s)
-                findall(s, start+1, distance)
-        findall(loc, 1, 5)
-        for f in self.move_effects:
-            mvlist = f(mvlist)
+        for c in app.coords:
+            if dist(loc, c) <= self.get_attr('move_range') and app.grid[c[0]][c[1]] == '':
+                mvlist.append(c)
         return mvlist
-
-
+        
+        
 class Water_Mage(Summon):
     def __init__(self, name, img, loc, owner, number, waiting = False):
         self.actions = {'attack':self.do_attack}
@@ -6119,8 +6154,6 @@ class Water_Mage(Summon):
         for c in app.coords:
             if dist(loc, c) <= 5 and app.grid[c[0]][c[1]] == '':
                 mvlist.append(c)
-        for f in self.move_effects:
-            mvlist = f(mvlist)
         return mvlist
 
 
@@ -6595,8 +6628,6 @@ class Earth_Mage(Summon):
         for c in app.coords:
             if dist(loc, c) <= 5 and app.grid[c[0]][c[1]] == '':
                 mvlist.append(c)
-        for f in self.move_effects:
-            mvlist = f(mvlist)
         return mvlist
         
         
@@ -6750,8 +6781,6 @@ class Earth_Elemental(Summon):
                     mvlist.append(s)
                 findall(s, start+1, distance)
         findall(loc, 1, 5)
-        for f in self.move_effects:
-            mvlist = f(mvlist)
         return mvlist
         
 # casts firewall after teleporting randomly within a dist, resummons fire elementals if they all die
@@ -7185,8 +7214,6 @@ class Sorceress(Summon):
         for c in app.coords:
             if dist(loc, c) <= 5 and app.grid[c[0]][c[1]] == '':
                 mvlist.append(c)
-        for f in self.move_effects:
-            mvlist = f(mvlist)
         return mvlist
         
         
@@ -7338,9 +7365,7 @@ class Orc_Axeman(Summon):
                 if s not in mvlist:
                     mvlist.append(s)
                 findall(s, start+1, distance)
-        findall(loc, 1, 5)
-        for f in self.move_effects:
-            mvlist = f(mvlist)
+        findall(loc, 1, 4)
         return mvlist
         
         
@@ -7551,8 +7576,6 @@ class Fire_Elemental(Summon):
                     mvlist.append(s)
                 findall(s, start+1, distance)
         findall(loc, 1, 4)
-        for f in self.move_effects:
-            mvlist = f(mvlist)
         return mvlist
         
         
@@ -7705,8 +7728,6 @@ class Barbarian(Summon):
                     mvlist.append(s)
                 findall(s, start+1, distance)
         findall(loc, 1, 3)
-        for f in self.move_effects:
-            mvlist = f(mvlist)
         return mvlist
         
     # if no ent within immediate move/attack range, only move toward witch
@@ -8250,8 +8271,6 @@ class Minotaur(Summon):
                     mvlist.append(s)
                 findall(s, start+1, distance)
         findall(loc, 1, 5)
-        for f in self.move_effects:
-            mvlist = f(mvlist)
         return mvlist
         
         
@@ -8508,31 +8527,29 @@ class Warrior(Summon):
         my_agl = self.get_attr('agl')
         target_agl = app.ent_dict[id].get_attr('agl')
         if to_hit(my_agl, target_agl) == True:
-            my_str = self.get_attr('str')
-            target_end = app.ent_dict[id].get_attr('end')
-            d = damage(my_str, target_end)
-            app.canvas.create_text(sqr[0]*100-app.moved_right+49, sqr[1]*100-app.moved_down+74, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
-            app.canvas.create_text(sqr[0]*100-app.moved_right+49, sqr[1]*100-app.moved_down+75, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
-            root.after(2666, lambda id = id, d = d : self.do_attack(id, d))
+            root.after(2666, lambda id = id : self.do_attack(id))
         else:
             app.canvas.create_text(sqr[0]*100-app.moved_right+49, sqr[1]*100-app.moved_down+74, text = 'Miss!', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
             app.canvas.create_text(sqr[0]*100-app.moved_right+50, sqr[1]*100-app.moved_down+75, text = 'Miss!', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
             root.after(2666, lambda e = None : self.cancel_attack(event = e))
         
-    def do_attack(self, id, dmg):
-#         app.ent_dict[id].set_attr('spirit', -dmg)
-#         name = 'dethlok'+str(app.death_count)
-#         app.death_count += 1
-#         app.dethloks[name] = tk.IntVar(0)
-#         lock(apply_damage, self, app.ent_dict[id], -dmg, 'melee', name)
-        lock(apply_damage, self, app.ent_dict[id], -dmg, 'melee')
-#         app.wait_variable(app.dethloks[name])
+    def do_attack(self, id):
+        my_str = self.get_attr('str')
+        target_end = app.ent_dict[id].get_attr('end')
+        pre = app.ent_dict[id].spirit
+        d = damage(my_str, target_end)
+        lock(apply_damage, self, app.ent_dict[id], -d, 'melee')
+        post = app.ent_dict[id].spirit
+        d = pre - post
+        sqr = app.ent_dict[id].loc[:]
+        app.canvas.create_text(sqr[0]*100-app.moved_right+49, sqr[1]*100-app.moved_down+74, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+        app.canvas.create_text(sqr[0]*100-app.moved_right+49, sqr[1]*100-app.moved_down+75, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
         if app.ent_dict[id].spirit <= 0:
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+94, text = app.ent_dict[id].name.replace('_', ' ') + ' Killed...', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+95, text = app.ent_dict[id].name.replace('_', ' ') + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
+            app.canvas.create_text(sqr[0]*100-app.moved_right+49, sqr[1]*100-app.moved_down+94, text = app.ent_dict[id].name.replace('_', ' ') + ' Killed...', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+            app.canvas.create_text(sqr[0]*100-app.moved_right+50, sqr[1]*100-app.moved_down+95, text = app.ent_dict[id].name.replace('_', ' ') + ' Killed...', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
             root.after(1666, lambda e = None, id = id : self.cancel_attack(e, id))
         else:
-            self.cancel_attack(event = None)
+            root.after(1666, lambda e = None, id = id : self.cancel_attack(e, id))
     
     def cancel_attack(self, event = None, id = None):
         self.init_normal_anims()
@@ -8603,8 +8620,6 @@ class Warrior(Summon):
                         if n in coords:
                             if  app.grid[n[0]][n[1]] == '':
                                 mvlist.append(n)
-        for f in self.move_effects:
-            mvlist = f(mvlist)
         return mvlist
                     
                     
@@ -8829,8 +8844,6 @@ class Familiar_Homonculus(Summon):
                     mvlist.append(s)
                 findall(s, start+1, distance)
         findall(loc, 1, 5)
-        for f in self.move_effects:
-            mvlist = f(mvlist)
         return mvlist
 
 class Lesser_Demon(Summon):
@@ -8863,8 +8876,6 @@ class Lesser_Demon(Summon):
                     mvlist.append(s)
                 findall(s, start+1, distance)
         findall(loc, 1, 4)
-        for f in self.move_effects:
-            mvlist = f(mvlist)
         return mvlist
         
         
@@ -8938,15 +8949,17 @@ class Lesser_Demon(Summon):
                         elif app.ent_dict[id].move_type == 'normal':
                             if app.ent_dict[id].attr_check('str') == False:
                                 app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+95-app.moved_down, text = 'Movement Reduced', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
-                                def brambles_move_effect(sqrs = None, obj = None):
-                                    n = [s for s in sqrs if dist(s, obj.loc) == 1]
-                                    return n
-                                p = partial(brambles_move_effect, obj = app.ent_dict[id])
-                                app.ent_dict[id].move_effects.append(p)
-                                def un(i, f):
-                                    app.ent_dict[i].move_effects.remove(f)
+                                def brambles_move(move_range):
+                                    move_range -= 1
+                                    if move_range < 0:
+                                        return 0
+                                    else:
+                                        return move_range
+                                app.ent_dict[id].move_effects.append(brambles_move)
+                                def un(i):
+                                    app.ent_dict[i].move_effects.remove(brambles_move)
                                     return None
-                                uf = partial(un, id, p)
+                                uf = partial(un, id)
                                 # EOT FUNC
                                 def nothing():
                                     return None
@@ -9427,7 +9440,7 @@ class Cenobite(Summon):
                     app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+95-app.moved_down, text = 'Burned', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
                 # burn effect, every time burned ent takes spirit dmg it takes that much dmg plus 2
                     def burn_effect(attacker, defender, amount, type):
-                        if amount < 0:
+                        if amount < 0 and (type == 'melee' or type == 'ranged'):
                             app.canvas.create_text(defender.loc[0]*100+49-app.moved_right, defender.loc[1]*100+54-app.moved_down, text = '+2 spirit burn', justify ='center', font = ('Andale Mono', 13), fill = 'black', tags = 'burn_text')
                             app.canvas.create_text(defender.loc[0]*100+50-app.moved_right, defender.loc[1]*100+55-app.moved_down, text = '+2 spirit burn', justify ='center', font = ('Andale Mono', 13), fill = 'orangered2', tags = 'burn_text')
                             root.after(1888, lambda t = 'burn_text' : app.canvas.delete(t))
@@ -9479,8 +9492,6 @@ class Cenobite(Summon):
                     mvlist.append(s)
                 findall(s, start+1, distance)
         findall(loc, 1, 4)
-        for f in self.move_effects:
-            mvlist = f(mvlist)
         return mvlist
         
     # ensure only one at a time, on death witch loses spirit, flight for movement (not blocked by obstacles)
@@ -9582,17 +9593,15 @@ class Familiar_Imp(Summon):
                     def blind_effect(): # EOT effect (nothing)
                         pass
                     # SOT effect (at begin of turn, if ent is within affected sqrs)
-                    def blind_moves(mvlist, obj = None):# REPLACE CLASS MOVEMENT WITH MOVE dist 2 if movement type == normal
-                        m = []
-                        for c in mvlist:
-                            if dist(c, obj.loc) <= 2:
-                                m.append(c)
-                        return m
-                    p2 = partial(blind_moves, obj = app.ent_dict[id])
-                    app.ent_dict[id].move_effects.append(p2)
-                    def un(i, func):
-                        app.ent_dict[i].move_effects.remove(func)
-                    p = partial(un, id, p2)
+                    def blind_moves(move_range):
+                        if move_range < 2:
+                            return move_range
+                        else:
+                            return 2
+                    app.ent_dict[id].move_effects.append(blind_moves)
+                    def un(i):
+                        app.ent_dict[i].move_effects.remove(blind_moves)
+                    p = partial(un, id)
                     # EOT FUNC
                     def nothing():
                         return None
@@ -9706,8 +9715,6 @@ class Familiar_Imp(Summon):
         for c in app.coords:
             if dist(c, loc) <= 5 and app.grid[c[0]][c[1]] == '':
                 mvlist.append(c)
-        for f in self.move_effects:
-            mvlist = f(mvlist)
         return mvlist
                     
 class Witch(Entity):
@@ -9985,8 +9992,6 @@ class Witch(Entity):
                     mvlist.append(s)
                 findall(s, start+1, distance)
         findall(loc, 1, 3)
-        for f in self.move_effects:
-            mvlist = f(mvlist)
         return mvlist
         
     def spell(self, event = None):
@@ -11145,20 +11150,18 @@ class Witch(Entity):
                 return stat
         app.ent_dict[id].agl_effects.append(gravity_agil_effect)
         app.ent_dict[id].dodge_effects.append(gravity_dodge_effect)
-        def gravity_move(mvlist, obj = None):
-            m = []
-            for s in mvlist:
-                if dist(s, obj.loc) <= 2:
-                    m.append(s)
-            return m
-        p_gravity_move = partial(gravity_move, obj = app.ent_dict[id])
-        app.ent_dict[id].move_effects.append(p_gravity_move)
-        def un(i, f):
+        def gravity_move(move_range):
+            if move_range < 2:
+                return move_range
+            else:
+                return 2
+        app.ent_dict[id].move_effects.append(gravity_move)
+        def un(i):
             app.ent_dict[i].agl_effects.remove(gravity_agil_effect)
             app.ent_dict[i].dodge_effects.remove(gravity_dodge_effect)
-            app.ent_dict[i].move_effects.remove(f)
+            app.ent_dict[i].move_effects.remove(gravity_move)
             return None
-        p = partial(un, id, p_gravity_move)
+        p = partial(un, id)
         # EOT FUNC
         def nothing():
             return None
@@ -11388,23 +11391,9 @@ class Witch(Entity):
         f = meditate_effect
         app.ent_dict[id].psyche_effects.append(f)
 ############################################
-        def meditate_move(mvlist):
-            locs = mvlist
-            m = mvlist[:]
-            for loc in locs:
-                def findall(loc, start, distance):
-                    if start > distance:
-                        return
-                    adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
-                    for s in adj:
-                        if s not in m:
-                            m.append(s)
-                        findall(s, start+1, distance)
-                findall(loc, 1, 2)
-            return m
-#####################################
+        def meditate_move(move_range):
+            return move_range + 2
         app.ent_dict[id].move_effects.append(meditate_move)
-            
         def un(i):
             app.ent_dict[i].psyche_effects.remove(meditate_effect)
             app.ent_dict[i].move_effects.remove(meditate_move)
@@ -11633,20 +11622,17 @@ class Witch(Entity):
             return stat
         f = mummify_effect
         app.ent_dict[id].end_effects.append(f)
-        def mummy_moves(mvlist, obj = None):
-            m = []
-            for c in mvlist:
-                if dist(c, obj.loc) == 1:
-                    m.append(c)
-            return m
-        p2 = partial(mummy_moves, obj = app.ent_dict[id])
-        app.ent_dict[id].move_effects.append(p2)
-        
-        def un(i, f):
+        def mummy_moves(move_range):
+            if move_range < 2:
+                return move_range
+            else:
+                return 2
+        app.ent_dict[id].move_effects.append(mummy_moves)
+        def un(i):
             app.ent_dict[i].end_effects.remove(mummify_effect)
-            app.ent_dict[i].move_effects.remove(f)
+            app.ent_dict[i].move_effects.remove(mummy_moves)
             return None
-        p = partial(un, id, p2)
+        p = partial(un, id)
         # EOT FUNC
         def nothing():
             return None
@@ -12238,19 +12224,6 @@ class App(tk.Frame):
 #                 else:
 #                     return None
 #             self.map_triggers.append(summon_trick)
-            # add generate revenants to global effects
-            # DEBUG should not be map trigger, happen only once per turn
-            def generate_revenants():
-                if self.turn_counter % 4 == 0:
-                    if app.grid[24][4] == '':
-                        img = ImageTk.PhotoImage(Image.open('summon_imgs/Revenant.png'))
-                        # needs to be unique number
-                        counter = self.effects_counter+3 # seed with 3 to prevent collision existing Ents
-                        self.effects_counter += 3
-                        id = 'b' + str(counter)
-                        app.grid[24][4] = id
-                        app.ent_dict[id] = Revenant(name = 'Revenant', img = img, loc = [24,4], owner = 'p2', number = id)
-            self.map_triggers.append(generate_revenants)
             #   CREATE SPARKLES
             def create_sparkles():
                 app.vis_dict['Sparkle1'] = Vis(name = 'Sparkle', loc = [28,15])
@@ -12268,7 +12241,6 @@ class App(tk.Frame):
                     return None
             self.map_triggers.append(kill_ghost)
             # trigger ghost
-            # Need to ensure spot is not blocked
             def ghost_teleport1():
                 if app.ent_dict['b2'].spirit < 50:
                     if app.grid[7][2] != '':
@@ -12336,6 +12308,8 @@ class App(tk.Frame):
             sound1.set_volume(0.3)
             self.map_triggers = []
             self.revenant_rate = 0
+            self.top2 = Image.open('1_player_map_fog/map21/2_top.png')
+            self.bot2 = Image.open('1_player_map_fog/map21/2.png')
 #             def summon_trick():
 #                 all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
 #                 if 'Bard' in all:
@@ -12755,8 +12729,12 @@ class App(tk.Frame):
                     coords = [[29,21],[30,21],[31,21],[29,20],[30,20],[31,20],[29,19],[30,19],[31,19],[29,18],[30,18],[31,18],[29,17],[30,17],[31,17],[29,16],[30,16],[31,16],[29,15],[30,15],[31,15],[29,14],[30,14],[31,14],[29,13],[30,13],[31,13],[29,12],[30,12],[31,12],[28,12],[28,13],[27,12],[27,13],[26,12],[26,13],[25,12],[25,13],[24,12],[24,13],[23,12],[23,13],[22,12],[22,13],[21,12],[21,13],[20,12],[20,13],[19,12],[19,13],[18,12],[18,13],[17,12],[17,13],[16,12],[16,13],[15,12],[15,13],[14,12],[14,13],[16,11],[17,11],[18,11],[19,11],[20,11],[21,11],[22,11],[16,10],[16,9],[14,11],[24,11],[24,10],[24,9],[26,11],[26,10],[26,9]]
                     for c in coords:
                         app.grid[c[0]][c[1]] = ''
-                    top = Image.open('1_player_map_fog/map21/2_top.png')
-                    bot = Image.open('1_player_map_fog/map21/2.png')
+                        
+#                     top = Image.open('1_player_map_fog/map21/2_top.png')
+#                     bot = Image.open('1_player_map_fog/map21/2.png')
+                    top = self.top2
+                    bot = self.bot2
+                    
                     newbot = self.map_bottom_image
                     newtop = self.map_top_image
                     newbot = Image.alpha_composite(newbot, bot)
@@ -13725,7 +13703,8 @@ class App(tk.Frame):
         self.depop_context(event = None)
         # ADD EOT effects for single player levels
         if app.num_players == 1:
-            if app.ent_dict[app.p1_witch].current_area == 21: #LABYRINTH
+            # LABYRINTH
+            if self.map_number == 21:
                 # generate revenants based on app.revenant_rate, starts at 2
                 if app.active_player == 'p1':
                     for i in range(min(2, app.revenant_rate//3)):
@@ -13740,6 +13719,21 @@ class App(tk.Frame):
                         sqr = choice(sqrs)
                         app.grid[sqr[0]][sqr[1]] = id
                         app.ent_dict[id] = Revenant(name = 'Revenant', img = img, loc = sqr[:], owner = 'p2', number = id)
+            # LIBRARY
+            elif self.map_number == 121:
+                if app.active_player == 'p1':
+                    # get potential spawn sqrs
+                    sqrs = [s for s in [[22,3],[23,3],[24,3],[22,4],[23,4],[24,4],[22,5],[23,5],[24,5]] if app.grid[s[0]][s[1]] == '']
+                    if sqrs != []:
+                        loc = choice(sqrs)
+                        img = ImageTk.PhotoImage(Image.open('summon_imgs/Revenant.png'))
+                        if self.effects_counter < 3:
+                            self.effects_counter += 3
+                        counter = self.effects_counter
+                        self.effects_counter += 1
+                        id = 'b' + str(counter)
+                        app.grid[loc[0]][loc[1]] = id
+                        app.ent_dict[id] = Revenant(name = 'Revenant', img = img, loc = loc[:], owner = 'p2', number = id)
         
         # first do EOT loop, rest of this becomes finish_end_turn()
         # get list of all ents, pass in first ent, loop pops front and calls 
