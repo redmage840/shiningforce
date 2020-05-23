@@ -1,7 +1,6 @@
+# method of preventing elemental summons id collision will not work if many ids die and later routine is called again
+# the length of keys may be some number but the highest id value could be different
 # update elementals / mages pathing/ai
-# elemental mages summons effects_counter collisions
-
-# move reducers (fear, slow), debug when max range is inhibited by obstacles
 
 # white dragon flight anims, ascend flight descend
 # dragon level, at some point, lose the ability to click down on map, what coord is left click registering on bottom edge? probably hinges on moved_down/moved_right...
@@ -5361,8 +5360,9 @@ class Air_Mage(Summon):
         else:
             if self.summons_used == False:
                 self.summons_used = True
-                if app.effects_counter <= len([k for k,v in app.ent_dict.items() if v.owner == self.owner]):
-                    app.effects_counter = len([k for k,v in app.ent_dict.items() if v.owner == self.owner]) + 1
+                maxid = max([int(v.number[1:]) for k,v in app.ent_dict.items() if v.owner == self.owner])
+                if app.effects_counter <= maxid:
+                    app.effects_counter = maxid+1
                 num1 = app.effects_counter
                 app.effects_counter += 1
                 num2 = app.effects_counter
@@ -5658,6 +5658,8 @@ class Air_Mage(Summon):
                 root.after(666, lambda id = id, name = name : app.kill(id, name))
                 root.wait_variable(app.dethloks[name])
                 self.finish_attack(ents_list)
+            else:
+                self.finish_attack(ents_list)
         else:
             self.finish_attack(ents_list)
                     
@@ -5923,8 +5925,9 @@ class Water_Mage(Summon):
             self.pass_priority(ents_list)
         else:
             # summon wave of elems (echelon)
-            if app.effects_counter <= len([k for k,v in app.ent_dict.items() if v.owner == self.owner]):
-                app.effects_counter = len([k for k,v in app.ent_dict.items() if v.owner == self.owner]) + 1
+            maxid = max([int(v.number[1:]) for k,v in app.ent_dict.items() if v.owner == self.owner])
+            if app.effects_counter <= maxid:
+                app.effects_counter = maxid+1
             num1 = app.effects_counter
             app.effects_counter += 1
             num2 = app.effects_counter
@@ -6030,7 +6033,7 @@ class Water_Mage(Summon):
     # ranged water attack or stat affecting spell?
     def do_attack(self, ents_list):
         if self.attack_used == True:
-            root.after(666, lambda e = ents_list : app.do_ai_loop(e))
+            root.after(666, lambda e = ents_list : self.ai_end_turn(e))
         else:
             self.attack_used = True
     #         self.init_attack_anims()
@@ -6052,25 +6055,23 @@ class Water_Mage(Summon):
 #         effect1 = mixer.Sound('Sound_Effects/deluge.ogg')
 #         effect1.set_volume(1)
 #         sound_effects.play(effect1, 0)
-        ents = [app.grid[c[0]][c[1]] for c in app.coords if dist(c, self.loc) <= 4 and app.grid[c[0]][c[1]] != '' and app.grid[c[0]][c[1]] != 'block']
-        ents = [e for e in ents if app.ent_dict[e].owner != self.owner]
+        ents = [k for k,v in app.ent_dict.items() if dist(v.loc, self.loc) <= 4 and v.owner != self.owner]
         if ents == []:
-            root.after(666, lambda e = ents_list : app.do_ai_loop(e))
+            root.after(666, lambda e = ents_list : self.ai_end_turn(e))
         else:
+            app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+84-app.moved_down, text = 'Deluge', font = ('Andale Mono', 16), fill = 'black', tags = 'text')
             app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+85-app.moved_down, text = 'Deluge', font = ('Andale Mono', 16), fill = 'cyan', tags = 'text')
             app.vis_dict['Deluge'] = Vis(name = 'Deluge', loc = self.loc[:])
             app.canvas.create_image(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+50-app.moved_down, image = app.vis_dict['Deluge'].img, tags = 'Deluge')
             id = choice(ents)
             loc = app.ent_dict[id].loc[:]
-            ents = [app.grid[c[0]][c[1]] for c in app.coords if dist(c, loc) <= 2 and app.grid[c[0]][c[1]] != '' and app.grid[c[0]][c[1]] != 'block']
-            ents = [e for e in ents if app.ent_dict[e].owner != self.owner]
+            ents = [k for k,v in app.ent_dict.items() if dist(loc, v.loc) <= 2 and v.owner != self.owner]
             for id in ents:
                 loc = app.ent_dict[id].loc[:]
                 n = 'Deluge' + str(app.effects_counter)
                 app.effects_counter += 1
                 app.vis_dict[n] = Vis(name = 'Deluge', loc = loc[:])
                 app.canvas.create_image(loc[0]*100+50-app.moved_right, loc[1]*100+50-app.moved_down, image = app.vis_dict[n].img, tags = 'Deluge')
-                # determine hit/dmg
                 my_psyche = self.get_attr('psyche')
                 tar_dodge = app.ent_dict[id].get_attr('dodge')
                 if to_hit(my_psyche, tar_dodge) == True:
@@ -6146,11 +6147,7 @@ class Water_Mage(Summon):
             self.finish_attackers(ents_list)
             
     def finish_attackers(self, ents_list):
-        el = ents_list[1:]
-        if ents_list == []:
-            app.end_turn()
-        else:
-            root.after(666, lambda el = el : app.do_ai_loop(el))
+        self.ai_end_turn(ents_list)
                 
                 
     # not used for movement, kept for purposes of monkey-patching
@@ -6351,8 +6348,9 @@ class Earth_Mage(Summon):
             # summon elementals once
             if self.summons_used == False:
                 self.summons_used = True
-                if app.effects_counter <= len([k for k,v in app.ent_dict.items() if v.owner == self.owner]):
-                    app.effects_counter = len([k for k,v in app.ent_dict.items() if v.owner == self.owner]) + 1
+                maxid = max([int(v.number[1:]) for k,v in app.ent_dict.items() if v.owner == self.owner])
+                if app.effects_counter <= maxid:
+                    app.effects_counter = maxid+1
                 num1 = app.effects_counter
                 app.effects_counter += 1
                 num2 = app.effects_counter
@@ -6822,8 +6820,9 @@ class Fire_Mage(Summon):
         sound_effects.play(effect1, 0)
         f_elems = [v.name for k,v in app.ent_dict.items() if v.name == 'Fire_Elemental']
         if f_elems == []:
-            if app.effects_counter <= len([k for k,v in app.ent_dict.items() if v.owner == self.owner]):
-                app.effects_counter = len([k for k,v in app.ent_dict.items() if v.owner == self.owner]) + 1
+            maxid = max([int(v.number[1:]) for k,v in app.ent_dict.items() if v.owner == self.owner])
+            if app.effects_counter <= maxid:
+                app.effects_counter = maxid+1
             num1 = app.effects_counter
             app.effects_counter += 1
             num2 = app.effects_counter
