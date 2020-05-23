@@ -1,4 +1,5 @@
 # update elementals / mages pathing/ai
+# elemental mages summons effects_counter collisions
 
 # move reducers (fear, slow), debug when max range is inhibited by obstacles
 
@@ -5360,6 +5361,8 @@ class Air_Mage(Summon):
         else:
             if self.summons_used == False:
                 self.summons_used = True
+                if app.effects_counter <= len([k for k,v in app.ent_dict.items() if v.owner == self.owner]):
+                    app.effects_counter = len([k for k,v in app.ent_dict.items() if v.owner == self.owner]) + 1
                 num1 = app.effects_counter
                 app.effects_counter += 1
                 num2 = app.effects_counter
@@ -5422,12 +5425,12 @@ class Air_Mage(Summon):
             
             
     def air_mage_move(self, ents_list, endloc):
-        global selected
+#         global selected
         self.move_used = True
         oldloc = self.loc[:]
         app.vis_dict['Teleport'] = Vis(name = 'Teleport', loc = oldloc[:])
         vis = app.vis_dict['Teleport']
-        app.canvas.create_image(oldloc[0]*100+50-app.moved_right, oldloc[1]*100+50-app.moved_down, image = vis.img, tags = 'Teleport')
+#         app.canvas.create_image(oldloc[0]*100+50-app.moved_right, oldloc[1]*100+50-app.moved_down, image = vis.img, tags = 'Teleport')
         root.after(2999, lambda ents_list = ents_list, endloc = endloc : self.finish_move(ents_list, endloc))
         
     def finish_move(self, ents_list, endloc):
@@ -5441,7 +5444,7 @@ class Air_Mage(Summon):
         except: pass
         app.vis_dict['Teleport'] = Vis(name = 'Teleport', loc = endloc[:])
         vis = app.vis_dict['Teleport']
-        app.canvas.create_image(endloc[0]*100+50-app.moved_right, endloc[1]*100+50-app.moved_down, image = vis.img, tags = 'Teleport')
+#         app.canvas.create_image(endloc[0]*100+50-app.moved_right, endloc[1]*100+50-app.moved_down, image = vis.img, tags = 'Teleport')
         root.after(2999, lambda ents_list = ents_list, endloc = endloc : self.cleanup_teleport(ents_list, endloc))
         
     def cleanup_teleport(self, ents_list, endloc):
@@ -5901,6 +5904,7 @@ class Water_Mage(Summon):
         self.dodge = 4
         self.psyche = 8
         self.spirit = 79
+        self.move_range = 9
         self.waiting = waiting
         self.move_type = 'teleport'
         self.summons_used = False
@@ -5919,6 +5923,8 @@ class Water_Mage(Summon):
             self.pass_priority(ents_list)
         else:
             # summon wave of elems (echelon)
+            if app.effects_counter <= len([k for k,v in app.ent_dict.items() if v.owner == self.owner]):
+                app.effects_counter = len([k for k,v in app.ent_dict.items() if v.owner == self.owner]) + 1
             num1 = app.effects_counter
             app.effects_counter += 1
             num2 = app.effects_counter
@@ -6345,7 +6351,8 @@ class Earth_Mage(Summon):
             # summon elementals once
             if self.summons_used == False:
                 self.summons_used = True
-                app.effects_counter += 1 # skip existing ent ids, increment 'just in case'
+                if app.effects_counter <= len([k for k,v in app.ent_dict.items() if v.owner == self.owner]):
+                    app.effects_counter = len([k for k,v in app.ent_dict.items() if v.owner == self.owner]) + 1
                 num1 = app.effects_counter
                 app.effects_counter += 1
                 num2 = app.effects_counter
@@ -6815,7 +6822,8 @@ class Fire_Mage(Summon):
         sound_effects.play(effect1, 0)
         f_elems = [v.name for k,v in app.ent_dict.items() if v.name == 'Fire_Elemental']
         if f_elems == []:
-            app.effects_counter += 1 # skip existing ent ids
+            if app.effects_counter <= len([k for k,v in app.ent_dict.items() if v.owner == self.owner]):
+                app.effects_counter = len([k for k,v in app.ent_dict.items() if v.owner == self.owner]) + 1
             num1 = app.effects_counter
             app.effects_counter += 1
             num2 = app.effects_counter
