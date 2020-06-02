@@ -154,20 +154,23 @@ if caster does not already have Beleth's Command Effect, caster gets +1 to endur
 level equal to caster psyche (on cast).<br>
 <br>
 <b>Summon Abilities</b><br>
-Warrior: Guard: Friendly unit gets effect that redirects all damage to this Warrior. Warrior's death removes<br>
-Effect. Lasts 3 turns at level 8.<br>
 Warrior: Attack: Agility versus agility to-hit. Strength versus endurance determines damage. Range 1, type melee.<br>
 Warrior: Leap: Move over obstacles to any square within range 3. Movement effects do not affect the range of Leap<br>
 unless specifically noted. Does not count as either an action or a move. Can only be used once per turn.<br>
-Shadow: Shadow Strike: Range 2-8. Agility versus dodge to-hit. Strength versus endurance determines damage.<br>
+Warrior lvl2: Throw: relocate an adjacent unit to a location up to distance 3 from Warrior<br>
+Warrior lvl2: Rage: Dispel current affects at +6, gain +2 str, +2 end, +4 psy, take 3 dmg on effect end, lasts 4 turns.<br>
+Shadow (wolf form): Shadow Strike: Range 2-8. Agility versus dodge to-hit. Strength versus endurance determines damage.<br>
 Type is ranged.<br>
-Shadow: Dark Shroud: Target Warrior, Bard, Trickster, or Plaguebearer and all other of all these types within range<br>
+Shadow (wolf form): Dark Shroud: Target Warrior, Bard, Trickster, or Plaguebearer and all other of all these types within range<br>
 of the target heal 2 spirit up to their max spirit and receive +1 dodge if they do not already have the effect.<br>
 Lasts 3 turns at level 3.<br>
-Shadow: Muddle: If target within range 4 fails psyche save, it gets muddle effect for 3 turns. At the end of turn,<br>
+Shadow lvl2 (wolf form): Darkblast: Dispel attempt one effect on a unit at +2, if unit is friendly then heal 3, if unit is<br>
+enemy then attack agility vs dodge, str vs end damage.<br>
+Shadow lvl2 (wolf form): Stalk: If target fails dodge save it gets defense_effect that increases ranged damage by 2, lasts 7 turns.<br>
+Shadow (mist form): Muddle: If target within range 4 fails psyche save, it gets muddle effect for 3 turns. At the end of turn,<br>
 the affected unit attacks itself using its own agility versus its own agility to-hit and its own strength and<br>
 endurance for determining damage with type of melee. Level 5.<br>
-Shadow: Drain Life: Target within range 2-5 is attacked using psyche versus psyche to-hit. Damage uses psyche<br>
+Shadow (mist form): Drain Life: Target within range 2-5 is attacked using psyche versus psyche to-hit. Damage uses psyche<br>
 versus psyche but is divided by 2 and rounded down to a minimum of 1 and then added to one (essentially about half<br>
 normal damage formula with a minimum of 2). Any damage done to the defending unit that is not more than its current<br>
 spirit total is added back to the caster's spirit (to a max of its starting spirit). Type magick<br>
@@ -184,13 +187,18 @@ Bard: Discord: Target within range 5 is attacked using psyche versus psyche to-h
 divided by 2 rounded down and added to 1 (about half normal formula, minimum 2). Type magick.<br>
 Bard: Esuna: Target within range 4 has each effect attempted to dispel/remove with no modifier.<br>
 Bard: Moonlight: Target Warrior, Shadow, Plaguebearer, or Trickster is healed 4 spirit up to its max spirit.<br>
+Bard lvl 2: Aura: Target Warrior, Shadow, Plaguebearer, or Trickster and all of these types within range 2 heal up to 3 spirit.<br>
+Bard lvl 2: Tranquility: Dispel attempt all effects on a location
 Plaguebearer: Pox: Each adjacent, non-plaguebearer, unit gets pox effect if it does not already have it. Effect<br>
 causes 3 poison damage at end of turn. Lasts 4 turns at level 6.<br>
 Plaguebearer: Paralyze: Target adjacent unit makes endurance save or is stunned (has no actions or move) until<br>
 its next end of turn.<br>
+Plaguebearer: Scarab Gestation: Target enemy gets a death trigger that creates a scarab under your control, scarab has str 2, agl 3<br>
+end 3, dodge 3, psyche 2, spirit 9, move range 5, and bite attack agility vs agility, str vs end damage.<br>
 Plaguebearer: Contagion: Plaguebearers have an innate death effect that gives each adjacent unit a contagion effect<br>
 if it does not already have one. Contagion gives -3 to strength, endurance, agility, and dodge. Lasts 3 turns at<br>
 level 7. This is triggered the moment a plaguebearer is reduced to zero spirit.<br>
+Plaguebearer lvl 2: Spore Cloud: Target location gets effect +2 dodge, -2 ranged or melee damage, lasts 3 full turns.<br>
 <br>
 Coming soon: descriptions of enemy abilities, powerup spells/summons and Fakir Ali's spells already in game...<br>
 <b>Fakir Ali Spells:<b><br>
