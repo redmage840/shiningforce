@@ -406,12 +406,13 @@ class Effect():
             return False
 
 class Local_Effect():
-    def __init__(self, name, undo, duration, level, loc):
+    def __init__(self, name, undo, duration, level, loc, avoid):
         self.name = name
         self.undo = undo
         self.duration = duration
         self.level = level
         self.loc = loc
+        self.avoid = avoid
         app.effects_counter += 1
         
     def dispel(self, mod = 0):
@@ -1709,103 +1710,103 @@ class Shadow(Summon):
         app.rebind_all()
         
         
-    def warpfire(self, event = None):
-#         loc_effects = [v.name for k,v in app.loc_effects_dict.items()]
-#         if 'Warpfire' in loc_effects:
+#     def warpfire(self, event = None):
+# #         loc_effects = [v.name for k,v in app.loc_effects_dict.items()]
+# #         if 'Warpfire' in loc_effects:
+# #             return
+#         if self.attack_used == True:
 #             return
-        if self.attack_used == True:
-            return
-        root.unbind('<a>')
-        root.unbind('<q>')
-        root.bind('<q>', self.cleanup_warpfire)
-        sqrs = []
-        for c in app.coords:
-            if 2 < dist(self.loc, c) <= 7:
-                sqrs.append(c)
-        app.animate_squares(sqrs)
-        app.depop_context(event = None)
-        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_warpfire(event = e, sqr = s, sqrs = sqrs)) 
-        b = tk.Button(app.context_menu, text = 'Choose Warpfire Location', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_warpfire(event = e, sqr = s, sqrs = sqrs))
-        b.pack(side = 'top')
-        app.context_buttons.append(b)
-        
-    def do_warpfire(self, event = None, sqr = None, sqrs = None):
-        if sqr not in sqrs:
-            return
-        if 'Warpfire' in [v.name for k,v in app.loc_effects_dict[tuple(sqr)].effects_dict.items()]:
-            return
-        app.unbind_all()
-        app.depop_context(event = None)
-        app.cleanup_squares()
-#         effect1 = mixer.Sound('Sound_Effects/warpfire.ogg')
-#         effect1.set_volume(1)
-#         sound_effects.play(effect1, 0)
-        self.attack_used = True
-        app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+94-app.moved_down, text = 'Warpfire', font = ('Andale Mono', 14), fill = 'black', tags = 'text')
-        app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+95-app.moved_down, text = 'Warpfire', font = ('Andale Mono', 14), fill = 'deeppink', tags = 'text')
-        un = 'Warpfire' + str(app.effects_counter)
-        app.effects_counter += 1
-        app.vis_dict[un] = Vis(name = 'Warpfire', loc = sqr[:])
-        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict[un].img, tags = un)
-        
-        # change to sot effect that damages occupying ent, then attempts to move all ents wi rang3 to a sqr that would reduce dist
-        # to warpfire by 1 if it exists
-        # make 2 separate sot_effects
-        def warpfire_effect(s):
-            # first dmg ent at this loc if exists
-            ent = [k for k,v in app.ent_dict.items() if v.loc == s]
-            if ent != []:
-                tar = ent[0]
-                app.get_focus(tar)
-                lock(apply_damage, self, app.ent_dict[tar], -2, 'magick')
-                app.canvas.create_text(app.ent_dict[tar].loc[0]*100+49-app.moved_right, app.ent_dict[tar].loc[1]*100+74-app.moved_down, text = '2 spirit Warpfire', justify ='center', font = ('Andale Mono', 13), fill = 'black', tags = 'text')
-                app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+75-app.moved_down, text = '2 spirit Warpfire', justify ='center', font = ('Andale Mono', 13), fill = 'deeppink', tags = 'text')
-                if app.ent_dict[tar].spirit <= 0:
-                    app.canvas.create_text(app.ent_dict[tar].loc[0]*100+49-app.moved_right, app.ent_dict[tar].loc[1]*100+94-app.moved_down, text = app.ent_dict[tar].name.replace('_',' ') + ' Killed...', justify = 'center', font = ('Andale Mono', 13), fill = 'black', tags = 'text')
-                    app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+95-app.moved_down, text = app.ent_dict[tar].name.replace('_',' ') + ' Killed...', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
-                return 'Not None'
-            else:
-                return None
-        sot = partial(warpfire_effect, sqr[:])
-        app.loc_effects_dict[tuple(sqr)].sot_effects.append(sot)
-        def warp_move(s):
-            ents = [k for k,v in app.ent_dict.items() if 1 <= dist(v.loc,s) <= 3]
-            if ents != []:
-                # assign empty locs, move all at once, do not assign same sqr twice
-                
-
-            
-        p = partial(spore_effect)
-        app.loc_effects_dict[tuple(sqr)].dodge_effects.append(p)
-        def spore_def(attacker, defender, amount, type):
-            if amount < 0 and (type == 'melee' or type == 'ranged'):
-                app.canvas.create_text(defender.loc[0]*100+49-app.moved_right, defender.loc[1]*100+54-app.moved_down, text = '-2 (min1) spirit spore cloud', justify ='center', font = ('Andale Mono', 13), fill = 'black', tags = 'text')
-                app.canvas.create_text(defender.loc[0]*100+50-app.moved_right, defender.loc[1]*100+55-app.moved_down, text = '-2 (min1) spirit spore cloud', justify ='center', font = ('Andale Mono', 13), fill = 'olivedrab2', tags = 'text')
-                root.after(1888, lambda t = 'text' : app.canvas.delete(t))
-                amount += 2
-                if amount > -1:
-                    return -1
-                else:
-                    return amount
-            else:
-                return amount
-        app.loc_effects_dict[tuple(sqr)].def_effects.append(spore_def)
-        def undo(s, un, p_ef):
-            app.loc_effects_dict[tuple(s)].dodge_effects.remove(p_ef)
-            app.loc_effects_dict[tuple(s)].def_effects.remove(spore_def)
-            del app.vis_dict[un]
-            app.canvas.delete(un)
-        u = partial(undo, sqr[:], un, p)
-        app.loc_effects_dict[tuple(sqr)].effects_dict[un] = Local_Effect(name = 'Spore_Cloud', undo = u, duration = 6, level = 8, loc = sqr[:])
-        root.after(1666, self.cleanup_spore_cloud)
-        
-    def cleanup_spore_cloud(self, event = None):
-        app.unbind_all()
-        app.rebind_all()
-        app.cleanup_squares()
-        app.depop_context(event = None)
-        try: app.canvas.delete('text')
-        except: pass
+#         root.unbind('<a>')
+#         root.unbind('<q>')
+#         root.bind('<q>', self.cleanup_warpfire)
+#         sqrs = []
+#         for c in app.coords:
+#             if 2 < dist(self.loc, c) <= 7:
+#                 sqrs.append(c)
+#         app.animate_squares(sqrs)
+#         app.depop_context(event = None)
+#         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_warpfire(event = e, sqr = s, sqrs = sqrs)) 
+#         b = tk.Button(app.context_menu, text = 'Choose Warpfire Location', wraplength = 190, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_warpfire(event = e, sqr = s, sqrs = sqrs))
+#         b.pack(side = 'top')
+#         app.context_buttons.append(b)
+#         
+#     def do_warpfire(self, event = None, sqr = None, sqrs = None):
+#         if sqr not in sqrs:
+#             return
+#         if 'Warpfire' in [v.name for k,v in app.loc_effects_dict[tuple(sqr)].effects_dict.items()]:
+#             return
+#         app.unbind_all()
+#         app.depop_context(event = None)
+#         app.cleanup_squares()
+# #         effect1 = mixer.Sound('Sound_Effects/warpfire.ogg')
+# #         effect1.set_volume(1)
+# #         sound_effects.play(effect1, 0)
+#         self.attack_used = True
+#         app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+94-app.moved_down, text = 'Warpfire', font = ('Andale Mono', 14), fill = 'black', tags = 'text')
+#         app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+95-app.moved_down, text = 'Warpfire', font = ('Andale Mono', 14), fill = 'deeppink', tags = 'text')
+#         un = 'Warpfire' + str(app.effects_counter)
+#         app.effects_counter += 1
+#         app.vis_dict[un] = Vis(name = 'Warpfire', loc = sqr[:])
+#         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict[un].img, tags = un)
+#         
+#         # change to sot effect that damages occupying ent, then attempts to move all ents wi rang3 to a sqr that would reduce dist
+#         # to warpfire by 1 if it exists
+#         # make 2 separate sot_effects
+#         def warpfire_effect(s):
+#             # first dmg ent at this loc if exists
+#             ent = [k for k,v in app.ent_dict.items() if v.loc == s]
+#             if ent != []:
+#                 tar = ent[0]
+#                 app.get_focus(tar)
+#                 lock(apply_damage, self, app.ent_dict[tar], -2, 'magick')
+#                 app.canvas.create_text(app.ent_dict[tar].loc[0]*100+49-app.moved_right, app.ent_dict[tar].loc[1]*100+74-app.moved_down, text = '2 spirit Warpfire', justify ='center', font = ('Andale Mono', 13), fill = 'black', tags = 'text')
+#                 app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+75-app.moved_down, text = '2 spirit Warpfire', justify ='center', font = ('Andale Mono', 13), fill = 'deeppink', tags = 'text')
+#                 if app.ent_dict[tar].spirit <= 0:
+#                     app.canvas.create_text(app.ent_dict[tar].loc[0]*100+49-app.moved_right, app.ent_dict[tar].loc[1]*100+94-app.moved_down, text = app.ent_dict[tar].name.replace('_',' ') + ' Killed...', justify = 'center', font = ('Andale Mono', 13), fill = 'black', tags = 'text')
+#                     app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+95-app.moved_down, text = app.ent_dict[tar].name.replace('_',' ') + ' Killed...', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+#                 return 'Not None'
+#             else:
+#                 return None
+#         sot = partial(warpfire_effect, sqr[:])
+#         app.loc_effects_dict[tuple(sqr)].sot_effects.append(sot)
+#         def warp_move(s):
+#             ents = [k for k,v in app.ent_dict.items() if 1 <= dist(v.loc,s) <= 3]
+#             if ents != []:
+#                 # assign empty locs, move all at once, do not assign same sqr twice
+#                 
+# 
+#             
+#         p = partial(spore_effect)
+#         app.loc_effects_dict[tuple(sqr)].dodge_effects.append(p)
+#         def spore_def(attacker, defender, amount, type):
+#             if amount < 0 and (type == 'melee' or type == 'ranged'):
+#                 app.canvas.create_text(defender.loc[0]*100+49-app.moved_right, defender.loc[1]*100+54-app.moved_down, text = '-2 (min1) spirit spore cloud', justify ='center', font = ('Andale Mono', 13), fill = 'black', tags = 'text')
+#                 app.canvas.create_text(defender.loc[0]*100+50-app.moved_right, defender.loc[1]*100+55-app.moved_down, text = '-2 (min1) spirit spore cloud', justify ='center', font = ('Andale Mono', 13), fill = 'olivedrab2', tags = 'text')
+#                 root.after(1888, lambda t = 'text' : app.canvas.delete(t))
+#                 amount += 2
+#                 if amount > -1:
+#                     return -1
+#                 else:
+#                     return amount
+#             else:
+#                 return amount
+#         app.loc_effects_dict[tuple(sqr)].def_effects.append(spore_def)
+#         def undo(s, un, p_ef):
+#             app.loc_effects_dict[tuple(s)].dodge_effects.remove(p_ef)
+#             app.loc_effects_dict[tuple(s)].def_effects.remove(spore_def)
+#             del app.vis_dict[un]
+#             app.canvas.delete(un)
+#         u = partial(undo, sqr[:], un, p)
+#         app.loc_effects_dict[tuple(sqr)].effects_dict[un] = Local_Effect(name = 'Spore_Cloud', undo = u, duration = 6, level = 8, loc = sqr[:], avoid = -7)
+#         root.after(1666, self.cleanup_spore_cloud)
+#         
+#     def cleanup_spore_cloud(self, event = None):
+#         app.unbind_all()
+#         app.rebind_all()
+#         app.cleanup_squares()
+#         app.depop_context(event = None)
+#         try: app.canvas.delete('text')
+#         except: pass
         
         
         
@@ -2494,7 +2495,7 @@ class Plaguebearer(Summon):
             del app.vis_dict[un]
             app.canvas.delete(un)
         u = partial(undo, sqr[:], un, p)
-        app.loc_effects_dict[tuple(sqr)].effects_dict[un] = Local_Effect(name = 'Spore_Cloud', undo = u, duration = 6, level = 8, loc = sqr[:])
+        app.loc_effects_dict[tuple(sqr)].effects_dict[un] = Local_Effect(name = 'Spore_Cloud', undo = u, duration = 6, level = 8, loc = sqr[:], avoid = -7)
         root.after(1666, self.cleanup_spore_cloud)
         
     def cleanup_spore_cloud(self, event = None):
@@ -4417,15 +4418,15 @@ class Revenant(Summon):
             root.after(1333, lambda el = ents_list, id = id : self.do_attack(el, id)) # ATTACK
         else: # MOVE THEN TRY ATTACK
             enemy_locs = [v.loc for k,v in app.ent_dict.items() if v.owner != self.owner]
-            goals = [c for c in app.coords for el in enemy_locs if 1 <= dist(c, el) <= 2 and app.grid[c[0]][c[1]] == '']
-            # get closest goal sqr
-            if goals == []:
+            gs = [c for c in app.coords for el in enemy_locs if 1 <= dist(c, el) <= 2 and app.grid[c[0]][c[1]] == '']
+            if gs == []:
                 friendly_locs = [v.loc for k,v in app.ent_dict.items() if v.owner == self.owner and v != self]
                 egrid = deepcopy(app.grid)
                 for s in friendly_locs:
                     egrid[s[0]][s[1]] = '' # EGRID NOW EMPTIED OF FRIENDLY ENTS
-                goals = [c for c in app.coords for el in enemy_locs if 1 <= dist(c, el) <= 2 and egrid[c[0]][c[1]] == '']
-            goal = reduce(lambda a,b : a if dist(a, self.loc) < dist(b, self.loc) else b, goals)
+                gs = [c for c in app.coords for el in enemy_locs if 1 <= dist(c, el) <= 2 and egrid[c[0]][c[1]] == '']
+            cs = [c for c in app.coords if sum([ef.avoid for k,ef in app.loc_effects_dict[tuple(c)].effects_dict.items()])*10 < randrange(30,90)]
+            goal = reduce(lambda a,b : a if sum([ef.avoid for k,ef in app.loc_effects_dict[tuple(a)].effects_dict.items()]) < sum([ef.avoid for k,ef in app.loc_effects_dict[tuple(b)].effects_dict.items()]) else b, gs)
             moves = self.legal_moves()
             if moves == []:
                 self.ai_end_turn(ents_list)
@@ -4433,6 +4434,25 @@ class Revenant(Summon):
                 # get legal move sqr that minimizes dist to goal
                 move = reduce(lambda a,b : a if dist(a, goal) < dist(b, goal) else b, moves)
                 self.revenant_move(ents_list, move)
+        
+        
+#             enemy_locs = [v.loc for k,v in app.ent_dict.items() if v.owner != self.owner]
+#             goals = [c for c in app.coords for el in enemy_locs if 1 <= dist(c, el) <= 2 and app.grid[c[0]][c[1]] == '']
+#             # get closest goal sqr
+#             if goals == []:
+#                 friendly_locs = [v.loc for k,v in app.ent_dict.items() if v.owner == self.owner and v != self]
+#                 egrid = deepcopy(app.grid)
+#                 for s in friendly_locs:
+#                     egrid[s[0]][s[1]] = '' # EGRID NOW EMPTIED OF FRIENDLY ENTS
+#                 goals = [c for c in app.coords for el in enemy_locs if 1 <= dist(c, el) <= 2 and egrid[c[0]][c[1]] == '']
+#             goal = reduce(lambda a,b : a if dist(a, self.loc) < dist(b, self.loc) else b, goals)
+#             moves = self.legal_moves()
+#             if moves == []:
+#                 self.ai_end_turn(ents_list)
+#             else:
+#                 # get legal move sqr that minimizes dist to goal
+#                 move = reduce(lambda a,b : a if dist(a, goal) < dist(b, goal) else b, moves)
+#                 self.revenant_move(ents_list, move)
             
     def revenant_move(self, ents_list, sqr):
         global selected
@@ -9859,7 +9879,7 @@ class Familiar_Homonculus(Summon):
                             root.after(2666, lambda ents = ents : fuse_loop(ents))
                 fuse_loop(ents)
             u = partial(undo, sqr[:], un)
-            app.loc_effects_dict[tuple(sqr)].effects_dict[un] = Local_Effect(name = 'Fuse_Trap', undo = u, duration = 3, level = 4, loc = sqr[:])
+            app.loc_effects_dict[tuple(sqr)].effects_dict[un] = Local_Effect(name = 'Fuse_Trap', undo = u, duration = 3, level = 4, loc = sqr[:], avoid = 4)
         self.cleanup_fuse_trap()
                     
     def cleanup_fuse_trap(self, event = None):
@@ -10560,11 +10580,15 @@ class Cenobite(Summon):
         if to_hit(my_psyche, target_psyche) == True:
             target_end = app.ent_dict[id].get_attr('end')
             d = damage(my_psyche, target_end)
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+75-app.moved_down, text = 'Hit! '+str(d)+' spirit', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
-#             app.ent_dict[id].set_attr('spirit', -d)
+            pre = app.ent_dict[id].spirit
             lock(apply_damage, self, app.ent_dict[id], -d, 'magick')
+            post = app.ent_dict[id].spirit
+            d = pre - post
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100+49-app.moved_right, app.ent_dict[id].loc[1]*100+74-app.moved_down, text = 'Hit! '+str(d)+' spirit', justify ='center', font = ('Andale Mono', 13), fill = 'black', tags = 'text')
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+75-app.moved_down, text = 'Hit! '+str(d)+' spirit', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
             if app.ent_dict[id].spirit <= 0:
-                app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+90-app.moved_down, text = app.ent_dict[id].name.replace('_',' ')+' Killed...', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+                app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+94-app.moved_down, text = app.ent_dict[id].name.replace('_',' ')+' Killed...', font = ('Andale Mono', 13), fill = 'black', tags = 'text')
+                app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+95-app.moved_down, text = app.ent_dict[id].name.replace('_',' ')+' Killed...', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
                 name = 'Dethlok'+str(app.death_count)
                 app.death_count += 1
                 app.dethloks[name] = tk.IntVar(0)
@@ -10573,13 +10597,14 @@ class Cenobite(Summon):
                 app.wait_variable(app.dethloks[name])
             else:# SAVE to avoid burn
                 if app.ent_dict[id].attr_check('end') == False:
-                    app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+95-app.moved_down, text = 'Burned', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100+49-app.moved_right, app.ent_dict[id].loc[1]*100+94-app.moved_down, text = 'Burned', justify ='center', font = ('Andale Mono', 13), fill = 'black', tags = 'text')
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+95-app.moved_down, text = 'Burned', justify ='center', font = ('Andale Mono', 13), fill = 'orangered2', tags = 'text')
                 # burn effect, every time burned ent takes spirit dmg it takes that much dmg plus 2
                     def burn_effect(attacker, defender, amount, type):
                         if amount < 0 and (type == 'melee' or type == 'ranged'):
-                            app.canvas.create_text(defender.loc[0]*100+49-app.moved_right, defender.loc[1]*100+54-app.moved_down, text = '+2 spirit burn', justify ='center', font = ('Andale Mono', 13), fill = 'black', tags = 'burn_text')
-                            app.canvas.create_text(defender.loc[0]*100+50-app.moved_right, defender.loc[1]*100+55-app.moved_down, text = '+2 spirit burn', justify ='center', font = ('Andale Mono', 13), fill = 'orangered2', tags = 'burn_text')
-                            root.after(1888, lambda t = 'burn_text' : app.canvas.delete(t))
+                            app.canvas.create_text(defender.loc[0]*100+49-app.moved_right, defender.loc[1]*100+54-app.moved_down, text = '+2 spirit burn', justify ='center', font = ('Andale Mono', 13), fill = 'black', tags = 'text')
+                            app.canvas.create_text(defender.loc[0]*100+50-app.moved_right, defender.loc[1]*100+55-app.moved_down, text = '+2 spirit burn', justify ='center', font = ('Andale Mono', 13), fill = 'orangered2', tags = 'text')
+                            root.after(1888, lambda t = 'text' : app.canvas.delete(t))
                             amount -= 2
                             return amount
                         else:
@@ -10597,7 +10622,8 @@ class Cenobite(Summon):
                     app.ent_dict[id].effects_dict[n] = Effect(name = 'Burn', info = 'Burn, 2 more dmg', eot_func = eot, undo = p, duration = 3, level = 4)
                 root.after(2666, lambda e = None : self.cancel_hellfire(event = e))
         else:
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+75-app.moved_down, text = 'Missed', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100+49-app.moved_right, app.ent_dict[id].loc[1]*100+74-app.moved_down, text = 'Miss!', justify ='center', font = ('Andale Mono', 13), fill = 'black', tags = 'text')
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+75-app.moved_down, text = 'Miss!', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
             root.after(2666, lambda e = None : self.cancel_hellfire(event = e))
         
     def cancel_hellfire(self, event = None):
@@ -10721,7 +10747,7 @@ class Familiar_Imp(Summon):
                     del app.vis_dict[un]
                     app.canvas.delete(un)
                 u = partial(undo, s, un, p)
-                app.loc_effects_dict[tuple(s)].effects_dict[un] = Local_Effect(name = 'Darkness', undo = u, duration = 3, level = 3, loc = s[:])
+                app.loc_effects_dict[tuple(s)].effects_dict[un] = Local_Effect(name = 'Darkness', undo = u, duration = 3, level = 3, loc = s[:], avoid = 5)
         self.cleanup_darkness()
         
     def cleanup_darkness(self, event = None):
