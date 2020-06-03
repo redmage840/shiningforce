@@ -1,3 +1,9 @@
+# willowisp make sure path has max len
+
+# darkblast shows heal text / heals witch
+
+# cenobite and lesser demon stuff, update to new techniques... ie correct focus/timing on stw brambles etc...
+
 # aura is model for spells/Vis objects img loading, files opened in App init
 # image opens prob thrashing disk, total images about 200mb, just load all into ram (make members of root object)
 
@@ -1817,7 +1823,7 @@ class Shadow(Summon):
         root.unbind('<a>')
         root.unbind('<q>')
         root.bind('<q>', self.finish_stalk)
-        sqrs = [c for c in app.coords if 1 <= dist(self.loc, c) <= 7]
+        sqrs = [c for c in app.coords if 3 <= dist(self.loc, c) <= 9]
         app.animate_squares(sqrs)
         app.depop_context(event = None)
         root.bind('<a>', lambda e, sqr = grid_pos, sqrs = sqrs : self.do_stalk(event = e, sqr = sqr, sqrs = sqrs))
@@ -1946,13 +1952,16 @@ class Shadow(Summon):
                     bg.create_text(15, 15, text= 'Choose Effect...', width = 190, anchor = 'nw', font = ('chalkduster', 16), fill = 'indianred')
                     app.context_buttons.append(bg)
                     efs = [(k, v.name) for k,v in app.ent_dict[id].effects_dict.items()]
-                    for key,name in efs:
-#                         i += 1
-#                         root.bind(str(i), call)
-#                         p = partial(call, None)
-                        b = tk.Button(app.context_menu, text = name.replace('_',' '), wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda id = id, ef_name = name, key = key : self.darkblast_dispel(id, ef_name, key))
-                        b.pack(side = 'top')
-                        app.context_buttons.append(b)
+                    if efs == []:
+                        root.after(2666, lambda e = None, id = id : self.finish_darkblast(event = e, id = id))
+                    else:
+                        for key,name in efs:
+    #                         i += 1
+    #                         root.bind(str(i), call)
+    #                         p = partial(call, None)
+                            b = tk.Button(app.context_menu, text = name.replace('_',' '), wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda id = id, ef_name = name, key = key : self.darkblast_dispel(id, ef_name, key))
+                            b.pack(side = 'top')
+                            app.context_buttons.append(b)
             else:# MISS
                 app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Miss!', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
                 app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Miss!', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
@@ -1969,13 +1978,16 @@ class Shadow(Summon):
             bg.create_text(15, 15, text= 'Choose Effect...', width = 190, anchor = 'nw', font = ('chalkduster', 16), fill = 'indianred')
             app.context_buttons.append(bg)
             efs = [(k, v.name) for k,v in app.ent_dict[id].effects_dict.items()]
-            for key,name in efs:
-#                         i += 1
-#                         root.bind(str(i), call)
-#                         p = partial(call, None)
-                b = tk.Button(app.context_menu, text = name.replace('_',' '), wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda id = id, ef_name = name, key = key : self.darkblast_dispel(id, ef_name, key))
-                b.pack(side = 'top')
-                app.context_buttons.append(b)
+            if efs == []:
+                root.after(2666, lambda e = None, id = id : self.finish_darkblast(event = e, id = id))
+            else:
+                for key,name in efs:
+    #                         i += 1
+    #                         root.bind(str(i), call)
+    #                         p = partial(call, None)
+                    b = tk.Button(app.context_menu, text = name.replace('_',' '), wraplength = 190, font = ('chalkduster', 24), fg = 'tan3', highlightbackground = 'tan3', command = lambda id = id, ef_name = name, key = key : self.darkblast_dispel(id, ef_name, key))
+                    b.pack(side = 'top')
+                    app.context_buttons.append(b)
             
     def darkblast_dispel(self, id, ef_name, key):
         app.depop_context(event = None)
@@ -2261,7 +2273,7 @@ class Shadow(Summon):
         root.bind('<q>', self.finish_shadow_strike)
         sqrs = []
         for coord in app.coords:
-            if 1 < dist(coord, self.loc) <= 8:
+            if 1 < dist(coord, self.loc) <= 7:
                 sqrs.append(coord)
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, sqr = grid_pos, sqrs = sqrs : self.do_shadow_strike(e, sqr, sqrs))
@@ -4334,11 +4346,9 @@ class Ghost(Summon):
         # insert Wail (equak no dmg), then 'wander'
         self.wail(ents_list)
         
+    # change to ensure path is no greater than 2 or 3, only move to increase distance from ghost
     def wail(self, ents_list):
-        sqrs = []
-        for c in app.coords:
-            if dist(c, self.loc) <= 6:
-                sqrs.append(c)
+        sqrs = [c for c in app.coords if dist(c,self.loc) <= 6]
         app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+84-app.moved_down, text = 'Wail', font = ('Andale Mono', 17), fill = 'black', tags = 'text')
         app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+85-app.moved_down, text = 'Wail', font = ('Andale Mono', 17), fill = 'bisque2', tags = 'text')
         root.after(2555, lambda t = 'text' : app.canvas.delete(t))
@@ -4353,7 +4363,7 @@ class Ghost(Summon):
                 ents = ents[1:]
                 loc = app.ent_dict[id].loc
                 app.get_focus(id)
-                sqrs = [s for s in app.coords if dist(s, loc) <= 2 and app.grid[s[0]][s[1]] == '' and bfs(loc, [s], app.grid)]
+                sqrs = [s for s in app.coords if dist(s, loc) <= 2 and app.grid[s[0]][s[1]] == '' and dist(s,self.loc) >= dist(loc,self.loc) and bfs(loc, [s], app.grid) and len(bfs(loc, [s], app.grid)) <= 3]
                 if sqrs == []:
                     root.after(666, lambda ents = ents : wail_loop(ents))
                 else:
@@ -4426,7 +4436,12 @@ class Revenant(Summon):
                     egrid[s[0]][s[1]] = '' # EGRID NOW EMPTIED OF FRIENDLY ENTS
                 gs = [c for c in app.coords for el in enemy_locs if 1 <= dist(c, el) <= 2 and egrid[c[0]][c[1]] == '']
             cs = [c for c in app.coords if sum([ef.avoid for k,ef in app.loc_effects_dict[tuple(c)].effects_dict.items()])*10 < randrange(30,90)]
-            goal = reduce(lambda a,b : a if sum([ef.avoid for k,ef in app.loc_effects_dict[tuple(a)].effects_dict.items()]) < sum([ef.avoid for k,ef in app.loc_effects_dict[tuple(b)].effects_dict.items()]) else b, gs)
+            goals = [g for g in gs if g in cs]
+            if goals == []:
+                goal = choice(gs)
+            else:
+                goal = reduce(lambda a,b : a if dist(a,self.loc) < dist(b,self.loc) else b, goals)
+#             goal = reduce(lambda a,b : a if sum([ef.avoid for k,ef in app.loc_effects_dict[tuple(a)].effects_dict.items()]) < sum([ef.avoid for k,ef in app.loc_effects_dict[tuple(b)].effects_dict.items()]) else b, gs)
             moves = self.legal_moves()
             if moves == []:
                 self.ai_end_turn(ents_list)
