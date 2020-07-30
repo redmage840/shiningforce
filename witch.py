@@ -1,11 +1,46 @@
+# library, rev pathing, low ghost str + beleths str save/paralyze
+
+# pain timing, cast on adjacent pb
+
+# help popup window size, scrollbar, text widget?
+
+# bind r-click to popcontext (act as 'a')?
+
+# consider critical-hit/miss for dispel (if randval == 0 or 100 fail pass)
+
+# make sure to-hit has max 99% and min 5%
+
+# change fuse trap? undo_funcs should not cause dmg? also rage?
+
+# change ent_dict.items() lookups to app.ent().items()
+
+# all flying moves become 'large' (move above maptops)
+
+# FIX rev pathing egrid
+
+# unbind all during mapmelds?
+
+# psi-push onto sparkle, was 'fixed' with 'psi-push-text', changed back...
+
+# labyrinth limit total revs (if not already)
+
+# shadow glow eyes, apparent in dark space...
+
+# load all summon related images on levelstart
+
+# restrict/lock screen size, do not allow screen resizings during logic execution
+
+# ? cenobite, lesser demon, familiar (spell-produced summons/non-wolves) become ai-controlled?
+
+# beleths timing when moving map to focus on adjacent enemy
+
 # will be able to implement guard after changing atk/def effects to use lock
+# currently returning amt and time (similar to lock method)
 
 # change other effect loops to use lock
 
 # change each eot_effect to accept lockname and alter it upon completion
-# curse of oriax is model, timing on set of tkvar is allotted time
-# can also change to handle own kills
-# does this enable hunting hawk?
+# curse of oriax is model, timing on set of tkvar is allotted time (func decides its own time dynamically)
 
 # pathing manager, ai manager/dispatcher
 
@@ -26,6 +61,9 @@
 
 # add lighting sound beleths
 
+# 1plyr/2plyr becomes campaign/deathmatch|witchbattle?
+# deathmatch: set options num summons, sum level, spells
+
 # change powerups like +1 all stats, +1 end, to specific lvl2's for each char, so each char can grow differently
 
 # undead knight more interesting than just melee atk
@@ -39,6 +77,7 @@
 # limit number of scarabs?
 
 # fix all 'large tops' affected by things (top of large ent animations)
+# FIX: access ents with app.ents() (returns dict stripped of large tops and potentially other) INSTEAD of app.ent_dict.items()
 
 # finish version .9
 # finish levels, add gorgon level
@@ -91,6 +130,7 @@
 # minotaur shadow
 
 # speed up map melds (labyrinth)
+# open all files on map load, BUT expensive operation is meld itself (transparency union) which happen in orders unpredictable (preloadable)
 
 # save modifiers
 
@@ -100,7 +140,7 @@
 
 # enemy to dispel stuff...
 
-# test LOS
+# test LOS, implement it with something (gorgon at least)
 
 # redo FA spells...
 
@@ -261,7 +301,7 @@ def apply_damage(attacker, defender, amount, type, lockname):
     
 def atk_loop(effects_list, attacker, defender, amount, type, lockname):
     if effects_list == []:
-        defense_loop(defender.defense_effects[:] + app.loc_effects_dict[tuple(defender.loc)].def_effects, attacker, defender, amount, type, lockname)
+        defense_loop(defender.defense_effects[:] + app.loc_effects_dict[tuple(defender.loc)].def_effects[:], attacker, defender, amount, type, lockname)
     else:
         ef = effects_list[0]
         effects_list = effects_list[1:]
@@ -1047,7 +1087,7 @@ class Trickster(Summon):
                             app.canvas.create_text(dfndr.loc[0]*100+49-app.moved_right, dfndr.loc[1]*100+94-app.moved_down, text = 'Double absorbs spirit...', font = ('Andale Mono', 14), fill = 'black', tags = 'text')
                             app.canvas.create_text(dfndr.loc[0]*100+50-app.moved_right, dfndr.loc[1]*100+95-app.moved_down, text = 'Double absorbs spirit...', font = ('Andale Mono', 14), fill = 'lightcyan', tags = 'text')
                             root.after(1888, lambda t = 'text' : app.canvas.delete(t))
-                            return amt//2
+                            return (amt//2, 1666)
                         else:
                             app.canvas.create_text(atkr.loc[0]*100+49-app.moved_right, atkr.loc[1]*100+94-app.moved_down, text = 'Psyche Save...', font = ('Andale Mono', 14), fill = 'black', tags = 'text')
                             app.canvas.create_text(atkr.loc[0]*100+50-app.moved_right, atkr.loc[1]*100+95-app.moved_down, text = 'Psyche Save...', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
@@ -1993,9 +2033,9 @@ class Shadow(Summon):
             p = partial(un, id)
             n = 'Tendrils_Move' + str(app.effects_counter)
             app.ent_dict[id].effects_dict[n] = Effect(name = 'Tendrils_Move', undo_func = p, duration = 5, level = 6)
-        # -1 rand stat non-cumulative
+        # -1 rand non-str stat, cumulative
         target_str = app.ent_dict[id].get_abl('str')
-        if to_hit(my_psyche, target_str) == True and 'Tendrils_Drain' not in [ef.name for k,ef in app.ent_dict[id].effects_dict.items()]:
+        if to_hit(my_psyche, target_str) == True:
             app.canvas.create_text(app.ent_dict[id].loc[0]*100+49-app.moved_right, app.ent_dict[id].loc[1]*100+94-app.moved_down, text = '-1 random stat...', justify ='center', font = ('Andale Mono', 13), fill = 'black', tags = 'text')
             app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+95-app.moved_down, text = '-1 random stat...', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
             def tendrils_effect(stat):
@@ -2005,10 +2045,10 @@ class Shadow(Summon):
                 else:
                     return stat
             f = tendrils_effect
-            any = choice(range(1,6))
+            any = choice(range(1,5))
             if any == 1:
                 app.ent_dict[id].str_effects.append(f)
-                ef_type = 'str'
+                ef_type = 'psyche'
             elif any == 2:
                 app.ent_dict[id].end_effects.append(f)
                 ef_type = 'end'
@@ -2018,9 +2058,6 @@ class Shadow(Summon):
             elif any == 4:
                 app.ent_dict[id].dodge_effects.append(f)
                 ef_type = 'dodge'
-            elif any == 5:
-                app.ent_dict[id].psyche_effects.append(f)
-                ef_type = 'psyche'
             def un(i, ef_type):
                 if ef_type == 'str':
                     app.ent_dict[i].str_effects.remove(tendrils_effect)
@@ -2035,7 +2072,7 @@ class Shadow(Summon):
                 return None
             p_undo = partial(un, id, ef_type)
             n = 'Tendrils_Drain' + str(app.effects_counter)
-            app.ent_dict[id].effects_dict[n] = Effect(name = 'Tendrils_Drain', undo_func = p_undo, duration = 5, level = 8)
+            app.ent_dict[id].effects_dict[n] = Effect(name = 'Tendrils_Drain', undo_func = p_undo, duration = 5, level = 6)
         root.after(2666, lambda e = None : self.finish_tendrils_of_chaos(event = e))
         
     def finish_tendrils_of_chaos(self, event = None):
@@ -2204,7 +2241,7 @@ class Shadow(Summon):
 #         vis = app.vis_dict['Stalk']
 #         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = vis.img, tags = 'Stalk')
         # Dodge save, if fail gets def_ef that incr ranged dmg
-        if app.ent_dict[id].save_check('dodge', mod = -2) == False: # Fail Save
+        if app.ent_dict[id].save_check('dodge', mod = -3) == False: # Fail Save
             app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Stalked...', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
             app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Stalked...', justify = 'center', fill = 'gray88', font = ('Andale Mono', 13), tags = 'text')
 #             app.vis_dict['Stalk'] = Vis(name = 'Stalk', loc = sqr)
@@ -2223,7 +2260,7 @@ class Shadow(Summon):
                 return None
             u = partial(un, id)
             n = 'Stalk' + str(app.effects_counter)
-            app.ent_dict[id].effects_dict[n] = Effect(name = 'Stalk', undo_func = u, duration = 7, level = 5)
+            app.ent_dict[id].effects_dict[n] = Effect(name = 'Stalk', undo_func = u, duration = 11, level = 7)
             root.after(2666, self.finish_stalk)
         else:
             app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Dodge Save', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
@@ -2315,7 +2352,7 @@ class Shadow(Summon):
                 app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Miss!', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
                 root.after(2666, lambda e = None, id = id : self.finish_darkblast(event = e, id = id))
         else:# FRIENDLY ENT, heal 3 then attempt target dispel
-            if isinstance(app.ent_dict[id], (Warrior, Trickster, Bard, Plaguebearer, Shadow)):# heal if summon, else just dispel friendly
+            if isinstance(app.ent_dict[id], (Warrior, Trickster, Bard, Plaguebearer)):# heal if summon, else just dispel friendly
                 app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Heal 3 spirit', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
                 app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Heal 3 spirit', justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
                 apply_heal(self, app.ent_dict[id], 3)
@@ -2347,8 +2384,8 @@ class Shadow(Summon):
             app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Dispel '+ef_name.replace('_',' '), justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
             root.after(1999, lambda id = id : self.finish_darkblast(id = id))
         else:
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Dispel failed...'+ef_name, justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Dispel failed...'+ef_name, justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Dispel failed...'+ef_name.replace('_',' '), justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Dispel failed...'+ef_name.replace('_',' '), justify = 'center', fill = 'white', font = ('Andale Mono', 13), tags = 'text')
             root.after(1999, lambda id = id : self.finish_darkblast(id = id))
             
             
@@ -2477,7 +2514,6 @@ class Shadow(Summon):
         app.vis_dict['Drain_Life'] = Vis(name = 'Drain_Life', loc = sqr[:])
         vis = app.vis_dict['Drain_Life']
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = vis.img, tags = 'Drain_Life')
-        
         my_psyche = self.get_abl('psyche')
         tar_psyche = app.ent_dict[id].get_abl('psyche')
         if to_hit(my_psyche, tar_psyche) == True:
@@ -4631,13 +4667,15 @@ class Ghost(Summon):
     def do_ai(self, ents_list):
         if self.waiting == True: # DO NOT MOVE TOWARDS OR ATTACK UNTIL TRIGGER
             self.pass_priority(ents_list)
-        elif app.map_number == 21 and self.times_retreated == 0 and self.spirit < 50:
-            app.map_triggers.remove(ghost_death)
+        elif app.map_number == 21 and self.times_retreated == 0 and self.spirit < 45:
+            for func in app.map_triggers[:]:
+                if func.__name__ == 'ghost_death':
+                    app.map_triggers.remove(func)
             self.times_retreated += 1
             # erase from map / ent_dict, place map_trigger to watch 1,2 2,2 3,2
             to_remove = []
             for k,v in app.ent_dict['b2'].effects_dict.items():
-                v.undo()
+                v.undo_func()
                 to_remove.append(k)
             for k in to_remove:
                 del app.ent_dict['b2'].effects_dict[k]
@@ -5407,13 +5445,13 @@ class Kobold_Cleric(Summon):
                     def cleanup_hex(name):
                         app.canvas.delete(name)
                         del app.vis_dict[name]
-                        app.canvas.delete('hex_text')
+                        app.canvas.delete('text')
                     name = 'Hex' + str(app.effects_counter)
                     app.effects_counter += 1
                     app.vis_dict[name] = Vis(name = 'Hex', loc = visloc)
                     app.canvas.create_image(visloc[0]*100+50-app.moved_right, visloc[1]*100+50-app.moved_down, image = app.vis_dict[name].img, tags = name)
-                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Hex', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'hex_text')
-                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Hex', justify = 'center', fill = 'gray88', font = ('Andale Mono', 13), tags = 'hex_text')
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Hex, -1 stats', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Hex, -1 stats', justify = 'center', fill = 'gray88', font = ('Andale Mono', 13), tags = 'text')
                     
                     def hex_effect(stat):
                         stat -= 1
@@ -5458,13 +5496,13 @@ class Kobold_Cleric(Summon):
                     def cleanup_warcry(name):
                         app.canvas.delete(name)
                         del app.vis_dict[name]
-                        app.canvas.delete('warcry_text')
+                        app.canvas.delete('text')
                     name = 'Warcry' + str(app.effects_counter)
                     app.effects_counter += 1
                     app.vis_dict[name] = Vis(name = 'Warcry', loc = visloc)
                     app.canvas.create_image(visloc[0]*100+50-app.moved_right, visloc[1]*100+50-app.moved_down, image = app.vis_dict[name].img, tags = name)
-                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Warcry', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'warcry_text')
-                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Warcry', justify = 'center', fill = 'salmon1', font = ('Andale Mono', 13), tags = 'warcry_text')
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Warcry, +1 stats', justify = 'center', fill = 'black', font = ('Andale Mono', 13), tags = 'text')
+                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Warcry, +1 stats', justify = 'center', fill = 'salmon1', font = ('Andale Mono', 13), tags = 'text')
                     
                     def warcry_effect(stat):
                         stat += 1
@@ -9930,7 +9968,7 @@ class Minotaur(Summon):
 class Warrior(Summon):
     def __init__(self, name, img, loc, owner, number, level):
         if level == 1:
-            self.actions = {'Move':self.move, 'Attack':self.warrior_attack, 'Leap':self.leap}
+            self.actions = {'Move':self.move, 'Slash':self.slash, 'Leap':self.leap}
             self.attack_used = False
             self.str = 6
             self.agl = 6
@@ -9941,7 +9979,7 @@ class Warrior(Summon):
             self.move_range = 3
             self.level = level
         elif level == 2:
-            self.actions = {'Move':self.move, 'Attack':self.warrior_attack, 'Leap':self.leap, 'Throw':self.throw, 'Rage':self.rage, 'Whirlwind':self.whirlwind}
+            self.actions = {'Move':self.move, 'Slash':self.slash, 'Leap':self.leap, 'Throw':self.throw, 'Rage':self.rage, 'Whirlwind':self.whirlwind}
             self.attack_used = False
             self.str = 7
             self.agl = 7
@@ -10436,7 +10474,7 @@ class Warrior(Summon):
         app.cleanup_squares()
         
         
-    def warrior_attack(self, event = None):
+    def slash(self, event = None):
         if self.attack_used == True:
             return
 #         root.unbind('<a>')
@@ -10747,8 +10785,11 @@ class Familiar_Homonculus(Summon):
             if app.ent_dict[tar].save_check('psyche', mod = 2) == False:
                 app.ent_dict[tar].attack_used = True
 #                 app.ent_dict[tar].set_attr('spirit', -5)
-                lock(apply_damage, self, app.ent_dict[id], -5, 'melee')
-                app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+70-app.moved_down, text = '5 Spirit, mesmerized', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
+                pre = app.ent_dict[id].spirit
+                lock(apply_damage, app.ent_dict[id], app.ent_dict[id], -5, 'melee')
+                post = app.ent_dict[id].spirit
+                d = pre - post
+                app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+70-app.moved_down, text = d+' Spirit, mesmerized', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
                 if app.ent_dict[tar].spirit <= 0:
                     app.canvas.create_text(app.ent_dict[tar].loc[0]*100+50-app.moved_right, app.ent_dict[tar].loc[1]*100+90-app.moved_down, text = app.ent_dict[tar].name.replace('_',' ') + '\nKilled...', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
             else:
@@ -10756,7 +10797,7 @@ class Familiar_Homonculus(Summon):
             return 'Not None'
             
         sot = partial(mesmerized, id)
-        app.ent_dict[id].effects_dict['Mesmerize'] = Effect(sot_func = sot, name = 'Mesmerize', undo = un, duration = 4, level = 5)
+        app.ent_dict[id].effects_dict['Mesmerize'] = Effect(sot_func = sot, name = 'Mesmerize', undo_func = un, duration = 4, level = 5)
         
         app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Mesmerize', fill = 'white', font = ('Andale Mono', 14), tags = 'text')
         app.vis_dict['Mesmerize'] = Vis(name = 'Mesmerize', loc = sqr)
@@ -10860,7 +10901,7 @@ class Lesser_Demon(Summon):
         self.attack_used = True
         app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+9-app.moved_down, text = 'Brambles', justify ='center', font = ('Andale Mono', 13), fill = 'black', tags = 'text')
         app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+10-app.moved_down, text = 'Brambles', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
-        ss = [c for c in app.coords if dist(sqr, c) <= 3]
+        ss = [c for c in app.coords if dist(sqr, c) <= 2]
         ents = [app.grid[s[0]][s[1]] for s in ss if app.grid[s[0]][s[1]] != '' and app.grid[s[0]][s[1]] != 'block']
         ents = [e for e in ents if app.ent_dict[e].owner != self.owner]
         if ents == []:
@@ -10900,8 +10941,8 @@ class Lesser_Demon(Summon):
                                 app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+95-app.moved_down, text = 'Movement Reduced', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
                                 def brambles_move(move_range):
                                     move_range -= 1
-                                    if move_range < 0:
-                                        return 0
+                                    if move_range <= 1:
+                                        return 1
                                     else:
                                         return move_range
                                 app.ent_dict[id].move_effects.append(brambles_move)
@@ -11008,7 +11049,7 @@ class Lesser_Demon(Summon):
                 root.after(1333, lambda ln = lockname : app.dethloks[ln].set(1))
             n = 'Baleful_Stare' + str(app.effects_counter)
             eot = partial(take_1, id)
-            app.ent_dict[id].effects_dict[n] = Effect(name = 'Baleful_Stare', eot_func = eot, undo = p, duration = 4, level = 5)
+            app.ent_dict[id].effects_dict[n] = Effect(name = 'Baleful_Stare', eot_func = eot, undo_func = p, duration = 9, level = 5)
         else:
             app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+75-app.moved_down, text = 'Baleful Stare Missed', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
         root.after(3333, lambda e = None : self.finish_baleful_stare(event = e))
@@ -11077,8 +11118,11 @@ class Lesser_Demon(Summon):
                     tar_str = app.ent_dict[id].get_abl('str')
                     tar_end = app.ent_dict[id].get_abl('end')
                     d = damage(tar_str, tar_end)
+                    pre = app.ent_dict[id].spirit
 #                     app.ent_dict[id].set_attr('spirit', -d)
                     lock(apply_damage, self, app.ent_dict[id], -d, 'magick')
+                    post = app.ent_dict[id].spirit
+                    d = pre - post
                     app.canvas.create_text(s[0]*100+49-app.moved_right, s[1]*100+74-app.moved_down, text = 'Attack Self '+str(d)+' spirit', font = ('Andale Mono', 13), fill = 'black', tags = 'text')
                     app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+75-app.moved_down, text = 'Attack Self '+str(d)+' spirit', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
                     if app.ent_dict[id].spirit <= 0:
@@ -11190,7 +11234,7 @@ class Cenobite(Summon):
                         return None
                     p = partial(un, id, f)
                     n = 'Strength_Through_Wounding' + str(app.effects_counter)
-                    app.ent_dict[id].effects_dict[n] = Effect(name = 'Strength_Through_Wounding', undo = p, duration = 2, level = 4)
+                    app.ent_dict[id].effects_dict[n] = Effect(name = 'Strength_Through_Wounding', undo_func = p, duration = 2, level = 4)
                     root.after(2666, lambda u = u : cleanup_stw(u))
                     root.after(2999, lambda ents = ents : stw_loop(ents))
                 else:
@@ -11500,7 +11544,7 @@ class Familiar_Imp(Summon):
         root.bind('<q>', self.cancel_attack)
         sqrs = []
         for c in app.coords:
-            if dist(self.loc, c) <= 3:
+            if dist(self.loc, c) <= 5:
                 sqrs.append(c)
         app.animate_squares(sqrs)
         app.depop_context(event = None)
@@ -11531,8 +11575,8 @@ class Familiar_Imp(Summon):
                 app.canvas.create_image(s[0]*100+50-app.moved_right, s[1]*100+50-app.moved_down, image = app.vis_dict[un].img, tags = un)
                 def dark_move(move_range):
                     move_range -= 2
-                    if move_range < 0:
-                        return 0
+                    if move_range <= 1:
+                        return 1
                     else:
                         return move_range
                 p = partial(dark_move)
@@ -11542,7 +11586,7 @@ class Familiar_Imp(Summon):
                     del app.vis_dict[un]
                     app.canvas.delete(un)
                 u = partial(undo, s, un, p)
-                app.loc_effects_dict[tuple(s)].effects_dict[un] = Local_Effect(name = 'Darkness', undo = u, duration = 5, level = 3, loc = s[:], avoid = 5)
+                app.loc_effects_dict[tuple(s)].effects_dict[un] = Local_Effect(name = 'Darkness', undo = u, duration = 2, level = 3, loc = s[:], avoid = 6)
         self.cleanup_darkness()
         
     def cleanup_darkness(self, event = None):
@@ -11618,7 +11662,7 @@ class Familiar_Imp(Summon):
                 root.after(1333, lambda ln = lockname : app.dethloks[ln].set(1))
             eot = partial(take_2, id)
             n = 'Poison_Sting' + str(app.effects_counter)
-            app.ent_dict[id].effects_dict[n] = Effect(name = 'Poison_Sting', eot_func = eot, undo_func = p, duration = 5, level = 4)
+            app.ent_dict[id].effects_dict[n] = Effect(name = 'Poison_Sting', eot_func = eot, undo_func = p, duration = 4, level = 4)
         else:
             app.canvas.create_text(app.ent_dict[id].loc[0]*100+49-app.moved_right, app.ent_dict[id].loc[1]*100+74-app.moved_down, text = 'Miss!', justify ='center', font = ('Andale Mono', 13), fill = 'black', tags = 'text')
             app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+75-app.moved_down, text = 'Miss!', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
@@ -11818,9 +11862,9 @@ class Witch(Entity):
         self.summon_ids = 0
         self.move_type = 'normal'
         if name == 'Agnes_Sampson':
-            self.cantrip_dict['Psionic_Push'] = (self.psionic_push)
-            self.cantrip_dict['Scrye'] = (self.scrye)
-            self.cantrip_dict['Energize'] = (self.energize)
+            self.cantrip_dict['Psionic_Push'] = (self.psionic_push, 0)
+            self.cantrip_dict['Scrye'] = (self.scrye, 0)
+            self.cantrip_dict['Energize'] = (self.energize, 0)
             self.arcane_dict['Plague'] = (self.plague, 6)
             self.arcane_dict['Pestilence'] = (self.pestilence, 8)
             self.arcane_dict['Curse_of_Oriax'] = (self.curse_of_oriax, 7)
@@ -11835,9 +11879,9 @@ class Witch(Entity):
             self.magick = 75
             self.move_range = 3
         elif name == 'Fakir_Ali':
-            self.cantrip_dict['Boiling_Blood'] = (self.boiling_blood)
-            self.cantrip_dict['Dark_Sun'] = (self.dark_sun)
-            self.cantrip_dict['Meditate'] = (self.meditate)
+            self.cantrip_dict['Boiling_Blood'] = (self.boiling_blood, 0)
+            self.cantrip_dict['Dark_Sun'] = (self.dark_sun, 0)
+            self.cantrip_dict['Meditate'] = (self.meditate, 0)
             self.arcane_dict['Horrid_Wilting'] = (self.horrid_wilting,5)
             self.arcane_dict['Disintegrate'] = (self.disintegrate, 4)
             self.arcane_dict['Mummify'] = (self.mummify, 5)
@@ -11852,9 +11896,9 @@ class Witch(Entity):
             self.magick = 70
             self.move_range = 3
         elif name == 'Morgan_LeFay':
-            self.cantrip_dict['Fleet_of_Paw'] = (self.fleet_of_paw)
-            self.cantrip_dict['Hunting_Hawk'] = (self.hunting_hawk)
-            self.cantrip_dict['Entangle'] = (self.entangle)
+            self.cantrip_dict['Fleet_of_Paw'] = (self.fleet_of_paw, 0)
+            self.cantrip_dict['Hunting_Hawk'] = (self.hunting_hawk, 0)
+            self.cantrip_dict['Entangle'] = (self.entangle, 0)
 #             self.spell_dict['Enchant'] = (self.enchant, 4)
 #             self.spell_dict['Counterspell'] = (self.counterspell, 3)
 #             self.spell_dict["Nature's_Wrath"] = (self.natures_wrath, 5)
@@ -12112,37 +12156,27 @@ class Witch(Entity):
 #         root.unbind('<a>')
         app.unbind_nonarrows()
         root.bind('<q>', self.cleanup_spell)
-        for i, item in enumerate(self.cantrip_dict.items()):
-            name = item[0]
-            name = name.replace('_', ' ')
-            spell = item[1]
-            i += 1
-            b1 = tk.Button(app.context_menu, wraplength = 190, text = str(i) +' : '+ name + ' •', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = spell)
-            b1.pack(side = 'top', pady = 2)
-            root.bind(str(i), spell)
-            app.context_buttons.append(b1)
-        b2 = tk.Button(app.context_menu, text = 'Cancel', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = self.cleanup_spell)
-        b2.pack(side = 'top')
-        app.context_buttons.append(b2)
+#         for i, item in enumerate(self.cantrip_dict.items()):
+#             name = item[0]
+#             name = name.replace('_', ' ')
+#             spell = item[1]
+#             i += 1
+#             b1 = tk.Button(app.context_menu, wraplength = 190, text = str(i) +' : '+ name + ' •', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = spell)
+#             b1.pack(side = 'top', pady = 2)
+#             root.bind(str(i), spell)
+#             app.context_buttons.append(b1)
+#         b2 = tk.Button(app.context_menu, text = 'Cancel', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = self.cleanup_spell)
+#         b2.pack(side = 'top')
+#         app.context_buttons.append(b2)
+        tup_list = list(self.cantrip_dict.items())
+        self.page_spells(tup_list = tup_list, index = 0)
         
     def arcane(self, event = None):
         if self.arcane_used == True:
             return
         app.depop_context(event = None)
-#         root.unbind('<q>')
-#         root.unbind('<a>')
         app.unbind_nonarrows()
         root.bind('<q>', self.cleanup_spell)
-        # change: if screenheight>num_spells*30, divide spells into number of 'pages', create 'next page' button DEBUG
-        # FOR NOW: just grab seven spells at a time, with room for a 'next' and 'back/prev' button (for hotkeys)
-        # first get screenheight
-#         h = root.winfo_screenheight() # or parent?
-        # get number of spellbuttons needed
-#         spellnum = len(self.arcane_dict)
-        # first divide into 'pages' of 7
-#         first7pairs = {k: self.arcane_dict[k] for k in list(self.arcane_dict.keys())[:7]}
-#         num_pages = ceil(len(self.arcane_dict.items())/7)
-        # display first page (should attempt to maintain order across calls)
         tup_list = list(self.arcane_dict.items())
         self.page_spells(tup_list = tup_list, index = 0)
         
@@ -12161,6 +12195,7 @@ class Witch(Entity):
             else:
                 root.bind(str(i), spell)
             app.context_buttons.append(b1)
+            b1.bind('<Button-2>', lambda event, b = b1, n = name : app.action_info(event, name = n, button = b))
         if index > 0:
             b4 = tk.Button(app.context_menu, text = '9 : Prev', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda t = tup_list, i = index-7 : self.page_spells(tup_list = t, index = i))
             b4.pack(side = 'top')
@@ -12634,14 +12669,13 @@ class Witch(Entity):
                     return None
                 p = partial(un, id)
                 n = 'Torment' + str(app.effects_counter)
-                app.ent_dict[id].effects_dict[n] = Effect(name = 'Torment', undo_func = p, duration = 4, level = self.get_abl('psyche'))
+                app.ent_dict[id].effects_dict[n] = Effect(name = 'Torment', undo_func = p, duration = 7, level = self.get_abl('psyche'))
             root.after(2999, lambda  name = 'Torment' : self.cleanup_spell(name = name))
 
     # destroy a summon you own to deal dmg to adj ents
     def pain(self, event = None):
         app.depop_context(event = None)
         root.bind('<q>', lambda name = 'Pain' : self.cleanup_spell(name = name))
-#         coords = [[x,y] for x in range(app.map_width//100) for y in range(app.map_height//100)]
         sqrs = [s for s in app.coords if dist(self.loc, s) <= 4]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_pain(event = e, sqr = s, sqrs = sqrs))
@@ -12655,7 +12689,7 @@ class Witch(Entity):
         id = app.grid[sqr[0]][sqr[1]]
         if id == '' or id == 'block':
             return
-        if app.ent_dict[id].owner != 'p1' or not isinstance(app.ent_dict[id], Summon):
+        if app.ent_dict[id].owner != self.owner or not isinstance(app.ent_dict[id], Summon):
             return
         effect1 = mixer.Sound('Sound_Effects/pain.ogg')
         effect1.set_volume(.07)
@@ -12700,8 +12734,8 @@ class Witch(Entity):
             app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+50-app.moved_down-30, text = 'Pain', justify ='center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
             # Damage
             my_psyche = self.get_abl('psyche')
-            tar_agl = app.ent_dict[id].get_abl('agl')
-            d = damage(my_psyche, tar_agl)
+            tar_dodge = app.ent_dict[id].get_abl('dodge')
+            d = damage(my_psyche, tar_dodge)
             d += 9
             app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+75-app.moved_down, text = str(d)+' Spirit', justify ='center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
 #             app.ent_dict[id].set_attr('spirit', -d)
@@ -12803,7 +12837,7 @@ class Witch(Entity):
                     return None
                 p_undo = partial(un, id, ef_type)
                 n = 'Plague' + str(app.effects_counter)
-                app.ent_dict[id].effects_dict['Plague'] = Effect(name = 'Plague', undo = p_undo, duration = 6, level = self.get_abl('psyche'))
+                app.ent_dict[id].effects_dict['Plague'] = Effect(name = 'Plague', undo_func = p_undo, duration = 6, level = self.get_abl('psyche'))
                 # get adj
                 adj = [k for k,v in app.ent_dict.items() if dist(v.loc, loc) == 1 and k not in visited and v.type != 'large']
                 adj = [id for id in adj if 'Plague' not in [v.name for k,v in app.ent_dict[id].effects_dict.items()]]
@@ -12948,7 +12982,7 @@ class Witch(Entity):
             for ent in adj_ents:
                 if app.ent_dict[ent].save_check('agl', mod = 1) == False:
                     d = damage(tar_str, app.ent_dict[ent].get_abl('end'))
-                    lock(apply_damage, self, app.ent_dict[ent], -d, 'melee')
+                    lock(apply_damage, app.ent_dict[tar], app.ent_dict[ent], -d, 'melee')
                     app.canvas.create_text(app.ent_dict[ent].loc[0]*100+49-app.moved_right, app.ent_dict[ent].loc[1]*100+74-app.moved_down, text = str(d) + ' spirit', justify = 'center', font = ('Andale Mono', 13), fill = 'black', tags = 'text')
                     app.canvas.create_text(app.ent_dict[ent].loc[0]*100+50-app.moved_right, app.ent_dict[ent].loc[1]*100+75-app.moved_down, text = str(d) + ' spirit', justify = 'center', font = ('Andale Mono', 13), fill = 'white', tags = 'text')
                     if app.ent_dict[ent].spirit <= 0:
@@ -13061,12 +13095,12 @@ class Witch(Entity):
                             n = 'Pestilence' + str(app.effects_counter) # not an effect, just need unique int
                             app.effects_counter += 1 # that is why this is incr manually here, no Effect init
                             app.vis_dict[n] = Vis(name = 'Pestilence', loc = s[:])
-                            app.canvas.create_text(s[0]*100+49-app.moved_right, s[1]*100+74-app.moved_down, text = 'Pestilence', justify ='center', font = ('Andale Mono', 13), fill = 'black', tags = 'pestil_text')
-                            app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+75-app.moved_down, text = 'Pestilence', justify ='center', font = ('Andale Mono', 13), fill = 'gray88', tags = 'pestil_text')
+                            app.canvas.create_text(s[0]*100+49-app.moved_right, s[1]*100+74-app.moved_down, text = 'Pestilence', justify ='center', font = ('Andale Mono', 13), fill = 'black', tags = 'text')
+                            app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+75-app.moved_down, text = 'Pestilence', justify ='center', font = ('Andale Mono', 13), fill = 'gray88', tags = 'text')
                             def cleanup_vis(name):
                                 del app.vis_dict[name]
                                 app.canvas.delete(name)
-                                app.canvas.delete('pestil_text')
+                                app.canvas.delete('text')
                             app.canvas.create_image(s[0]*100+50-app.moved_right, s[1]*100+50-app.moved_down, image = app.vis_dict[n].img, tags = n)
                             root.after(2222, lambda n = n : cleanup_vis(n))
                             p_inner = partial(pestil_death_trigger, obj = app.ent_dict[id])
@@ -13426,7 +13460,7 @@ class Witch(Entity):
                 app.ent_dict[i].psyche_effects.remove(beleths_command_effect)
                 return None
             p = partial(un, self.number)
-            self.effects_dict["Beleth's_Command"] = Effect(name = "Beleth's_Command", undo = p, duration = 5, level = self.get_abl('psyche'))
+            self.effects_dict["Beleth's_Command"] = Effect(name = "Beleth's_Command", undo_func = p, duration = 5, level = self.get_abl('psyche'))
         root.after(3666, lambda  name = "Beleth's_Command" : self.cleanup_spell(name = name))
         
         
@@ -13682,7 +13716,7 @@ class Witch(Entity):
         app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+95-app.moved_down, text = 'Mummify', justify = 'center', font = ('Andale Mono', 14), fill = 'darkgoldenrod', tags = 'text')
         # DO Mummify EFFECTS
         def mummify_effect(stat):
-            stat += 5
+            stat += 4
             return stat
         f = mummify_effect
         app.ent_dict[id].end_effects.append(f)
@@ -13690,7 +13724,7 @@ class Witch(Entity):
             if move_range < 2:
                 return move_range
             else:
-                return 2
+                return 1
         app.ent_dict[id].move_effects.append(mummy_moves)
         def un(i):
             app.ent_dict[i].end_effects.remove(mummify_effect)
@@ -13698,7 +13732,7 @@ class Witch(Entity):
             return None
         p = partial(un, id)
         n = 'Mummify' + str(app.effects_counter)
-        app.ent_dict[id].effects_dict[n] = Effect(name = 'Mummify', undo = p, duration = 3, level = self.get_abl('psyche'))
+        app.ent_dict[id].effects_dict[n] = Effect(name = 'Mummify', undo_func = p, duration = 7, level = self.get_abl('psyche'))
         root.after(3666, lambda  name = 'Mummify' : self.cleanup_spell(name = name))
         
         
@@ -13878,7 +13912,7 @@ class Witch(Entity):
         app.context_buttons.append(b)
         
     def do_command_of_osiris(self, event, sqrs):
-        self.magick -= self.arcane_dict['Disintegrate'][1]
+        self.magick -= self.arcane_dict['Command_of_Osiris'][1]
 #         self.init_cast_anims()
         app.unbind_all()
         app.depop_context(event = None)
@@ -13921,19 +13955,13 @@ class Witch(Entity):
                 return stat
             app.ent_dict[id].str_effects.append(osiris_effect)
             app.ent_dict[id].end_effects.append(osiris_effect)
-            app.ent_dict[id].agl_effects.append(osiris_effect)
-            app.ent_dict[id].dodge_effects.append(osiris_effect)
-            app.ent_dict[id].psyche_effects.append(osiris_effect)
             def un(i):
                 app.ent_dict[i].str_effects.remove(osiris_effect)
                 app.ent_dict[i].end_effects.remove(osiris_effect)
-                app.ent_dict[i].agl_effects.remove(osiris_effect)
-                app.ent_dict[i].dodge_effects.remove(osiris_effect)
-                app.ent_dict[i].psyche_effects.remove(osiris_effect)
                 return None
             p = partial(un, id)
             n = 'Command_of_Osiris' + str(app.effects_counter)
-            app.ent_dict[id].effects_dict[n] = Effect(name = 'Command_of_Osiris', undo_func = p, duration = 3, level = self.get_abl('psyche'))
+            app.ent_dict[id].effects_dict[n] = Effect(name = 'Command_of_Osiris', undo_func = p, duration = 9, level = self.get_abl('psyche'))
         #  ENEMY ENTS
         for id in enemy_ents:
             effs = [v.name for k,v in app.ent_dict[id].effects_dict.items()]
@@ -13969,19 +13997,13 @@ class Witch(Entity):
                     return stat
             app.ent_dict[id].str_effects.append(osiris_effect)
             app.ent_dict[id].end_effects.append(osiris_effect)
-            app.ent_dict[id].agl_effects.append(osiris_effect)
-            app.ent_dict[id].dodge_effects.append(osiris_effect)
-            app.ent_dict[id].psyche_effects.append(osiris_effect)
             def un(i):
                 app.ent_dict[i].str_effects.remove(osiris_effect)
                 app.ent_dict[i].end_effects.remove(osiris_effect)
-                app.ent_dict[i].agl_effects.remove(osiris_effect)
-                app.ent_dict[i].dodge_effects.remove(osiris_effect)
-                app.ent_dict[i].psyche_effects.remove(osiris_effect)
                 return None
             p = partial(un, id)
             n = 'Command_of_Osiris' + str(app.effects_counter)
-            app.ent_dict[id].effects_dict[n] = Effect(name = 'Command_of_Osiris', undo = p, duration = 3, level = self.get_abl('psyche'))
+            app.ent_dict[id].effects_dict[n] = Effect(name = 'Command_of_Osiris', undo_func = p, duration = 9, level = self.get_abl('psyche'))
         root.after(3666, lambda  name = 'Command_of_Osiris' : self.cleanup_spell(name = name))
         
 # MORGAN SPELLS
@@ -14037,7 +14059,7 @@ class Witch(Entity):
                 else:
                     fop_loop(ents)
         root.after(1555, lambda t = 'text' : app.canvas.delete(t))
-        ents = [k for k,v in app.ent_dict.items() if v.owner == self.owner and isInstance(v, (Bard, Trickster, Shadow, Warrior, Plaguebearer))]
+        ents = [k for k,v in app.ent_dict.items() if v.owner == self.owner and isinstance(v, (Bard, Trickster, Shadow, Warrior, Plaguebearer))]
         root.after(1666, lambda ents = ents : fop_loop(ents))
                     
                     
@@ -14179,8 +14201,77 @@ class App(tk.Frame):
         self.p2_witch = ''
         self.two_player_map_num = 0
         self.turn_counter = 0
-        self.choose_num_players()
-        
+        self.info = {'Summon':'Summon 1 wolf per turn', 
+        'Move':'Move along an unobstructed path', 
+        'Spell':'Cast 1 cantrip and 1 arcane spell per turn', 
+        'Pestilence':'Psyche vs (psyche+endurance)/2 dmg to a target, each unit within range 3 takes same dmg minus distance from target. Main target gets effect that does 1 poison dmg at end of turn. When a unit with pestilence effect dies, all adjacent units get pestilence effect if they do not possess it already. Effect lasts 20 turns at level of caster psyche.', 
+        'Plague':'Any unit and each unit connected by occupied adjacent sqrs (counting units without pestilence effect) gets -3 to a random ability. Lasts 6 turns at level of caster psyche', 
+        'Gravity':'A unit gets move range reduced to maximum of 2, -1 agility and -2 dodge. Lasts 4 turns at level of caster psyche.', 
+        "Beleth's Command":'Caster cannot use move action before or after casting this turn. A non-adjacent unit is struck by lightning, taking psyche vs (psyche+endurance)/2 magick dmg. Upon failing a strength save(-1) the unit cannot make any actions (unless it is granted new ones) for its next turn. That unit then gains an effect of -1 psyche and -1 endurance for 5 turns at level of caster psyche. Then, all adjacent units to the caster take 9 magick dmg. The caster gains +1 psyche +1 endurance effect if not already possessed, lasting 5 turns.', 
+        'Curse of Oriax':'A unit gets -1 to each ability and takes 2 magick dmg at end of turn. Lasts 6 turns at level of caster psyche.', 
+        'Scrye':'A wolf gets +2 agility +2 psyche for the remainder of this turn.', 
+        'Psionic Push':'A unit is pushed to any location (including its current) within range 2 as long as the path is unobstructed. After push, if there are any adjacent units then each plus original target make agility save(+1). A failed save means the unit takes a melee attack from the pushed unit using strength(of pushed unit) vs endurance(of unit receiving attack) (the pushed unit attacks itself upon a failed save after ending a push adjacent to other units, ending the push on a location with no adjacent units results in no attacks).', 
+        'Energize':'A summon who has already used a move, flying move or mist move action may move again this turn.', 
+        'Boiling Blood':'Target Warrior gets +5 strength and endurance reduced to 1 for 4 turns at level of caster psyche', 
+        'Dark Sun':'Target Shadow may use an action again if it already used an action this turn.', 
+        'Meditate':'Caster gets +2 psyche and increase move range by 2 until end of turn.', 
+        'Command of Osiris':'All friendly units within range 3 of caster are healed 1 spirit and get an effect, if they do not have it already, that grants +1 strength +1 endurance. All enemy units within range 3 of caster take 1 magick damage and get an effect, if they do not have it already, that gives -1 strength -1 endurance. Lasts 9 turns at the level of caster psyche', 
+        'Disintegrate':'A unit gets an effect which causes -1 to a random ability at the end of its owner turn. The unit also takes 1 magick damage. Lasts 6 turns at level of caster psyche.', 
+        'Horrid Wilting':'Target and each adjacent unit each take magick damage from caster, psyche vs endurance',
+        'Mummify':'Target gets effect which reduces movement to maximum of 1 and also grants +4 endurance. Lasts 7 turns at level of caster psyche.', 
+        'Immolate':'Target takes magick damage from caster, (psyche vs psyche)+5 ', 
+        'Hatred':'All summons may use another action if they have already used an action this turn.', 
+        'Vengeance':'Target takes damage equal to spirit lost by caster (current spirit minus max spirit).', 
+        'Torment':'Target takes magick damage from caster, psyche vs endurance, and gets an effect that gives -2 psyche. Lasts 7 turns at level of caster psyche.', 
+        'Pain':'Destroy one of your own summons to damage the units adjacent to the summon, (psyche vs dodge)+9', 
+        'Entomb':'Teleport to the chosen location, leaving a tomb in your place. The tomb is a summon but has no movement or actions. Its abilities are: str 1, agl 1, end 5, dodge 1, psyche 5, spirit 20',
+        'Foul Familiar':'Summon an Imp(agnes), Homunculus(ali), or Faerie Dragon(morgan). Limit 1 familiar in play at a time. Familiar death causes 3 magick dmg to owner.', 
+        'Summon Lesser Demon':'Transform a familiar into a lesser demon thrall. Does not cause loss of spirit due to familiar death.', 
+        'Summon Cenobite':'Summon a cenobite, a demon priest of suffering', 
+        'Mist Move':'Move without being obstructed by obstacles.', 
+        'Drain Life':'to hit: psyche vs psyche, dmg: minimum(1 OR (psyche vs psyche)/2)+1 (range of about 2 to half of normal psyche vs psyche dmg). Caster is healed equal to the amount of dmg successfully dealt.', 
+        'Muddle':'If target fails a psyche save(+1), it gets an end of turn effect causing it to attack itself. It attempts a hit with its own agility (always 50%, unless affected by its own attack or defense effects). A successful hit causes strength vs endurance (its own) melee dmg. Lasts 3 turns at level 5.', 
+        'Tendrils of Chaos':'2 to-hit attempts are made against the target: the first, psyche vs agl, target gets -1 to its move range unless it already has this move range effect. The second, psyche vs str, gives -1 to a random ability besides strength and can be given multiple times to the same unit. Both effects last 5 turns at level 6.', 
+        'Warpfire':'Target location which does not already have a warpfire effect has a warpfire placed on it. At the start of each players turn, 2 magick damage is done to any unit occupying the location. After this, each unit within range 3 of the warpfire is teleported to a random location within the same range.', 
+        'Phase Shift':'Switch between the Shadow Wolf and Shadow Mist forms. Counts as action.', 
+        'Dark Shroud':'Target Warrior, Bard, Trickster, or Plaguebearer and all other of all these types within range 3 of the target heal 2 spirit up to their max spirit and receive +1 dodge if they do not already have the effect. Effect lasts for 3 turns at level 3.', 
+        'Shadow Strike':'Agility versus dodge to-hit. Strength versus endurance determines damage. Type is ranged.', 
+        'Stalk':'If target fails a dodge save(-3), it gets an effect which causes ranged damage dealt to it to be increased by 2. Lasts 11 turns at level 7.', 
+        'Darkblast':'If used on a friendly unit, attempt to dispel(+2) any 1 effect and if the unit is a warrior, trickster, bard, or plaguebearer, then heal it 3 spirit. If used on an enemy unit, a successful to-hit (agl vs dodge) does damage (str vs end)/2 (minimum 2) and after the attack attempts to dispel(+2) any 1 effect on the target.', 
+        'Slash':'Agility versus agility to-hit. Strength versus endurance determines damage. Range 1, type melee.', 
+        'Leap':'Move over obstacles to any square within range 3. Movement effects do not affect the range of Leap unless specifically noted. Does not count as either an action or a move. Can only be used once per turn.', 
+        'Rage':'Dispel(+6) current effects, gain +1 str, +1 end, +4 psy, take 3 dmg on effect end, lasts 4 turns.', 
+        'Throw':'Move an adjacent unit to a location up to distance 3 from Warrior',
+        'Whirlwind':'Attack each adjacent unit. To-hit: agl-2 vs agl, damage: str vs end', 
+        'Pyrotechnics':'Do 2 ranged damage to any target within range 3, auto hit.', 
+        'Simulacrum':'Target within range 4 gets +3 agility and +3 dodge. Lasts 3 turns at level 4. Cannot cast on target if it already has simulacrum effect.', 
+        'Gate':'Target unit within range 2 is teleported to any square within range 5 of the caster.',
+        'Mortar':'All units within range 2 of target square within range 6-8 must make a dodge save or take a random amount of ranged damage between 1-3.', 
+        'Tracer Grenade':'All units within range 2 of target square within range 6-8 get tracer effect if they do not already have it. Effect gives -2 dodge for 6 turns at level 5.', 
+        'Doubling Cube':'Target unit and all friendly units within range 2 of target get double effect if they do not already have it. Effect causes any melee or ranged attack made against unit to force attacker to make a psyche save(-1). On fail, the attackers dmg is halved (rounded down). Lasts 6 turns at level 5', 
+        'Unholy Chant':'All other friendly units within range 2 get +1 to all stats for the remainder of the turn at level 4.', 
+        'Discord':'Target within range 5 is attacked using psyche versus psyche to-hit. Damage is psyche versus psyche divided by 2 rounded down and added to 1 (about half normal formula, minimum 2). Type magick.', 
+        'Esuna':'Target within range 4 has each effect attempted to dispel(+0).',
+        'Moonlight':'Target Warrior, Shadow, Plaguebearer, or Trickster is healed 4 spirit up to its max spirit.', 
+        'Aura':'Target Warrior, Shadow, Plaguebearer, or Trickster and all of these types within range 2 of target heal up to 3 spirit.', 
+        'Tranquility':'Dispel(0) attempt all effects on a location', 
+        'Pox':'Each adjacent, non-plaguebearer, unit gets pox effect if it does not already have it. Effect causes 2 poison damage at end of turn. Lasts 4 turns at level 6.', 
+        'Paralyze':'If target fails a strength save(-1), it gets an effect which causes melee and ranged dmg to be halved(rounded down) and its move range reduced to 1. Lasts 2 turns at level 6.', 
+        'Scarab Gestation':'Target adjacent enemy gets a death trigger that creates a scarab under your control, scarab has str 2, agl 3, end 3, dodge 3, psyche 2, spirit 9, move range 5, and bite attack (melee, range 1) agility vs agility to-hit, str vs end damage.', 
+        'Bite':'Scarab bites an adjacent unit. To-hit: agl vs agl, damage: str vs end, melee.', 
+        'Scarab Swarm':'Transform a scarab into a flying scarab swarm with the following abilities: str 4, agl 6, end 5, dodge 6, psyche 4, spirit 19, move range 6 (flying, same bite attack).', 
+        'Spore Cloud':'Target location gets effect: +2 dodge, -2 received ranged or melee damage for occupant. Lasts 3 full turns (removed at the end of your turn after the next) at level 8.', 
+        'Darkness':'Target location and each location within range 3 of target get darkness effect if location does not already have darkness effect. Any unit attempting to move when in a darkness location has its move range reduced by 2 to a minimum of 1. Lasts 2 turns at level 3.', 
+        'Poison Sting':'to-hit: agility vs dodge. On successful hit, target gets effect that causes -1 strength and 2 poison dmg at end of turn. Target may have multiple copies of same effect. Lasts 4 turns at level 5. ', 
+        'Flying Move':'Move without being impeded by obstacles.', 
+        'Brambles':'Target unit and all enemy units within range 2 must make a dodge save(-1) or take psyche vs endurance dmg. Units must also make a strength save(-1) if they have normal movement type, and on fail get an effect that reduces move range by 1 to a minimum of 1. Lasts 1 turn at level 5.', 
+        'Baleful Stare':'to-hit: psyche vs endurance. On successful hit, target gets effect that causes -1 psyche and 1 magick dmg at end of turn. Lasts 9 turns at level 5.', 
+        'Dire Charm':'All enemy units within range 3 of caster must make a psyche save(-3) or attack themselves. The attack against self is auto-hit and strength vs endurance dmg (the units own strength and endurance).', 
+        'Hellfire':'to-hit: psyche vs psyche. Dmg is psyche vs endurance. Target makes endurance save(-1) or receives burn effect. Burn causes dmg from melee and ranged sources to deal an extra 2 dmg. Lasts 3 turns at level 4.', 
+        'Flesh Hooks':'Target summon receives a ranged attack action called hook attack. Hook attack is to-hit: psyche vs dodge and dmg: endurance vs endurance. Lasts 3 turns at level 6.', 
+        'Strength Through Wounding':'All units (friendly and enemy) within range 3 of caster take 2 magick dmg. All friendly units gain effect of +2 endurance and +2 psyche. Lasts 2 turns at level 4.', 
+        'Fuse Trap':'expect to change. NOTES: causes damage on undo. Even though damage is applied with lock, undo funcs do not, in any other case, need time (they can happen as fast as the program logic calls them)', 
+        'Mesmerize':'Target gets an effect which causes a psyche save(+2) at the start of its turn. A failure causes it to count as having used its action for the turn (it may still move or regain the ability to use an action through some means). It also does 5 melee damage to itself.'}
         self.sqr_anims = {}
         anims = [a for r,d,a in walk('animations/move/')][0]
         anims = [a for a in anims[:] if a[0] != '.']
@@ -14215,6 +14306,8 @@ class App(tk.Frame):
         for i, anim in enumerate(anims):
             a = ImageTk.PhotoImage(Image.open('animations/Plague/' + anim))
             self.plague_anims[i] = a
+            
+        self.choose_num_players()
         
         # Luminari 280
         # Herculanum 240
@@ -14229,13 +14322,13 @@ class App(tk.Frame):
         self.game_title.create_image(0,0, image =self.title_screen, anchor = 'nw')
         self.game_title.pack(side = 'top')
         
-        self.one_player = tk.Button(root, text = '1 Player', fg = 'tan3', highlightbackground = 'tan3', font = ('chalkduster', 24), command = lambda num = 1 : self.num_chose(num))
+        self.one_player = tk.Button(root, text = 'Campaign', fg = 'tan3', highlightbackground = 'tan3', font = ('chalkduster', 24), command = lambda num = 1 : self.num_chose(num))
         self.game_title.create_window(root.winfo_screenwidth()/2, root.winfo_screenheight()-120, anchor='s', window = self.one_player)
         
-        self.two_player = tk.Button(root, text = '2 Player', fg = 'tan3', highlightbackground = 'tan3', font = ('chalkduster', 24), command = lambda num = 2 : self.num_chose(num))
+        self.two_player = tk.Button(root, text = 'Duel', fg = 'tan3', highlightbackground = 'tan3', font = ('chalkduster', 24), command = lambda num = 2 : self.num_chose(num))
         self.game_title.create_window(root.winfo_screenwidth()/2, root.winfo_screenheight()-70, anchor='s', window = self.two_player)
         
-        self.load_button = tk.Button(root, text = 'Load Game', fg = 'tan3', highlightbackground = 'tan3', font = ('chalkduster', 24), command = self.try_load)
+        self.load_button = tk.Button(root, text = 'Load Campaign', fg = 'tan3', highlightbackground = 'tan3', font = ('chalkduster', 24), command = self.try_load)
         self.game_title.create_window(root.winfo_screenwidth()/2, root.winfo_screenheight()-20, anchor='s', window = self.load_button)
         
     def try_load(self):
@@ -14269,7 +14362,7 @@ class App(tk.Frame):
                 area = int(f.readline().strip('\n'))
                 summon_level = int(f.readline().strip('\n'))
                 if 'Foul_Familiar' in cantrips:
-                    obj.cantrip_dict['Foul_Familiar'] = obj.foul_familiar
+                    obj.cantrip_dict['Foul_Familiar'] = (obj.foul_familiar, 0)
                 if 'Hatred' in arcane:
                     obj.arcane_dict['Hatred'] = (obj.hatred, 9)
                 if 'Vengeance' in arcane:
@@ -14284,8 +14377,6 @@ class App(tk.Frame):
                     obj.arcane_dict['Summon_Cenobite'] = (obj.summon_cenobite, 9)
                 if 'Summon_Lesser_Demon' in arcane:
                     obj.arcane_dict['Summon_Lesser_Demon'] = (obj.summon_lesser_demon, 9)
-                if 'Immolate' in arcane:
-                    obj.arcane_dict['Immolate'] = (obj.immolate, 9)
                 obj.summon_cap = sum_cap
                 obj.base_str = b_str
                 obj.str = b_str
@@ -15445,7 +15536,7 @@ class App(tk.Frame):
         
     def read_3_6_book(self):
         loc = app.ent_dict[app.p1_witch].loc[:]
-        app.ent_dict[app.p1_witch].cantrip_dict['Foul_Familiar'] = app.ent_dict[app.p1_witch].foul_familiar
+        app.ent_dict[app.p1_witch].cantrip_dict['Foul_Familiar'] = (app.ent_dict[app.p1_witch].foul_familiar, 0)
         app.canvas.create_text(loc[0]*100-app.moved_right, loc[1]*100-app.moved_down+85, text = 'Cantrip Spell\n-FOUL FAMILIAR-\nLearned', justify = 'center', font = ('Andale Mono', 16), fill = 'white', tags = 'text')
         root.after(2999, lambda t = 'text' : app.canvas.delete(t))
         self.cancel_3_6_book()
@@ -15921,7 +16012,8 @@ class App(tk.Frame):
             # LABYRINTH
             if self.map_number == 21:
                 # generate revenants based on app.revenant_rate, starts at 2
-                if app.active_player == 'p1':
+                total_revs = len([k for k,v in app.ents().items() if isinstance(v,Revenant)])
+                if app.active_player == 'p1' and total_revs <= 4:
                     for i in range(min(2, app.revenant_rate//3)):
                         img = ImageTk.PhotoImage(Image.open('summon_imgs/Revenant.png'))
                         if self.effects_counter < 3: # prevent collision with existing ents
@@ -16451,8 +16543,7 @@ class App(tk.Frame):
         self.repop_help_buttons()
 #         self.context_buttons = []
         for i, name_action in enumerate(tup_list[index:index+5]):
-            name = name_action[0]
-            name = name.replace('_', ' ')
+            name = name_action[0].replace('_', ' ')
             action = name_action[1]
 #             cost = name_spellcosttuple[1][1]
             i += 1
@@ -16460,6 +16551,7 @@ class App(tk.Frame):
             b1 = tk.Button(app.context_menu, wraplength = 190, text = str(i) +' : '+ name, font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = action)
             b1.pack(side = 'top', pady = 2)
             app.context_buttons.append(b1)
+            b1.bind('<Button-2>', lambda event, b = b1, n = name : app.action_info(event, name = n, button = b))
         if index > 0:
             b4 = tk.Button(app.context_menu, text = '9 : Prev', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda t = tup_list, i = index-5 : self.page_actions(tup_list = t, index = i))
             b4.pack(side = 'top')
@@ -16602,16 +16694,14 @@ class App(tk.Frame):
         self.help_popup = tk.Toplevel()
         self.help_popup.grab_set()
         self.help_popup.attributes('-topmost', 'true')
+#         self.help_popup.geometry(root.winfo_screenwidth(), root.winfo_screenheight())
+        def on_close():
+            pass
+        self.info_popup.protocol('WM_DELETE_WINDOW', on_close)
         help_text = '''
-        Arrow keys move cursor around map\n
-        Cursor over an object you control and press 'a' to see action options\n
-        Press 'q' to cancel the context menu for a selected object/action\n
-        Cursor over enemy controlled object and press 'a' for available info\n
-        Your witch can cast one arcane spell AND one cantrip AND use one summon AND move once per turn\n
-        Your summons can move AND use one action per turn in most cases\n
-        Except, for example, Warriors may move, attack or guard, and use leap to move again in one turn\n
+        R-click on spell or action buttons to see descriptions. L-click on map to move cursor. ',' and 'l' cycle cursor over friendly units. '.' and ';' cycle cursor over enemy units. Arrow keys move cursor around map. Press 'a' when cursor is over a unit to populate the context menu (left side of screen) with information. If you own the unit and it has available actions, then those will be in the context menu when you have selected the unit with 'a'. To cancel an action after you have chosen it, press 'q'. Your witch can cast one arcane spell AND one cantrip AND use one summon AND move once per turn. Your summons can move AND use one action per turn in most cases. Except, for example, Warriors may move, attack, and use leap to move again in one turn (leap does not count towards summon limit of 1 action and 1 movement per turn). Effects caused by units or spells may target either other units themselves or in some cases locations. Either can be dispelled with some modifier. A dispel is an attempt to remove the effect, the success of which depends on the level of the effect (higher level effects are harder to dispel). The dispel formula is random-value-between-neg1-and-101 compared to spell-level minus modifier. If the randomly generated value is higher, the effect is dispelled. Save-checks are implemented similarly. They have a modifier added to a units ability score which is then compared to a random value. Save-checks are used by units to determine whether they can avoid the effects of some spell or ability and higher ability scores or positive modifiers in your favor are desirable. The to-hit formula takes 2 values to be compared against each other (usually some ability of the attacker compared to some ability of the defender). The base to-hit percentage is 50% (for equal values being compared against each other). For every point of difference in favor of the attacker, 5% is added to the success rate, and vice versa (higher defender value will subtract 5% for each point of difference). To a maximum of 99% success and a minimum of 5%. The dmg formula similarly compares some ability score against another (usually a value of the attacker compared to a value of the defender). The base value for dmg when ability scores are equal is 4. For example, if the strength value 6 of the attacker is compared to the endurance value 6 of the defender, the scores are the same so the base rate of 4 dmg is applied. For each difference in values, 1 is added/subtracted to the value to a minimum of 1 with no maximum value. Ability scores tend to range between 1-10 (abilities cannot be lower than 1 even after reduction from effects, but have no maximum value). Multiple effects can be applied to abilities like strength, agility, etc and also move range. Multiple changes of abilities caused by effects are resolved in the order in which they were applied (the most recently added effect is resolved last). The abilities str, end, agl, dodge, psyche cannot be reduced to less than 1. Move range effects often will not allow move range to be modified to less than 1, but not always.
         '''
-        self.text = tk.Label(self.help_popup, text = help_text, font = ('chalkduster', 24), fg='indianred', bg = 'black')
+        self.text = tk.Label(self.help_popup, text = help_text, wraplength = 750, font = ('chalkduster', 20), fg='indianred', bg = 'black')
         self.text.pack()
         self.close = tk.Button(self.help_popup, text = 'Close', font = ('chalkduster', 24), fg='tan3', command = lambda win = self.help_popup : self.destroy_release(win))
         self.close.pack()
@@ -16877,6 +16967,26 @@ class App(tk.Frame):
         
     def ents(self):
         return {k:v for k,v in self.ent_dict.items() if v.type != 'large'}
+        
+    # create popup with description of action name
+    # ADD manually lookup name for all actions and spells
+    def action_info(self, event = None, name = None, button = None):
+        def end(window):
+            self.destroy_release(window)
+        self.info_popup = tk.Toplevel()
+        self.info_popup.grab_set()
+        self.info_popup.attributes('-topmost', 'true')
+        def on_close():
+            pass
+        self.info_popup.protocol('WM_DELETE_WINDOW', on_close)
+        info_text = name + '\n' + app.info[name]
+        self.text = tk.Label(self.info_popup, text = info_text, wraplength = 400, font = ('chalkduster', 24), fg='indianred', bg = 'black')
+        self.text.pack()
+        self.close = tk.Button(self.info_popup, text = 'OK', font = ('chalkduster', 24), fg='tan3', command = lambda win = self.info_popup : end(win))
+        self.close.pack()
+#         self.info_popup.overrideredirect(1)
+#         self.info_popup.lift()
+
         
     def debugger(self, event):
         print(app.ent_dict.keys())

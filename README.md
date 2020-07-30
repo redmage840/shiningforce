@@ -158,10 +158,10 @@ Warrior: Attack: Agility versus agility to-hit. Strength versus endurance determ
 Warrior: Leap: Move over obstacles to any square within range 3. Movement effects do not affect the range of Leap<br>
 unless specifically noted. Does not count as either an action or a move. Can only be used once per turn.<br>
 Warrior lvl2: Throw: relocate an adjacent unit to a location up to distance 3 from Warrior<br>
-Warrior lvl2: Rage: Dispel current affects at +6, gain +2 str, +2 end, +4 psy, take 3 dmg on effect end, lasts 4 turns.<br>
+Warrior lvl2: Rage: Dispel current affects at +6, gain +1 str, +1 end, +4 psy, take 3 dmg on effect end, lasts 4 turns.<br>
 Shadow (wolf form): Shadow Strike: Range 2-8. Agility versus dodge to-hit. Strength versus endurance determines damage.<br>
 Type is ranged.<br>
-Shadow (wolf form): Dark Shroud: Target Warrior, Bard, Trickster, or Plaguebearer and all other of all these types within range<br>
+Shadow (wolf form): Dark Shroud: Target Warrior, Bard, Trickster, or Plaguebearer and all other of all these types within range 3<br>
 of the target heal 2 spirit up to their max spirit and receive +1 dodge if they do not already have the effect.<br>
 Lasts 3 turns at level 3.<br>
 Shadow lvl2 (wolf form): Darkblast: Dispel attempt one effect on a unit at +2, if unit is friendly then heal 3, if unit is<br>
@@ -187,8 +187,8 @@ Bard: Discord: Target within range 5 is attacked using psyche versus psyche to-h
 divided by 2 rounded down and added to 1 (about half normal formula, minimum 2). Type magick.<br>
 Bard: Esuna: Target within range 4 has each effect attempted to dispel/remove with no modifier.<br>
 Bard: Moonlight: Target Warrior, Shadow, Plaguebearer, or Trickster is healed 4 spirit up to its max spirit.<br>
-Bard lvl 2: Aura: Target Warrior, Shadow, Plaguebearer, or Trickster and all of these types within range 2 heal up to 3 spirit.<br>
-Bard lvl 2: Tranquility: Dispel attempt all effects on a location
+Bard lvl 2: Aura: Target Warrior, Shadow, Plaguebearer, or Trickster and all of these types within range 2 of target heal up to 3 spirit.<br>
+Bard lvl 2: Tranquility: Dispel(0) attempt all effects on a location<br>
 Plaguebearer: Pox: Each adjacent, non-plaguebearer, unit gets pox effect if it does not already have it. Effect<br>
 causes 3 poison damage at end of turn. Lasts 4 turns at level 6.<br>
 Plaguebearer: Paralyze: Target adjacent unit makes endurance save or is stunned (has no actions or move) until<br>
