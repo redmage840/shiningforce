@@ -1,4 +1,10 @@
+# scrollbox help menu
+
+# make paths prefer decrease of BOTH x and y coords, to prevent 'strafing' kiting : far away enemy will reduce distance with a completely vertical or horizontal move, if the ent it is 'chasing' mirrors this movement then ents with equal moverange will continue this cycle, although the same distance would still be maintained it is preferable for gameplay to have the ents 'chase' in a more lifelike manner (directly towards)
+
 # library, rev pathing, low ghost str + beleths str save/paralyze
+
+# darkblast, effects exist but do not desire to dispel any
 
 # pain timing, cast on adjacent pb
 
@@ -4646,11 +4652,11 @@ class Ghost(Summon):
     def __init__(self, name, img, loc, owner, number, waiting = False):
         self.actions = {'attack':self.do_attack}
         self.attack_used = False
-        self.str = 4
+        self.str = 7
         self.agl = 9
         self.end = 8
         self.dodge = 9
-        self.psyche = 8
+        self.psyche = 11
         self.spirit = 75
         self.move_range = 4
         self.times_retreated = 0
@@ -5009,7 +5015,7 @@ class Revenant(Summon):
             self.get_path(ents_list)
             
     def get_path(self, ents_list):
-        els = [v.loc for k,v in app.ent_dict.items() if v.owner != self.owner]
+        els = [v.loc for k,v in app.ents().items() if v.owner != self.owner]
         cs = [c for c in app.coords if sum([ef.avoid for k,ef in app.loc_effects_dict[tuple(c)].effects_dict.items()])*10 < randrange(30,60)]
         fls = [v.loc for k,v in app.ent_dict.items() if v.owner == self.owner]
         egrid = deepcopy(app.grid)
@@ -5023,12 +5029,12 @@ class Revenant(Summon):
                 if gs3 == []:
                     self.ai_end_turn(ents_list)
                 else:
-                    g = reduce(lambda a,b : a if sum([dist(a,el) for el in els]) > sum([dist(b,el) for el in els]) else b, gs1)
+                    g = reduce(lambda a,b : a if dist(a,self.loc) < dist(b,self.loc) else b, gs3)
             else:
-                g = reduce(lambda a,b : a if sum([dist(a,el) for el in els]) > sum([dist(b,el) for el in els]) else b, gs1)
+                g = reduce(lambda a,b : a if dist(a,self.loc) < dist(b,self.loc) else b, gs2)
         else:
             # need to ensure getting goal closest to range...DEBUG
-            g = reduce(lambda a,b : a if sum([dist(a,el) for el in els]) > sum([dist(b,el) for el in els]) else b, gs1)
+            g = reduce(lambda a,b : a if dist(a,self.loc) < dist(b,self.loc) else b, gs1)
         ms = self.legal_moves()
         moves = [m for m in ms if m in cs]
         if moves == []:
@@ -16691,20 +16697,24 @@ class App(tk.Frame):
 
     # Helper functions
     def help(self):
-        self.help_popup = tk.Toplevel()
+        self.help_popup = tk.Toplevel(bg = 'black')
+        sb = tk.Scrollbar(self.help_popup)
         self.help_popup.grab_set()
         self.help_popup.attributes('-topmost', 'true')
+#         self.help_popup.config(resize = False)
 #         self.help_popup.geometry(root.winfo_screenwidth(), root.winfo_screenheight())
         def on_close():
             pass
-        self.info_popup.protocol('WM_DELETE_WINDOW', on_close)
+        self.help_popup.protocol('WM_DELETE_WINDOW', on_close)
         help_text = '''
         R-click on spell or action buttons to see descriptions. L-click on map to move cursor. ',' and 'l' cycle cursor over friendly units. '.' and ';' cycle cursor over enemy units. Arrow keys move cursor around map. Press 'a' when cursor is over a unit to populate the context menu (left side of screen) with information. If you own the unit and it has available actions, then those will be in the context menu when you have selected the unit with 'a'. To cancel an action after you have chosen it, press 'q'. Your witch can cast one arcane spell AND one cantrip AND use one summon AND move once per turn. Your summons can move AND use one action per turn in most cases. Except, for example, Warriors may move, attack, and use leap to move again in one turn (leap does not count towards summon limit of 1 action and 1 movement per turn). Effects caused by units or spells may target either other units themselves or in some cases locations. Either can be dispelled with some modifier. A dispel is an attempt to remove the effect, the success of which depends on the level of the effect (higher level effects are harder to dispel). The dispel formula is random-value-between-neg1-and-101 compared to spell-level minus modifier. If the randomly generated value is higher, the effect is dispelled. Save-checks are implemented similarly. They have a modifier added to a units ability score which is then compared to a random value. Save-checks are used by units to determine whether they can avoid the effects of some spell or ability and higher ability scores or positive modifiers in your favor are desirable. The to-hit formula takes 2 values to be compared against each other (usually some ability of the attacker compared to some ability of the defender). The base to-hit percentage is 50% (for equal values being compared against each other). For every point of difference in favor of the attacker, 5% is added to the success rate, and vice versa (higher defender value will subtract 5% for each point of difference). To a maximum of 99% success and a minimum of 5%. The dmg formula similarly compares some ability score against another (usually a value of the attacker compared to a value of the defender). The base value for dmg when ability scores are equal is 4. For example, if the strength value 6 of the attacker is compared to the endurance value 6 of the defender, the scores are the same so the base rate of 4 dmg is applied. For each difference in values, 1 is added/subtracted to the value to a minimum of 1 with no maximum value. Ability scores tend to range between 1-10 (abilities cannot be lower than 1 even after reduction from effects, but have no maximum value). Multiple effects can be applied to abilities like strength, agility, etc and also move range. Multiple changes of abilities caused by effects are resolved in the order in which they were applied (the most recently added effect is resolved last). The abilities str, end, agl, dodge, psyche cannot be reduced to less than 1. Move range effects often will not allow move range to be modified to less than 1, but not always.
         '''
-        self.text = tk.Label(self.help_popup, text = help_text, wraplength = 750, font = ('chalkduster', 20), fg='indianred', bg = 'black')
-        self.text.pack()
-        self.close = tk.Button(self.help_popup, text = 'Close', font = ('chalkduster', 24), fg='tan3', command = lambda win = self.help_popup : self.destroy_release(win))
+        self.text = tk.Canvas(self.help_popup, yscrollcommand = sb.set)#, text = help_text, wraplength = 750, font = ('chalkduster', 20), fg='indianred', bg = 'black')
+        self.close = tk.Button(self.help_popup, text = 'Close', font = ('chalkduster', 24), fg='tan3', highlightbackground = 'tan3', command = lambda win = self.help_popup : self.destroy_release(win))
         self.close.pack()
+        self.text.pack()
+        sb.pack(side = 'right', fill = 'y')
+        sb.config(command = self.text.yview)
         
     def get_info_text(self, ent):
         txt = ''
