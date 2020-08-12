@@ -1,12 +1,9 @@
+# flesh hooks adds/deletes an action, other effects may need to remove actions (beleths stun), resulting in flesh hooks expiration not seeing its entry to delete, only to be re-added later by the other temp effect removing it
+# make actions resolve in the same way as abls (getter method)
+
 # many pathing typos gs1,gs2...
 
-# finish mages app.spell_target_ents()...
-
-# lvl 1 needs balance
-
 # put types in context menu
-
-# continue replacing app.all_ents() or app.targetable_ents()...
 
 # scrollbox help menu
 # text widget is editable text?!...
@@ -546,6 +543,14 @@ class Entity():
         self.anim_dict = {}
         self.init_normal_anims()
         self.anim_counter = randrange(0, len(self.anim_dict.keys()))
+        self.action_effects = []
+        
+    def get_actions(self):
+        actions = dict(self.actions)
+        for ef in self.action_effects:
+            actions = ef(actions)
+        return actions
+            
             
     def rotate_image(self):
         total_imgs = len(self.anim_dict.keys())-1
@@ -3297,6 +3302,8 @@ class Scarab_Swarm(Summon):
         id = app.grid[sqr[0]][sqr[1]]
         if id == '' or id == 'block':
             return
+        if id not in app.action_target_ents().keys():
+            return
 #         effect1 = mixer.Sound('Sound_Effects/bite.ogg')
 #         effect1.set_volume(.5)
 #         sound_effects.play(effect1, 0)
@@ -3387,6 +3394,8 @@ class Scarab(Summon):
             return
         id = app.grid[sqr[0]][sqr[1]]
         if id == '' or id == 'block':
+            return
+        if id not in app.action_target_ents().keys():
             return
 #         effect1 = mixer.Sound('Sound_Effects/bite.ogg')
 #         effect1.set_volume(.5)
@@ -7029,7 +7038,7 @@ class Air_Mage(Summon):
     # teleport to limit of range, ranged atk or spell?
     def continue_ai(self, ents_list):
         # get empty sqrs exactly 3 or 4 from any enemy
-        ent_locs = [v.loc[:] for k,v in app.ent_dict.items() if v.owner == 'p1']
+        ent_locs = [v.loc[:] for k,v in app.all_ents().items() if v.owner == 'p1']
         locs = [s for s in app.coords for c in ent_locs if 3 <= dist(s, c) <= 4  and app.grid[s[0]][s[1]] == '']
         if locs != []:
             loc = choice(locs)
@@ -7089,7 +7098,7 @@ class Air_Mage(Summon):
             elif 20 <= rand < 85:
                 self.do_cyclone(ents_list)
             else:
-                elems = [v for k,v in app.ent_dict.items() if v.name == 'Air_Elemental']
+                elems = [v for k,v in app.all_ents().items() if v.name == 'Air_Elemental']
                 if elems == []:
                     self.do_sandstorm(ents_list)
                 else:
@@ -7100,8 +7109,7 @@ class Air_Mage(Summon):
         effect1 = mixer.Sound('Sound_Effects/teleport_move.ogg')
         effect1.set_volume(.8)
         sound_effects.play(effect1, 0)
-        ents = [app.grid[c[0]][c[1]] for c in app.coords if dist(c, self.loc) <= 4 and app.grid[c[0]][c[1]] != '' and app.grid[c[0]][c[1]] != 'block']
-        ents = [e for e in ents if app.ent_dict[e].owner != self.owner]
+        ents = [k for k,v in app.action_target_ents().items() if dist(v.loc,self.loc) <= 4 and v.owner != self.owner]
         if ents == []:
             root.after(666, lambda e = ents_list : app.do_ai_loop(e))
         else:
@@ -7109,8 +7117,7 @@ class Air_Mage(Summon):
             app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+85-app.moved_down, text = 'Sandstorm', font = ('Andale Mono', 15), fill = 'gray', tags = 'text')
             id = choice(ents)
             loc = app.ent_dict[id].loc[:]
-            ents = [app.grid[c[0]][c[1]] for c in app.coords if dist(c, loc) <= 2 and app.grid[c[0]][c[1]] != '' and app.grid[c[0]][c[1]] != 'block']
-            ents = [e for e in ents if app.ent_dict[e].owner != self.owner]
+            ents = [k for k,v in app.all_ents().items() if dist(v.loc,loc) <= 2 and v.name != 'Air_Elemental' and v != self]
             for id in ents:
                 loc = app.ent_dict[id].loc[:]
                 app.canvas.create_text(loc[0]*100+49-app.moved_right, loc[1]*100+84-app.moved_down, text = 'Effects\nRemoved', justify = 'center', font = ('Andale Mono', 12), fill = 'black', tags = 'text')
@@ -7169,8 +7176,7 @@ class Air_Mage(Summon):
 #         effect1 = mixer.Sound('Sound_Effects/cyclone.ogg')
 #         effect1.set_volume(1)
 #         sound_effects.play(effect1, 0)
-        ents = [app.grid[c[0]][c[1]] for c in app.coords if dist(c, self.loc) <= 4 and app.grid[c[0]][c[1]] != '' and app.grid[c[0]][c[1]] != 'block']
-        ents = [e for e in ents if app.ent_dict[e].owner != self.owner]
+        ents = [k for k,v in app.spell_target_ents().items() if dist(v.loc,self.loc) <= 4 and v.owner != self.owner]
         if ents == []:
             root.after(666, lambda el = ents_list : self.cleanup_attack(el))
         else:
@@ -7237,7 +7243,7 @@ class Air_Mage(Summon):
         app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+95-app.moved_down, text = 'Breath of Life', justify = 'center', font = ('Andale Mono', 14), fill = 'white', tags = 'text')
 #         app.vis_dict['Breath_of_Life'] = Vis(name = 'Breath_of_Life', loc = self.loc[:])
 #         app.canvas.create_image(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+50-app.moved_down, image = app.vis_dict['Breath_of_Life'].img, tags = 'Breath_of_Life')
-        ents = [k for k,v in app.ent_dict.items() if v.name == 'Air_Elemental']
+        ents = [k for k,v in app.all_ents().items() if v.name == 'Air_Elemental']
         def breath_loop(ents):
             if ents == []:
                 self.cleanup_attack(ents_list)
@@ -7632,7 +7638,7 @@ class Water_Mage(Summon):
     # teleport to limit of range, ranged atk or spell?
     def continue_ai(self, ents_list):
         # get empty sqrs exactly 3 or 4 from any enemy
-        ent_locs = [v.loc[:] for k,v in app.ent_dict.items() if v.owner == 'p1']
+        ent_locs = [v.loc[:] for k,v in app.all_ents().items() if v.owner == 'p1']
         locs = [s for s in app.coords for c in ent_locs if 3 <= dist(s, c) <= 4  and app.grid[s[0]][s[1]] == '']
         if locs != []:
             loc = choice(locs)
@@ -7703,7 +7709,7 @@ class Water_Mage(Summon):
 #         effect1 = mixer.Sound('Sound_Effects/deluge.ogg')
 #         effect1.set_volume(1)
 #         sound_effects.play(effect1, 0)
-        ents = [k for k,v in app.ent_dict.items() if dist(v.loc, self.loc) <= 4 and v.owner != self.owner]
+        ents = [k for k,v in app.spell_target_ents().items() if dist(v.loc, self.loc) <= 4 and v.owner != self.owner]
         if ents == []:
             root.after(666, lambda e = ents_list : self.ai_end_turn(e))
         else:
@@ -7713,7 +7719,7 @@ class Water_Mage(Summon):
 #             app.canvas.create_image(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+50-app.moved_down, image = app.vis_dict['Deluge'].img, tags = 'Deluge')
             id = choice(ents)
             loc = app.ent_dict[id].loc[:]
-            ents = [k for k,v in app.ent_dict.items() if dist(loc, v.loc) <= 2 and v.owner != self.owner]
+            ents = [k for k,v in app.all_ents().items() if dist(loc, v.loc) <= 2 and v.owner != self.owner]
             def deluge_loop(ents):
                 if ents == []:
                     self.cleanup_attack(ents_list)
@@ -7773,7 +7779,7 @@ class Water_Mage(Summon):
 #         effect1 = mixer.Sound('Sound_Effects/fog.ogg')
 #         effect1.set_volume(1)
 #         sound_effects.play(effect1, 0)
-        ents = [k for k,v in app.ent_dict.items() if dist(v.loc, self.loc) <= 4 and v.owner != self.owner]
+        ents = [k for k,v in app.action_target_ents().items() if dist(v.loc, self.loc) <= 4 and v.owner != self.owner]
         if ents == []:
             root.after(666, lambda e = ents_list : self.ai_end_turn(e))
         else:
@@ -7783,7 +7789,7 @@ class Water_Mage(Summon):
 #             app.canvas.create_image(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+50-app.moved_down, image = app.vis_dict['Fog'].img, tags = 'Fog')
             id = choice(ents)
             loc = app.ent_dict[id].loc[:]
-            ents = [k for k,v in app.ent_dict.items() if dist(loc, v.loc) <= 2 and v.owner != self.owner]
+            ents = [k for k,v in app.all_ents().items() if dist(loc, v.loc) <= 2 and v.owner != self.owner]
             def fog_loop(ents):
                 if ents == []:
                     self.cleanup_attack(ents_list)
@@ -8020,7 +8026,7 @@ class Earth_Mage(Summon):
         self.weak = ['crushing', 'fire']
         self.summons_used = False
         super().__init__(name, img, loc, owner, number)
-        # add effects that alter attrs based on alive elementals
+        # add effects that alter abls based on alive elementals
         def elementals(stat):
             alive = [k for k,v in app.ent_dict.items() if v.name == 'Earth_Elemental']
             bonus = len(alive)
@@ -8100,7 +8106,7 @@ class Earth_Mage(Summon):
     # teleport near enemy ents, cast earthquake
     def continue_ai(self, ents_list):
         # get empty sqrs within 6 of any enemy
-        ent_locs = [v.loc[:] for k,v in app.ent_dict.items() if v.owner == 'p1']
+        ent_locs = [v.loc[:] for k,v in app.all_ents().items() if v.owner == 'p1']
         locs = [s for s in app.coords for c in ent_locs if dist(s, c) <= 6 and app.grid[s[0]][s[1]] == '']
         if locs != []:
             loc = choice(locs)
@@ -8153,7 +8159,7 @@ class Earth_Mage(Summon):
             else:
                 root.after(666, lambda e = ents_list : app.do_ai_loop(e))
     
-    # earthquake, dmg near ents (non-flying) and move them to a sqr not within close range
+    # earthquake, dmg near ents (non-flying) and move them 'back'
     def do_attack(self, ents_list):
         if self.attack_used == True:
             self.cleanup_attack(ents_list)
@@ -8172,7 +8178,7 @@ class Earth_Mage(Summon):
             app.vis_dict['Earthquake'] = Vis(name = 'Earthquake', loc = self.loc[:])
             app.canvas.create_image(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+50-app.moved_down, image = app.vis_dict['Earthquake'].img, tags = 'Earthquake')
             # get all ents in vicinity
-            ents = [k for k,v in app.ent_dict.items() if v.owner != self.owner and v.loc in sqrs and v.move_type != 'flying']
+            ents = [k for k,v in app.all_ents().items() if v.owner != self.owner and v.loc in sqrs and v.move_type != 'flying' and v.move_type != 'ethereal']
             if ents != []:
                 t1,t2,t3 = [],[],[]
                 for e in ents:
@@ -8593,7 +8599,7 @@ class Fire_Mage(Summon):
     # teleport to random sqr within 6 of an enemy ent, do firewall
     def continue_ai(self, ents_list):
         # get empty sqrs within 6 of any enemy
-        ent_locs = [v.loc[:] for k,v in app.ent_dict.items() if v.owner == 'p1']
+        ent_locs = [v.loc[:] for k,v in app.all_ents().items() if v.owner == 'p1']
         locs = [s for s in app.coords for c in ent_locs if dist(s, c) <= 6 and app.grid[s[0]][s[1]] == '']
         if locs != []:
             loc = choice(locs)
@@ -8665,7 +8671,7 @@ class Fire_Mage(Summon):
                 app.vis_dict[u_name] = Vis(name = 'Firewall', loc = s[:])
                 app.canvas.create_image(s[0]*100+50-app.moved_right, s[1]*100+50-app.moved_down, image = app.vis_dict[u_name].img, tags = 'Firewall')
             # get all ents in paths
-            ents = [k for k,v in app.ent_dict.items() if v.name != 'Fire_Elemental' and v.loc in sqrs]
+            ents = [k for k,v in app.all_ents().items() if v.name != 'Fire_Elemental' and v.loc in sqrs]
             if ents != []:
                 # check for dmg and create text object
                 def firewall_loop(ents):
@@ -8858,7 +8864,6 @@ class Sorceress(Summon):
     def finish_turn(self, ents_list):
         if self.attack_used == False:
             atk_sqrs = self.legal_attacks()
-            holder = 
             if atk_sqrs == []:
                 self.ai_end_turn(ents_list)
             else:
@@ -11372,6 +11377,8 @@ class Cenobite(Summon):
             return
         if isinstance(app.ent_dict[id], (Bard, Trickster, Warrior, Shadow, Plaguebearer)) == False:
             return
+        if 'Hook Attack' in app.ent_dict[id].get_actions().keys():
+            return
         self.attack_used = True
 #         self.init_attack_anims()
         effect1 = mixer.Sound('Sound_Effects/flesh_hooks.ogg')
@@ -11454,14 +11461,20 @@ class Cenobite(Summon):
             # END INNER-INNER FUNCS
         # ADD ACTION TO TARGET
         p = partial(hook_attack, obj = app.ent_dict[id])
-        app.ent_dict[id].actions['Hook Attack'] = p
+#         app.ent_dict[id].actions['Hook Attack'] = p
+        def add_hook_attack(actions = None, func = None):
+            actions['Hook Attack'] = func
+            return actions
+        p2 = partial(add_hook_attack, func = p)
+        app.ent_dict[id].action_effects.append(p2)
         def hook_effect():
             pass
         f = hook_effect
-        def un(i):
-            del app.ent_dict[i].actions['Hook Attack']
+        def un(i, func):
+            app.ent_dict[i].action_effects.remove(func)
+#             del app.ent_dict[i].actions['Hook Attack']
             return None
-        p = partial(un, id)
+        p = partial(un, id, p2)
         n = 'Hook_Attack' + str(app.effects_counter)
         app.ent_dict[id].effects_dict[n] = Effect(name = 'Hook_Attack', undo_func = p, duration = 3, level = 6)
         root.after(2666, self.finish_flesh_hooks)
@@ -12024,6 +12037,7 @@ class Witch(Entity):
         super().__init__(name, img, loc, owner, type = 'normal')
         
     def reset_transient_vars(self):
+        self.action_effects = []
         self.summon_ids = 0
         self.cantrip_used = False
         self.arcane_used = False
@@ -16648,7 +16662,8 @@ class App(tk.Frame):
         self.context_buttons.append(bg)
         if self.ent_dict[e].owner == self.active_player:
             # insert page actions
-            tup_list = list(self.ent_dict[e].actions.items())
+#             tup_list = list(self.ent_dict[e].actions.items())
+            tup_list = list(self.ent_dict[e].get_actions().items())
             self.page_actions(tup_list = tup_list, index = 0)
             
     def page_actions(self, event = None, tup_list = None, index = None):
