@@ -190,9 +190,8 @@ Bard: Moonlight: Target Warrior, Shadow, Plaguebearer, or Trickster is healed 4 
 Bard lvl 2: Aura: Target Warrior, Shadow, Plaguebearer, or Trickster and all of these types within range 2 of target heal up to 3 spirit.<br>
 Bard lvl 2: Tranquility: Dispel(0) attempt all effects on a location<br>
 Plaguebearer: Pox: Each adjacent, non-plaguebearer, unit gets pox effect if it does not already have it. Effect<br>
-causes 3 poison damage at end of turn. Lasts 4 turns at level 6.<br>
-Plaguebearer: Paralyze: Target adjacent unit makes endurance save or is stunned (has no actions or move) until<br>
-its next end of turn.<br>
+causes 2 poison damage at end of turn. Lasts 4 turns at level 6.<br>
+Plaguebearer: Paralyze: If target fails a strength save(-1), it gets an effect which causes melee and ranged dmg to be halved(rounded down) and its move range reduced to 1. Lasts 2 turns at level 6.<br>
 Plaguebearer: Scarab Gestation: Target enemy gets a death trigger that creates a scarab under your control, scarab has str 2, agl 3<br>
 end 3, dodge 3, psyche 2, spirit 9, move range 5, and bite attack agility vs agility, str vs end damage.<br>
 Plaguebearer: Contagion: Plaguebearers have an innate death effect that gives each adjacent unit a contagion effect<br>
