@@ -1,13 +1,13 @@
 # in user controlled ents that fail sanity check, during call of Summon.do_move, keys are rebinded. This results in, when chaining multiple user controlled ents that fail sanity checks, potential for user input that may move the map or otherwise disrupt the correct postion of the cursor/map/focus.
 # user controlled ents that fail sanity check, should somehow call separate move (like throw_move)
+# solution: have user-controlled ents (Summons), call Bot.do_move (instead of Summon.do_move) which does not bind/unbind keys
+# in repl this works, j = X(), Y.hello(j) (calls Y class method without any instances of Y, only j which is an X)
 
 # show costs of actions, without disrupting the names for action_descr lookups...
 # alt five is infi symbol
 
 # duel not starting lvl music
 # above due to convoluted ordering of: (loading map, loading map triggers, choosing protagonist(s), creating canvas/context_menu), also shoehorned in that is save/load of games...
-
-# test unholy chant about to undo on unit that dies
 
 # r-click hotkey for targeting/confirming of spells/actions/move/summon
 
@@ -20,8 +20,6 @@
 # more info txt styling, header txt dif color
 
 # melee pursue/smart pursue avoids detr efcts on gs, not necessarily on long paths
-
-# dark sun text
 
 # esuna show efcts like dispel...
 
@@ -211,7 +209,7 @@ def action_description(act):
     elif act == 'Mummify':
         return 'Spell target within range reason gets +4 endurance and move range reduced to 1. If unit is a Berserker, its leap is set to used for the turn on casting and during start-of-turn effects. Duration is reason. Level is wisdom.'
     elif act == 'Command of Osiris':
-        return 'All friendly units within range reason get +1 str and end. They are also healed for 1 spirit. All enemies in the same range get -1 str and end. Duration is reason. Level is wisdom. Does not target.'
+        return 'All friendly units within half range reason (rounded down, min 1) get +1 str and end. They are also healed for 1 spirit. All enemies in the same range get -1 str and end. Duration is reason. Level is wisdom. Does not target.'
     elif act == 'Immolate':
         return 'Spell target within half of reason range (rounded down, minimum 1) takes (psyche vs psyche)+5 fire damage.'
     elif act == 'Disintegrate':
@@ -259,7 +257,7 @@ def action_description(act):
     elif act == 'Gaze':
         return 'Action target within range ballistics, on to-hit marksmanship vs dodge, gets -2 psyche, strength, and move range. Duration is missle. Level is marksmanship.'
     elif act == 'Howl From Beyond':
-        return 'All enemy units within range reason without this effect, on to-hit strength vs strength, get -3 sanity and reason. Duration is endurance. Level is strength.'
+        return 'All enemy units within range reason without this effect, on to-hit strength vs strength, get -3 sanity and -2 reason. Duration is endurance. Level is strength.'
     elif act == 'Track':
         return 'All enemy units within range reason, on to-hit agility vs agility, get an effect that removes invisibility. Duration is endurance. Level is strength.'
     elif act == 'Toxic Miasma':
@@ -429,7 +427,7 @@ def effect_description(ef):
     elif ef.name == 'Gaze':
         return '-2 strength, psyche, and move range. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Howl_From_Beyond':
-        return '-3 sanity and reason. dur = '+str(ef.duration)+', level = '+str(ef.level)
+        return '-3 sanity, -2 reason. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Track':
         return 'Lose invisibility. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Miasma_Drain':
@@ -5231,7 +5229,7 @@ class Thaumaturge(Summon):
                 app.ent_dict[i].san_effects.remove(func)
                 app.ent_dict[i].init_effects.remove(func)
                 app.ent_dict[i].move_range_effects.remove(func)
-            u = partial(un, id, f)
+            u = partial(un, id, p)
             n = 'Unholy_Chant' + str(app.effects_counter)
             app.ent_dict[id].effects_dict[n] = Effect(name = 'Unholy_Chant', undo_func = u, duration = 1, level = self.get_abl('wis'))
         root.after(3111, self.finish_unholy_chant)
@@ -11389,18 +11387,21 @@ class Berserker(Summon):
                 my_str = self.get_abl('str')
                 tar_str = ent.get_abl('str')
                 if to_hit(my_str, tar_str):
-                    app.canvas.create_text(s[0]*100+49-app.moved_right, s[1]*100+84-app.moved_down, text = '-3 san, rsn', font = ('chalkduster', 13), fill = 'black', tags = 'text')
-                    app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+85-app.moved_down, text = '-3 san, rsn', font = ('chalkduster', 13), fill = 'white', tags = 'text')
+                    app.canvas.create_text(s[0]*100+49-app.moved_right, s[1]*100+84-app.moved_down, text = '-3 san, -2 rsn', font = ('chalkduster', 13), fill = 'black', tags = 'text')
+                    app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+85-app.moved_down, text = '-3 san, -2 rsn', font = ('chalkduster', 13), fill = 'ghostwhite', tags = 'text')
                     def howl_effect(stat):
                         return max(1,stat-3)
+                    def howl_rsn_effect(stat):
+                        return max(1, stat-2)
                     p = partial(howl_effect)
+                    p2 = partial(howl_rsn_effect)
                     ent.san_effects.append(p)
-                    ent.rsn_effects.append(p)
+                    ent.rsn_effects.append(p2)
                     n = 'Howl_From_Beyond' + str(app.effects_counter)
-                    def un(i, func):
-                        app.ent_dict[i].san_effects.remove(func)
-                        app.ent_dict[i].rsn_effects.remove(func)
-                    u = partial(un, id, p)
+                    def un(i, p, p2):
+                        app.ent_dict[i].san_effects.remove(p)
+                        app.ent_dict[i].rsn_effects.remove(p2)
+                    u = partial(un, id, p, p2)
                     ent.effects_dict[n] = Effect(name = 'Howl_From_Beyond', undo_func = u, duration = self.get_abl('end'), level = self.get_abl('str'))
                     root.after(888, lambda t = 'text' : app.canvas.delete(t))
                     root.after(999, lambda ents = ents : howl_loop(ents))
@@ -12443,6 +12444,10 @@ class Lesser_Demon(Summon):
             
             
     def finish_dire_charm(self, event = None):
+        try:
+            del app.vis_dict['Dire_Charm']
+            app.canvas.delete('Dire_Charm')
+        except: pass
         app.cleanup_squares()
         app.unbind_all()
         app.rebind_all()
@@ -15959,7 +15964,7 @@ class Witch(Summon):
     def command_of_osiris(self, event = None):
         app.depop_context(event = None)
         root.bind('<q>', self.cleanup_spell)
-        sqrs = [s for s in app.coords if dist(self.loc, s) <= self.get_abl('rsn')]
+        sqrs = [s for s in app.coords if dist(self.loc, s) <= max(1, self.get_abl('rsn')//2)]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, sqrs = sqrs : self.do_command_of_osiris(event = e, sqrs = sqrs))
         b = tk.Button(app.context_menu, text = 'Confirm Command of Osiris', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, sqrs = sqrs : self.do_command_of_osiris(e, sqrs = sqrs))
@@ -18321,11 +18326,11 @@ class App(tk.Frame):
                     q.append(ef)
         for ef in q:
             if ef.eot_func != None:
-                if ef in [j for k,v in app.ent_dict.items() for i,j in v.effects_dict.items()] + [j for k,v in app.loc_dict.items() for i,j in v.effects_dict.items()]:
+                if ef in [j for k,v in app.ent_dict.items() for i,j in v.effects_dict.items()] + [j for k,v in app.loc_dict.items() for i,j in v.effects_dict.items()]:# CHECKS IF STILL EXISTS THIS LINE
                     lock(ef.eot_func) # RESOLVE / CALL effects
             # decr ef.dur
             ef.duration -= 1
-            if ef.duration <= 0:
+            if ef.duration <= 0 and ef in [j for k,v in app.ent_dict.items() for i,j in v.effects_dict.items()] + [j for k,v in app.loc_dict.items() for i,j in v.effects_dict.items()]: # MUST CHECK IF STILL EXISTS AGAIN, in case eot removed owner
                 ef.undo_func()
                 # delete Effect from source dict
                 for efct,key,ent in [(j,i,v) for k,v in app.ent_dict.items() for i,j in v.effects_dict.items()]:
