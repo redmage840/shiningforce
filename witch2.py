@@ -1,8 +1,3 @@
-# in user controlled ents that fail sanity check, during call of Summon.do_move, keys are rebinded. This results in, when chaining multiple user controlled ents that fail sanity checks, potential for user input that may move the map or otherwise disrupt the correct postion of the cursor/map/focus.
-# user controlled ents that fail sanity check, should somehow call separate move (like throw_move)
-# solution: have user-controlled ents (Summons), call Bot.do_move (instead of Summon.do_move) which does not bind/unbind keys
-# in repl this works, j = X(), Y.hello(j) (calls Y class method without any instances of Y, only j which is an X)
-
 # show costs of actions, without disrupting the names for action_descr lookups...
 # alt five is infi symbol
 
@@ -11,13 +6,7 @@
 
 # r-click hotkey for targeting/confirming of spells/actions/move/summon
 
-# text still not very visible in contxt menu
-
-# info popups wrapping text, cuts words 
-
 # highlight headrs, efcts names in more info popup
-
-# more info txt styling, header txt dif color
 
 # melee pursue/smart pursue avoids detr efcts on gs, not necessarily on long paths
 
@@ -225,7 +214,7 @@ def action_description(act):
     elif act == 'Baleful Stare':
         return 'Spell target within range reason, upon to-hit wisdom vs strength, that does not have this effect gets -1 psyche and end-of-turn 1 acid damage. Duration is reason. Level is wisdom.'
     elif act == 'Mind Rot':
-        return 'Spell target in range reason gets -3 wisdom, reason, sanity. Duration is reason. Level is wisdom.'
+        return 'Spell target in range reason gets -2 wisdom, -1 reason, -3 sanity. Duration is reason. Level is wisdom.'
     elif act == 'Legerdemain':
         return 'Exchange position of two spell target units.'
     elif act == 'Grasp of the Old Ones':
@@ -1626,7 +1615,7 @@ class Illusionist(Summon):
             self.rsn = 5
             self.san = 14
             self.init = 6
-            self.spirit = 16
+            self.spirit = 21
             self.magick = 11
             self.acts = 2
             self.mvs = 1
@@ -2045,8 +2034,8 @@ class Illusionist(Summon):
                     root.after(1777, lambda ents = ents : mortar_loop(ents))
                 else:
                     miss(app.ent_dict[id].loc[:])
-                    cleanup_vis(n)
-                    mortar_loop(ents)
+                    root.after(1666, lambda n = n : cleanup_vis(n))
+                    root.after(1777, lambda ents = ents : mortar_loop(ents))
         mortar_loop(ents)
         
     def cleanup_tracer_grenade(self, event = None):
@@ -2915,7 +2904,7 @@ class Umbrae_Wolf(Summon):
         app.depop_context(event = None)
         app.unbind_nonarrows()
         root.bind('<q>', self.cleanup_haste)
-        sqrs = [s for s in app.coords if dist(self.loc, s) <= self.get_abl('rsn')]
+        sqrs = [s for s in app.coords if 1 <= dist(self.loc, s) <= self.get_abl('rsn')]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_haste(event = e, sqr = s, sqrs = sqrs))
         b = tk.Button(app.context_menu, text = 'Choose Target For Haste', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_haste(e, s, sqrs))
@@ -3022,7 +3011,7 @@ class Umbrae_Wolf(Summon):
         if self.acts < 1:
             return
         app.unbind_nonarrows()
-        root.bind('<q>', self.rend_space)
+        root.bind('<q>', self.finish_rend_space)
         sqrs = [c for c in app.coords if dist(self.loc, c) <= self.get_abl('rsn')]
         app.animate_squares(sqrs)
         app.depop_context(event = None)
@@ -4740,7 +4729,7 @@ class Thaumaturge(Summon):
             self.rsn = 4
             self.san = 13
             self.init = 8
-            self.spirit = 19
+            self.spirit = 27
             self.magick = 29
             self.acts = 2
             self.mvs = 2
@@ -11247,7 +11236,7 @@ class Berserker(Summon):
             self.psyche = 4
             self.wis = 4
             self.rsn = 4
-            self.san = 14
+            self.san = 1
             self.init = 9
             self.spirit = 35
             self.magick = 0
@@ -11255,7 +11244,7 @@ class Berserker(Summon):
             self.mvs = 1
             self.move_range = 4
         self.move_type = 'charge'
-        self.weak = ['magick']
+        self.weak = []
         self.resist = ['crushing', 'poison']
         self.leap_used = False
         self.leap_anims = {}
@@ -13169,7 +13158,7 @@ class Witch(Summon):
         self.level = level
         self.name = name
         self.summon_cap = 6
-        self.summon_level = 1
+#         self.summon_level = 1
         self.summon_count = 0
         self.arcane_dict = {}
         self.cantrip_dict = {}
@@ -13204,93 +13193,183 @@ class Witch(Summon):
         self.init_normal_anims()
         self.anim_counter = randrange(0, len(self.anim_dict.keys()))
         if name == 'Agnes_Sampson':
-            self.cantrip_dict['Psionic_Push'] = (self.psionic_push, 0)
-            self.cantrip_dict["Minerva's_Gift"] = (self.minervas_gift, 0)
-            self.cantrip_dict['Bewitch'] = (self.bewitch, 0)
-            self.cantrip_dict['Read_the_Stars'] = (self.read_the_stars, 0)
-            self.cantrip_dict['Energize'] = (self.energize, 0)
-            self.cantrip_dict['Psi_Blades'] = (self.psi_blades, 0)
-            self.cantrip_dict['Cosmic_Sight'] = (self.cosmic_sight, 0)
-            self.arcane_dict['Plague'] = (self.plague, 6)
-            self.arcane_dict['Pestilence'] = (self.pestilence, 4)
-            self.arcane_dict['Curse_of_Oriax'] = (self.curse_of_oriax, 5)
-            self.arcane_dict['Demonic_Sight'] = (self.demonic_sight, 3)
-            self.arcane_dict['Molecular_Subversion'] = (self.molecular_subversion, 4)
-            self.arcane_dict['Plutonian_Cloak'] = (self.plutonian_cloak, 6)
-            self.arcane_dict['Hidden_From_the_Stars'] = (self.hidden_from_the_stars, 6)
-            self.arcane_dict['Gravity'] = (self.gravity, 5)
-            self.arcane_dict["Beleth's_Command"] = (self.beleths_command, 8)
-            self.base_cantrips = 1
-            self.cantrips = 1
-            self.base_smns = 1
-            self.smns = 1
-            self.base_acts = 1
-            self.acts = 1
-            self.base_mvs = 1
-            self.mvs = 1
-            self.move_range = 3
-            self.move_type = 'normal'
-            self.str = 4
-            self.agl = 4
-            self.end = 4
-            self.mm = 4
-            self.msl = 0
-            self.bls = 0
-            self.dodge = 4
-            self.psyche = 6
-            self.wis = 6
-            self.rsn = 6
-            self.san = 15
-            self.init = 9
-            self.spirit = 40
-            self.magick = 75
-            self.weak = []
-            self.resist = ['poison', 'fire']
-            self.base_spirit = 40
-            self.base_magick = 75
+            if level == 1:
+                self.cantrip_dict['Psionic_Push'] = (self.psionic_push, 0)
+                self.cantrip_dict["Minerva's_Gift"] = (self.minervas_gift, 0)
+                self.cantrip_dict['Bewitch'] = (self.bewitch, 0)
+                self.cantrip_dict['Read_the_Stars'] = (self.read_the_stars, 0)
+                self.cantrip_dict['Energize'] = (self.energize, 0)
+                self.cantrip_dict['Psi_Blades'] = (self.psi_blades, 0)
+                self.cantrip_dict['Cosmic_Sight'] = (self.cosmic_sight, 0)
+                self.arcane_dict['Plague'] = (self.plague, 6)
+                self.arcane_dict['Pestilence'] = (self.pestilence, 4)
+                self.arcane_dict['Curse_of_Oriax'] = (self.curse_of_oriax, 5)
+                self.arcane_dict['Demonic_Sight'] = (self.demonic_sight, 3)
+                self.arcane_dict['Molecular_Subversion'] = (self.molecular_subversion, 4)
+                self.arcane_dict['Plutonian_Cloak'] = (self.plutonian_cloak, 6)
+                self.arcane_dict['Hidden_From_the_Stars'] = (self.hidden_from_the_stars, 6)
+                self.arcane_dict['Gravity'] = (self.gravity, 5)
+                self.arcane_dict["Beleth's_Command"] = (self.beleths_command, 8)
+                self.base_cantrips = 1
+                self.cantrips = 1
+                self.base_smns = 1
+                self.smns = 1
+                self.base_acts = 1
+                self.acts = 1
+                self.base_mvs = 1
+                self.mvs = 1
+                self.move_range = 3
+                self.move_type = 'normal'
+                self.str = 4
+                self.agl = 4
+                self.end = 4
+                self.mm = 4
+                self.msl = 0
+                self.bls = 0
+                self.dodge = 4
+                self.psyche = 6
+                self.wis = 6
+                self.rsn = 6
+                self.san = 15
+                self.init = 9
+                self.spirit = 40
+                self.magick = 75
+                self.weak = []
+                self.resist = ['poison', 'fire']
+                self.base_spirit = 40
+                self.base_magick = 75
+            elif level == 2:
+                self.cantrip_dict['Psionic_Push'] = (self.psionic_push, 0)
+                self.cantrip_dict["Minerva's_Gift"] = (self.minervas_gift, 0)
+                self.cantrip_dict['Bewitch'] = (self.bewitch, 0)
+                self.cantrip_dict['Read_the_Stars'] = (self.read_the_stars, 0)
+                self.cantrip_dict['Energize'] = (self.energize, 0)
+                self.cantrip_dict['Psi_Blades'] = (self.psi_blades, 0)
+                self.cantrip_dict['Cosmic_Sight'] = (self.cosmic_sight, 0)
+                self.arcane_dict['Plague'] = (self.plague, 6)
+                self.arcane_dict['Pestilence'] = (self.pestilence, 4)
+                self.arcane_dict['Curse_of_Oriax'] = (self.curse_of_oriax, 5)
+                self.arcane_dict['Demonic_Sight'] = (self.demonic_sight, 3)
+                self.arcane_dict['Molecular_Subversion'] = (self.molecular_subversion, 4)
+                self.arcane_dict['Plutonian_Cloak'] = (self.plutonian_cloak, 6)
+                self.arcane_dict['Hidden_From_the_Stars'] = (self.hidden_from_the_stars, 6)
+                self.arcane_dict['Gravity'] = (self.gravity, 5)
+                self.arcane_dict["Beleth's_Command"] = (self.beleths_command, 8)
+                self.base_cantrips = 1
+                self.cantrips = 1
+                self.base_smns = 1
+                self.smns = 1
+                self.base_acts = 1
+                self.acts = 1
+                self.base_mvs = 1
+                self.mvs = 1
+                self.move_range = 3
+                self.move_type = 'normal'
+                self.str = 7
+                self.agl = 7
+                self.end = 8
+                self.mm = 6
+                self.msl = 0
+                self.bls = 0
+                self.dodge = 8
+                self.psyche = 10
+                self.wis = 10
+                self.rsn = 7
+                self.san = 15
+                self.init = 9
+                self.spirit = 50
+                self.magick = 85
+                self.weak = []
+                self.resist = ['poison', 'fire']
+                self.base_spirit = 50
+                self.base_magick = 85
             self.color_img = ImageTk.PhotoImage(Image.open('animations/Agnes_Sampson_Color/Agnes_Sampson_Color.png'))
         elif name == 'Fakir_Ali':
-            self.cantrip_dict['Boiling_Blood'] = (self.boiling_blood, 0)
-            self.cantrip_dict['Dark_Sun'] = (self.dark_sun, 0)
-            self.cantrip_dict['Meditate'] = (self.meditate, 0)
-            self.cantrip_dict['Legerdemain'] = (self.legerdemain, 0)
-            self.cantrip_dict['Grasp_of_the_Old_Ones'] = (self.grasp_of_the_old_ones, 0)
-            self.arcane_dict['Horrid_Wilting'] = (self.horrid_wilting,5)
-            self.arcane_dict['Mind_Rot'] = (self.mind_rot,3)
-            self.arcane_dict['Dust_Devil'] = (self.dust_devil,5)
-            self.arcane_dict['Dispel'] = (self.dispel,4)
-            self.arcane_dict['Disintegrate'] = (self.disintegrate, 5)
-            self.arcane_dict['Mummify'] = (self.mummify, 5)
-            self.arcane_dict['Immolate'] = (self.immolate, 7)
-            self.arcane_dict['Command_of_Osiris'] = (self.command_of_osiris, 8)
-            self.base_cantrips = 1
-            self.cantrips = 1
-            self.base_smns = 1
-            self.smns = 1
-            self.base_acts = 1
-            self.acts = 1
-            self.base_mvs = 1
-            self.mvs = 1
-            self.move_range = 3
-            self.move_type = 'normal'
-            self.str = 3
-            self.agl = 3
-            self.end = 5
-            self.mm = 3
-            self.msl = 0
-            self.bls = 0
-            self.dodge = 4
-            self.psyche = 6
-            self.wis = 5
-            self.rsn = 6
-            self.san = 17
-            self.init = 8
-            self.spirit = 50
-            self.magick = 70
-            self.weak = []
-            self.resist = ['slashing', 'piercing', 'fire']
-            self.base_spirit = 50
-            self.base_magick = 70
+            if level == 1:
+                self.cantrip_dict['Boiling_Blood'] = (self.boiling_blood, 0)
+                self.cantrip_dict['Dark_Sun'] = (self.dark_sun, 0)
+                self.cantrip_dict['Meditate'] = (self.meditate, 0)
+                self.cantrip_dict['Legerdemain'] = (self.legerdemain, 0)
+                self.cantrip_dict['Grasp_of_the_Old_Ones'] = (self.grasp_of_the_old_ones, 0)
+                self.arcane_dict['Horrid_Wilting'] = (self.horrid_wilting,5)
+                self.arcane_dict['Mind_Rot'] = (self.mind_rot,3)
+                self.arcane_dict['Dust_Devil'] = (self.dust_devil,5)
+                self.arcane_dict['Dispel'] = (self.dispel,4)
+                self.arcane_dict['Disintegrate'] = (self.disintegrate, 5)
+                self.arcane_dict['Mummify'] = (self.mummify, 5)
+                self.arcane_dict['Immolate'] = (self.immolate, 7)
+                self.arcane_dict['Command_of_Osiris'] = (self.command_of_osiris, 8)
+                self.base_cantrips = 1
+                self.cantrips = 1
+                self.base_smns = 1
+                self.smns = 1
+                self.base_acts = 1
+                self.acts = 1
+                self.base_mvs = 1
+                self.mvs = 1
+                self.move_range = 3
+                self.move_type = 'normal'
+                self.str = 3
+                self.agl = 3
+                self.end = 5
+                self.mm = 3
+                self.msl = 0
+                self.bls = 0
+                self.dodge = 4
+                self.psyche = 6
+                self.wis = 5
+                self.rsn = 6
+                self.san = 17
+                self.init = 8
+                self.spirit = 50
+                self.magick = 70
+                self.weak = []
+                self.resist = ['slashing', 'piercing', 'fire']
+                self.base_spirit = 50
+                self.base_magick = 70
+            elif level == 2:
+                self.cantrip_dict['Boiling_Blood'] = (self.boiling_blood, 0)
+                self.cantrip_dict['Dark_Sun'] = (self.dark_sun, 0)
+                self.cantrip_dict['Meditate'] = (self.meditate, 0)
+                self.cantrip_dict['Legerdemain'] = (self.legerdemain, 0)
+                self.cantrip_dict['Grasp_of_the_Old_Ones'] = (self.grasp_of_the_old_ones, 0)
+                self.arcane_dict['Horrid_Wilting'] = (self.horrid_wilting,5)
+                self.arcane_dict['Mind_Rot'] = (self.mind_rot,3)
+                self.arcane_dict['Dust_Devil'] = (self.dust_devil,5)
+                self.arcane_dict['Dispel'] = (self.dispel,4)
+                self.arcane_dict['Disintegrate'] = (self.disintegrate, 5)
+                self.arcane_dict['Mummify'] = (self.mummify, 5)
+                self.arcane_dict['Immolate'] = (self.immolate, 7)
+                self.arcane_dict['Command_of_Osiris'] = (self.command_of_osiris, 8)
+                self.base_cantrips = 1
+                self.cantrips = 1
+                self.base_smns = 1
+                self.smns = 1
+                self.base_acts = 1
+                self.acts = 1
+                self.base_mvs = 1
+                self.mvs = 1
+                self.move_range = 3
+                self.move_type = 'normal'
+                self.str = 8
+                self.agl = 7
+                self.end = 9
+                self.mm = 5
+                self.msl = 0
+                self.bls = 0
+                self.dodge = 6
+                self.psyche = 9
+                self.wis = 9
+                self.rsn = 7
+                self.san = 17
+                self.init = 8
+                self.spirit = 60
+                self.magick = 80
+                self.weak = []
+                self.resist = ['slashing', 'piercing', 'fire']
+                self.base_spirit = 60
+                self.base_magick = 80
+
             self.color_img = ImageTk.PhotoImage(Image.open('animations/Fakir_Ali_Color/Fakir_Ali_Color.png'))
         elif name == 'Morgan_LeFay':
             self.actions['Move'] = self.flying_move
@@ -13446,7 +13525,7 @@ class Witch(Summon):
         elif summon == Murrain_Wolf:
             name = 'Murrain_Wolf'
             img = ImageTk.PhotoImage(Image.open('summon_imgs/Murrain_Wolf.png'))
-        s = summon(name = name, id = id, img = img, loc = sqr[:], owner = self.owner, level = self.summon_level)
+        s = summon(name = name, id = id, img = img, loc = sqr[:], owner = self.owner, level = self.level)
         app.cleanup_squares()
         app.depop_context(event = None)
         # separate here to finish summon vis, place ent after a sec or two
@@ -15403,19 +15482,25 @@ class Witch(Summon):
         def mind_rot_effect(stat):
             return max(1, stat-3)
         p = partial(mind_rot_effect)
+        def mind_rot_wis(stat):
+            return max(1, stat-2)
+        p2 = partial(mind_rot_wis)
+        def mind_rot_rsn(stat):
+            return max(1, stat-1)
+        p3 = partial(mind_rot_rsn)
         ent.san_effects.append(p)
-        ent.wis_effects.append(p)
-        ent.rsn_effects.append(p)
-        def un(id, func):
-            app.ent_dict[id].san_effects.remove(func)
-            app.ent_dict[id].wis_effects.remove(func)
-            app.ent_dict[id].rsn_effects.remove(func)
-        u = partial(un, id, p)
+        ent.wis_effects.append(p2)
+        ent.rsn_effects.append(p3)
+        def un(id, p, p2, p3):
+            app.ent_dict[id].san_effects.remove(p)
+            app.ent_dict[id].wis_effects.remove(p2)
+            app.ent_dict[id].rsn_effects.remove(p3)
+        u = partial(un, id, p, p2, p3)
         n = 'Mind_Rot' + str(app.effects_counter)
         ent.effects_dict[n] = Effect(name = 'Mind_Rot', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
         loc = ent.loc
-        app.canvas.create_text(loc[0]*100+49-app.moved_right, loc[1]*100+84-app.moved_down, text = '-3 wis, rsn, san', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
-        app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+85-app.moved_down, text = '-3 wis, rsn, san', justify = 'center', font = ('chalkduster', 13), fill = 'olivedrab2', tags = 'text')
+        app.canvas.create_text(loc[0]*100+49-app.moved_right, loc[1]*100+84-app.moved_down, text = '-1 rsn, -2 wis, -3 san', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
+        app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+85-app.moved_down, text = '-1 rsn, -2 wis, -3 san', justify = 'center', font = ('chalkduster', 13), fill = 'olivedrab2', tags = 'text')
         root.after(2666, lambda  name = 'Mind_Rot' : self.cleanup_spell(name = name))
         
     def horrid_wilting(self, event = None):
@@ -16257,7 +16342,9 @@ class Ai_man():
                         mv = choice(mvs)
                         app.focus_square(mv)
 #                         root.after(666, lambda mv = mv : app.focus_square(mv))
+#                         lock(Bot.do_move, ent, mv)
                         lock(ent.do_move, mv)
+                        app.unbind_all()
                         flail_loop(ent)
                     else:
                         flail_loop(ent)
@@ -16611,7 +16698,7 @@ class App(tk.Frame):
                 b_spirit = int(f.readline().strip('\n'))
                 b_magick = int(f.readline().strip('\n'))
                 area = int(f.readline().strip('\n'))
-                summon_level = int(f.readline().strip('\n'))
+#                 summon_level = int(f.readline().strip('\n'))
                 move_range = int(f.readline().strip('\n'))
                 # ALL SPELLS
                 '''
@@ -16674,7 +16761,7 @@ class App(tk.Frame):
                 obj.base_magick = b_magick
                 obj.magick = b_magick
                 obj.current_area = area
-                obj.summon_level = summon_level
+#                 obj.summon_level = summon_level
                 obj.move_range = move_range
                 cmd = lambda obj = obj : self.load_game(obj)
                 b = tk.Button(self.scroll_frame.interior, text = s, width = 13, wraplength = 190, fg = 'indianred', highlightbackground = 'black', font = ('chalkduster', 22), relief = 'raised', command = cmd)
@@ -17854,9 +17941,9 @@ class App(tk.Frame):
     
     def read_21_book(self):
         loc = app.ent_dict[app.p1_witch].loc[:]
-        app.ent_dict[app.p1_witch].summon_level = 2
-        app.canvas.create_text(loc[0]*100-app.moved_right-1, loc[1]*100-app.moved_down+84, text = 'Summons gain experience...', justify = 'center', font = ('chalkduster', 16), fill = 'black', tags = 'text')
-        app.canvas.create_text(loc[0]*100-app.moved_right, loc[1]*100-app.moved_down+85, text = 'Summons gain experience...', justify = 'center', font = ('chalkduster', 16), fill = 'white', tags = 'text')
+        app.ent_dict[app.p1_witch].level = 2
+        app.canvas.create_text(loc[0]*100-app.moved_right-1, loc[1]*100-app.moved_down+84, text = 'Gain experience...', justify = 'center', font = ('chalkduster', 16), fill = 'black', tags = 'text')
+        app.canvas.create_text(loc[0]*100-app.moved_right, loc[1]*100-app.moved_down+85, text = 'Gain experience...', justify = 'center', font = ('chalkduster', 16), fill = 'white', tags = 'text')
         root.after(2999, lambda t = 'text' : app.canvas.delete(t))
         self.cancel_21_book()
         
@@ -17892,9 +17979,9 @@ class App(tk.Frame):
         
     def inspect_121_painting(self):
         loc = app.ent_dict[app.p1_witch].loc[:]
-        app.ent_dict[app.p1_witch].summon_level = 2
-        app.canvas.create_text(loc[0]*100-app.moved_right-1, loc[1]*100-app.moved_down+84, text = 'Summons gain experience...', justify = 'center', font = ('chalkduster', 16), fill = 'black', tags = 'text')
-        app.canvas.create_text(loc[0]*100-app.moved_right, loc[1]*100-app.moved_down+85, text = 'Summons gain experience...', justify = 'center', font = ('chalkduster', 16), fill = 'white', tags = 'text')
+        app.ent_dict[app.p1_witch].level = 2
+        app.canvas.create_text(loc[0]*100-app.moved_right-1, loc[1]*100-app.moved_down+84, text = 'Gain experience...', justify = 'center', font = ('chalkduster', 16), fill = 'black', tags = 'text')
+        app.canvas.create_text(loc[0]*100-app.moved_right, loc[1]*100-app.moved_down+85, text = 'Gain experience...', justify = 'center', font = ('chalkduster', 16), fill = 'white', tags = 'text')
         root.after(2999, lambda t = 'text' : app.canvas.delete(t))
         self.cancel_121_painting()
         
@@ -17918,32 +18005,21 @@ class App(tk.Frame):
         self.intro_canvas.create_image(0,0, image =self.intro_scene, anchor = 'nw')
         self.intro_canvas.pack(side = 'top')
 
-        self.bd_img = ImageTk.PhotoImage(Image.open('border.png').resize((root.winfo_screenwidth()-180, root.winfo_screenheight()//3)))
-        self.intro_canvas.create_image(root.winfo_screenwidth()//2, root.winfo_screenheight()-180, anchor='s', image =self.bd_img)
-
+        self.bd_img = ImageTk.PhotoImage(Image.open('border.png').resize((root.winfo_screenwidth()-180, root.winfo_screenheight()//3-10)))
+        self.intro_canvas.create_image(root.winfo_screenwidth()//2, root.winfo_screenheight()-190, anchor='s', image =self.bd_img)
         
-        self.frame = tk.Frame(self.intro_canvas, width = root.winfo_screenwidth()-180, height = root.winfo_screenheight()//3)
-        self.frame.pack()
-        sb = tk.Scrollbar(self.frame)
-        sb.pack(side = 'right', fill = 'y')
+        self.frame = tk.Frame(root)#, width = root.winfo_screenwidth()-180, height = root.winfo_screenheight()//4)
+        self.sb = tk.Scrollbar(self.frame)
         
-#         self.txt_canvas = tk.Canvas(self.frame, bg = 'black', width = root.winfo_screenwidth()-180, height = root.winfo_screenheight()//3, highlightthickness = 0)
-#         self.txt_canvas.pack(side = 'left')
-        
-        self.intro_text = tk.Text(self.frame, bg = 'black', relief = 'sunken', borderwidth = 0, fg = 'indianred', font = ('kokonor', 16))
+        self.intro_text = tk.Text(self.frame, height = 7, width = 118, wrap = 'word', bg = 'black', relief = 'raised', highlightthickness = 1, borderwidth = 0, fg = 'indianred', font = ('kokonor', 16))
         self.intro_text.insert('end', text)
         self.intro_text.configure(state = 'disabled')
-        self.intro_text.configure(yscrollcommand = sb.set)
+        
+        self.intro_canvas.create_window(root.winfo_screenwidth()//2, root.winfo_screenheight()-320, window = self.frame)
         self.intro_text.pack(side = 'left')
-#         
-#         self.txt_canvas.create_window(10, 10, anchor = 'nw', window = self.intro_text)
-#         
-        self.intro_canvas.create_window(root.winfo_screenwidth()//2, root.winfo_screenheight()+360, anchor = 's', window = self.frame)
-#         sb.config(command = self.intro_text.yview)
-
-
-
-
+        self.sb.pack(side = 'right', fill = 'y')
+        self.intro_text.configure(yscrollcommand = self.sb.set)
+        self.sb.config(command = self.intro_text.yview)
 
 # # CONT OR SAVE BUTTONS        
         self.start_area_button = tk.Button(root, text = 'Start Area', fg = 'tan3', highlightbackground = 'tan3', font = ('chalkduster', 22), command = lambda n = map_number, po = protaganist_object : self.create_map_curs_context(n,po))
@@ -18135,7 +18211,7 @@ class App(tk.Frame):
             self.ent_dict[witch] = protaganist_object
         else:
             witch_img = ImageTk.PhotoImage(Image.open('avatars/' + witch +'.png'))
-            self.ent_dict[witch] = Witch(name = witch, img = witch_img, loc = loc, owner = 'p' + str(player_num), level = 1)
+            self.ent_dict[witch] = Witch(name = witch, img = witch_img, loc = loc, owner = 'p' + str(player_num), level = 2)
         self.canvas.create_image(self.ent_dict[witch].loc[0]*100+50-self.moved_right, self.ent_dict[witch].loc[1]*100+50-self.moved_down, image = self.ent_dict[witch].img, tags = self.ent_dict[witch].tags)
         self.grid[self.ent_dict[witch].loc[0]][self.ent_dict[witch].loc[1]] = witch
         # EXIT FOR 1 PLAYER
@@ -18738,7 +18814,7 @@ class App(tk.Frame):
             f.write(str(protag_obj.base_spirit)+'\n')
             f.write(str(protag_obj.base_magick)+'\n')
             f.write(str(protag_obj.current_area)+'\n')
-            f.write(str(protag_obj.summon_level)+'\n')
+#             f.write(str(protag_obj.summon_level)+'\n')
             f.write(str(protag_obj.move_range)+'\n')
             ####********
 #             have to strip tkinter objects from protag obj
@@ -18766,10 +18842,10 @@ class App(tk.Frame):
         bg.pack(side = 'top')
         bg.create_image(0,0, image = self.cntxt_info_bg, anchor = 'nw')
         bg.create_text(14, 7, text=expanded_name + '\n', width = 190, anchor = 'nw', font = ('chalkduster', 17), fill = 'black')
-        bg.create_text(15, 8, text=expanded_name + '\n', width = 190, anchor = 'nw', font = ('chalkduster', 17), fill = 'ghostwhite')
+        bg.create_text(15, 8, text=expanded_name + '\n', width = 190, anchor = 'nw', font = ('chalkduster', 17), fill = 'antiquewhite2')
         text2 =  self.get_info_text(e)
-        bg.create_text(14, 24, text=text2, width = 190, anchor = 'nw', font = ('chalkduster', 13), fill = 'black')
-        bg.create_text(15, 25, text=text2, width = 190, anchor = 'nw', font = ('chalkduster', 13), fill = 'ghostwhite')
+        bg.create_text(14, 24, text=text2, width = 190, anchor = 'nw', font = ('chalkduster', 13), fill = 'ghostwhite')
+        bg.create_text(15, 25, text=text2, width = 190, anchor = 'nw', font = ('chalkduster', 13), fill = 'gray18')
         # create 'info' button as last element
         txt3 = self.get_more_info(e)
         more_info_button = tk.Button(self.context_menu, text = 'More Info', font = ('chalkduster', 22), fg='indianred', highlightbackground = 'tan3', command = lambda t = txt3 : self.more_info(t))
@@ -18980,7 +19056,7 @@ class App(tk.Frame):
         Multiple effects can be applied to abilities like strength, agility, etc and also move range. Multiple changes of abilities caused by effects are resolved in the order in which they were applied (the most recently added effect is resolved last).
         '''
 #         self.text = tk.List(self.help_popup, yscrollcommand = sb.set, text = help_text, wraplength = 750, font = ('chalkduster', 20), fg='indianred', bg = 'black')
-        self.text = tk.Text(self.help_popup, yscrollcommand = sb.set, bg = 'black', fg = 'tan3', font = ('chalkduster', 20))
+        self.text = tk.Text(self.help_popup, yscrollcommand = sb.set, wrap = 'word', bg = 'black', fg = 'tan3', font = ('chalkduster', 20))
         self.text.insert('end', help_text)
         self.text.configure(state = 'disabled')
         self.close = tk.Button(self.help_popup, text = 'Close', font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda win = self.help_popup : self.destroy_release(win))
@@ -19013,7 +19089,7 @@ class App(tk.Frame):
         def on_close():
             pass
         self.mi_popup.protocol('WM_DELETE_WINDOW', on_close)
-        self.text = tk.Text(bg, yscrollcommand = sb.set, bg = 'gray16', relief = 'sunken', borderwidth = 0, fg = 'tan3', font = ('chalkduster', 20))
+        self.text = tk.Text(bg, yscrollcommand = sb.set, bg = 'gray16', wrap = 'word', relief = 'sunken', borderwidth = 0, fg = 'tan3', font = ('chalkduster', 20))
         self.text.insert('end', txt)
         self.text.configure(state = 'disabled')
         self.close = tk.Button(bg, text = 'Close', font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda win = self.mi_popup : self.destroy_release(win))
@@ -19084,7 +19160,7 @@ class App(tk.Frame):
         def on_close():
             pass
         self.mi_popup.protocol('WM_DELETE_WINDOW', on_close)
-        self.text = tk.Text(bg, yscrollcommand = sb.set, bg = 'gray16', relief = 'sunken', borderwidth = 0, fg = 'tan3', font = ('chalkduster', 20))
+        self.text = tk.Text(bg, yscrollcommand = sb.set, bg = 'black', highlightthickness = 0, relief = 'sunken', wrap = 'word', borderwidth = 0, fg = 'tan3', font = ('chalkduster', 20))
         self.text.insert('end', txt)
         self.text.configure(state = 'disabled')
         self.close = tk.Button(bg, text = 'Close', font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda win = self.mi_popup : self.destroy_release(win))
@@ -19492,7 +19568,7 @@ class App(tk.Frame):
         def on_close():
             pass
         self.mi_popup.protocol('WM_DELETE_WINDOW', on_close)
-        self.text = tk.Text(bg, yscrollcommand = sb.set, bg = 'gray16', relief = 'sunken', borderwidth = 0, fg = 'tan3', font = ('chalkduster', 20))
+        self.text = tk.Text(bg, yscrollcommand = sb.set, bg = 'gray16', relief = 'sunken', wrap = 'word', borderwidth = 0, fg = 'tan3', font = ('chalkduster', 20))
         self.text.insert('end', txt)
         self.text.configure(state = 'disabled')
         self.close = tk.Button(bg, text = 'Close', font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda win = self.mi_popup : self.destroy_release(win))
