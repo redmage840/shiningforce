@@ -11216,7 +11216,7 @@ class Berserker(Summon):
             self.psyche = 3
             self.wis = 3
             self.rsn = 3
-            self.san = 1
+            self.san = 12
             self.init = 5
             self.spirit = 23
             self.magick = 0
@@ -11236,7 +11236,7 @@ class Berserker(Summon):
             self.psyche = 4
             self.wis = 4
             self.rsn = 4
-            self.san = 1
+            self.san = 13
             self.init = 9
             self.spirit = 35
             self.magick = 0
@@ -18844,8 +18844,8 @@ class App(tk.Frame):
         bg.create_text(14, 7, text=expanded_name + '\n', width = 190, anchor = 'nw', font = ('chalkduster', 17), fill = 'black')
         bg.create_text(15, 8, text=expanded_name + '\n', width = 190, anchor = 'nw', font = ('chalkduster', 17), fill = 'antiquewhite2')
         text2 =  self.get_info_text(e)
-        bg.create_text(14, 24, text=text2, width = 190, anchor = 'nw', font = ('chalkduster', 13), fill = 'ghostwhite')
-        bg.create_text(15, 25, text=text2, width = 190, anchor = 'nw', font = ('chalkduster', 13), fill = 'gray18')
+        bg.create_text(14, 24, text=text2, width = 190, anchor = 'nw', font = ('chalkduster', 13), fill = 'black')
+        bg.create_text(15, 25, text=text2, width = 190, anchor = 'nw', font = ('chalkduster', 13), fill = 'antiquewhite2')
         # create 'info' button as last element
         txt3 = self.get_more_info(e)
         more_info_button = tk.Button(self.context_menu, text = 'More Info', font = ('chalkduster', 22), fg='indianred', highlightbackground = 'tan3', command = lambda t = txt3 : self.more_info(t))
