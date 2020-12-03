@@ -2841,7 +2841,7 @@ class Umbrae_Wolf(Summon):
             app.vis_dict['Encumber'] = Vis(name = 'Encumber', loc = start_loc[:])
             app.canvas.create_image(start_loc[0]*100+50-app.moved_right, start_loc[1]*100+50-app.moved_down, image = ent.img, tags = 'left')
             app.canvas.create_image(start_loc[0]*100+50-app.moved_right, start_loc[1]*100+50-app.moved_down, image = ent.img, tags = 'right')
-            app.canvas.create_image(start_loc[0]*100+50-app.moved_right, start_loc[1]*100+50-app.moved_down, image = app.vis_dict['Haste'].img, tags = ('Encumber','right'))
+            app.canvas.create_image(start_loc[0]*100+50-app.moved_right, start_loc[1]*100+50-app.moved_down, image = app.vis_dict['Encumber'].img, tags = ('Encumber','right'))
             app.canvas.create_image(start_loc[0]*100+50-app.moved_right, start_loc[1]*100+50-app.moved_down, image = app.vis_dict['Encumber'].img, tags = ('Encumber','left'))
             app.canvas.create_text(start_loc[0]*100+49-app.moved_right, start_loc[1]*100+84-app.moved_down, text = 'Encumber', font = ('chalkduster', 14), fill = 'black', tags = 'text')
             app.canvas.create_text(start_loc[0]*100+50-app.moved_right, start_loc[1]*100+85-app.moved_down, text = 'Encumber', font = ('chalkduster', 14), fill = 'ghostwhite', tags = 'text')
