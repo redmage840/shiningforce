@@ -1,10 +1,16 @@
+# homunculus
+
+# spell to change level of effects
+
+# abl bonuses based on proximity to owner of effect...
+
 # sounds: bewitch, hfts, haste, dispel, dcube, analyze, rts, dsight, arrow, 
 
-# speed up stuff, start with slash...
+# cancel button for everything (spells, actions)
 
-# update readme
-
-# check encumber txt
+# currently, abeyance will work with Skeletons (Bone Strike, not Move) since they now check for the existence of 'Bone Strike' (their only action besides move) before attempting melee attacks
+# find a way to make abeyance work with Bots, may involve changing action dicts to point to action objects which denote a 'type' like 'melee' or 'ranged' or 'spell/buff/debuff'
+# Bots would then query their action dict at the start of each round to determine what ai routines to use (melee atk/pursue, ranged atk/pursue, hold position, flee)
 
 # show costs of actions, without disrupting the names for action_descr lookups...
 # alt five is infi symbol
@@ -18,15 +24,7 @@
 
 # melee pursue/smart pursue avoids detr efcts on gs, not necessarily on long paths
 
-# esuna show efcts like dispel...
-
-# teeth/caltrops? wrap do_move, dmg = dist
-
 # add note in help or clarify order resolution: currently local effects are gathered/queued AFTER all ent.effects are applied REGARDLESS of timestamp/cast-order
-
-# change all dynamic widget size (based on screen dimensions) to floor division (some cannot take float args)
-
-# wm_frame method for widgets? return decorative frame...?
 
 # 2-player map triggers
 
@@ -90,7 +88,7 @@ def action_description(act):
     elif act == 'Gravity':
         return 'A unit within range equal to caster rsn gets move range reduced by 2 to minimum 1, -1 agility and -2 dodge. Duration equal to caster rsn. Level equal to caster wis. Target as spell.'
     elif act == 'Curse of Oriax':
-        return 'A unit within range of caster rsn gets -1 to each (str,agl,end,mm,dod,psy,wis,rsn,san,init) and takes 2 magick dmg at end of turn. Duration equal to caster rsn. Level equal to caster wis. Target as spell.'
+        return 'A unit within range of caster rsn gets -1 to each (psy,wis,rsn,san,init) and takes 2 magick dmg at end of turn. Duration equal to caster rsn. Level equal to caster wis. Target as spell.'
     elif act == 'Pestilence':
         return 'Range rsn, wis vs wis to hit, psy vs psy poison dmg, psy vs psy (minus distance from primary target times 2) to all within range 3 on hit. Primary target gets effect: eot 1 poison dmg and a death trigger that passes new eot effect to all adjacent (dur and level based on current caster abilities). Duration = rsn times 2, level = wis. Does not target unit. Targets location (can cast on units with psyshield).'
     elif act == 'Plague':
@@ -98,7 +96,7 @@ def action_description(act):
     elif act == "Beleth's Command":
         return 'Costs 1 act AND 1 mv to use. A non-adjacent unit is struck by lightning, taking psyche vs psyche elec dmg. On to-hit (psyche vs strength) the unit gets -1 moves, lasting rsn at level wis. Then, all adjacent units to the caster take psy vs psy fire dmg. The caster gains +1 psyche +1 endurance effect if not already possessed, lasting rsn at level wis. Target only lightning target as spell.'
     elif act == "Minerva's Gift":
-        return 'Spell target gets +2 agl, +2 init, heal 1 spirit. Duration 2 turns at level wis.'
+        return 'Spell target gets +1 agl, init, heal 1 spirit. Duration 2 turns at level wis.'
     elif act == 'Psionic Push':
         return 'A unit is pushed at/towards any location (including its current) within range 2 as long as the path is unobstructed. After push, if there are any adjacent units then each plus original target make agility save(+1). A failed save means the unit takes a crushing attack from the pushed unit using half strength(of pushed unit, rounded up) vs endurance(of unit receiving attack) (the pushed unit attacks itself upon a failed save after ending a push adjacent to other units, ending the push on a location with no adjacent units results in no attacks to any unit). Spell target.'
     elif act == 'Energize':
@@ -114,7 +112,7 @@ def action_description(act):
     elif act == 'Plutonian Cloak':
         return 'Target gets a defense effect. When taking damage, if the type is slashing, piercing, or crushing, this summon gains invisibility (untargetable with non-spell actions) until the end of this turn. If the type is magick, the summon gains psyshield (untargetable with spells) until the end of this turn. Invisibility or psyshield are not added if the summon already has them as types added by this spell. Duration of caster reason at level wisdom. (each instance of either invisibility or psyshield last 1 turn). Spell target.'
     elif act == 'Hidden From the Stars':
-        return 'A non-witch adjacent target gains +2 reason, +2 wisdom, +2 sanity, and psyshield. Duration is reason at level of wisdom. Spell target.'
+        return 'A non-witch adjacent target gains +1 reason, wisdom, sanity, and psyshield. Duration is reason at level of wisdom. Spell target.'
     elif act == 'Cosmic Sight':
         return 'All enemies within range 3 of caster make wisdom check (-2) or get an effect which strips all preexisting instances of psyshield (effects applied later may grant psyshield while this is still in effect). May grant effect to unit already with this effect (for the purposes of stripping later added instances of psyshield). Duration is reason at level of wisdom. No targeting.'
     elif act == 'Bewitch':
@@ -263,6 +261,22 @@ def action_description(act):
         return 'An adjacent action target unit, on to-hit agility vs agility, gets -1 str, end, agl, mm, psy, wis, rsn, san, init and takes strength vs endurance slashing melee damage.'
     elif act == 'Concerted Volley':
         return 'Each friendly unit within range 2 of caster gets +X marksmanship where X is equal to the number of friendly units within range 2 of caster without this effect. Duration is wisdom. Level is wisdom. Costs 1.'
+    elif act == 'Vengeance':
+        return 'Spell target gets defense effect, on receiving damage, not during start-of-turn or end-of-turn phase, adds a +1 effect to str,agl,end,psy,wis,rsn. Both +1 boosts and this effect have duration equal to caster reason and level equal to caster wisdom.'
+    elif act == 'Pounce':
+        return "'Jump'(move unimpeded by obstacles) to a location within move range that is adjacent to at least 1 enemy unit. After relocating, attack each adjacent enemy, to-hit agility vs agility, damage strength vs endurance, slashing melee. Does not target."
+    elif act == 'Suplex':
+        return "An adjacent, action target unit, that does not have the type 'immovable', on to-hit agility vs agility, is relocated to any adjacent location from the caster. Any unit occupying the location is relocated to one of the closest locations to its current location. The original target, and the other potential unit, both take damage equal to the caster strength vs their endurance, crushing melee."
+    elif act == 'Anoint':
+        return 'Any spell target within range reason, that does not have this effect, on passing a psyche save check gets an effect that raises their wisdom to 8, if it is below 8. Duration is reason. Level is wisdom. Costs 1 magick.'
+    elif act == 'Abeyance':
+        return 'An adjacent, spell target unit, on to-hit wisdom vs wisdom, has an action of your choice removed for duration reason at level wisdom. Costs 2 magick.'
+    elif act == 'Reveal':
+        return 'An adjacent unit, on to-hit wisdom vs wisdom, gets an effect that strips psyshield if it has psyshield, otherwise gets an effect that strips invisibility. Duration is reason. Level is wisdom.'
+    elif act == 'Nullify':
+        return 'All units within range reason, that do not have either psyshield or invisibility, have each of their effects attempted to dispel using the caster wisdom. Costs 3 magick.'
+    elif act == 'Roar':
+        return 'All units within range reason, enemy units on strength vs psyche to-hit get -2 sanity, friendly units on wisdom save check get +2 sanity. Duration is endurance. Level is srength.'
     elif act == '':
         return ''
     elif act == '':
@@ -283,7 +297,6 @@ def action_description(act):
         'Mesmerize':'Target gets an effect which causes a psyche save(+2) at the start of its turn. A failure causes it to count as having used its action for the turn (it may still move or regain the ability to use an action through some means). It also does 5 melee damage to itself.',
         'Hook Attack':'To-hit: psyche vs dodge. Dmg: end vs end (piercing).',
         'Hatred':'All summons may use another action if they have already used an action this turn.', 
-        'Vengeance':'Target takes damage equal to spirit lost by caster (current spirit minus max spirit).', 
         'Torment':'Target takes magick damage from caster, psyche vs endurance, and gets an effect that gives -2 psyche. Lasts 7 turns at level of caster psyche.', 
         'Pain':'Destroy one of your own summons to damage the units adjacent to the summon, (psyche vs dodge)+9', 
         'Entomb':'Teleport to the chosen location, leaving a tomb in your place. The tomb is a summon but has no movement or actions. Its abilities are: str 1, agl 1, end 5, dodge 1, psyche 5, spirit 20',
@@ -314,7 +327,7 @@ def loc_effect_description(ef):
 # takes an Effect instance, returns a string descr, used in populate_context=>get_info/get_more_info
 def effect_description(ef):
     if ef.name == 'Curse_of_Oriax':
-        return '-1 all stats, 2 magick dmg eot, dur = '+str(ef.duration)+', level = '+str(ef.level)
+        return '-1 psy,wis,rsn,san,init, 2 magick dmg eot, dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Pox':
         return 'Eot 2 poison dmg, dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Pestilence':
@@ -324,7 +337,7 @@ def effect_description(ef):
     elif ef.name == 'Gravity':
         return '-2 agility, dodge, and move range, minimum 1, dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Hidden_From_the_Stars':
-        return '+2 wisdom, sanity, and reason. Adds psyshield. dur = '+str(ef.duration)+', level = '+str(ef.level)
+        return '+1 wisdom, sanity, and reason. Adds psyshield. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Plutonian_Cloak':
         return 'Adds defense effect. If receiving slashing, piercing, or crushing damage, add inisibility to self for the remainder of turn. If receiving magick damage, add psyshield to self for remainder of turn. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Plutonian_Invisibility':
@@ -364,7 +377,7 @@ def effect_description(ef):
     elif ef.name == 'Molecular_Subversion':
         return 'Removes resistances to piercing, slashing, crushing, acid, and explosive. Add weaknesses acid and explosive. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == "Minerva's_Gift":
-        return '+2 agility and initiative. Heal 1 spirit. dur = '+str(ef.duration)+', level = '+str(ef.level)
+        return '+1 agility and initiative. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Bewitch':
         return 'Adds psyshield. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Read_the_Stars':
@@ -435,6 +448,26 @@ def effect_description(ef):
         return '-1 str, end, agl, mm, psy, wis, rsn, san, init. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Concerted_Volley':
         return '+X marksmanship. dur = '+str(ef.duration)+', level = '+str(ef.level)
+    elif ef.name == 'Abeyance':
+        return 'Action removed. dur = '+str(ef.duration)+', level = '+str(ef.level)
+    elif ef.name == 'Vengeance':
+        return 'adds +1 to str,agl,end,psy,wis,rsn on non-sot/eot dmg. dur = '+str(ef.duration)+', level = '+str(ef.level)
+    elif ef.name == 'Vengeance_Boost':
+        return '+1 str,agl,end,psy,wis,rsn. dur = '+str(ef.duration)+', level = '+str(ef.level)
+    elif ef.name == 'Reveal_Psyshield':
+        return 'Remove psyshield. dur = '+str(ef.duration)+', level = '+str(ef.level)
+    elif ef.name == 'Reveal_Invisibility':
+        return 'Remove invisibility. dur = '+str(ef.duration)+', level = '+str(ef.level)
+    elif ef.name == 'Abeyance':
+        return 'Remove chosen action. dur = '+str(ef.duration)+', level = '+str(ef.level)
+    elif ef.name == 'Roar_Friendly':
+        return '+2 sanity. dur = '+str(ef.duration)+', level = '+str(ef.level)
+    elif ef.name == 'Roar_Enemy':
+        return '-2 sanity. dur = '+str(ef.duration)+', level = '+str(ef.level)
+    elif ef.name == 'Anoint':
+        return 'Raise wisdom to 8 if it is below 8. dur = '+str(ef.duration)+', level = '+str(ef.level)
+    elif ef.name == '':
+        return '. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == '':
         return '. dur = '+str(ef.duration)+', level = '+str(ef.level)
     else:
@@ -1074,37 +1107,37 @@ class Entity():
         def flying_arc(x, y, endx, endy, start_sqr, end_sqr, acm, tic, xstep, ystep):
             if acm >= tic:
                 acm = 0
-                self.rotate_image()
+#                 self.rotate_image()
                 app.canvas.delete(self.tags)
                 app.canvas.create_image(x, y, image = self.img, tags = self.tags)
             if x > endx:
                 acm += xstep
                 x -= xstep
-                self.rotate_image()
+#                 self.rotate_image()
                 app.canvas.delete(self.tags)
                 app.canvas.create_image(x, y, image = self.img, tags = self.tags)
             elif x < endx:
                 acm += xstep
                 x += xstep
-                self.rotate_image()
+#                 self.rotate_image()
                 app.canvas.delete(self.tags)
                 app.canvas.create_image(x, y, image = self.img, tags = self.tags)
             if y > endy:
                 acm += ystep
                 y -= ystep
-                self.rotate_image()
+#                 self.rotate_image()
                 app.canvas.delete(self.tags)
                 app.canvas.create_image(x, y, image = self.img, tags = self.tags)
             elif y < endy:
                 acm += ystep
                 y += ystep
-                self.rotate_image()
+#                 self.rotate_image()
                 app.canvas.delete(self.tags)
                 app.canvas.create_image(x, y, image = self.img, tags = self.tags)
             if abs(x - endx) < 13 and abs(y - endy) < 13:
                 self.throw_move_finish(end_sqr, start_sqr, ln)
             else: # CONTINUE LOOP
-                root.after(33, lambda x = x, y = y, e = endx, e2 = endy, s = start_sqr, s2 = end_sqr, acm = acm, tic = tic, xs = xstep, ys = ystep : flying_arc(x, y, e, e2, s, s2, acm, tic, xs, ys))
+                root.after(23, lambda x = x, y = y, e = endx, e2 = endy, s = start_sqr, s2 = end_sqr, acm = acm, tic = tic, xs = xstep, ys = ystep : flying_arc(x, y, e, e2, s, s2, acm, tic, xs, ys))
         flying_arc(x, y, endx, endy, start_sqr, end_sqr, tic+1, tic, xstep, ystep)
         
     def throw_move_finish(self, end, start, ln):
@@ -1115,8 +1148,8 @@ class Entity():
         app.grid[start[0]][start[1]] = ''
         app.grid[end[0]][end[1]] = self.id
 #         if app.num_players == 2 or self.owner == 'p1':
-        app.unbind_all()
-        app.rebind_all()
+#         app.unbind_all()
+#         app.rebind_all()
         app.dethloks[ln].set(1)
             
             
@@ -1572,17 +1605,50 @@ class Summon(Entity):
         
         
 class Tomb(Summon):
-    def __init__(self, name, id, img, loc, owner):
-        self.actions = {}
-        self.attack_used = False
-        self.str = 1
-        self.agl = 1
-        self.end = 5
-        self.dodge = 1
-        self.psyche = 5
-        self.spirit = 20
-        self.move_range = 0
+    def __init__(self, name, id, img, loc, owner, level):
+        if level == 1:
+            self.actions = {}
+            self.str = 1
+            self.agl = 1
+            self.end = 8
+            self.mm = 1
+            self.msl = 0
+            self.bls = 0
+            self.dodge = 1
+            self.psyche = 6
+            self.wis = 3
+            self.rsn = 1
+            self.san = 20
+            self.init = 1
+            self.spirit = 20
+            self.magick = 0
+            self.acts = 0
+            self.mvs = 0
+            self.move_range = 0
+            self.level = level
+        elif level == 2:
+            self.actions = {}
+            self.str = 1
+            self.agl = 1
+            self.end = 10
+            self.mm = 1
+            self.msl = 0
+            self.bls = 0
+            self.dodge = 1
+            self.psyche = 8
+            self.wis = 4
+            self.rsn = 1
+            self.san = 20
+            self.init = 1
+            self.spirit = 30
+            self.magick = 0
+            self.acts = 0
+            self.mvs = 0
+            self.move_range = 0
+            self.level = level
         self.move_type = 'immobile'
+        self.weak = ['crushing']
+        self.resist = ['slashing', 'fire', 'piercing', 'poison', 'cold']
         super().__init__(name, id, img, loc, owner)
         
 # lvl 2 gains spellcasting/alchemy/psyche
@@ -1594,9 +1660,9 @@ class Illusionist(Summon):
             self.str = 2
             self.agl = 4
             self.end = 2
-            self.mm = 6
+            self.mm = 7
             self.msl = 4
-            self.bls = 5
+            self.bls = 6
             self.dodge = 7
             self.psyche = 5
             self.wis = 6
@@ -1614,9 +1680,9 @@ class Illusionist(Summon):
             self.str = 3
             self.agl = 5
             self.end = 4
-            self.mm = 7
+            self.mm = 8
             self.msl = 6
-            self.bls = 6
+            self.bls = 7
             self.dodge = 7
             self.psyche = 6
             self.wis = 7
@@ -4701,7 +4767,7 @@ class Scarab(Summon):
 class Thaumaturge(Summon):
     def __init__(self, name, id, img, loc, owner, level):
         if level == 1:
-            self.actions = {'Move':self.move, 'Unholy Chant':self.unholy_chant, 'Arrow of Diana' : self.arrow_of_diana, 'Moonlight' : self.moonlight, 'Esuna':self.esuna, 'Concerted Volley':self.concerted_volley}#"Devil's Mark":self.devils_mark
+            self.actions = {'Move':self.move, 'Unholy Chant':self.unholy_chant, 'Arrow of Diana' : self.arrow_of_diana, 'Moonlight' : self.moonlight, 'Esuna':self.esuna, 'Concerted Volley':self.concerted_volley}
             self.str = 3
             self.agl = 8
             self.end = 4
@@ -4721,7 +4787,7 @@ class Thaumaturge(Summon):
             self.move_range = 5
             self.level = level
         elif level == 2:
-            self.actions = {'Move':self.move, 'Unholy Chant':self.unholy_chant, 'Arrow of Diana' : self.arrow_of_diana, 'Moonlight' : self.moonlight, 'Esuna':self.esuna, 'Concerted Volley':self.concerted_volley, 'Aura':self.aura, 'Tranquility':self.tranquility, 'Concerted Volley':self.concerted_volley}#, "Devil's Mark":self.devils_mark,}
+            self.actions = {'Move':self.move, 'Unholy Chant':self.unholy_chant, 'Arrow of Diana' : self.arrow_of_diana, 'Moonlight' : self.moonlight, 'Esuna':self.esuna, 'Concerted Volley':self.concerted_volley, 'Aura':self.aura, 'Tranquility':self.tranquility, 'Concerted Volley':self.concerted_volley, "Devil's Mark":self.devils_mark}
             self.str = 4
             self.agl = 9
             self.end = 5
@@ -4747,172 +4813,124 @@ class Thaumaturge(Summon):
         super().__init__(name, id, img, loc, owner)
         
         
-#     def devils_mark(self, event = None):
-#         if self.acts < 1:
-#             return
-#         app.unbind_nonarrows()
-#         root.bind('<q>', self.cleanup_devils_mark)
-#         sqrs = [c for c in app.coords if 1 <= dist(self.loc, c) <= self.get_abl('rsn')]
-#         app.animate_squares(sqrs)
-#         app.depop_context(event = None)
-#         root.bind('<a>', lambda e, sqr = grid_pos, sqrs = sqrs : self.do_devils_mark(event = e, sqr = sqr, sqrs = sqrs))
-#         b = tk.Button(app.context_menu, text = "Confirm Devil's Mark Target", wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_devils_mark(event = e, sqr = sqr, sqrs = sqrs))
-#         b.pack(side = 'top')
-#         app.context_buttons.append(b)
-#         
-#     def do_devils_mark(self, event, sqr, sqrs):
-#         if sqr not in sqrs:
-#             return
-#         id = app.grid[sqr[0]][sqr[1]]
-#         if id not in [k for k in app.spell_target_ents().keys()]:
-#             return
-#         if self.magick < 1:
-#             return
-#         if "Devil's_Mark" in [v.name for k,v in app.ent_dict[id].effects_dict.items()]:
-#             return
-# #         effect1 = mixer.Sound('Sound_Effects/devils_mark.ogg')
-# #         effect1.set_volume(.5)
-# #         sound_effects.play(effect1, 0)
-#         app.unbind_all()
-#         app.depop_context(event = None)
-#         app.cleanup_squares()
-#         self.acts -= 1
-#         app.vis_dict["Devil's_Mark"] = Vis(name = "Devil's_Mark", loc = sqr[:])
-#         vis = app.vis_dict["Devil's_Mark"]
-#         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = vis.img, tags = "Devil's_Mark")
-#         
-#         
-#         app.cntxt_info_bg = ImageTk.PhotoImage(Image.open('page.png'))
-#         bg = tk.Canvas(app.context_menu, width = 190, height = 363, bg = 'burlywood4', bd=0, relief='raised', highlightthickness=0)
-#         bg.pack(side = 'top')
-#         bg.create_image(0,0, image = app.cntxt_info_bg, anchor = 'nw')
-#         bg.create_text(15, 15, text= 'Choose Ability...', width = 190, anchor = 'nw', font = ('chalkduster', 16), fill = 'indianred')
-#         app.context_buttons.append(bg)
-#         abls = ['str', 'agl', 'end', 'mm', 'msl', 'bls', 'dod', 'psy', 'wis', 'rsn', 'san', 'init']
-#         for abl in abls:
-#             b = tk.Button(app.context_menu, text = abl, wraplength = 190, font = ('chalkduster', 16), fg = 'tan3', highlightbackground = 'tan3', command = lambda id = id, abl = abl : self.choose_mark(id, abl))
-#             b.pack(side = 'top')
-#             app.context_buttons.append(b)
-#             
-#     def choose_mark(self, id, abl):
-#         app.depop_context(event = None)
-#         app.canvas.delete('text')
-#         if 
-#         
-#         
-#             app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Dispel '+ef_name.replace('_',' '), justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
-#             app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Dispel '+ef_name.replace('_',' '), justify = 'center', fill = 'white', font = ('chalkduster', 13), tags = 'text')
-#             root.after(1999, self.finish_darkblast)
-#         else:
-#             app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Dispel failed...'+ef_name.replace('_',' '), justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
-#             app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Dispel failed...'+ef_name.replace('_',' '), justify = 'center', fill = 'white', font = ('chalkduster', 13), tags = 'text')
-#             root.after(1999, self.finish_darkblast)
-#             
-#             
-#     def finish_darkblast(self, event = None):
-#         try: 
-#             del app.vis_dict['Darkblast']
-#             app.canvas.delete('Darkblast')
-#         except: pass
-#         app.depop_context(event = None)
-#         app.canvas.delete('text')
-#         app.cleanup_squares()
-#         app.rebind_all()
-#         
-#         
-#     def cleanup_devils_mark(self, event = None):
-# #         app.unbind_all()
-#         app.rebind_all()
-#         app.cleanup_squares()
-#         app.depop_context(event = None)
-#         app.canvas.delete('left')
-#         app.canvas.delete('right')
-#         try: 
-#             del app.vis_dict['Simulacrum']
-#             app.canvas.delete('Simulacrum')
-#         except: pass
-#         app.canvas.delete('text')
-# 
-# 
-#         if app.ent_dict[id].owner != self.owner:
-#             my_mm = self.get_abl('mm')
-#             tar_dodge = app.ent_dict[id].get_abl('dodge')
-#             if to_hit(my_mm, tar_dodge) == True:
-#                 my_msl = self.get_abl('msl')
-#                 tar_end = app.ent_dict[id].get_abl('end')
-#                 d = round(damage(my_msl, tar_end)//2)
-#                 lock(apply_damage, self, app.ent_dict[id], -d, 'piercing', 'Darkblast', 'ranged')
-#                 if id not in app.all_ents().keys():
-#                     root.after(666, lambda e = None : self.finish_darkblast(event = e))
-#                 else:# ent still alive, attempt dispel target effect (must create interface to target) then finish_darkblast
-#                     app.depop_context(event = None)
-#                     app.cntxt_info_bg = ImageTk.PhotoImage(Image.open('page.png'))
-#                     bg = tk.Canvas(app.context_menu, width = 190, height = 363, bg = 'burlywood4', bd=0, relief='raised', highlightthickness=0)
-#                     bg.pack(side = 'top')
-#                     bg.create_image(0,0, image = app.cntxt_info_bg, anchor = 'nw')
-#                     bg.create_text(15, 15, text= 'Choose Effect...', width = 190, anchor = 'nw', font = ('chalkduster', 16), fill = 'indianred')
-#                     app.context_buttons.append(bg)
-#                     efs = [(k, v.name) for k,v in app.ent_dict[id].effects_dict.items()]
-#                     if efs == []:
-#                         root.after(1666, lambda e = None : self.finish_darkblast(event = e))
-#                     else:
-#                         for key,name in efs:
-#     #                         i += 1
-#     #                         root.bind(str(i), call)
-#     #                         p = partial(call, None)
-#                             b = tk.Button(app.context_menu, text = name.replace('_',' '), wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda id = id, ef_name = name, key = key : self.darkblast_dispel(id, ef_name, key))
-#                             b.pack(side = 'top')
-#                             app.context_buttons.append(b)
-#             else:# MISS
-#                 miss(app.ent_dict[id].loc)
-#                 root.after(2666, lambda e = None : self.finish_darkblast(event = e))
-#         else:# FRIENDLY ENT, heal 3 then attempt target dispel
-#             if app.ent_dict[id].owner == self.owner:# heal if summon, else just dispel friendly
-#                 app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Heal 3 spirit', justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
-#                 app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Heal 3 spirit', justify = 'center', fill = 'white', font = ('chalkduster', 13), tags = 'text')
-#                 apply_heal(self, app.ent_dict[id], 3)
-#             app.depop_context(event = None)
-#             app.cntxt_info_bg = ImageTk.PhotoImage(Image.open('page.png'))
-#             bg = tk.Canvas(app.context_menu, width = 190, height = 363, bg = 'burlywood4', bd=0, relief='raised', highlightthickness=0)
-#             bg.pack(side = 'top')
-#             bg.create_image(0,0, image = app.cntxt_info_bg, anchor = 'nw')
-#             bg.create_text(15, 15, text= 'Choose Effect...', width = 190, anchor = 'nw', font = ('chalkduster', 16), fill = 'indianred')
-#             app.context_buttons.append(bg)
-#             efs = [(k, v.name) for k,v in app.ent_dict[id].effects_dict.items()]
-#             if efs == []:
-#                 root.after(2666, lambda e = None : self.finish_darkblast(event = e))
-#             else:
-#                 for key,name in efs:
-#     #                         i += 1
-#     #                         root.bind(str(i), call)
-#     #                         p = partial(call, None)
-#                     b = tk.Button(app.context_menu, text = name.replace('_',' '), wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda id = id, ef_name = name, key = key : self.darkblast_dispel(id, ef_name, key))
-#                     b.pack(side = 'top')
-#                     app.context_buttons.append(b)
-#             
-#     def darkblast_dispel(self, id, ef_name, key):
-#         app.depop_context(event = None)
-#         app.canvas.delete('text')
-#         if app.ent_dict[id].effects_dict[key].dispel(self.get_abl('msl')) == 'Dispelled':
-#             del app.ent_dict[id].effects_dict[key]
-#             app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Dispel '+ef_name.replace('_',' '), justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
-#             app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Dispel '+ef_name.replace('_',' '), justify = 'center', fill = 'white', font = ('chalkduster', 13), tags = 'text')
-#             root.after(1999, self.finish_darkblast)
-#         else:
-#             app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Dispel failed...'+ef_name.replace('_',' '), justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
-#             app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Dispel failed...'+ef_name.replace('_',' '), justify = 'center', fill = 'white', font = ('chalkduster', 13), tags = 'text')
-#             root.after(1999, self.finish_darkblast)
-#             
-#             
-#     def finish_darkblast(self, event = None):
-#         try: 
-#             del app.vis_dict['Darkblast']
-#             app.canvas.delete('Darkblast')
-#         except: pass
-#         app.depop_context(event = None)
-#         app.canvas.delete('text')
-#         app.cleanup_squares()
-#         app.rebind_all()
+    def devils_mark(self, event = None):
+        if self.acts < 1:
+            return
+        app.unbind_nonarrows()
+        root.bind('<q>', self.cleanup_devils_mark)
+        sqrs = [c for c in app.coords if 1 <= dist(self.loc, c) <= self.get_abl('rsn')]
+        app.animate_squares(sqrs)
+        app.depop_context(event = None)
+        root.bind('<a>', lambda e, sqr = grid_pos, sqrs = sqrs : self.do_devils_mark(event = e, sqr = sqr, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = "Confirm Devil's Mark Target", wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_devils_mark(event = e, sqr = sqr, sqrs = sqrs))
+        b.pack(side = 'top')
+        app.context_buttons.append(b)
+        
+    def do_devils_mark(self, event, sqr, sqrs):
+        if sqr not in sqrs:
+            return
+        id = app.grid[sqr[0]][sqr[1]]
+        if id not in [k for k in app.spell_target_ents().keys()]:
+            return
+        if self.magick < 1:
+            return
+        self.magick -= 1
+        if "Devil's_Mark" in [v.name for k,v in app.ent_dict[id].effects_dict.items()]:
+            return
+#         effect1 = mixer.Sound('Sound_Effects/devils_mark.ogg')
+#         effect1.set_volume(.5)
+#         sound_effects.play(effect1, 0)
+        app.unbind_all()
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        self.acts -= 1
+        app.vis_dict["Devil's_Mark"] = Vis(name = "Devil's_Mark", loc = sqr[:])
+        vis = app.vis_dict["Devil's_Mark"]
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = vis.img, tags = "Devil's_Mark")
+        app.cntxt_info_bg = ImageTk.PhotoImage(Image.open('page.png'))
+        bg = tk.Canvas(app.context_menu, width = 190, height = 363, bg = 'burlywood4', bd=0, relief='raised', highlightthickness=0)
+        bg.pack(side = 'top')
+        bg.create_image(0,0, image = app.cntxt_info_bg, anchor = 'nw')
+        bg.create_text(15, 15, text= 'Choose Ability...', width = 190, anchor = 'nw', font = ('chalkduster', 16), fill = 'indianred')
+        app.context_buttons.append(bg)
+        abls = ['strength', 'aglility', 'endurance', 'marksmanship', 'missle', 'ballistics', 'dodge', 'psyche', 'wisdom', 'reason', 'sanity', 'initiative']
+        for abl in abls:
+            b = tk.Button(app.context_menu, text = abl, wraplength = 190, font = ('chalkduster', 16), fg = 'tan3', highlightbackground = 'tan3', command = lambda id = id, abl = abl : self.choose_mark(id, abl))
+            b.pack(side = 'top')
+            app.context_buttons.append(b)
+            
+    def choose_mark(self, id, abl):
+        app.depop_context(event = None)
+        app.canvas.delete('text')
+        ent = app.ent_dict[id]
+        app.canvas.create_text(ent.loc[0]*100-app.moved_right+49, ent.loc[1]*100-app.moved_down+74, text = '+2 ability', justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
+        app.canvas.create_text(ent.loc[0]*100-app.moved_right+50, ent.loc[1]*100-app.moved_down+75, text = '+2 ability', justify = 'center', fill = 'white', font = ('chalkduster', 13), tags = 'text')
+        def devils_mark_efct(stat):
+            return stat+2
+        p = partial(devils_mark_efct)
+        if abl == 'strength':
+            ent.str_effects.append(p)
+        elif abl == 'agility':
+            ent.agl_effects.append(p)
+        elif abl == 'endurance':
+            ent.end_effects.append(p)
+        elif abl == 'marksmanship':
+            ent.mm_effects.append(p)
+        elif abl == 'missle':
+            ent.msl_effects.append(p)
+        elif abl == 'ballistics':
+            ent.bls_effects.append(p)
+        elif abl == 'dodge':
+            ent.dodge_effects.append(p)
+        elif abl == 'psyche':
+            ent.psyche_effects.append(p)
+        elif abl == 'wisdom':
+            ent.wis_effects.append(p)
+        elif abl == 'reason':
+            ent.rsn_effects.append(p)
+        elif abl == 'sanity':
+            ent.san_effects.append(p)
+        elif abl == 'initiative':
+            ent.init_effects.append(p)
+        def undo(id, abl, func):
+            if abl == 'strength':
+                app.ent_dict[id].str_effects.remove(func)
+            elif abl == 'agility':
+                app.ent_dict[id].agl_effects.remove(func)
+            elif abl == 'endurance':
+                app.ent_dict[id].end_effects.remove(func)
+            elif abl == 'marksmanship':
+                app.ent_dict[id].mm_effects.remove(func)
+            elif abl == 'missle':
+                app.ent_dict[id].msl_effects.remove(func)
+            elif abl == 'ballistics':
+                app.ent_dict[id].bls_effects.remove(func)
+            elif abl == 'dodge':
+                app.ent_dict[id].dodge_effects.remove(func)
+            elif abl == 'psyche':
+                app.ent_dict[id].psyche_effects.remove(func)
+            elif abl == 'wisdom':
+                app.ent_dict[id].wis_effects.remove(func)
+            elif abl == 'reason':
+                app.ent_dict[id].rsn_effects.remove(func)
+            elif abl == 'sanity':
+                app.ent_dict[id].san_effects.remove(func)
+            elif abl == 'initiative':
+                app.ent_dict[id].init_effects.remove(func)
+        u = partial(undo, id, abl, p)
+        n = "Devil's_Mark"+str(app.effects_counter)
+        ent.effects_dict[n] = Effect(name = "Devil's_Mark", undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
+        root.after(1999, self.cleanup_devils_mark)
+        
+    def cleanup_devils_mark(self, event = None):
+        app.rebind_all()
+        app.cleanup_squares()
+        app.depop_context(event = None)
+        try: 
+            del app.vis_dict["Devil's_Mark"]
+            app.canvas.delete("Devil's_Mark")
+        except: pass
+        app.canvas.delete('text')
         
         
     def aura(self, event = None):
@@ -5042,8 +5060,6 @@ class Thaumaturge(Summon):
         if sqr not in sqrs:
             return
         id = app.grid[sqr[0]][sqr[1]]
-        if id == '' or id == 'block':
-            return
         if id not in app.spell_target_ents().keys():
             return
         if self.magick < 1:
@@ -5056,19 +5072,34 @@ class Thaumaturge(Summon):
         app.depop_context(event = None)
         app.cleanup_squares()
         self.acts -= 1
+        ent = app.ent_dict[id]
         app.canvas.create_text(self.loc[0]*100-app.moved_right+49, self.loc[1]*100-app.moved_down+84, text = 'Esuna', justify = 'center', fill = 'black', font = ('chalkduster', 16), tags = 'text')
         app.canvas.create_text(self.loc[0]*100-app.moved_right+50, self.loc[1]*100-app.moved_down+85, text = 'Esuna', justify = 'center', fill = 'ivory', font = ('chalkduster', 16), tags = 'text')
         app.vis_dict['Esuna'] = Vis(name = 'Esuna', loc = sqr[:])
         vis = app.vis_dict['Esuna']
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = vis.img, tags = 'Esuna')
-        app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Dispel Attempt\nAll Effects', justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
-        app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Dispel Attempt\nAll Effects', justify = 'center', fill = 'white', font = ('chalkduster', 13), tags = 'text')
+#         app.canvas.create_text(ent.loc[0]*100-app.moved_right+49, ent.loc[1]*100-app.moved_down+74, text = 'Dispel Attempt\nAll Effects', justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
+#         app.canvas.create_text(ent.loc[0]*100-app.moved_right+50, ent.loc[1]*100-app.moved_down+75, text = 'Dispel Attempt\nAll Effects', justify = 'center', fill = 'white', font = ('chalkduster', 13), tags = 'text')
+#         to_remove = []
+#         for k,v in app.ent_dict[id].effects_dict.items():
+#             if v.dispel(self.get_abl('wis')) == 'Dispelled':
+#                 to_remove.append(k)
+#         for k in to_remove:
+#             del app.ent_dict[id].effects_dict[k]
+            
+        spacer = 30
         to_remove = []
-        for k,v in app.ent_dict[id].effects_dict.items():
+        for k,v in ent.effects_dict.items():
             if v.dispel(self.get_abl('wis')) == 'Dispelled':
                 to_remove.append(k)
+                if spacer > 300:
+                    continue
+                app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+spacer-app.moved_down, text = 'Dispel '+v.name.replace('_',' '), justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
+                app.canvas.create_text(ent.loc[0]*100+50-app.moved_right, ent.loc[1]*100+spacer-app.moved_down, text = 'Dispel '+v.name.replace('_',' '), justify = 'center', font = ('chalkduster', 14), fill = 'darkorchid1', tags = 'text')
+                spacer += 15
         for k in to_remove:
-            del app.ent_dict[id].effects_dict[k]
+            del ent.effects_dict[k]
+            
         root.after(2666, self.finish_esuna)
         
     def finish_esuna(self, event = None):
@@ -5371,658 +5402,674 @@ class Thaumaturge(Summon):
         return mvlist
         
         
-class Guardian(Summon):
+class Fiend(Summon):
     def __init__(self, name, id, img, loc, owner, level):
         if level == 1:
-            self.actions = {'Move':self.move, 'Unholy Chant':self.unholy_chant, 'Arrow of Diana' : self.arrow_of_diana, 'Moonlight' : self.moonlight, 'Esuna':self.esuna, 'Concerted Volley':self.concerted_volley}#"Devil's Mark":self.devils_mark
-            self.str = 3
-            self.agl = 8
-            self.end = 4
-            self.mm = 6
-            self.msl = 3
-            self.bls = 8
-            self.dodge = 5
-            self.psyche = 4
-            self.wis = 6
-            self.rsn = 4
-            self.san = 14
-            self.init = 7
-            self.spirit = 16
-            self.magick = 15
-            self.acts = 1
-            self.mvs = 1
-            self.move_range = 5
-            self.level = level
-        elif level == 2:
-            self.actions = {'Move':self.move, 'Unholy Chant':self.unholy_chant, 'Arrow of Diana' : self.arrow_of_diana, 'Moonlight' : self.moonlight, 'Esuna':self.esuna, 'Concerted Volley':self.concerted_volley, 'Aura':self.aura, 'Tranquility':self.tranquility, 'Concerted Volley':self.concerted_volley}#, "Devil's Mark":self.devils_mark,}
-            self.str = 4
-            self.agl = 9
-            self.end = 5
-            self.mm = 8
-            self.msl = 5
-            self.bls = 9
-            self.dodge = 5
+            self.actions = {'Move':self.move, 'Suplex':self.suplex, 'Pounce' : self.pounce, 'Roar' : self.roar, 'Nullify':self.nullify}
+            self.str = 5
+            self.agl = 5
+            self.end = 8
+            self.mm = 3
+            self.msl = 0
+            self.bls = 0
+            self.dodge = 4
             self.psyche = 5
             self.wis = 6
             self.rsn = 4
-            self.san = 13
-            self.init = 8
-            self.spirit = 27
-            self.magick = 29
+            self.san = 14
+            self.init = 5
+            self.spirit = 25
+            self.magick = 12
+            self.acts = 1
+            self.mvs = 2
+            self.move_range = 3
+            self.level = level
+        elif level == 2:
+            self.actions = {'Move':self.move, 'Suplex':self.suplex, 'Pounce' : self.pounce, 'Roar' : self.roar, 'Nullify':self.nullify, 'Abeyance':self.abeyance, 'Anoint':self.anoint, 'Reveal':self.reveal}
+            self.str = 6
+            self.agl = 6
+            self.end = 9
+            self.mm = 4
+            self.msl = 0
+            self.bls = 0
+            self.dodge = 5
+            self.psyche = 6
+            self.wis = 7
+            self.rsn = 5
+            self.san = 16
+            self.init = 6
+            self.spirit = 29
+            self.magick = 16
             self.acts = 2
             self.mvs = 2
-            self.move_range = 5
+            self.move_range = 4
             self.level = level
-#             name = 'Ranger' #this works, just need appr anim files
         self.move_type = 'normal'
-        self.weak = ['poison']
-        self.resist = ['slashing']
+        self.weak = ['elec']
+        self.resist = ['crushing']
+        self.pounce_anims = {}
+        for k,v in app.pounce_anims.items():
+            self.pounce_anims[k] = v
         super().__init__(name, id, img, loc, owner)
         
+    def init_pounce_anims(self):
+        self.anim_dict = {}
+        self.anim_counter = 0
+        for k,v in self.pounce_anims.items():
+            self.anim_dict[k] = v
+        self.img = self.anim_dict[0]
         
-#     def devils_mark(self, event = None):
-#         if self.acts < 1:
-#             return
-#         app.unbind_nonarrows()
-#         root.bind('<q>', self.cleanup_devils_mark)
-#         sqrs = [c for c in app.coords if 1 <= dist(self.loc, c) <= self.get_abl('rsn')]
-#         app.animate_squares(sqrs)
-#         app.depop_context(event = None)
-#         root.bind('<a>', lambda e, sqr = grid_pos, sqrs = sqrs : self.do_devils_mark(event = e, sqr = sqr, sqrs = sqrs))
-#         b = tk.Button(app.context_menu, text = "Confirm Devil's Mark Target", wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_devils_mark(event = e, sqr = sqr, sqrs = sqrs))
-#         b.pack(side = 'top')
-#         app.context_buttons.append(b)
-#         
-#     def do_devils_mark(self, event, sqr, sqrs):
-#         if sqr not in sqrs:
-#             return
-#         id = app.grid[sqr[0]][sqr[1]]
-#         if id not in [k for k in app.spell_target_ents().keys()]:
-#             return
-#         if self.magick < 1:
-#             return
-#         if "Devil's_Mark" in [v.name for k,v in app.ent_dict[id].effects_dict.items()]:
-#             return
-# #         effect1 = mixer.Sound('Sound_Effects/devils_mark.ogg')
-# #         effect1.set_volume(.5)
-# #         sound_effects.play(effect1, 0)
-#         app.unbind_all()
-#         app.depop_context(event = None)
-#         app.cleanup_squares()
-#         self.acts -= 1
-#         app.vis_dict["Devil's_Mark"] = Vis(name = "Devil's_Mark", loc = sqr[:])
-#         vis = app.vis_dict["Devil's_Mark"]
-#         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = vis.img, tags = "Devil's_Mark")
-#         
-#         
-#         app.cntxt_info_bg = ImageTk.PhotoImage(Image.open('page.png'))
-#         bg = tk.Canvas(app.context_menu, width = 190, height = 363, bg = 'burlywood4', bd=0, relief='raised', highlightthickness=0)
-#         bg.pack(side = 'top')
-#         bg.create_image(0,0, image = app.cntxt_info_bg, anchor = 'nw')
-#         bg.create_text(15, 15, text= 'Choose Ability...', width = 190, anchor = 'nw', font = ('chalkduster', 16), fill = 'indianred')
-#         app.context_buttons.append(bg)
-#         abls = ['str', 'agl', 'end', 'mm', 'msl', 'bls', 'dod', 'psy', 'wis', 'rsn', 'san', 'init']
-#         for abl in abls:
-#             b = tk.Button(app.context_menu, text = abl, wraplength = 190, font = ('chalkduster', 16), fg = 'tan3', highlightbackground = 'tan3', command = lambda id = id, abl = abl : self.choose_mark(id, abl))
-#             b.pack(side = 'top')
-#             app.context_buttons.append(b)
-#             
-#     def choose_mark(self, id, abl):
-#         app.depop_context(event = None)
-#         app.canvas.delete('text')
-#         if 
-#         
-#         
-#             app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Dispel '+ef_name.replace('_',' '), justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
-#             app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Dispel '+ef_name.replace('_',' '), justify = 'center', fill = 'white', font = ('chalkduster', 13), tags = 'text')
-#             root.after(1999, self.finish_darkblast)
-#         else:
-#             app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Dispel failed...'+ef_name.replace('_',' '), justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
-#             app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Dispel failed...'+ef_name.replace('_',' '), justify = 'center', fill = 'white', font = ('chalkduster', 13), tags = 'text')
-#             root.after(1999, self.finish_darkblast)
-#             
-#             
-#     def finish_darkblast(self, event = None):
-#         try: 
-#             del app.vis_dict['Darkblast']
-#             app.canvas.delete('Darkblast')
-#         except: pass
-#         app.depop_context(event = None)
-#         app.canvas.delete('text')
-#         app.cleanup_squares()
-#         app.rebind_all()
-#         
-#         
-#     def cleanup_devils_mark(self, event = None):
-# #         app.unbind_all()
-#         app.rebind_all()
-#         app.cleanup_squares()
-#         app.depop_context(event = None)
-#         app.canvas.delete('left')
-#         app.canvas.delete('right')
-#         try: 
-#             del app.vis_dict['Simulacrum']
-#             app.canvas.delete('Simulacrum')
-#         except: pass
-#         app.canvas.delete('text')
-# 
-# 
-#         if app.ent_dict[id].owner != self.owner:
-#             my_mm = self.get_abl('mm')
-#             tar_dodge = app.ent_dict[id].get_abl('dodge')
-#             if to_hit(my_mm, tar_dodge) == True:
-#                 my_msl = self.get_abl('msl')
-#                 tar_end = app.ent_dict[id].get_abl('end')
-#                 d = round(damage(my_msl, tar_end)//2)
-#                 lock(apply_damage, self, app.ent_dict[id], -d, 'piercing', 'Darkblast', 'ranged')
-#                 if id not in app.all_ents().keys():
-#                     root.after(666, lambda e = None : self.finish_darkblast(event = e))
-#                 else:# ent still alive, attempt dispel target effect (must create interface to target) then finish_darkblast
-#                     app.depop_context(event = None)
-#                     app.cntxt_info_bg = ImageTk.PhotoImage(Image.open('page.png'))
-#                     bg = tk.Canvas(app.context_menu, width = 190, height = 363, bg = 'burlywood4', bd=0, relief='raised', highlightthickness=0)
-#                     bg.pack(side = 'top')
-#                     bg.create_image(0,0, image = app.cntxt_info_bg, anchor = 'nw')
-#                     bg.create_text(15, 15, text= 'Choose Effect...', width = 190, anchor = 'nw', font = ('chalkduster', 16), fill = 'indianred')
-#                     app.context_buttons.append(bg)
-#                     efs = [(k, v.name) for k,v in app.ent_dict[id].effects_dict.items()]
-#                     if efs == []:
-#                         root.after(1666, lambda e = None : self.finish_darkblast(event = e))
-#                     else:
-#                         for key,name in efs:
-#     #                         i += 1
-#     #                         root.bind(str(i), call)
-#     #                         p = partial(call, None)
-#                             b = tk.Button(app.context_menu, text = name.replace('_',' '), wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda id = id, ef_name = name, key = key : self.darkblast_dispel(id, ef_name, key))
-#                             b.pack(side = 'top')
-#                             app.context_buttons.append(b)
-#             else:# MISS
-#                 miss(app.ent_dict[id].loc)
-#                 root.after(2666, lambda e = None : self.finish_darkblast(event = e))
-#         else:# FRIENDLY ENT, heal 3 then attempt target dispel
-#             if app.ent_dict[id].owner == self.owner:# heal if summon, else just dispel friendly
-#                 app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Heal 3 spirit', justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
-#                 app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Heal 3 spirit', justify = 'center', fill = 'white', font = ('chalkduster', 13), tags = 'text')
-#                 apply_heal(self, app.ent_dict[id], 3)
-#             app.depop_context(event = None)
-#             app.cntxt_info_bg = ImageTk.PhotoImage(Image.open('page.png'))
-#             bg = tk.Canvas(app.context_menu, width = 190, height = 363, bg = 'burlywood4', bd=0, relief='raised', highlightthickness=0)
-#             bg.pack(side = 'top')
-#             bg.create_image(0,0, image = app.cntxt_info_bg, anchor = 'nw')
-#             bg.create_text(15, 15, text= 'Choose Effect...', width = 190, anchor = 'nw', font = ('chalkduster', 16), fill = 'indianred')
-#             app.context_buttons.append(bg)
-#             efs = [(k, v.name) for k,v in app.ent_dict[id].effects_dict.items()]
-#             if efs == []:
-#                 root.after(2666, lambda e = None : self.finish_darkblast(event = e))
-#             else:
-#                 for key,name in efs:
-#     #                         i += 1
-#     #                         root.bind(str(i), call)
-#     #                         p = partial(call, None)
-#                     b = tk.Button(app.context_menu, text = name.replace('_',' '), wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda id = id, ef_name = name, key = key : self.darkblast_dispel(id, ef_name, key))
-#                     b.pack(side = 'top')
-#                     app.context_buttons.append(b)
-#             
-#     def darkblast_dispel(self, id, ef_name, key):
-#         app.depop_context(event = None)
-#         app.canvas.delete('text')
-#         if app.ent_dict[id].effects_dict[key].dispel(self.get_abl('msl')) == 'Dispelled':
-#             del app.ent_dict[id].effects_dict[key]
-#             app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Dispel '+ef_name.replace('_',' '), justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
-#             app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Dispel '+ef_name.replace('_',' '), justify = 'center', fill = 'white', font = ('chalkduster', 13), tags = 'text')
-#             root.after(1999, self.finish_darkblast)
-#         else:
-#             app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Dispel failed...'+ef_name.replace('_',' '), justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
-#             app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Dispel failed...'+ef_name.replace('_',' '), justify = 'center', fill = 'white', font = ('chalkduster', 13), tags = 'text')
-#             root.after(1999, self.finish_darkblast)
-#             
-#             
-#     def finish_darkblast(self, event = None):
-#         try: 
-#             del app.vis_dict['Darkblast']
-#             app.canvas.delete('Darkblast')
-#         except: pass
-#         app.depop_context(event = None)
-#         app.canvas.delete('text')
-#         app.cleanup_squares()
-#         app.rebind_all()
-        
-        
-    def aura(self, event = None):
+    # jump to loc wi agl that is adj to an ent, atk all adj
+    def pounce(self, event = None):
         if self.acts < 1:
             return
         app.unbind_nonarrows()
-        root.bind('<q>', self.finish_aura)
-        sqrs = [c for c in app.coords if 1 <= dist(self.loc, c) <= self.get_abl('rsn')]
+        root.bind('<q>', self.cancel_pounce)
+        sqrs = [c for c in app.coords if dist(self.loc, c) <= self.get_abl('move_range') and app.grid[c[0]][c[1]] == '' and [s for s in app.coords if dist(c,s) == 1 and app.grid[s[0]][s[1]] in app.all_ents().keys() and app.ent_dict[app.grid[s[0]][s[1]]].owner != self.owner] != []]
         app.animate_squares(sqrs)
         app.depop_context(event = None)
-        root.bind('<a>', lambda e, sqr = grid_pos, sqrs = sqrs : self.do_aura(event = e, sqr = sqr, sqrs = sqrs)) 
-        b = tk.Button(app.context_menu, text = 'Confirm Aura', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_aura(event = e, sqr = sqr, sqrs = sqrs))
+        root.bind('<a>', lambda e, sqrs = sqrs, sqr = grid_pos : self.do_pounce(event = e, sqrs = sqrs, sqr = sqr)) 
+        b = tk.Button(app.context_menu, text = 'Confirm Pounce', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqrs = sqrs, sqr = grid_pos : self.do_pounce(event = e, sqrs = sqrs, sqr = sqr))
         b.pack(side = 'top')
         app.context_buttons.append(b)
         
-    def do_aura(self, event = None, sqr = None, sqrs = None):
+    def do_pounce(self, event = None, sqrs = None, sqr = None):
+        global selected
         if sqr not in sqrs:
             return
-        id = app.grid[sqr[0]][sqr[1]]
-        if id == '' or id == 'block':
-            return
-        if id not in app.spell_target_ents().keys():
-            return
-        if self.magick < 1:
-            return
-        self.magick -= 1
         self.acts -= 1
-#         self.init_attack_anims()
-#         effect1 = mixer.Sound('Sound_Effects/aura.ogg')
+        self.init_pounce_anims()
+#         effect1 = mixer.Sound('Sound_Effects/pounce.ogg')
+#         effect1.set_volume(1)
+#         sound_effects.play(effect1, 0)
+        app.depop_context(event = None)
+        app.unbind_all()
+        app.cleanup_squares()
+        x = self.loc[0]*100+50-app.moved_right
+        y = self.loc[1]*100+50-app.moved_down
+        endx = sqr[0]*100+50-app.moved_right
+        endy = sqr[1]*100+50-app.moved_down
+        start_sqr = self.loc[:]
+        end_sqr = sqr[:]
+        selected = [self.id]
+        total_distance = abs(x - endx) + abs(y - endy)
+        tic = total_distance/6 # tic is based on number of images in image source folders
+        if x == endx:
+            xstep = 0
+            ystep = 10
+        elif y == endy:
+            xstep = 10
+            ystep = 0
+        else:
+            slope = Fraction(abs(x - endx), abs(y - endy))
+            # needs to be moving at least 10 pixels, xstep + ystep >= 10
+            xstep = slope.numerator
+            ystep = slope.denominator
+            while xstep + ystep < 10:
+                xstep *= 2
+                ystep *= 2
+        # need to call rotate_image every tic
+        def leap_loop(x, y, endx, endy, start_sqr, end_sqr, acm, tic, xstep, ystep):
+            if acm >= tic:
+                acm = 0
+                self.rotate_image()
+                app.canvas.delete(self.id)
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+            if x > endx:
+                acm += xstep
+                x -= xstep
+                app.canvas.delete(self.id)
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+                app.canvas.tag_raise(self.id)
+            elif x < endx:
+                acm += xstep
+                x += xstep
+                app.canvas.delete(self.id)
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+                app.canvas.tag_raise(self.id)
+            if y > endy:
+                acm += ystep
+                y -= ystep
+                app.canvas.delete(self.id)
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+                app.canvas.tag_raise(self.id)
+            elif y < endy:
+                acm += ystep
+                y += ystep
+                app.canvas.delete(self.id)
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+                app.canvas.tag_raise(self.id)
+            if abs(x - endx) < 13 and abs(y - endy) < 13:
+                root.after(666, lambda e = end_sqr, s = start_sqr : self.finish_pounce(e, s))
+            else: # CONTINUE LOOP
+                root.after(23, lambda x = x, y = y, e = endx, e2 = endy, s = start_sqr, s2 = end_sqr, acm = acm, tic = tic, xs = xstep, ys = ystep : leap_loop(x, y, e, e2, s, s2, acm, tic, xs, ys))
+        leap_loop(x, y, endx, endy, start_sqr, end_sqr, tic+1, tic, xstep, ystep)
+            
+            
+    def finish_pounce(self, end_sqr, start_sqr):
+        global selected
+        selected = []
+        self.loc = end_sqr[:]
+        app.grid[start_sqr[0]][start_sqr[1]] = ''
+        app.grid[end_sqr[0]][end_sqr[1]] = self.id
+        self.init_normal_anims()
+#         app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+84-app.moved_down, text = 'Pounce', font = ('chalkduster', 12), fill = 'black', tags = 'text')
+#         app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+85-app.moved_down, text = 'Pounce', font = ('chalkduster', 12), fill = 'ghostwhite', tags = 'text')
+        # CHANGE - insert atk adj here...
+        ents = [e for e in app.all_ents().values() if dist(e.loc, self.loc) == 1 and e.owner != self.owner]
+        def pounce_loop(ents):
+            if ents == []:
+                self.cancel_pounce()
+            else:
+                ent = ents[0]
+                ents = ents[1:]
+                my_agl = self.get_abl('agl')
+                tar_agl = ent.get_abl('agl')
+                if to_hit(my_agl, tar_agl):
+                    my_str = self.get_abl('str')
+                    tar_end = ent.get_abl('end')
+                    d = damage(my_str, tar_end)
+                    lock(apply_damage, self, ent, -d, 'slashing', 'Pounce', 'melee')
+                    pounce_loop(ents)
+                else:
+                    miss(ent.loc)
+                    root.after(1222, lambda t = 'text' : app.canvas.delete(t))
+                    root.after(1333, lambda ents = ents : pounce_loop(ents))
+        pounce_loop(ents)
+        
+    def cancel_pounce(self, event = None):
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        app.unbind_all()
+        app.rebind_all()
+        
+        
+        
+        
+    # on save_check frndly  +2 san, on to-hit enmy -2 san
+    def roar(self, event = None):
+        if self.acts < 1:
+            return
+        app.unbind_nonarrows()
+        root.bind('<q>', self.finish_roar)
+        sqrs = [c for c in app.coords if 1 <= dist(self.loc, c) <= self.get_abl('rsn')]
+        app.animate_squares(sqrs)
+        app.depop_context(event = None)
+        root.bind('<a>', lambda e, s = sqrs : self.do_roar(event = e, sqrs = s)) 
+        b = tk.Button(app.context_menu, text = 'Confirm Roar', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqrs = sqrs : self.do_roar(event = e, sqrs = sqrs))
+        b.pack(side = 'top')
+        app.context_buttons.append(b)
+        
+    def do_roar(self, event = None, sqrs = None):
+        self.acts -= 1
+#         effect1 = mixer.Sound('Sound_Effects/roar.ogg')
 #         effect1.set_volume(1)
 #         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
         app.unbind_all()
-        ents = [k for k,v in app.all_ents().items() if dist(v.loc, sqr) <= 3 and v.owner == self.owner]
-        app.get_focus(choice(ents))
-        app.canvas.create_text(self.loc[0]*100-app.moved_right+49, self.loc[1]*100-app.moved_down+84, text = 'Aura', justify = 'center', fill = 'black', font = ('chalkduster', 16), tags = 'text')
-        app.canvas.create_text(self.loc[0]*100-app.moved_right+50, self.loc[1]*100-app.moved_down+85, text = 'Aura', justify = 'center', fill = 'ivory', font = ('chalkduster', 16), tags = 'text')
-        for id in ents:
-            loc = app.ent_dict[id].loc[:]
-            r = randrange(1,self.get_abl('psyche')+1)
-            apply_heal(self, app.ent_dict[id], r)
-            un = 'Aura' + str(app.effects_counter)
-            app.effects_counter += 1
-            app.vis_dict[un] = Vis(name = 'Aura', loc = loc[:])
-            vis = app.vis_dict[un]
-            app.canvas.create_image(loc[0]*100+50-app.moved_right, loc[1]*100+50-app.moved_down, image = vis.img, tags = un)
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = '+'+str(r)+' spirit', justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = '+'+str(r)+' spirit', justify = 'center', fill = 'white', font = ('chalkduster', 13), tags = 'text')
-            def cleanup_aura(un):
-                del app.vis_dict[un]
-                app.canvas.delete(un)
-            root.after(2666, lambda un = un : cleanup_aura(un))
-        root.after(2777, self.finish_aura)
+        s = self.loc[:]
+        app.canvas.create_text(s[0]*100+49-app.moved_right, s[1]*100+84-app.moved_down, text = 'Roar', font = ('chalkduster', 13), fill = 'black', tags = 'text')
+        app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+85-app.moved_down, text = 'Roar', font = ('chalkduster', 13), fill = 'ghostwhite', tags = 'text')
+        ents = [k for k,v in app.all_ents().items() if v.loc in sqrs and 'Roar' not in [j.name for i,j in v.effects_dict.items()]]
+        def cleanup_roar(n):
+            del app.vis_dict[n]
+            app.canvas.delete(n)
+        def roar_loop(ents):
+            if ents == []:
+                self.finish_roar()
+            else:
+                id = ents[0]
+                ents = ents[1:]
+                ent = app.ent_dict[id]
+                s = ent.loc[:]
+                app.focus_square(s)
+                u = 'Roar' + str(app.effects_counter) # not an effect, just need unique int
+                app.effects_counter += 1 # that is why this is incr manually here, no Effect init
+                app.vis_dict[u] = Vis(name = 'Roar', loc = s)
+                app.canvas.create_image(s[0]*100+50-app.moved_right, s[1]*100+50-app.moved_down, image = app.vis_dict[u].img, tags = u)
+                root.after(1555, lambda u = u : cleanup_roar(u))
+                if ent.owner != self.owner:
+                    my_str = self.get_abl('str')
+                    tar_psy = ent.get_abl('psyche')
+                    if to_hit(my_str, tar_psy):
+                        app.canvas.create_text(s[0]*100+49-app.moved_right, s[1]*100+84-app.moved_down, text = '-2 san', font = ('chalkduster', 13), fill = 'black', tags = 'text')
+                        app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+85-app.moved_down, text = '-2 san', font = ('chalkduster', 13), fill = 'ghostwhite', tags = 'text')
+                        def roar_effect(stat):
+                            return max(1,stat-2)
+                        p = partial(roar_effect)
+                        ent.san_effects.append(p)
+                        n = 'Roar' + str(app.effects_counter)
+                        def un(i, p):
+                            app.ent_dict[i].san_effects.remove(p)
+                        u = partial(un, id, p)
+                        ent.effects_dict[n] = Effect(name = 'Roar_Enemy', undo_func = u, duration = self.get_abl('end'), level = self.get_abl('str'))
+                        root.after(888, lambda t = 'text' : app.canvas.delete(t))
+                        root.after(999, lambda ents = ents : roar_loop(ents))
+                    else:
+                        miss(ent.loc)
+                        root.after(999, lambda ents = ents : roar_loop(ents))
+                else:
+                    if ent.save_check('wis') == 'Pass':
+                        app.canvas.create_text(s[0]*100+49-app.moved_right, s[1]*100+84-app.moved_down, text = '+2 san', font = ('chalkduster', 13), fill = 'black', tags = 'text')
+                        app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+85-app.moved_down, text = '+2 san', font = ('chalkduster', 13), fill = 'ghostwhite', tags = 'text')
+                        def roar_effect(stat):
+                            return stat+2
+                        p = partial(roar_effect)
+                        ent.san_effects.append(p)
+                        n = 'Roar' + str(app.effects_counter)
+                        def un(i, p):
+                            app.ent_dict[i].san_effects.remove(p)
+                        u = partial(un, id, p)
+                        ent.effects_dict[n] = Effect(name = 'Roar_Friendly', undo_func = u, duration = self.get_abl('end'), level = self.get_abl('str'))
+                        root.after(888, lambda t = 'text' : app.canvas.delete(t))
+                        root.after(999, lambda ents = ents : roar_loop(ents))
+                    else:
+                        app.canvas.create_text(s[0]*100+49-app.moved_right, s[1]*100+84-app.moved_down, text = 'Wisdom save fail...', font = ('chalkduster', 13), fill = 'black', tags = 'text')
+                        app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+85-app.moved_down, text = 'Wisdom save fail...', font = ('chalkduster', 13), fill = 'ghostwhite', tags = 'text')
+                        root.after(888, lambda t = 'text' : app.canvas.delete(t))
+                        root.after(999, lambda ents = ents : roar_loop(ents))
+        roar_loop(ents)
         
-    def finish_aura(self, event = None):
+    def finish_roar(self, event = None):
 #         self.init_normal_anims()
+        app.canvas.delete('text')
         app.cleanup_squares()
         app.unbind_all()
         app.rebind_all()
-        app.canvas.delete('text')
         app.depop_context(event = None)
-
-    def tranquility(self, event = None):
+        
+        
+    # all wi rng, dispel atmpt all efcts
+    def nullify(self, event = None):
         if self.acts < 1:
             return
         app.unbind_nonarrows()
-        root.bind('<q>', self.finish_tranquility)
-        sqrs = [c for c in app.coords if dist(self.loc, c) <= self.get_abl('rsn')]
+        root.bind('<q>', self.finish_nullify)
+        sqrs = [c for c in app.coords if 1 <= dist(self.loc, c) <= self.get_abl('rsn')]
         app.animate_squares(sqrs)
         app.depop_context(event = None)
-        root.bind('<a>', lambda e, sqr = grid_pos, sqrs = sqrs : self.do_tranquility(event = e, sqr = sqr, sqrs = sqrs))
-        b = tk.Button(app.context_menu, text = 'Confirm Tranquility Target', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_tranquility(event = e, sqr = sqr, sqrs = sqrs))
+        root.bind('<a>', lambda e, s = sqrs : self.do_nullify(event = e, sqrs = s)) 
+        b = tk.Button(app.context_menu, text = 'Confirm Nullify', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqrs = sqrs : self.do_nullify(event = e, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
         
-    def do_tranquility(self, event, sqr, sqrs):
+    def do_nullify(self, event = None, sqrs = None):
+        if self.magick < 3:
+            return
+        self.magick -= 3
+        self.acts -= 1
+#         effect1 = mixer.Sound('Sound_Effects/nullify.ogg')
+#         effect1.set_volume(1)
+#         sound_effects.play(effect1, 0)
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        app.unbind_all()
+        s = self.loc[:]
+        app.canvas.create_text(s[0]*100+49-app.moved_right, s[1]*100+84-app.moved_down, text = 'Nullify', font = ('chalkduster', 13), fill = 'black', tags = 'text')
+        app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+85-app.moved_down, text = 'Nullify', font = ('chalkduster', 13), fill = 'ghostwhite', tags = 'text')
+        ents = [k for k,v in app.all_ents().items() if v.loc in sqrs and 'psyshield' not in v.get_types() and 'invis' not in v.get_types()]
+        def cleanup_nullify(n):
+            del app.vis_dict[n]
+            app.canvas.delete(n)
+            app.canvas.delete('text')
+        def nullify_loop(ents):
+            if ents == []:
+                self.finish_nullify()
+            else:
+                id = ents[0]
+                ents = ents[1:]
+                ent = app.ent_dict[id]
+                s = ent.loc[:]
+                u = 'Nullify' + str(app.effects_counter) # not an effect, just need unique int
+                app.effects_counter += 1 # that is why this is incr manually here, no Effect init
+                app.vis_dict[u] = Vis(name = 'Nullify', loc = s)
+                app.canvas.create_image(s[0]*100+50-app.moved_right, s[1]*100+50-app.moved_down, image = app.vis_dict[u].img, tags = u)
+                app.canvas.create_text(ent.loc[0]*100-app.moved_right+49, ent.loc[1]*100-app.moved_down+74, text = 'Dispel Attempt\nAll Effects', justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
+                app.canvas.create_text(ent.loc[0]*100-app.moved_right+50, ent.loc[1]*100-app.moved_down+75, text = 'Dispel Attempt\nAll Effects', justify = 'center', fill = 'ghostwhite', font = ('chalkduster', 13), tags = 'text')
+                to_remove = []
+                for k,v in ent.effects_dict.items():
+                    if v.dispel(self.get_abl('wis')) == 'Dispelled':
+                        to_remove.append(k)
+                for k in to_remove:
+                    del ent.effects_dict[k]
+                root.after(1555, lambda u = u : cleanup_nullify(u))
+                root.after(1666, lambda ents = ents : nullify_loop(ents))
+        nullify_loop(ents)
+        
+    def finish_nullify(self, event = None):
+#         self.init_normal_anims()
+        app.canvas.delete('text')
+        app.cleanup_squares()
+        app.unbind_all()
+        app.rebind_all()
+        app.depop_context(event = None)
+        
+        
+    # remove target action
+    def abeyance(self, event = None):
+        if self.acts < 1:
+            return
+        app.unbind_nonarrows()
+        root.bind('<q>', self.finish_abeyance)
+        sqrs = [c for c in app.coords if dist(self.loc, c) == 1]
+        app.animate_squares(sqrs)
+        app.depop_context(event = None)
+        root.bind('<a>', lambda e, sqr = grid_pos, sqrs = sqrs : self.do_abeyance(event = e, sqr = sqr, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Confirm Abeyance Target', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_abeyance(event = e, sqr = sqr, sqrs = sqrs))
+        b.pack(side = 'top')
+        app.context_buttons.append(b)
+        
+    def do_abeyance(self, event, sqr, sqrs):
         if sqr not in sqrs:
             return
-#         effect1 = mixer.Sound('Sound_Effects/tranquility.ogg')
+        id = app.grid[sqr[0]][sqr[1]]
+        if id not in app.spell_target_ents().keys():
+            return
+        if isinstance(app.ent_dict[id], Witch):
+            return
+        if self.magick < 2:
+            return
+        self.magick -= 2
+#         effect1 = mixer.Sound('Sound_Effects/abeyance.ogg')
 #         effect1.set_volume(.5)
 #         sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
         self.acts -= 1
-        app.canvas.create_text(self.loc[0]*100-app.moved_right+49, self.loc[1]*100-app.moved_down+84, text = 'Tranquility', justify = 'center', fill = 'black', font = ('chalkduster', 16), tags = 'text')
-        app.canvas.create_text(self.loc[0]*100-app.moved_right+50, self.loc[1]*100-app.moved_down+85, text = 'Tranquility', justify = 'center', fill = 'ivory', font = ('chalkduster', 16), tags = 'text')
-        app.vis_dict['Tranquility'] = Vis(name = 'Tranquility', loc = sqr[:])
-        vis = app.vis_dict['Tranquility']
-        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = vis.img, tags = 'Tranquility')
-        app.canvas.create_text(sqr[0]*100-app.moved_right+49, sqr[1]*100-app.moved_down+74, text = 'Dispel Attempt\n Local Effects', justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
-        app.canvas.create_text(sqr[0]*100-app.moved_right+50, sqr[1]*100-app.moved_down+75, text = 'Dispel Attempt\n Local Effects', justify = 'center', fill = 'white', font = ('chalkduster', 13), tags = 'text')
-        to_remove = []
-        for k,v in app.loc_dict[tuple(sqr)].effects_dict.items():
-            if v.dispel(self.get_abl('wis')) == 'Dispelled':
-                to_remove.append(k)
-        for k in to_remove:
-            del app.loc_dict[tuple(sqr)].effects_dict[k]
-        root.after(2666, self.finish_tranquility)
+        ent = app.ent_dict[id]
+        my_wis = self.get_abl('wis')
+        tar_wis = ent.get_abl('wis')
+        if to_hit(my_wis, tar_wis):
+            app.canvas.create_text(ent.loc[0]*100-app.moved_right+49, ent.loc[1]*100-app.moved_down+74, text = 'Remove Action', justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
+            app.canvas.create_text(ent.loc[0]*100-app.moved_right+50, ent.loc[1]*100-app.moved_down+75, text = 'Remove Action', justify = 'center', fill = 'white', font = ('chalkduster', 13), tags = 'text')
+            app.depop_context(event = None)
+            app.cntxt_info_bg = ImageTk.PhotoImage(Image.open('page.png'))
+            bg = tk.Canvas(app.context_menu, width = 190, height = 363, bg = 'burlywood4', bd=0, relief='raised', highlightthickness=0)
+            bg.pack(side = 'top')
+            bg.create_image(0,0, image = app.cntxt_info_bg, anchor = 'nw')
+            bg.create_text(15, 15, text= 'Choose Action...', width = 190, anchor = 'nw', font = ('chalkduster', 16), fill = 'indianred')
+            app.context_buttons.append(bg)
+            actions = [(k, v) for k,v in ent.get_actions().items()]
+            if actions == []:
+                root.after(1666, lambda e = None : self.finish_abeyance(event = e))
+            else:
+                for key,func in actions:
+                    b = tk.Button(app.context_menu, text = key.replace('_',' '), wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda id = id, func = func, key = key : self.abeyance_remove(id, func, key))
+                    b.pack(side = 'top')
+                    app.context_buttons.append(b)
+        else:
+            miss(ent.loc)
+            root.after(1999, self.finish_abeyance)
+            
+    def abeyance_remove(self, id, func, key):
+        app.depop_context(event = None)
+        app.canvas.delete('text')
+        ent = app.ent_dict[id]
+        def abey_rmv(actions_dict):
+            if key in actions_dict.keys():
+                del actions_dict[key]
+            return actions_dict
+        p = partial(abey_rmv)
+        ent.action_effects.append(p)
+        def undo(id, func):
+            app.ent_dict[id].action_effects.remove(func)
+        u = partial(undo, id, p)
+        n = 'Abeyance'+str(app.effects_counter)
+        app.effects_counter += 1
+        ent.effects_dict[n] = Effect(name = 'Abeyance', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
+        app.canvas.create_text(ent.loc[0]*100-app.moved_right+49, ent.loc[1]*100-app.moved_down+74, text = key+' Removed', justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
+        app.canvas.create_text(ent.loc[0]*100-app.moved_right+50, ent.loc[1]*100-app.moved_down+75, text = key+' Removed', justify = 'center', fill = 'ghostwhite', font = ('chalkduster', 13), tags = 'text')
+        root.after(1999, self.finish_abeyance)
         
-    def finish_tranquility(self, event = None):
+    def finish_abeyance(self, event = None):
         try: 
-            del app.vis_dict['Tranquility']
-            app.canvas.delete('Tranquility')
+            del app.vis_dict['Abeyance']
+            app.canvas.delete('Abeyance')
         except: pass
         app.depop_context(event = None)
         app.canvas.delete('text')
         app.cleanup_squares()
-        app.unbind_all()
         app.rebind_all()
         
-    def esuna(self, event = None):
+        
+        
+    # on psy save_check, efct that raises wis to 8 if lower
+    def anoint(self, event = None):
         if self.acts < 1:
             return
+        app.depop_context(event = None)
         app.unbind_nonarrows()
-        root.bind('<q>', self.finish_esuna)
-        sqrs = [c for c in app.coords if dist(self.loc, c) <= self.get_abl('rsn')]
+        root.bind('<q>', self.cleanup_anoint)
+        sqrs = [s for s in app.coords if 1 <= dist(self.loc, s) <= self.get_abl('rsn')]
         app.animate_squares(sqrs)
-        app.depop_context(event = None)
-        root.bind('<a>', lambda e, sqr = grid_pos, sqrs = sqrs : self.do_esuna(event = e, sqr = sqr, sqrs = sqrs)) 
-        b = tk.Button(app.context_menu, text = 'Confirm Esuna Target', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_esuna(event = e, sqr = sqr, sqrs = sqrs))
-        b.pack(side = 'top')
-        app.context_buttons.append(b)
-        
-    def do_esuna(self, event, sqr, sqrs):
-        if sqr not in sqrs:
-            return
-        id = app.grid[sqr[0]][sqr[1]]
-        if id == '' or id == 'block':
-            return
-        if id not in app.spell_target_ents().keys():
-            return
-        if self.magick < 1:
-            return
-        self.magick -= 1
-        effect1 = mixer.Sound('Sound_Effects/esuna.ogg')
-        effect1.set_volume(.5)
-        sound_effects.play(effect1, 0)
-        app.unbind_all()
-        app.depop_context(event = None)
-        app.cleanup_squares()
-        self.acts -= 1
-        app.canvas.create_text(self.loc[0]*100-app.moved_right+49, self.loc[1]*100-app.moved_down+84, text = 'Esuna', justify = 'center', fill = 'black', font = ('chalkduster', 16), tags = 'text')
-        app.canvas.create_text(self.loc[0]*100-app.moved_right+50, self.loc[1]*100-app.moved_down+85, text = 'Esuna', justify = 'center', fill = 'ivory', font = ('chalkduster', 16), tags = 'text')
-        app.vis_dict['Esuna'] = Vis(name = 'Esuna', loc = sqr[:])
-        vis = app.vis_dict['Esuna']
-        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = vis.img, tags = 'Esuna')
-        app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Dispel Attempt\nAll Effects', justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
-        app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Dispel Attempt\nAll Effects', justify = 'center', fill = 'white', font = ('chalkduster', 13), tags = 'text')
-        to_remove = []
-        for k,v in app.ent_dict[id].effects_dict.items():
-            if v.dispel(self.get_abl('wis')) == 'Dispelled':
-                to_remove.append(k)
-        for k in to_remove:
-            del app.ent_dict[id].effects_dict[k]
-        root.after(2666, self.finish_esuna)
-        
-    def finish_esuna(self, event = None):
-        try: 
-            del app.vis_dict['Esuna']
-            app.canvas.delete('Esuna')
-        except: pass
-        app.depop_context(event = None)
-        app.canvas.delete('text')
-        app.cleanup_squares()
-        app.unbind_all()
-        app.rebind_all()
-        
-    def moonlight(self, event = None):
-        if self.acts < 1:
-            return
-        app.depop_context(event = None)
-        root.bind('<q>', self.cleanup_moonlight)
-        sqrs = [s for s in app.coords if dist(self.loc, s) <= self.get_abl('rsn')]
-        app.animate_squares(sqrs)
-        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_moonlight(event = e, s = s, sqrs = sqrs))
-        b = tk.Button(app.context_menu, text = 'Choose Target For Moonlight', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_moonlight(e, s, sqrs))
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_anoint(event = e, sqr = s, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Choose Target For Anoint', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_anoint(e, s, sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
         
-    def do_moonlight(self, event, s, sqrs):
-        global selected_vis
-        id = app.grid[s[0]][s[1]]
+    def do_anoint(self, event, sqr, sqrs):
+        if sqr not in sqrs:
+            return
+        id = app.grid[sqr[0]][sqr[1]]
         if id not in app.spell_target_ents().keys():
             return
-        if s not in sqrs:
-            return
         if self.magick < 1:
             return
-        self.magick -= 1
-        self.acts -= 1
-        effect1 = mixer.Sound('Sound_Effects/moonlight.ogg')
-        effect1.set_volume(.2)
-        sound_effects.play(effect1, 0)
-        app.unbind_all()
-        app.depop_context(event = None)
-        app.cleanup_squares()
-#         self.init_cast_anims()
-        amt = self.get_abl('psyche')
-        apply_heal(self, app.ent_dict[id], amt)
-        app.vis_dict['Moonlight'] = Vis(name = 'Moonlight', loc = s)
-        app.canvas.create_image(s[0]*100+50-app.moved_right, s[1]*100+70-app.moved_down, image = app.vis_dict['Moonlight'].img, tags = 'Moonlight')
-        app.canvas.create_text(s[0]*100+49-app.moved_right, s[1]*100+74-app.moved_down, text = 'Moonlight', font = ('chalkduster', 16), fill = 'black', tags = 'text')
-        app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+75-app.moved_down, text = 'Moonlight', font = ('chalkduster', 16), fill = 'azure', tags = 'text')
-        app.canvas.create_text(s[0]*100+49-app.moved_right, s[1]*100+89-app.moved_down, text = '+'+str(amt)+' Spirit', font = ('chalkduster', 13), fill = 'black', tags = 'text')
-        app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+90-app.moved_down, text = '+'+str(amt)+' Spirit', font = ('chalkduster', 13), fill = 'azure', tags = 'text')
-        selected_vis = ['Moonlight']
-        def moonlight_loop(starty, endy, x):
-            if starty > endy:
-                app.vis_dict['Moonlight'].rotate_image()
-                app.canvas.delete('Moonlight')
-                app.canvas.create_image(x, starty, image = app.vis_dict['Moonlight'].img, tags = 'Moonlight')
-                starty -= 10
-                app.canvas.move('Moonlight', 0, -10)
-                app.canvas.tag_raise('Moonlight')
-            if starty == endy:
-                root.after(333, self.cleanup_moonlight)
-            else:
-                root.after(166, lambda sy = starty, ey = endy, x = x : moonlight_loop(sy, ey, x))
-        locy = s[1]*100+70-app.moved_down
-        locx = s[0]*100+50-app.moved_right
-        moonlight_loop(locy, locy-120, locx)
-        
-    def cleanup_moonlight(self, event = None):
-        global selected, selected_vis
-#         self.init_normal_anims()
-        app.unbind_all()
-        app.rebind_all()
-        app.cleanup_squares()
-        app.depop_context(event = None)
-        try: 
-            del app.vis_dict['Moonlight']
-            app.canvas.delete('Moonlight')
-        except: pass
-        try: app.canvas.delete('text')
-        except: pass
-        selected = []
-        selected_vis = []
-        
-    def unholy_chant(self, event = None):
-        if self.acts < 1:
+        if 'Anoint' in app.ent_dict[id].effects_dict.keys():
             return
-        app.unbind_nonarrows()
-        root.bind('<q>', self.finish_unholy_chant)
-        sqrs = [c for c in app.coords if dist(self.loc, c) <= 2]
-        app.animate_squares(sqrs)
-        app.depop_context(event = None)
-        root.bind('<a>', lambda e, s = sqrs : self.do_unholy_chant(event = e, sqrs = s)) 
-        b = tk.Button(app.context_menu, text = 'Confirm Unholy Chant', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqrs = sqrs : self.do_unholy_chant(event = e, sqrs = sqrs))
-        b.pack(side = 'top')
-        app.context_buttons.append(b)
-        
-        
-    def do_unholy_chant(self, event = None, sqrs = None):
-        if self.magick < 1:
-            return
-        self.magick -= 1
-        self.acts -= 1
-#         self.init_attack_anims()
-        effect1 = mixer.Sound('Sound_Effects/unholy_chant.ogg')
+        app.unbind_all()
+        effect1 = mixer.Sound('Sound_Effects/simulacrum.ogg')
         effect1.set_volume(1)
         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
-        app.unbind_all()
-        ents = [k for k,v in app.all_ents().items() if v.owner == self.owner and dist(v.loc, self.loc) <= 2 and 'Unholy_Chant' not in [j.name for i,j in v.effects_dict.items()]]
-        app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+14-app.moved_down, text = 'Unholy Chant', justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
-        app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+15-app.moved_down, text = 'Unholy Chant', justify = 'center', font = ('chalkduster', 14), fill = 'ivory3', tags = 'text')
-        def cleanup_vis(n):
-            del app.vis_dict[n]
-        for id in ents:
-            e = app.ent_dict[id]
-            n2 = 'Unholy_Chant' + str(app.effects_counter) # not an effect, just need unique int
-            app.effects_counter += 1 # that is why this is incr manually here, no Effect init
-            app.vis_dict[n2] = Vis(name = 'Unholy_Chant', loc = e.loc)
-            app.canvas.create_image(e.loc[0]*100+50-app.moved_right, e.loc[1]*100+50-app.moved_down, image = app.vis_dict[n2].img, tags = 'Unholy_Chant')
-            app.canvas.create_text(e.loc[0]*100+49-app.moved_right, e.loc[1]*100+89-app.moved_down, text = '+1 All Stats', font = ('chalkduster', 12), fill = 'black', tags = 'text')
-            app.canvas.create_text(e.loc[0]*100+50-app.moved_right, e.loc[1]*100+90-app.moved_down, text = '+1 All Stats', font = ('chalkduster', 12), fill = 'white', tags = 'text')
-            root.after(2999, lambda n = n2 : cleanup_vis(n))
-            def unholy_chant_effect(stat):
-                return stat + 1
-            p = partial(unholy_chant_effect)
-            e.str_effects.append(p)
-            e.end_effects.append(p)
-            e.agl_effects.append(p)
-            e.mm_effects.append(p)
-            e.msl_effects.append(p)
-            e.bls_effects.append(p)
-            e.dodge_effects.append(p)
-            e.psyche_effects.append(p)
-            e.wis_effects.append(p)
-            e.rsn_effects.append(p)
-            e.san_effects.append(p)
-            e.init_effects.append(p)
-            e.move_range_effects.append(p)
-            def un(i, func):
-                app.ent_dict[i].str_effects.remove(func)
-                app.ent_dict[i].end_effects.remove(func)
-                app.ent_dict[i].agl_effects.remove(func)
-                app.ent_dict[i].mm_effects.remove(func)
-                app.ent_dict[i].msl_effects.remove(func)
-                app.ent_dict[i].bls_effects.remove(func)
-                app.ent_dict[i].dodge_effects.remove(func)
-                app.ent_dict[i].psyche_effects.remove(func)
-                app.ent_dict[i].wis_effects.remove(func)
-                app.ent_dict[i].rsn_effects.remove(func)
-                app.ent_dict[i].san_effects.remove(func)
-                app.ent_dict[i].init_effects.remove(func)
-                app.ent_dict[i].move_range_effects.remove(func)
-            u = partial(un, id, p)
-            n = 'Unholy_Chant' + str(app.effects_counter)
-            app.ent_dict[id].effects_dict[n] = Effect(name = 'Unholy_Chant', undo_func = u, duration = 1, level = self.get_abl('wis'))
-        root.after(3111, self.finish_unholy_chant)
-        
-    def finish_unholy_chant(self, event = None):
-#         self.init_normal_anims()
-        app.cleanup_squares()
-        app.unbind_all()
-        app.rebind_all()
-        app.canvas.delete('text')
-        app.depop_context(event = None)
-    
-    
-    def concerted_volley(self, event = None):
-        if self.acts < 1:
-            return
-        app.unbind_nonarrows()
-        root.bind('<q>', self.finish_concerted_volley)
-        sqrs = [c for c in app.coords if dist(self.loc, c) <= 2]
-        app.animate_squares(sqrs)
-        app.depop_context(event = None)
-        root.bind('<a>', lambda e, s = sqrs : self.do_concerted_volley(event = e, sqrs = s)) 
-        b = tk.Button(app.context_menu, text = 'Confirm Concerted Volley', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqrs = sqrs : self.do_concerted_volley(event = e, sqrs = sqrs))
-        b.pack(side = 'top')
-        app.context_buttons.append(b)
-        
-        
-    def do_concerted_volley(self, event = None, sqrs = None):
-        if self.magick < 1:
-            return
-        self.magick -= 1
         self.acts -= 1
-#         self.init_attack_anims()
-#         effect1 = mixer.Sound('Sound_Effects/unholy_chant.ogg')
-#         effect1.set_volume(1)
-#         sound_effects.play(effect1, 0)
-        app.depop_context(event = None)
-        app.cleanup_squares()
-        app.unbind_all()
-        ents = [k for k,v in app.all_ents().items() if v.owner == self.owner and v.loc in sqrs and 'Concerted_Volley' not in [j.name for i,j in v.effects_dict.items()]]
-        app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+14-app.moved_down, text = 'Concerted Volley', justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
-        app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+15-app.moved_down, text = 'Concerted Volley', justify = 'center', font = ('chalkduster', 14), fill = 'ivory3', tags = 'text')
-        def cleanup_vis(n):
-            del app.vis_dict[n]
-        num = len(ents)
-        for id in ents:
-            ent = app.ent_dict[id]
-            n2 = 'Concerted_Volley' + str(app.effects_counter) # not an effect, just need unique int
-            app.effects_counter += 1 # that is why this is incr manually here, no Effect init
-            app.vis_dict[n2] = Vis(name = 'Concerted_Volley', loc = ent.loc)
-            app.canvas.create_image(ent.loc[0]*100+50-app.moved_right, ent.loc[1]*100+50-app.moved_down, image = app.vis_dict[n2].img, tags = 'Concerted_Volley')
-            app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+84-app.moved_down, text = '+ '+str(num)+' mm', font = ('chalkduster', 12), fill = 'black', tags = 'text')
-            app.canvas.create_text(ent.loc[0]*100+50-app.moved_right, ent.loc[1]*100+85-app.moved_down, text = '+ '+str(num)+' mm', font = ('chalkduster', 12), fill = 'ghostwhite', tags = 'text')
-            root.after(1999, lambda n = n2 : cleanup_vis(n))
-            def concerted_volley_effect(stat, num = None):
-                return stat+num
-            p = partial(concerted_volley_effect, num = num)
-            ent.mm_effects.append(p)
-            def undo(i, func):
-                app.ent_dict[i].mm_effects.remove(func)
-            u = partial(undo, id, p)
-            n = 'Concerted_Volley' + str(app.effects_counter)
-            ent.effects_dict[n] = Effect(name = 'Concerted_Volley', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
-        root.after(2111, self.finish_concerted_volley)
+        self.magick -= 1
+        ent = app.ent_dict[id]
+        app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+14-app.moved_down, text = 'Anoint', font = ('chalkduster', 14), fill = 'black', tags = 'text')
+        app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+15-app.moved_down, text = 'Anoint', font = ('chalkduster', 14), fill = 'ghostwhite', tags = 'text')
+        app.vis_dict['Anoint'] = Vis(name = 'Anoint', loc = ent.loc[:])
+        app.canvas.create_image(ent.loc[0]*100+50-app.moved_right, ent.loc[1]*100+50-app.moved_down, image = app.vis_dict['Anoint'].img, tags = 'Anoint')
+        if ent.save_check('psyche') == 'Pass':
+            def anoint_effect(stat):
+                if stat < 8:
+                    return 8
+                else:
+                    return stat
+            p = partial(anoint_effect)
+            ent.wis_effects.append(p)
+            def un(id, func):
+                app.ent_dict[id].wis_effects.remove(func)
+            u = partial(un, id, p)
+            n = 'Anoint' + str(app.effects_counter)
+            ent.effects_dict[n] = Effect(name = 'Anoint', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
+            app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+84-app.moved_down, text = 'Minimum 8 wisdom', font = ('chalkduster', 14), fill = 'black', tags = 'text')
+            app.canvas.create_text(ent.loc[0]*100+50-app.moved_right, ent.loc[1]*100+85-app.moved_down, text = 'Minimum 8 wisdom', font = ('chalkduster', 14), fill = 'ghostwhite', tags = 'text')
+            root.after(1999, self.cleanup_anoint)
+        else:
+            app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+84-app.moved_down, text = 'Psyche save fail', font = ('chalkduster', 14), fill = 'black', tags = 'text')
+            app.canvas.create_text(ent.loc[0]*100+50-app.moved_right, ent.loc[1]*100+85-app.moved_down, text = 'Psyche save fail', font = ('chalkduster', 14), fill = 'ghostwhite', tags = 'text')
+            root.after(1999, self.cleanup_anoint)
         
-    def finish_concerted_volley(self, event = None):
-#         self.init_normal_anims()
-        app.cleanup_squares()
-        app.unbind_all()
+        
+    def cleanup_anoint(self, event = None):
         app.rebind_all()
-        app.canvas.delete('text')
+        app.cleanup_squares()
         app.depop_context(event = None)
-    
-    
-    def arrow_of_diana(self, event = None):
+        try: 
+            del app.vis_dict['Anoint']
+            app.canvas.delete('Anoint')
+        except: pass
+        app.canvas.delete('text')
+        
+        
+    # on to-hit, if tar has psysh, efct strips psysh, else efct strips invis
+    def reveal(self, event = None):
         if self.acts < 1:
             return
         app.unbind_nonarrows()
-        root.bind('<q>', self.finish_arrow)
-        sqrs = [c for c in app.coords if 1 <= dist(self.loc, c) <= self.get_abl('bls')]
+        root.bind('<q>', self.finish_reveal)
+        sqrs = [c for c in app.coords if dist(self.loc, c) == 1]
         app.animate_squares(sqrs)
         app.depop_context(event = None)
-        root.bind('<a>', lambda e, sqr = grid_pos, sqrs = sqrs : self.do_arrow(event = e, sqr = sqr, sqrs = sqrs))
-        b = tk.Button(app.context_menu, text = 'Confirm Arrow Target', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_arrow(event = e, sqr = sqr, sqrs = sqrs))
+        root.bind('<a>', lambda e, sqr = grid_pos, sqrs = sqrs : self.do_reveal(event = e, sqr = sqr, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Confirm Reveal Target', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_reveal(event = e, sqr = sqr, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
         
-    def do_arrow(self, event, sqr, sqrs):
+    def do_reveal(self, event, sqr, sqrs):
         if sqr not in sqrs:
             return
         id = app.grid[sqr[0]][sqr[1]]
-        if id not in app.action_target_ents().keys():
+        if id not in app.all_ents().keys():
             return
-#         effect1 = mixer.Sound('Sound_Effects/arrow_of_diana.ogg')
+#         effect1 = mixer.Sound('Sound_Effects/reveal.ogg')
 #         effect1.set_volume(.5)
 #         sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
         self.acts -= 1
-        app.vis_dict['Arrow_of_Diana'] = Vis(name = 'Arrow_of_Diana', loc = sqr[:])
-        vis = app.vis_dict['Arrow_of_Diana']
-        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = vis.img, tags = 'Arrow_of_Diana')
-        my_mm = self.get_abl('mm')
-        def cleanup_arrow():
-            del app.vis_dict['Arrow_of_Diana']
-            app.canvas.delete('Arrow_of_Diana')
-        tar_dod = app.ent_dict[id].get_abl('dodge')
-        if to_hit(my_mm, tar_dod) == True:
-            my_msl = self.get_abl('msl')
-            tar_end = app.ent_dict[id].get_abl('end')
-            d = damage(my_msl, tar_end)
-            root.after(1555, cleanup_arrow)
-            lock(apply_damage, self, app.ent_dict[id], -d, 'piercing', 'Arrow of Diana', 'ranged')
-            root.after(111, self.finish_arrow)
+        ent = app.ent_dict[id]
+        my_wis = self.get_abl('wis')
+        tar_wis = ent.get_abl('wis')
+        if to_hit(my_wis, tar_wis):
+            if 'psyshield' in ent.get_types():
+                app.canvas.create_text(ent.loc[0]*100-app.moved_right+49, ent.loc[1]*100-app.moved_down+74, text = 'Remove psyshield', justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
+                app.canvas.create_text(ent.loc[0]*100-app.moved_right+50, ent.loc[1]*100-app.moved_down+75, text = 'Remove psyshield', justify = 'center', fill = 'ghostwhite', font = ('chalkduster', 13), tags = 'text')
+                def reveal_psyshield(ts):
+                    return [t for t in ts if t != 'psyshield']
+                p = partial(reveal_psyshield)
+                ent.type_effects.append(p)
+                def un(id, func):
+                    app.ent_dict[id].type_effects.remove(func)
+                u = partial(un, id, p)
+                n = 'Reveal' + str(app.effects_counter)
+                ent.effects_dict[n] = Effect(name = 'Reveal_Psyshield', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
+                root.after(1999, self.finish_reveal)
+            else:
+                app.canvas.create_text(ent.loc[0]*100-app.moved_right+49, ent.loc[1]*100-app.moved_down+74, text = 'Remove invisibility', justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
+                app.canvas.create_text(ent.loc[0]*100-app.moved_right+50, ent.loc[1]*100-app.moved_down+75, text = 'Remove invisibility', justify = 'center', fill = 'ghostwhite', font = ('chalkduster', 13), tags = 'text')
+                def reveal_invisibility(ts):
+                    return [t for t in ts if t != 'invisibility']
+                p = partial(reveal_invisibility)
+                ent.type_effects.append(p)
+                def un(id, func):
+                    app.ent_dict[id].type_effects.remove(func)
+                u = partial(un, id, p)
+                n = 'Reveal' + str(app.effects_counter)
+                ent.effects_dict[n] = Effect(name = 'Reveal_Invisibility', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
+                root.after(1999, self.finish_reveal)
         else:
-            miss(app.ent_dict[id].loc)
-            root.after(1888, cleanup_arrow)
-            root.after(1999, self.finish_arrow)
+            miss(ent.loc)
+            root.after(1999, self.finish_reveal)
         
-    def finish_arrow(self, event = None):
+    def finish_reveal(self, event = None):
+        try: 
+            del app.vis_dict['Reveal']
+            app.canvas.delete('Reveal')
+        except: pass
         app.depop_context(event = None)
         app.canvas.delete('text')
         app.cleanup_squares()
+        app.rebind_all()
+        
+        
+        
+        
+    def suplex(self, event = None):
+        if self.acts < 1:
+            return
+        app.unbind_nonarrows()
+        root.bind('<q>', self.cleanup_suplex)
+        sqrs = [c for c in app.coords if dist(c,self.loc) == 1]
+        app.animate_squares(sqrs)
+        app.depop_context(event = None)
+        root.bind('<a>', lambda e, sqr = grid_pos, sqrs = sqrs : self.choose_target(e, sqr = sqr, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Choose Target', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.choose_target(event = e, sqr = sqr, sqrs = sqrs))
+        b.pack(side = 'top')
+        app.context_buttons.append(b)
+        
+    def choose_target(self, event = None, sqr = None, sqrs = None):
+        if sqr not in sqrs:
+            return
+        id = app.grid[sqr[0]][sqr[1]]
+        if id not in [k for k in app.action_target_ents().keys()]:
+            return
+        if app.ent_dict[id].immovable == True:
+            return
+        app.depop_context(event = None)
+        app.unbind_all()
+        app.rebind_arrows()
+        root.bind('<q>', self.cleanup_suplex)
+        distance = self.get_abl('str')
+        sqrs = [c for c in app.coords if dist(c,self.loc)==1 and app.grid[c[0]][c[1]] != 'block']
+        app.cleanup_squares()
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e, id = id, sqr = grid_pos, sqrs = sqrs : self.do_suplex(e, id = id, sqr = sqr, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Choose Location', font = ('chalkduster', 22), fg = 'tan3', wraplength = 190, highlightbackground = 'tan3', command = lambda e = None, id = id, sqr = grid_pos, sqrs = sqrs : self.do_suplex(e, id, sqr, sqrs))
+        b.pack(side = 'top')
+        app.context_buttons.append(b)
+    
+    # CHANGE - if sqr is ocpd, dmg both ents, else just target, move ocpr to clst uncpd
+    def do_suplex(self, event = None, id = None, sqr = None, sqrs = None):
+        if sqr not in sqrs:
+            return
+        self.acts -= 1
+        app.unbind_all()
+        app.depop_context(event = None)
+        app.cleanup_squares()
+#         effect1 = mixer.Sound('Sound_Effects/suplex.ogg')
+#         effect1.set_volume(.4)
+#         sound_effects.play(effect1, 0)
+        ent = app.ent_dict[id]
+        my_agl = self.get_abl('agl')
+        tar_agl = ent.get_abl('agl')
+        if to_hit(my_agl, tar_agl):
+            oldloc = app.ent_dict[id].loc[:]
+            newloc = sqr[:]
+            root.after(333, lambda newloc = newloc, id = id : self.finish_suplex(newloc, id))
+        else:
+            miss(ent.loc)
+            root.after(1666, self.cleanup_suplex)
+        
+    # CHANGE add dmg crshing
+    def finish_suplex(self, newloc, id):
+        mv2 = None
+        ent = app.ent_dict[id]
+        if app.grid[newloc[0]][newloc[1]] in app.all_ents().keys():
+            # get rand empt sqr (should include original target loc)
+            id2 = app.grid[newloc[0]][newloc[1]]
+            ent2 = app.ent_dict[id2]
+            cs = [c for c in app.coords if app.grid[c[0]][c[1]] == '']
+            cs.append(ent.loc[:])
+            mv2 = reduce(lambda a,b : a if dist(ent2.loc,a) < dist(ent2.loc,b) else b, cs)
+        lock(ent.throw_move, newloc)
+        # add dmg, already hit...
+        my_str = self.get_abl('str')
+        tar_end = ent.get_abl('end')
+        d = damage(my_str, tar_end)
+        if mv2:
+            start = ent2.loc[:]
+            lock(ent2.throw_move, mv2)
+            app.grid[start[0]][start[1]] = ent.id
+        lock(apply_damage, self, ent, -d, 'crushing', 'Suplex', 'melee')
+        if mv2:
+            tar2_end = ent2.get_abl('end')
+            d = damage(my_str, tar2_end)
+            app.get_focus(ent2.id)
+            lock(apply_damage, self, ent2, -d, 'crushing', 'Suplex', 'melee')
+        root.after(333, self.cleanup_suplex)
+        
+    def cleanup_suplex(self, event = None):
+        app.canvas.delete('text')
+        app.depop_context(event = None)
+        app.cleanup_squares()
         app.unbind_all()
         app.rebind_all()
+        
         
     def legal_moves(self):
         loc = self.loc[:]
@@ -8163,7 +8210,6 @@ class Ghoul(Bot):
 class Skeleton(Bot):
     def __init__(self, name, img, loc, owner, waiting = False):
         self.actions = {'Bone Strike':self.melee_attack}
-#         self.attack_used = False
         self.str = 5
         self.agl = 3
         self.end = 4
@@ -8191,7 +8237,7 @@ class Skeleton(Bot):
         if self.waiting == True:
             app.handle_action()
         else:
-            if self. acts > 0 and [k for k,v in app.action_target_ents().items() if dist(v.loc, self.loc) == 1 and v.owner != self.owner]:
+            if self. acts > 0 and [k for k,v in app.action_target_ents().items() if dist(v.loc, self.loc) == 1 and v.owner != self.owner] and 'Bone Strike' in self.get_actions().keys():
                 Ai_man.melee_dumb_attack_attempt(self)
             elif [k for k,v in app.action_target_ents().items() if v.owner != self.owner] != [] and self.mvs > 0 and self.legal_moves() != []:
                 Ai_man.melee_dumb_pursue(self) # PURSUE UNTIL NO MVS OR ADJ ENEMY
@@ -12074,6 +12120,7 @@ class Berserker(Summon):
                     root.after(999, lambda ents = ents : howl_loop(ents))
                 else:
                     miss(ent.loc)
+                    root.after(888, lambda t = 'text' : app.canvas.delete(t))
                     root.after(999, lambda ents = ents : howl_loop(ents))
         howl_loop(ents)
         
@@ -12271,43 +12318,13 @@ class Berserker(Summon):
 #         sound_effects.play(effect1, 0)
         oldloc = app.ent_dict[id].loc[:]
         newloc = sqr[:]
-#         app.vis_dict['Gate'] = Vis(name = 'Gate', loc = oldloc[:])
-#         vis = app.vis_dict['Gate']
-#         app.canvas.create_image(oldloc[0]*100+50-app.moved_right, oldloc[1]*100+50-app.moved_down, image = vis.img, tags = 'Gateway')
         root.after(333, lambda newloc = newloc, id = id : self.finish_throw(newloc, id))
         
     def finish_throw(self, newloc, id):
-#         app.grid[app.ent_dict[id].loc[0]][app.ent_dict[id].loc[1]] = ''
-#         app.canvas.delete(id)
-#         app.ent_dict[id].loc = newloc[:]
-#         app.grid[newloc[0]][newloc[1]] = id
-#         try: 
-#             del app.vis_dict['Gate']
-#             app.canvas.delete('Gate')
-#         except: pass
-#         app.vis_dict['Gate'] = Vis(name = 'Gate', loc = newloc[:])
-#         vis = app.vis_dict['Gate']
-        root.after(333, lambda id = id, newloc = newloc : self.place_entity(id, newloc))
-        
-    def place_entity(self, id, newloc):
-#         del app.vis_dict['Gate']
-#         app.canvas.delete('Gate')
-#         app.canvas.create_image(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+50-app.moved_down, image = app.ent_dict[id].img, tags = app.ent_dict[id].tags)
-#         try: app.canvas.tag_lower((app.ent_dict[id].tags), 'large')
-#         except: pass
-#         app.canvas.tag_lower((app.ent_dict[id].tags), 'maptop')
         lock(app.ent_dict[id].throw_move, newloc)
         root.after(333, self.cleanup_throw)
     
-    def doorway_squares(self, distance):
-        sqr_list = [c for c in app.coords if dist(c, self.loc) <= distance]
-        return sqr_list
-    
     def cleanup_throw(self, event = None):
-#         try:
-#             del app.vis_dict['Gate']
-#             app.canvas.delete('Gate')
-#         except: pass
         app.canvas.delete('text')
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -12439,7 +12456,7 @@ class Berserker(Summon):
         end_sqr = sqr[:]
         selected = [self.id]
         total_distance = abs(x - endx) + abs(y - endy)
-        tic = total_distance/7 # tic is based on number of images in image source folders
+        tic = total_distance/6 # tic is based on number of images in image source folders
         if x == endx:
             xstep = 0
             ystep = 10
@@ -12488,7 +12505,7 @@ class Berserker(Summon):
             if abs(x - endx) < 13 and abs(y - endy) < 13:
                 self.finish_leap(end_sqr, start_sqr) # EXIT
             else: # CONTINUE LOOP
-                root.after(43, lambda x = x, y = y, e = endx, e2 = endy, s = start_sqr, s2 = end_sqr, acm = acm, tic = tic, xs = xstep, ys = ystep : leap_loop(x, y, e, e2, s, s2, acm, tic, xs, ys))
+                root.after(23, lambda x = x, y = y, e = endx, e2 = endy, s = start_sqr, s2 = end_sqr, acm = acm, tic = tic, xs = xstep, ys = ystep : leap_loop(x, y, e, e2, s, s2, acm, tic, xs, ys))
         leap_loop(x, y, endx, endy, start_sqr, end_sqr, tic+1, tic, xstep, ystep)
             
             
@@ -12503,11 +12520,6 @@ class Berserker(Summon):
         app.cleanup_squares()
         app.unbind_all()
         app.rebind_all()
-#         app.canvas.delete('text')
-#         try: 
-#             del app.vis_dict['Berserker_Slash']
-#             app.canvas.delete('Berserker_Slash')
-#         except: pass
         
         
     def slash(self, event = None):
@@ -12527,8 +12539,6 @@ class Berserker(Summon):
         if sqr not in sqrs:
             return
         id = app.grid[sqr[0]][sqr[1]]
-        if id == '' or id == 'block':
-            return
         if id not in [k for k in app.action_target_ents().keys()]:
             return
         self.acts -= 1
@@ -12607,18 +12617,48 @@ class Berserker(Summon):
     # fuse trap, set global effect on sqr, when effect ends all ents within range 2 take 5 dmg 
 class Familiar_Homonculus(Summon):
     def __init__(self, name, id, img, loc, owner):
-        self.actions = {'Mesmerize':self.mesmerize, 'Fuse Trap':self.fuse_trap, 'move':self.move}
-        self.attack_used = False
-        self.str = 2
-        self.agl = 5
-        self.end = 5
-        self.dodge = 6
-        self.psyche = 5
-        self.spirit = 11
-        self.move_range = 5
+        if level == 1:
+            self.actions = {'Mesmerize':self.mesmerize, 'Fuse Trap':self.fuse_trap, 'Move':self.move}
+            self.str = 2
+            self.agl = 8
+            self.end = 3
+            self.mm = 7
+            self.msl = 3
+            self.bls = 7
+            self.dodge = 8
+            self.psyche = 4
+            self.wis = 8
+            self.rsn = 5
+            self.san = 12
+            self.init = 8
+            self.spirit = 13
+            self.magick = 13
+            self.acts = 1
+            self.mvs = 1
+            self.move_range = 5
+            self.level = level
+        elif level == 2:
+            self.actions = {'Mesmerize':self.mesmerize, 'Fuse Trap':self.fuse_trap, 'Move':self.move}
+            self.str = 3
+            self.agl = 9
+            self.end = 4
+            self.mm = 8
+            self.msl = 4
+            self.bls = 8
+            self.dodge = 9
+            self.psyche = 5
+            self.wis = 9
+            self.rsn = 6
+            self.san = 13
+            self.init = 9
+            self.spirit = 15
+            self.magick = 19
+            self.acts = 2
+            self.mvs = 2
+            self.move_range = 5
         self.move_type = 'normal'
-        self.resist = ['magick', 'fire']
-        self.weak = ['crushing', 'acid']
+        self.weak = ['cold', 'elec']
+        self.resist = ['fire', 'magick']
         super().__init__(name, id, img, loc, owner)
         def familiar_trigger(lockname = None):
             if self.owner == 'p1':
@@ -13406,7 +13446,7 @@ class Cenobite(Summon):
             d = damage(my_psyche, target_end)
             root.after(1555, cleanup_hellfire)
             lock(apply_damage, self, ent, -d, 'fire', 'Hellfire', 'spell')
-            if id in app.all_ents().keys() and ent.save_check('end', mod = -5) == 'Fail':
+            if id in app.all_ents().keys() and ent.save_check('end', mod = -5) == 'Fail' and 'Burn' not in [v.name for k,v in ent.effects_dict.items()]:
                 app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+84-app.moved_down, text = 'Burned', justify ='center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
                 app.canvas.create_text(ent.loc[0]*100+50-app.moved_right, ent.loc[1]*100+85-app.moved_down, text = 'Burned', justify ='center', font = ('chalkduster', 13), fill = 'orangered2', tags = 'text')
             # burn effect, every time burned ent takes spirit dmg it takes that much dmg plus 2
@@ -13879,6 +13919,7 @@ class Witch(Summon):
                 self.cantrip_dict['Energize'] = (self.energize, 0)
                 self.cantrip_dict['Psi_Blades'] = (self.psi_blades, 0)
                 self.cantrip_dict['Cosmic_Sight'] = (self.cosmic_sight, 0)
+                self.cantrip_dict['Foul_Familiar'] = (self.foul_familiar, 0)
                 self.arcane_dict['Plague'] = (self.plague, 6)
                 self.arcane_dict['Pestilence'] = (self.pestilence, 4)
                 self.arcane_dict['Curse_of_Oriax'] = (self.curse_of_oriax, 5)
@@ -13888,6 +13929,7 @@ class Witch(Summon):
                 self.arcane_dict['Hidden_From_the_Stars'] = (self.hidden_from_the_stars, 6)
                 self.arcane_dict['Gravity'] = (self.gravity, 5)
                 self.arcane_dict["Beleth's_Command"] = (self.beleths_command, 8)
+                self.arcane_dict['Vengeance'] = (self.vengeance, 4)
                 self.base_cantrips = 1
                 self.cantrips = 1
                 self.base_smns = 1
@@ -13924,6 +13966,7 @@ class Witch(Summon):
                 self.cantrip_dict['Energize'] = (self.energize, 0)
                 self.cantrip_dict['Psi_Blades'] = (self.psi_blades, 0)
                 self.cantrip_dict['Cosmic_Sight'] = (self.cosmic_sight, 0)
+                self.cantrip_dict['Foul_Familiar'] = (self.foul_familiar, 0)
                 self.arcane_dict['Plague'] = (self.plague, 6)
                 self.arcane_dict['Pestilence'] = (self.pestilence, 4)
                 self.arcane_dict['Curse_of_Oriax'] = (self.curse_of_oriax, 5)
@@ -13933,6 +13976,13 @@ class Witch(Summon):
                 self.arcane_dict['Hidden_From_the_Stars'] = (self.hidden_from_the_stars, 6)
                 self.arcane_dict['Gravity'] = (self.gravity, 5)
                 self.arcane_dict["Beleth's_Command"] = (self.beleths_command, 8)
+                self.arcane_dict['Vengeance'] = (self.vengeance, 4)
+                self.arcane_dict['Pain'] = (self.pain, 4)
+                self.arcane_dict['Torment'] = (self.torment, 5)
+                self.arcane_dict['Hatred'] = (self.hatred, 9)
+                self.arcane_dict['Entomb'] = (self.entomb, 7)
+                self.arcane_dict['Summon_Lesser_Demon'] = (self.summon_lesser_demon, 10)
+                self.arcane_dict['Summon_Cenobite'] = (self.summon_cenobite, 10)
                 self.base_cantrips = 1
                 self.cantrips = 1
                 self.base_smns = 1
@@ -13969,6 +14019,7 @@ class Witch(Summon):
                 self.cantrip_dict['Meditate'] = (self.meditate, 0)
                 self.cantrip_dict['Legerdemain'] = (self.legerdemain, 0)
                 self.cantrip_dict['Grasp_of_the_Old_Ones'] = (self.grasp_of_the_old_ones, 0)
+                self.cantrip_dict['Foul_Familiar'] = (self.foul_familiar, 0)
                 self.arcane_dict['Horrid_Wilting'] = (self.horrid_wilting,5)
                 self.arcane_dict['Mind_Rot'] = (self.mind_rot,3)
                 self.arcane_dict['Dust_Devil'] = (self.dust_devil,5)
@@ -13977,6 +14028,7 @@ class Witch(Summon):
                 self.arcane_dict['Mummify'] = (self.mummify, 5)
                 self.arcane_dict['Immolate'] = (self.immolate, 7)
                 self.arcane_dict['Command_of_Osiris'] = (self.command_of_osiris, 8)
+                self.arcane_dict['Vengeance'] = (self.vengeance, 4)
                 self.base_cantrips = 1
                 self.cantrips = 1
                 self.base_smns = 1
@@ -14011,6 +14063,7 @@ class Witch(Summon):
                 self.cantrip_dict['Meditate'] = (self.meditate, 0)
                 self.cantrip_dict['Legerdemain'] = (self.legerdemain, 0)
                 self.cantrip_dict['Grasp_of_the_Old_Ones'] = (self.grasp_of_the_old_ones, 0)
+                self.cantrip_dict['Foul_Familiar'] = (self.foul_familiar, 0)
                 self.arcane_dict['Horrid_Wilting'] = (self.horrid_wilting,5)
                 self.arcane_dict['Mind_Rot'] = (self.mind_rot,3)
                 self.arcane_dict['Dust_Devil'] = (self.dust_devil,5)
@@ -14019,6 +14072,13 @@ class Witch(Summon):
                 self.arcane_dict['Mummify'] = (self.mummify, 5)
                 self.arcane_dict['Immolate'] = (self.immolate, 7)
                 self.arcane_dict['Command_of_Osiris'] = (self.command_of_osiris, 8)
+                self.arcane_dict['Vengeance'] = (self.vengeance, 4)
+                self.arcane_dict['Pain'] = (self.pain, 4)
+                self.arcane_dict['Torment'] = (self.torment, 5)
+                self.arcane_dict['Hatred'] = (self.hatred, 9)
+                self.arcane_dict['Entomb'] = (self.entomb, 7)
+                self.arcane_dict['Summon_Lesser_Demon'] = (self.summon_lesser_demon, 10)
+                self.arcane_dict['Summon_Cenobite'] = (self.summon_cenobite, 10)
                 self.base_cantrips = 1
                 self.cantrips = 1
                 self.base_smns = 1
@@ -14047,7 +14107,6 @@ class Witch(Summon):
                 self.resist = ['slashing', 'piercing', 'fire']
                 self.base_spirit = 60
                 self.base_magick = 80
-
             self.color_img = ImageTk.PhotoImage(Image.open('animations/Fakir_Ali_Color/Fakir_Ali_Color.png'))
         elif name == 'Morgan_LeFay':
             self.actions['Move'] = self.flying_move
@@ -14117,7 +14176,7 @@ class Witch(Summon):
         root.bind('3', lambda e, cls = 'Umbrae_Wolf' : self.place_summon(e, cls))
         root.bind('4', lambda e, cls = 'Thaumaturge': self.place_summon(e, cls))
         root.bind('5', lambda e, cls = 'Murrain_Wolf' : self.place_summon(e, cls))
-        root.bind('6', lambda e, cls = 'Guardian' : self.place_summon(e, cls))
+        root.bind('6', lambda e, cls = 'Fiend' : self.place_summon(e, cls))
         b1 = tk.Button(app.context_menu, text = '1:Berserker', font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, cls = 'Berserker' : self.place_summon(e, cls))
         b1.pack(side = 'top', pady = 2)
         app.context_buttons.append(b1)
@@ -14133,7 +14192,7 @@ class Witch(Summon):
         b5 = tk.Button(app.context_menu, text = '5:Murrain Wolf', font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, cls = 'Murrain_Wolf' : self.place_summon(e, cls))
         b5.pack(side = 'top', pady = 2)
         app.context_buttons.append(b5)
-        b6 = tk.Button(app.context_menu, text = '6:Guardian', font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, cls = 'Guardian' : self.place_summon(e, cls))
+        b6 = tk.Button(app.context_menu, text = '6:Fiend', font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, cls = 'Fiend' : self.place_summon(e, cls))
         b6.pack(side = 'top', pady = 2)
         app.context_buttons.append(b6)
         b7 = tk.Button(app.context_menu, text = 'Cancel', font = ('chalkduster', 20), highlightbackground = 'tan3', fg='tan3', command = self.cancel_placement)
@@ -14164,8 +14223,8 @@ class Witch(Summon):
             cls = Thaumaturge
         elif type == 'Murrain_Wolf':
             cls = Murrain_Wolf
-        elif type == 'Guardian':
-            cls = Guardian
+        elif type == 'Fiend':
+            cls = Fiend
         cmd = lambda e = None, x = cls, y = sqrs, s = grid_pos : self.continue_place_summon(e, summon = x, sqrs = y, sqr = s)
         root.bind('<a>', lambda e, x = cls, y = sqrs, s = grid_pos : self.continue_place_summon(e, x, y, s))
         b = tk.Button(app.context_menu, text = 'Place '+type.replace('_',' '), font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', wraplength = 190, command = cmd)
@@ -14209,9 +14268,9 @@ class Witch(Summon):
         elif summon == Murrain_Wolf:
             name = 'Murrain_Wolf'
             img = ImageTk.PhotoImage(Image.open('summon_imgs/Murrain_Wolf.png'))
-        elif summon == Guardian:
-            name = 'Guardian'
-            img = ImageTk.PhotoImage(Image.open('summon_imgs/Guardian.png'))
+        elif summon == Fiend:
+            name = 'Fiend'
+            img = ImageTk.PhotoImage(Image.open('summon_imgs/Fiend.png'))
         s = summon(name = name, id = id, img = img, loc = sqr[:], owner = self.owner, level = self.level)
         app.cleanup_squares()
         app.depop_context(event = None)
@@ -14503,11 +14562,11 @@ class Witch(Summon):
         self.cantrips -= 1
         app.vis_dict["Minerva's_Gift"] = Vis(name = "Minerva's_Gift", loc = sqr[:])
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict["Minerva's_Gift"].img, tags = "Minerva's_Gift")
-        app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+84-app.moved_down, text = '+2 agl\n+2 init\n+1 spirit', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
-        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+85-app.moved_down, text = '+2 agl\n+2 init\n+1 spirit', justify = 'center', font = ('chalkduster', 13), fill = 'white', tags = 'text')
+        app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+84-app.moved_down, text = '+1 agl, init\n+1 spirit', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
+        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+85-app.moved_down, text = '+1 agl, init\n+1 spirit', justify = 'center', font = ('chalkduster', 13), fill = 'white', tags = 'text')
         apply_heal(self, app.ent_dict[id], 1)
         def minervas_gift_effect(stat):
-            stat += 2
+            stat += 1
             return stat
         f = minervas_gift_effect
         app.ent_dict[id].agl_effects.append(f)
@@ -14798,7 +14857,7 @@ class Witch(Summon):
     def entomb(self, event = None):
         app.depop_context(event = None)
         root.bind('<q>', lambda name = 'Entomb' : self.cleanup_spell(name = name))
-        sqrs = [s for s in app.coords if 1 <= dist(self.loc, s) <= 7 and app.grid[s[0]][s[1]] == '']
+        sqrs = [s for s in app.coords if 1 <= dist(self.loc, s) <= self.get_abl('rsn') and app.grid[s[0]][s[1]] == '']
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_entomb(event = e, sqr = s, sqrs = sqrs))
         b = tk.Button(app.context_menu, text = 'Choose Location', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_entomb(e, s, sqrs))
@@ -14838,12 +14897,13 @@ class Witch(Summon):
         id = prefix + str(self.summon_ids)
         self.summon_ids += 1
         img = ImageTk.PhotoImage(Image.open('summon_imgs/Tomb.png'))
-        app.ent_dict[id] = Tomb(name = 'Tomb', id = id, img = img, loc = oldloc[:], owner = self.owner)
+        app.ent_dict[id] = Tomb(name = 'Tomb', id = id, img = img, loc = oldloc[:], owner = self.owner, level = self.level)
         app.grid[oldloc[0]][oldloc[1]] = id
         newloc = sqr[:]
 #         app.vis_dict['Entomb'] = Vis(name = 'Entomb', loc = oldloc)
 #         app.canvas.create_image(oldloc[0]*100+50-app.moved_right, oldloc[1]*100+50-app.moved_down, image = app.vis_dict['Entomb'].img, tags = 'Entomb')
-        app.canvas.create_text(oldloc[0]*100+50-app.moved_right, oldloc[1]*100+75-app.moved_down, text = 'Entomb', justify = 'center', font = ('chalkduster', 14), fill = 'white', tags = 'text')
+        app.canvas.create_text(oldloc[0]*100+49-app.moved_right, oldloc[1]*100+74-app.moved_down, text = 'Entomb', justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
+        app.canvas.create_text(oldloc[0]*100+50-app.moved_right, oldloc[1]*100+75-app.moved_down, text = 'Entomb', justify = 'center', font = ('chalkduster', 14), fill = 'ghostwhite', tags = 'text')
         root.after(2666, lambda loc = newloc : self.finish_entomb(loc))
         
     def finish_entomb(self, loc):
@@ -14859,11 +14919,11 @@ class Witch(Summon):
         root.after(2999, lambda  name = 'Entomb' : self.cleanup_spell(name = name))
         
 
-    # deal damage equal to spirit lost
+    # add def efct to smn, on non-sot/eot dmg, add +1 ablts 
     def vengeance(self, event = None):
         app.depop_context(event = None)
         root.bind('<q>', lambda name = 'Vengeance' : self.cleanup_spell(name = name))
-        sqrs = [s for s in app.coords if dist(self.loc, s) <= 4]
+        sqrs = [s for s in app.coords if 1 <= dist(self.loc, s) <= self.get_abl('rsn')]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_vengeance(event = e, sqr = s, sqrs = sqrs))
         b = tk.Button(app.context_menu, text = 'Choose Target For Vengeance', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_vengeance(e, s, sqrs))
@@ -14874,7 +14934,9 @@ class Witch(Summon):
         if sqr not in sqrs:
             return
         id = app.grid[sqr[0]][sqr[1]]
-        if id == '' or id == 'block':
+        if id not in app.spell_target_ents().keys():
+            return
+        if 'Vengeance' in [v.name for k,v in app.ent_dict[id].effects_dict.items()]:
             return
 #         self.init_cast_anims()
         effect1 = mixer.Sound('Sound_Effects/vengeance.ogg')
@@ -14885,22 +14947,46 @@ class Witch(Summon):
         app.depop_context(event = None)
         app.cleanup_squares()
         self.acts -= 1
-        d = self.base_spirit - self.spirit
-#         app.ent_dict[id].set_attr('spirit', -d)
-        lock(apply_damage, self, app.ent_dict[id], -d, 'magick', 'Vengeance', 'spell')
+        ent = app.ent_dict[id]
+        app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+74-app.moved_down, text = 'Vengeance', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
+        app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+75-app.moved_down, text = 'Vengeance', justify = 'center', font = ('chalkduster', 13), fill = 'ghostwhite', tags = 'text')
         app.vis_dict['Vengeance'] = Vis(name = 'Vengeance', loc = sqr)
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Vengeance'].img, tags = 'Vengeance')
-        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Vengeance\n'+str(d)+' Spirit', justify = 'center', font = ('chalkduster', 13), fill = 'white', tags = 'text')
-        if app.ent_dict[id].spirit <= 0:
-            app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+100-app.moved_down, text = app.ent_dict[id].name.replace('_',' ')+' Killed...', font = ('chalkduster', 13), fill = 'white', tags = 'text')
-            name = 'dethlok'+str(app.death_count)
-            app.death_count += 1
-            app.dethloks[name] = tk.IntVar(0)
-            root.after(2333, lambda id = id, n = name : app.kill(id, n))
-            root.wait_variable(app.dethloks[name])
-            self.cleanup_spell(name = 'Vengeance')
-        else:
-            root.after(2666, lambda  name = 'Vengeance' : self.cleanup_spell(name = name))
+        def vengeance_efct(atkr, dfndr, amt, type, sn, st):
+            if st != 'sot' and st != 'eot':
+                def vngnc_tmp(stat):
+                    return stat+1
+                p = partial(vngnc_tmp)
+                dfndr.str_effects.append(p)
+                dfndr.agl_effects.append(p)
+                dfndr.end_effects.append(p)
+                dfndr.psyche_effects.append(p)
+                dfndr.wis_effects.append(p)
+                dfndr.rsn_effects.append(p)
+                def undo(dfndr, func):
+                    dfndr.str_effects.remove(p)
+                    dfndr.agl_effects.remove(p)
+                    dfndr.end_effects.remove(p)
+                    dfndr.psyche_effects.remove(p)
+                    dfndr.wis_effects.remove(p)
+                    dfndr.rsn_effects.remove(p)
+                u = partial(undo, dfndr, p)
+                n = 'Vengeance_Boost'+str(app.effects_counter)
+                dfndr.effects_dict[n] = Effect(name = 'Vengeance_Boost', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
+                app.canvas.create_text(dfndr.loc[0]*100+49-app.moved_right, dfndr.loc[1]*100+74-app.moved_down, text = '+1 str, agl, end, psy, wis, rsn', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
+                app.canvas.create_text(dfndr.loc[0]*100+50-app.moved_right, dfndr.loc[1]*100+75-app.moved_down, text = '+1 str, agl, end, psy, wis, rsn', justify = 'center', font = ('chalkduster', 13), fill = 'ghostwhite', tags = 'text')
+                root.after(1555, lambda t = 'text' : app.canvas.delete(t))
+                return (amt, 1666)
+            else:
+                return (amt, 0)
+        p = partial(vengeance_efct)
+        ent.defense_effects.append(p)
+        def undo(id, func):
+            app.ent_dict[id].defense_effects.remove(func)
+        u = partial(undo, id, p)
+        n = 'Vengeance'+str(app.effects_counter)
+        ent.effects_dict[n] = Effect(name = 'Vengeance', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
+        root.after(2666, lambda  name = 'Vengeance' : self.cleanup_spell(name = name))
       
     # lose 3 spirit, all summons within range 2 may act again?
     def hatred(self, event = None):
@@ -15120,6 +15206,7 @@ class Witch(Summon):
             else:
                 id = ents[0]
                 ents = ents[1:]
+                app.get_focus(id)
                 loc = app.ent_dict[id].loc
                 u = 'Plague'+str(app.effects_counter)
                 app.effects_counter += 1
@@ -15489,8 +15576,6 @@ class Witch(Summon):
         if sqr not in sqrs:
             return
         id = app.grid[sqr[0]][sqr[1]]
-        if id == '' or id == 'block':
-            return
         if id not in app.spell_target_ents().keys():
             return
         effs = [v.name for k,v in app.ent_dict[id].effects_dict.items()]
@@ -15505,10 +15590,12 @@ class Witch(Summon):
         app.depop_context(event = None)
         app.cleanup_squares()
         self.acts -= 1
+        app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+19-app.moved_down, text = 'Curse\nof\nOriax', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
+        app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+20-app.moved_down, text = 'Curse\nof\nOriax', justify = 'center', font = ('chalkduster', 13), fill = 'white', tags = 'text')
         app.vis_dict['Curse_of_Oriax'] = Vis(name = 'Curse_of_Oriax', loc = sqr)
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Curse_of_Oriax'].img, tags = 'Curse_of_Oriax')
-        app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+99-app.moved_down, text = 'Curse\nof\nOriax', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
-        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+100-app.moved_down, text = 'Curse\nof\nOriax', justify = 'center', font = ('chalkduster', 13), fill = 'white', tags = 'text')
+        app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+99-app.moved_down, text = '-1 psy,wis,rsn,san,init', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
+        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+100-app.moved_down, text = '-1 psy,wis,rsn,san,init', justify = 'center', font = ('chalkduster', 13), fill = 'white', tags = 'text')
         # DO Curse_of_Oriax EFFECTS
         def curse_of_oriax_effect(stat):
             stat -= 1
@@ -15517,22 +15604,12 @@ class Witch(Summon):
             else:
                 return stat
         f = curse_of_oriax_effect
-        app.ent_dict[id].str_effects.append(f)
-        app.ent_dict[id].end_effects.append(f)
-        app.ent_dict[id].agl_effects.append(f)
-        app.ent_dict[id].mm_effects.append(f)
-        app.ent_dict[id].dodge_effects.append(f)
         app.ent_dict[id].psyche_effects.append(f)
         app.ent_dict[id].wis_effects.append(f)
         app.ent_dict[id].rsn_effects.append(f)
         app.ent_dict[id].san_effects.append(f)
         app.ent_dict[id].init_effects.append(f)
         def un(i):
-            app.ent_dict[i].str_effects.remove(curse_of_oriax_effect)
-            app.ent_dict[i].end_effects.remove(curse_of_oriax_effect)
-            app.ent_dict[i].agl_effects.remove(curse_of_oriax_effect)
-            app.ent_dict[i].mm_effects.remove(curse_of_oriax_effect)
-            app.ent_dict[i].dodge_effects.remove(curse_of_oriax_effect)
             app.ent_dict[i].psyche_effects.remove(curse_of_oriax_effect)
             app.ent_dict[i].wis_effects.remove(curse_of_oriax_effect)
             app.ent_dict[i].rsn_effects.remove(curse_of_oriax_effect)
@@ -15704,10 +15781,10 @@ class Witch(Summon):
         app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+14-app.moved_down, text = 'Hidden From the Stars', justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
         app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+15-app.moved_down, text = 'Hidden From the Stars', justify = 'center', font = ('chalkduster', 14), fill = 'turquoise', tags = 'text')
         e = app.ent_dict[id]
-        app.canvas.create_text(e.loc[0]*100+49-app.moved_right, e.loc[1]*100+84-app.moved_down, text = 'Psyshield, +2 Wis,San,Rsn', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
-        app.canvas.create_text(e.loc[0]*100+50-app.moved_right, e.loc[1]*100+85-app.moved_down, text = 'Psyshield, +2 Wis,San,Rsn', justify = 'center', font = ('chalkduster', 13), fill = 'turquoise', tags = 'text')
+        app.canvas.create_text(e.loc[0]*100+49-app.moved_right, e.loc[1]*100+84-app.moved_down, text = 'Psyshield, +1 Wis,San,Rsn', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
+        app.canvas.create_text(e.loc[0]*100+50-app.moved_right, e.loc[1]*100+85-app.moved_down, text = 'Psyshield, +1 Wis,San,Rsn', justify = 'center', font = ('chalkduster', 13), fill = 'turquoise', tags = 'text')
         def hfts_stat_effect(stat):
-            return stat+2
+            return stat+1
         app.ent_dict[id].wis_effects.append(hfts_stat_effect)
         app.ent_dict[id].san_effects.append(hfts_stat_effect)
         app.ent_dict[id].rsn_effects.append(hfts_stat_effect)
@@ -17320,6 +17397,13 @@ class App(tk.Frame):
             a = ImageTk.PhotoImage(Image.open('animations/Leap/' + anim))
             self.leap_anims[i] = a
             
+        self.pounce_anims = {}
+        anims = [a for r,d,a in walk('./animations/Pounce/')][0]
+        anims = [a for a in anims[:] if a[-3:] == 'png']
+        for i, anim in enumerate(anims):
+            a = ImageTk.PhotoImage(Image.open('animations/Pounce/' + anim))
+            self.pounce_anims[i] = a
+            
         self.choose_num_players()
         
         # Luminari 280
@@ -17460,7 +17544,7 @@ class App(tk.Frame):
                 
     def load_game(self, obj):
         self.game_title.destroy()
-        obj.move_type = 'normal'
+#         obj.move_type = 'normal'
         self.load_map_triggers(map_number = obj.current_area, protaganist_object = obj)
         
     def num_chose(self, num):
@@ -18692,13 +18776,13 @@ class App(tk.Frame):
         self.intro_canvas.create_image(0,0, image =self.intro_scene, anchor = 'nw')
         self.intro_canvas.pack(side = 'top')
 
-        self.bd_img = ImageTk.PhotoImage(Image.open('border.png').resize((root.winfo_screenwidth()-180, root.winfo_screenheight()//3-10)))
-        self.intro_canvas.create_image(root.winfo_screenwidth()//2, root.winfo_screenheight()-190, anchor='s', image =self.bd_img)
+        self.bd_img = ImageTk.PhotoImage(Image.open('border.png').resize((root.winfo_screenwidth()-180, root.winfo_screenheight()//3-11)))
+        self.intro_canvas.create_image(root.winfo_screenwidth()//2, root.winfo_screenheight()-192, anchor='s', image =self.bd_img)
         
         self.frame = tk.Frame(root)#, width = root.winfo_screenwidth()-180, height = root.winfo_screenheight()//4)
         self.sb = tk.Scrollbar(self.frame)
         
-        self.intro_text = tk.Text(self.frame, height = 7, width = 118, wrap = 'word', bg = 'black', relief = 'raised', highlightthickness = 1, borderwidth = 0, fg = 'indianred', font = ('kokonor', 16))
+        self.intro_text = tk.Text(self.frame, height = 7, width = 118, wrap = 'word', bg = 'black', relief = 'raised', highlightthickness = 0, borderwidth = 0, fg = 'indianred', font = ('kokonor', 16))
         self.intro_text.insert('end', text)
         self.intro_text.configure(state = 'disabled')
         
@@ -18721,18 +18805,19 @@ class App(tk.Frame):
         maps = [m for m in maps[:] if m[0] != '.']
         self.map_button_list = []
         self.tmp_mapimg_dict = {}
-        for i,map in enumerate(maps):
+        for map in maps:
             b = tk.Button(root)
-            cmd = lambda indx = i : self.map_choice_cleanup(indx)
+            map_num = map.rstrip('.png')
+            cmd = lambda indx = map_num : self.map_choice_cleanup(indx)
             photo = ImageTk.PhotoImage(Image.open('./2_player_map_portraits/' + map).resize((300,300)))
-            self.tmp_mapimg_dict['map'+str(i)] = photo
-            b.config(image = self.tmp_mapimg_dict['map'+str(i)], bg = 'black', highlightbackground = 'tan3', command = cmd)
+            self.tmp_mapimg_dict['map'+map_num] = photo
+            b.config(image = self.tmp_mapimg_dict['map'+map_num], bg = 'black', highlightbackground = 'tan3', command = cmd)
             # DEBUG packing will have to be fixed here for different screen sizes
             b.pack(side = 'left', padx = 55)
             self.map_button_list.append(b)
         
     def map_choice_cleanup(self, map_number):
-        self.two_player_map_num = map_number
+        self.two_player_map_num = int(map_number)
         self.choosemap.destroy()
         del self.tmp_mapimg_dict
         for b in self.map_button_list:
@@ -18930,6 +19015,42 @@ class App(tk.Frame):
         # EXIT CHOOSING IF BOTH FINISHED AND START TURN
         else: #self.num_players == 2 and self.p2_witch != '':
 #             self.start_turn()
+            if self.map_number == 0:
+                sound1 = mixer.Sound('Music/heroic_demise.ogg')
+                background_music.play(sound1, -1)
+                sound1.set_volume(0.4)
+            elif self.map_number == 1:
+                sound1 = mixer.Sound('Music/Caves of sorrow.ogg')
+                background_music.play(sound1, -1)
+                sound1.set_volume(1.6)
+            elif self.map_number == 2:
+                sound1 = mixer.Sound('Music/arabesque.ogg')
+                background_music.play(sound1, -1)
+                sound1.set_volume(0.3)
+            elif self.map_number == 121:
+                sound1 = mixer.Sound('Music/field_of_dreams.ogg')
+                background_music.play(sound1, -1)
+                sound1.set_volume(1)
+            elif self.map_number == 21:
+                sound1 = mixer.Sound('Music/Blackmoor_Colossus.ogg')
+                background_music.play(sound1, -1)
+                sound1.set_volume(0.3)
+            elif self.map_number == 22:
+                sound1 = mixer.Sound('Music/Dark_Amulet.ogg')
+                background_music.play(sound1, -1)
+                sound1.set_volume(0.4)
+            elif self.map_number == 122:
+                sound1 = mixer.Sound('Music/Dark_Descent.ogg')
+                background_music.play(sound1, -1)
+                sound1.set_volume(0.3)
+            elif self.map_number == 3:
+                sound1 = mixer.Sound('Music/radakan - old crypt.ogg')
+                background_music.play(sound1, -1)
+                sound1.set_volume(0.8)
+            elif self.map_number == 4:
+                sound1 = mixer.Sound('Music/The Peculiar Habits of the Cave Hermits.ogg')
+                background_music.play(sound1, -1)
+                sound1.set_volume(0.8)
             self.animate()
             self.start_level_popup()
             # change below to use 2-player map triggers (if necessary), will need at least some kind of trigger to detect player death
@@ -19528,11 +19649,13 @@ class App(tk.Frame):
         bg = tk.Canvas(self.context_menu, width = 190, height = 363, bg = 'burlywood4', bd=0, relief='raised', highlightthickness=0)
         bg.pack(side = 'top')
         bg.create_image(0,0, image = self.cntxt_info_bg, anchor = 'nw')
-        bg.create_text(14, 7, text=expanded_name + '\n', width = 190, anchor = 'nw', font = ('chalkduster', 17), fill = 'black')
-        bg.create_text(15, 8, text=expanded_name + '\n', width = 190, anchor = 'nw', font = ('chalkduster', 17), fill = 'antiquewhite2')
+        bg.create_text(14, 7, text=expanded_name + '\n', width = 190, anchor = 'nw', font = ('chalkduster', 17), fill = 'ghostwhite')
+        bg.create_text(16, 9, text=expanded_name + '\n', width = 190, anchor = 'nw', font = ('chalkduster', 17), fill = 'ghostwhite')
+        bg.create_text(15, 8, text=expanded_name + '\n', width = 190, anchor = 'nw', font = ('chalkduster', 17), fill = 'gray30')
         text2 =  self.get_info_text(e)
-        bg.create_text(14, 24, text=text2, width = 190, anchor = 'nw', font = ('chalkduster', 13), fill = 'black')
-        bg.create_text(15, 25, text=text2, width = 190, anchor = 'nw', font = ('chalkduster', 13), fill = 'antiquewhite2')
+        bg.create_text(14, 24, text=text2, width = 190, anchor = 'nw', font = ('chalkduster', 13), fill = 'ghostwhite')
+        bg.create_text(16, 26, text=text2, width = 190, anchor = 'nw', font = ('chalkduster', 13), fill = 'ghostwhite')
+        bg.create_text(15, 25, text=text2, width = 190, anchor = 'nw', font = ('chalkduster', 13), fill = 'gray30')
         # create 'info' button as last element
         txt3 = self.get_more_info(e)
         more_info_button = tk.Button(self.context_menu, text = 'More Info', font = ('chalkduster', 22), fg='indianred', highlightbackground = 'tan3', command = lambda t = txt3 : self.more_info(t))
@@ -19847,7 +19970,7 @@ class App(tk.Frame):
         def on_close():
             pass
         self.mi_popup.protocol('WM_DELETE_WINDOW', on_close)
-        self.text = tk.Text(bg, yscrollcommand = sb.set, bg = 'black', highlightthickness = 0, relief = 'sunken', wrap = 'word', borderwidth = 0, fg = 'tan3', font = ('chalkduster', 20))
+        self.text = tk.Text(bg, yscrollcommand = sb.set, bg = 'black', highlightthickness = 0, relief = 'sunken', wrap = 'word', borderwidth = 0, fg = 'tan3', font = ('baskerville', 20))
         self.text.insert('end', txt)
         self.text.configure(state = 'disabled')
         self.close = tk.Button(bg, text = 'Close', font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda win = self.mi_popup : self.destroy_release(win))
@@ -19861,26 +19984,26 @@ class App(tk.Frame):
     def get_info_text(self, ent):
         ent = app.ent_dict[ent]
         txt = ''
-        txt += 'Strength:' + str(ent.get_abl('str')) + '\n'
-        txt += 'Agility:' + str(ent.get_abl('agl')) + '\n'
-        txt += 'Endurance:' + str(ent.get_abl('end')) + '\n'
-        txt += 'Marksmanship:' + str(ent.get_abl('mm')) + '\n'
-        txt += 'Missle:' + str(ent.get_abl('msl')) + '\n'
-        txt += 'Ballistics:' + str(ent.get_abl('bls')) + '\n'
-        txt += 'Dodge:' + str(ent.get_abl('dodge')) + '\n'
-        txt += 'Psyche:' + str(ent.get_abl('psyche')) + '\n'
-        txt += 'Wisdom:' + str(ent.get_abl('wis')) + '\n'
-        txt += 'Reason:' + str(ent.get_abl('rsn')) + '\n'
-        txt += 'Sanity:' + str(ent.get_abl('san')) + '\n'
-        txt += 'Initiative:' + str(ent.get_abl('init')) + '\n'
+        txt += 'Strength: ' + str(ent.get_abl('str')) + '\n'
+        txt += 'Agility: ' + str(ent.get_abl('agl')) + '\n'
+        txt += 'Endurance: ' + str(ent.get_abl('end')) + '\n'
+        txt += 'Marksmanship: ' + str(ent.get_abl('mm')) + '\n'
+        txt += 'Missle: ' + str(ent.get_abl('msl')) + '\n'
+        txt += 'Ballistics: ' + str(ent.get_abl('bls')) + '\n'
+        txt += 'Dodge: ' + str(ent.get_abl('dodge')) + '\n'
+        txt += 'Psyche: ' + str(ent.get_abl('psyche')) + '\n'
+        txt += 'Wisdom: ' + str(ent.get_abl('wis')) + '\n'
+        txt += 'Reason: ' + str(ent.get_abl('rsn')) + '\n'
+        txt += 'Sanity: ' + str(ent.get_abl('san')) + '\n'
+        txt += 'Initiative: ' + str(ent.get_abl('init')) + '\n'
         txt += '\n'
-        txt += 'Move Range:' + str(ent.get_abl('move_range')) + '\n'
-        txt += 'Moves:' + str(ent.get_abl('mvs')) + '\n'
-        txt += 'Actions:' + str(ent.get_abl('acts')) + '\n'
+        txt += 'Move Range: ' + str(ent.get_abl('move_range')) + '\n'
+        txt += 'Moves: ' + str(ent.get_abl('mvs')) + '\n'
+        txt += 'Actions: ' + str(ent.get_abl('acts')) + '\n'
         if isinstance(ent, Witch):
-            txt += 'Cantrips:' + str(ent.get_abl('cantrips')) + '\n'
-        txt += 'Magick:' + str(ent.magick) + '/' + str(ent.base_magick) + '\n'
-        txt += 'Spirit:' + str(ent.spirit) + '/' + str(ent.base_spirit)
+            txt += 'Cantrips: ' + str(ent.get_abl('cantrips')) + '\n'
+        txt += 'Magick: ' + str(ent.magick) + '/' + str(ent.base_magick) + '\n'
+        txt += 'Spirit: ' + str(ent.spirit) + '/' + str(ent.base_spirit)
         return txt
         
     def get_more_info(self, ent):
@@ -20050,6 +20173,7 @@ class App(tk.Frame):
         root.unbind('<a>')
         root.unbind('<q>')
         root.unbind('<i>')
+        root.unbind('<e>')
         app.canvas.unbind('<Button-2>')
 #         root.unbind('<,>')
 #         root.unbind('<.>')
@@ -20255,7 +20379,7 @@ class App(tk.Frame):
         def on_close():
             pass
         self.mi_popup.protocol('WM_DELETE_WINDOW', on_close)
-        self.text = tk.Text(bg, yscrollcommand = sb.set, bg = 'black', highlightthickness = 0, relief = 'sunken', wrap = 'word', borderwidth = 0, fg = 'tan3', font = ('chalkduster', 20))
+        self.text = tk.Text(bg, yscrollcommand = sb.set, bg = 'black', highlightthickness = 0, relief = 'sunken', wrap = 'word', borderwidth = 0, fg = 'tan3', font = ('baskerville', 20))
         self.text.insert('end', txt)
         self.text.configure(state = 'disabled')
         self.close = tk.Button(bg, text = 'Close', font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda win = self.mi_popup : self.destroy_release(win))
