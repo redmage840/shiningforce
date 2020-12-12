@@ -1,3 +1,6 @@
+# all undo_func must now accept and set lockname (will be called by lock() in handle_eot_effects())
+# need some small delay (after sets lockname) at end of undo_func in order to give time for very next call (wait_var, in lock)
+
 # homunculus
 
 # spell to change level of effects
@@ -1742,8 +1745,9 @@ class Illusionist(Summon):
                 return [r for r in rs if r != 'slashing' and r != 'piercing' and r != 'crushing' and r != 'explosive']
             p1 = partial(analyze_resist)
             ent.resist_effects.append(p1)
-            def undo(id, p1):
+            def undo(id, p1, lockname = None):
                 app.ent_dict[id].resist_effects.remove(p1)
+                root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
             u = partial(undo, id, p1)
             n = 'Analyze' + str(app.effects_counter)
             app.ent_dict[id].effects_dict[n] = Effect(name = 'Analyze', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
@@ -1818,10 +1822,11 @@ class Illusionist(Summon):
 #             else:
 #                 return (amount,0)
 #         app.loc_dict[tuple(sqr)].def_effects.append(spore_def)
-        def undo(s, un, p_ef):
+        def undo(s, un, p_ef, lockname = None):
             app.loc_dict[tuple(s)].type_effects.remove(p_ef)
             del app.vis_dict[un]
             app.canvas.delete(un)
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
         u = partial(undo, sqr[:], un, p)
         app.loc_dict[tuple(sqr)].effects_dict[un] = Local_Effect(name = 'Smoke_Bomb', undo_func = u, duration = self.get_abl('msl'), level = self.get_abl('mm'), loc = sqr[:], avoid = -5)
         root.after(1666, self.cleanup_smoke_bomb)
@@ -1893,8 +1898,9 @@ class Illusionist(Summon):
                 p = partial(cube_effect)
                 app.ent_dict[id].defense_effects.append(p)
                 # make undo and effect
-                def undo(id, p):
+                def undo(id, p, lockname = None):
                     app.ent_dict[id].defense_effects.remove(p)
+                    root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
                 u = partial(undo, id, p)
                 app.ent_dict[id].effects_dict['Doubling_Cube'] = Effect(name = 'Doubling_Cube', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
                 un = 'Cube'+str(app.effects_counter)
@@ -2100,7 +2106,8 @@ class Illusionist(Summon):
                     def undo(id, p, p2):
                         app.ent_dict[id].dodge_effects.remove(p)
                         app.ent_dict[id].type_effects.remove(p2)
-                    u = partial(undo, id, p, p2)
+                        root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+                    u = partial(undo, id, p, p2, lockname = None)
                     app.ent_dict[id].effects_dict['Tracer_Grenade'] = Effect(name = 'Tracer_Grenade', undo_func = u, duration = self.get_abl('msl'), level = self.get_abl('bls'))
                     root.after(1666, lambda n = n : cleanup_vis(n))
                     root.after(1777, lambda ents = ents : mortar_loop(ents))
@@ -2343,8 +2350,9 @@ class Illusionist(Summon):
             return stat
         f = simulacrum_effect
         app.ent_dict[id].agl_effects.append(f)
-        def un(i):
+        def un(i, lockname = None):
             app.ent_dict[i].agl_effects.remove(simulacrum_effect)
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
         p = partial(un, id)
         n = 'Simulacrum' + str(app.effects_counter)
         app.ent_dict[id].effects_dict['Simulacrum'] = Effect(name = 'Simulacrum', undo_func = p, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
@@ -2825,10 +2833,11 @@ class Umbrae_Wolf(Summon):
             ent.psyche_effects.append(p)
             ent.str_effects.append(p)
             ent.move_range_effects.append(p)
-            def undo(id, func):
+            def undo(id, func, lockname = None):
                 app.ent_dict[id].psyche_effects.remove(func)
                 app.ent_dict[id].str_effects.remove(func)
                 app.ent_dict[id].move_range_effects.remove(func)
+                root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
             u = partial(undo, id, p)
             n = 'Gaze'+str(app.effects_counter)
             ent.effects_dict[n] = Effect(name = 'Gaze', undo_func = u, duration = self.get_abl('msl'), level = self.get_abl('mm'))
@@ -2898,13 +2907,14 @@ class Umbrae_Wolf(Summon):
                 return stat-1
             p3 = partial(encumber_mvs)
             ent.mvs_effects.append(p3)
-            def undo(id, p1, p2, p3):
+            def undo(id, p1, p2, p3, lockname = None):
                 app.ent_dict[id].init_effects.remove(p1)
                 app.ent_dict[id].agl_effects.remove(p2)
                 app.ent_dict[id].mm_effects.remove(p2)
                 app.ent_dict[id].dodge_effects.remove(p2)
                 app.ent_dict[id].move_range_effects.remove(p2)
                 app.ent_dict[id].mvs_effects.remove(p3)
+                root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
             u = partial(undo, id, p1, p2, p3)
             n = 'Encumber' + str(app.effects_counter)
             ent.effects_dict['Encumber'] = Effect(name = 'Encumber', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
@@ -3012,11 +3022,12 @@ class Umbrae_Wolf(Summon):
         ent.agl_effects.append(p2)
         ent.dodge_effects.append(p2)
         ent.mvs_effects.append(p2)
-        def undo(id, p1, p2):
+        def undo(id, p1, p2, lockname = None):
             app.ent_dict[id].init_effects.remove(p1)
             app.ent_dict[id].agl_effects.remove(p2)
             app.ent_dict[id].dodge_effects.remove(p2)
             app.ent_dict[id].mvs_effects.remove(p2)
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
         u = partial(undo, id, p1, p2)
         n = 'Haste' + str(app.effects_counter)
         app.ent_dict[id].effects_dict['Haste'] = Effect(name = 'Haste', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
@@ -3176,10 +3187,11 @@ class Umbrae_Wolf(Summon):
             p2 = partial(pierce_shield_abls)
             ent.wis_effects.append(p2)
             ent.psyche_effects.append(p2)
-            def undo(id, p1, p2):
+            def undo(id, p1, p2, lockname = None):
                 app.ent_dict[id].type_effects.remove(p1)
                 app.ent_dict[id].wis_effects.remove(p2)
                 app.ent_dict[id].psyche_effects.remove(p2)
+                root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
             u = partial(undo, id, p1, p2)
             n = 'Pierce_Shield' + str(app.effects_counter)
             app.ent_dict[id].effects_dict[n] = Effect(name = 'Pierce_Shield', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
@@ -3245,8 +3257,9 @@ class Umbrae_Wolf(Summon):
             def tendrils_move(move_range):
                 return max(1, move_range-2)
             app.ent_dict[id].move_range_effects.append(tendrils_move)
-            def un(i):
+            def un(i, lockname = None):
                 app.ent_dict[i].move_range_effects.remove(tendrils_move)
+                root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
             p = partial(un, id)
             n = 'Tendrils_Move' + str(app.effects_counter)
             app.ent_dict[id].effects_dict[n] = Effect(name = 'Tendrils_Move', undo_func = p, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
@@ -3279,7 +3292,7 @@ class Umbrae_Wolf(Summon):
                 app.ent_dict[id].san_effects.append(f)
             elif any == 'init':
                 app.ent_dict[id].init_effects.append(f)
-            def un(i, ef_type):
+            def un(i, ef_type, lockname = None):
                 if ef_type == 'str':
                     app.ent_dict[i].str_effects.remove(tendrils_effect)
                 elif ef_type == 'end':
@@ -3300,6 +3313,7 @@ class Umbrae_Wolf(Summon):
                     app.ent_dict[i].san_effects.remove(tendrils_effect)
                 elif ef_type == 'init':
                     app.ent_dict[i].init_effects.remove(tendrils_effect)
+                root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
             p_undo = partial(un, id, any)
             n = 'Tendrils_Drain' + str(app.effects_counter)
             app.ent_dict[id].effects_dict[n] = Effect(name = 'Tendrils_Drain', undo_func = p_undo, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
@@ -3394,8 +3408,9 @@ class Umbrae_Wolf(Summon):
                     return max(1, stat-2)
                 p = partial(warp_insane)
                 ent.san_effects.append(p)
-                def undo(ent, func):
+                def undo(ent, func, lockname = None):
                     ent.san_effects.remove(func)
+                    root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
                 u = partial(undo, ent, p)
                 n = 'Warp_Insane'+str(app.effects_counter)
                 app.effects_counter += 1
@@ -3405,9 +3420,10 @@ class Umbrae_Wolf(Summon):
             else:
                 root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
         eot = partial(warp_eot, sqr[:])
-        def undo(s, un, myid):
+        def undo(s, un, myid, lockname = None):
             del app.vis_dict[un]
             app.canvas.delete('Warpfire'+myid)
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
         u = partial(undo, sqr[:], un, self.id)
         app.loc_dict[tuple(sqr)].effects_dict['Warpfire'+self.id] = Local_Effect(name = 'Warpfire', undo_func = u, sot_func = sot2, eot_func = eot, duration = self.get_abl('rsn'), level = self.get_abl('wis'), loc = sqr[:], avoid = 6)
         root.after(1666, self.cleanup_warpfire)
@@ -3471,8 +3487,9 @@ class Umbrae_Wolf(Summon):
                 else:
                     return (amt, 0)
             app.ent_dict[id].defense_effects.append(stalk_effect)
-            def un(id):
+            def un(id, lockname = None):
                 app.ent_dict[id].defense_effects.remove(stalk_effect)
+                root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
             u = partial(un, id)
             n = 'Stalk' + str(app.effects_counter)
             app.ent_dict[id].effects_dict[n] = Effect(name = 'Stalk', undo_func = u, duration = self.get_abl('msl'), level = self.get_abl('bls'))
@@ -3656,8 +3673,9 @@ class Umbrae_Wolf(Summon):
                     return stat+1
                 f = dark_shroud_effect
                 app.ent_dict[id].dodge_effects.append(f)
-                def un(i, func):
+                def un(i, func, lockname = None):
                     app.ent_dict[i].dodge_effects.remove(func)
+                    root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
                 p = partial(un, id, f)
                 n = 'Dark_Shroud' + str(app.effects_counter)
                 app.ent_dict[id].effects_dict[n] = Effect(name = 'Dark_Shroud', undo_func = p, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
@@ -3779,8 +3797,8 @@ class Umbrae_Wolf(Summon):
         if to_hit(my_psy, tar_psy) == True:
             app.canvas.create_text(sqr[0]*100-app.moved_right+49, sqr[1]*100-app.moved_down+74, text = 'Muddled...', justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
             app.canvas.create_text(sqr[0]*100-app.moved_right+50, sqr[1]*100-app.moved_down+75, text = 'Muddled...', justify = 'center', fill = 'white', font = ('chalkduster', 13), tags = 'text')
-            def un():
-                pass
+            def un(lockname = None):
+                root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
             p = un
             # EOT FUNC
             def attack_self(id, lockname = None):
@@ -3893,8 +3911,96 @@ class Umbrae_Wolf(Summon):
         return mvlist
 
 
-# lvl 2 gains resistances and magick (mummy/embalmed one)
-# scarab, scarab swarm, spore cloud, dessicate, sleep
+# very slow but bat and wolf forms allow movement?
+# good anti melee tools (berserker, fiend)
+# chill touch good vs casters
+class Wurdulak(Summon):
+    def __init__(self, name, id, img, loc, owner, level):
+        if level == 1:
+            self.actions = {'Move':self.move, 'Entrance':self.entrance, 'Enthrall':self.enthrall, 'Chill Touch':self.chill_touch}
+            self.str = 7
+            self.agl = 4
+            self.end = 8
+            self.mm = 1
+            self.msl = 0
+            self.bls = 0
+            self.dodge = 4
+            self.psyche = 7
+            self.wis = 5
+            self.rsn = 4
+            self.san = 12
+            self.init = 4
+            self.spirit = 19
+            self.magick = 17
+            self.acts = 1
+            self.mvs = 1
+            self.move_range = 2
+            self.level = level
+        elif level == 2:
+            self.actions = {'Move':self.move, 'Entrance':self.entrance, 'Enthrall':self.enthrall, 'Chill Touch':self.chill_touch}
+            self.str = 8
+            self.agl = 5
+            self.end = 9
+            self.mm = 1
+            self.msl = 0
+            self.bls = 0
+            self.dodge = 5
+            self.psyche = 8
+            self.wis = 6
+            self.rsn = 5
+            self.san = 14
+            self.init = 5
+            self.spirit = 25
+            self.magick = 23
+            self.acts = 2
+            self.mvs = 1
+            self.move_range = 2
+            self.level = level
+        self.move_type = 'normal'
+        self.resist = ['slashing', 'crushing', 'magick']
+        self.weak = ['fire', 'piercing']
+        super().__init__(name, id, img, loc, owner)
+        
+    # on hit psy vs psy, -3 san, cumulative
+    def entrance(self):
+        pass
+    
+    # all wi rng rsn that fail psy save? to hit?, -2 str, agl, msl, dod
+    def enthrall(self):
+        pass
+        
+    # on hit str vs str, psy vs end cold, -1 wis cumulative
+    def chill_touch(self):
+        pass
+    
+    # save these for witch?
+    def bat_form(self):
+        pass
+        
+    # save these for witch?
+    def wolf_form(self):
+        pass
+        
+    def legal_moves(self):
+        loc = self.loc[:]
+        mvlist = []
+        sqr_cost_map = {}
+        def findall(loc, start, distance):
+            if start > distance:
+                return
+            adj = [c for c in app.coords if dist(c, loc) == 1 and app.grid[c[0]][c[1]] == '']
+            for s in adj:
+                if tuple(s) in sqr_cost_map:
+                    if sqr_cost_map[tuple(s)] < start:
+                        continue
+                sqr_cost_map[tuple(s)] = start
+                if s not in mvlist:
+                    mvlist.append(s)
+                findall(s, start+1, distance)
+        findall(loc, 1, self.get_abl('move_range'))
+        return mvlist
+
+
 class Murrain_Wolf(Summon):
     def __init__(self, name, id, img, loc, owner, level):
         if level == 1:
@@ -3939,7 +4045,7 @@ class Murrain_Wolf(Summon):
             self.level = level
         self.move_type = 'normal'
         self.resist = ['piercing', 'poison', 'magick']
-        self.weak = ['fire']
+        self.weak = ['cold']
         super().__init__(name, id, img, loc, owner)
         # ADD CONTAGION DEATH TRIGGER
         def contagion_trigger(lockname = None):
@@ -3959,11 +4065,12 @@ class Murrain_Wolf(Summon):
                 app.ent_dict[e].end_effects.append(f)
                 app.ent_dict[e].agl_effects.append(f)
                 app.ent_dict[e].dodge_effects.append(f)
-                def un(id, func):
+                def un(id, func, lockname = None):
                     app.ent_dict[id].str_effects.remove(func)
                     app.ent_dict[id].end_effects.remove(func)
                     app.ent_dict[id].agl_effects.remove(func)
                     app.ent_dict[id].dodge_effects.remove(func)
+                    root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
                 p = partial(un, e, f)
                 app.ent_dict[e].effects_dict[n] = Effect(name = 'Contagion', undo_func = p, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
                 n2 = 'Contagion' + str(app.effects_counter) # not an effect, just need unique int
@@ -3986,8 +4093,8 @@ class Murrain_Wolf(Summon):
             root.after(2222, cleanup_contagion)
             root.after(2333, lambda ln = lockname : app.dethloks[ln].set(1))
         dt = partial(contagion_trigger)
-        def undo():
-            pass
+        def undo(lockname = None):
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
         u = partial(undo)
         d_inst = Death_Trigger(name = 'Contagion', level = self.get_abl('wis'), undo_func = u, dt = dt)
         self.death_triggers.append(d_inst)
@@ -4039,7 +4146,7 @@ class Murrain_Wolf(Summon):
             ent.rsn_effects.append(p)
             ent.san_effects.append(p)
             ent.init_effects.append(p)
-            def undo(id, f):
+            def undo(id, f, lockname = None):
                 ent.str_effects.remove(f)
                 ent.agl_effects.remove(f)
                 ent.end_effects.remove(f)
@@ -4049,6 +4156,7 @@ class Murrain_Wolf(Summon):
                 ent.rsn_effects.remove(f)
                 ent.san_effects.remove(f)
                 ent.init_effects.remove(f)
+                root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
             u = partial(undo, id, p)
             un = 'Leprous_Bite'+str(app.effects_counter)
             app.effects_counter += 1
@@ -4192,11 +4300,12 @@ class Murrain_Wolf(Summon):
             else:
                 return (amount,0)
         app.loc_dict[tuple(sqr)].def_effects.append(spore_def)
-        def undo(s, un, p_ef):
+        def undo(s, un, p_ef, lockname = None):
             app.loc_dict[tuple(s)].dodge_effects.remove(p_ef)
             app.loc_dict[tuple(s)].def_effects.remove(spore_def)
             del app.vis_dict[un]
             app.canvas.delete(un)
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
         u = partial(undo, sqr[:], un, p)
         app.loc_dict[tuple(sqr)].effects_dict[un] = Local_Effect(name = 'Spore_Cloud', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'), loc = sqr[:], avoid = -5)
         root.after(1666, self.cleanup_spore_cloud)
@@ -4264,14 +4373,15 @@ class Murrain_Wolf(Summon):
                 app.grid[sqr[0]][sqr[1]] = id
                 root.after(333, lambda ln = lockname : app.dethloks[ln].set(1))
             dt = partial(scarab_effect, id = id)
-            def dt_undo():
-                pass
+            def dt_undo(lockname = None):
+                root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
             dt_inst = Death_Trigger(name = 'Scarab_Gestation', level = self.get_abl('psyche'), undo_func = dt_undo, dt = dt)
             app.ent_dict[id].death_triggers.append(dt_inst)
-            def un(id, ts):
+            def un(id, ts, lockname = None):
                 for dt in app.ent_dict[id].death_triggers[:]:
                     if dt.ts == ts:
                         app.ent_dict[id].death_triggers.remove(dt)
+                root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
             u = partial(un, id, dt_inst.ts)
             n = 'Scarab_Gestation' + str(app.effects_counter)
             app.ent_dict[id].effects_dict[n] = Effect(name = 'Scarab_Gestation', undo_func = u, duration = 13, level = self.get_abl('psyche'))
@@ -4338,9 +4448,10 @@ class Murrain_Wolf(Summon):
             app.ent_dict[id].move_range_effects.append(p1)
             p2 = partial(paralyze_acts)
             app.ent_dict[id].acts_effects.append(p2)
-            def undo(id, p1, p2):
+            def undo(id, p1, p2, lockname = None):
                 app.ent_dict[id].move_range_effects.remove(p1)
                 app.ent_dict[id].acts_effects.remove(p2)
+                root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
             u = partial(undo, id, p1, p2)
             n = 'Paralyze' + str(app.effects_counter)
             app.ent_dict[id].effects_dict[n] = Effect(name = 'Paralyze', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
@@ -4407,9 +4518,9 @@ class Murrain_Wolf(Summon):
                     # EOT
                     eot = partial(take_2, ent)
                     # UNDO
-                    def un():
-                        return None
-                    u = un
+                    def un(lockname = None):
+                        root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+                    u = partial(un)
                     # POX VIS
                     app.ent_dict[ent].effects_dict[n] = Effect(name = 'Pox', eot_func = eot , undo_func = u, duration = 4, level = 6)
                     app.canvas.create_text(app.ent_dict[ent].loc[0]*100-app.moved_right+49, app.ent_dict[ent].loc[1]*100-app.moved_down+89, text = 'Pox', justify = 'center', fill = 'black', font = ('chalkduster', 14), tags = 'text')
@@ -4476,8 +4587,9 @@ class Murrain_Wolf(Summon):
                         return [t for t in types if t != 'invisibility']
                     p = partial(miasma_invis)
                     ent.type_effects.append(p)
-                    def undo(id, f):
+                    def undo(id, f, lockname = None):
                         app.ent_dict[id].type_effects.remove(f)
+                        root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
                     u = partial(undo, id, p)
                     n = 'Toxic_Miasma'+str(app.effects_counter)
                     ent.effects_dict[n] = Effect(name = 'Miasma_Invis', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
@@ -4490,9 +4602,10 @@ class Murrain_Wolf(Summon):
                     p2 = partial(miasma_abls)
                     ent.wis_effects.append(p2)
                     ent.rsn_effects.append(p2)
-                    def undo(id, f):
+                    def undo(id, f, lockname = None):
                         app.ent_dict[id].wis_effects.remove(f)
                         app.ent_dict[id].rsn_effects.remove(f)
+                        root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
                     u2 = partial(undo, id, p2)
                     n = 'Toxic_Miasma'+str(app.effects_counter)
                     ent.effects_dict[n] = Effect(name = 'Miasma_Drain', undo_func = u2, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
@@ -4892,7 +5005,7 @@ class Thaumaturge(Summon):
             ent.san_effects.append(p)
         elif abl == 'initiative':
             ent.init_effects.append(p)
-        def undo(id, abl, func):
+        def undo(id, abl, func, lockname = None):
             if abl == 'strength':
                 app.ent_dict[id].str_effects.remove(func)
             elif abl == 'agility':
@@ -4917,6 +5030,7 @@ class Thaumaturge(Summon):
                 app.ent_dict[id].san_effects.remove(func)
             elif abl == 'initiative':
                 app.ent_dict[id].init_effects.remove(func)
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
         u = partial(undo, id, abl, p)
         n = "Devil's_Mark"+str(app.effects_counter)
         ent.effects_dict[n] = Effect(name = "Devil's_Mark", undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
@@ -5240,7 +5354,7 @@ class Thaumaturge(Summon):
             e.san_effects.append(p)
             e.init_effects.append(p)
             e.move_range_effects.append(p)
-            def un(i, func):
+            def un(i, func, lockname = None):
                 app.ent_dict[i].str_effects.remove(func)
                 app.ent_dict[i].end_effects.remove(func)
                 app.ent_dict[i].agl_effects.remove(func)
@@ -5254,6 +5368,7 @@ class Thaumaturge(Summon):
                 app.ent_dict[i].san_effects.remove(func)
                 app.ent_dict[i].init_effects.remove(func)
                 app.ent_dict[i].move_range_effects.remove(func)
+                root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
             u = partial(un, id, p)
             n = 'Unholy_Chant' + str(app.effects_counter)
             app.ent_dict[id].effects_dict[n] = Effect(name = 'Unholy_Chant', undo_func = u, duration = 1, level = self.get_abl('wis'))
@@ -5313,8 +5428,9 @@ class Thaumaturge(Summon):
                 return stat+num
             p = partial(concerted_volley_effect, num = num)
             ent.mm_effects.append(p)
-            def undo(i, func):
+            def undo(i, func, lockname = None):
                 app.ent_dict[i].mm_effects.remove(func)
+                root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
             u = partial(undo, id, p)
             n = 'Concerted_Volley' + str(app.effects_counter)
             ent.effects_dict[n] = Effect(name = 'Concerted_Volley', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
@@ -5640,8 +5756,9 @@ class Fiend(Summon):
                         p = partial(roar_effect)
                         ent.san_effects.append(p)
                         n = 'Roar' + str(app.effects_counter)
-                        def un(i, p):
+                        def un(i, p, lockname = None):
                             app.ent_dict[i].san_effects.remove(p)
+                            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
                         u = partial(un, id, p)
                         ent.effects_dict[n] = Effect(name = 'Roar_Enemy', undo_func = u, duration = self.get_abl('end'), level = self.get_abl('str'))
                         root.after(888, lambda t = 'text' : app.canvas.delete(t))
@@ -5658,8 +5775,9 @@ class Fiend(Summon):
                         p = partial(roar_effect)
                         ent.san_effects.append(p)
                         n = 'Roar' + str(app.effects_counter)
-                        def un(i, p):
+                        def un(i, p, lockname = None):
                             app.ent_dict[i].san_effects.remove(p)
+                            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
                         u = partial(un, id, p)
                         ent.effects_dict[n] = Effect(name = 'Roar_Friendly', undo_func = u, duration = self.get_abl('end'), level = self.get_abl('str'))
                         root.after(888, lambda t = 'text' : app.canvas.delete(t))
@@ -5813,8 +5931,9 @@ class Fiend(Summon):
             return actions_dict
         p = partial(abey_rmv)
         ent.action_effects.append(p)
-        def undo(id, func):
+        def undo(id, func, lockname = None):
             app.ent_dict[id].action_effects.remove(func)
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
         u = partial(undo, id, p)
         n = 'Abeyance'+str(app.effects_counter)
         app.effects_counter += 1
@@ -5880,8 +5999,9 @@ class Fiend(Summon):
                     return stat
             p = partial(anoint_effect)
             ent.wis_effects.append(p)
-            def un(id, func):
+            def un(id, func, lockname = None):
                 app.ent_dict[id].wis_effects.remove(func)
+                root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
             u = partial(un, id, p)
             n = 'Anoint' + str(app.effects_counter)
             ent.effects_dict[n] = Effect(name = 'Anoint', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
@@ -5943,8 +6063,9 @@ class Fiend(Summon):
                     return [t for t in ts if t != 'psyshield']
                 p = partial(reveal_psyshield)
                 ent.type_effects.append(p)
-                def un(id, func):
+                def un(id, func, lockname = None):
                     app.ent_dict[id].type_effects.remove(func)
+                    root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
                 u = partial(un, id, p)
                 n = 'Reveal' + str(app.effects_counter)
                 ent.effects_dict[n] = Effect(name = 'Reveal_Psyshield', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
@@ -5956,8 +6077,9 @@ class Fiend(Summon):
                     return [t for t in ts if t != 'invisibility']
                 p = partial(reveal_invisibility)
                 ent.type_effects.append(p)
-                def un(id, func):
+                def un(id, func, lockname = None):
                     app.ent_dict[id].type_effects.remove(func)
+                    root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
                 u = partial(un, id, p)
                 n = 'Reveal' + str(app.effects_counter)
                 ent.effects_dict[n] = Effect(name = 'Reveal_Invisibility', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
@@ -7141,9 +7263,10 @@ class Ghost(Bot):
                             stat -= 1
                             return max(1, stat)
                         app.ent_dict[id].psyche_effects.append(fear_effect)
-                        def undo(tar, fe):
+                        def undo(tar, fe, lockname = None):
                             app.ent_dict[tar].move_range_effects.remove(fear_move)
                             app.ent_dict[tar].psyche_effects.remove(fe)
+                            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
                         u = partial(undo, id, fear_effect)
                         n = 'Fear'+str(app.effects_counter)
                         app.effects_counter += 1
@@ -7197,9 +7320,10 @@ class Ghost(Bot):
                         else:
                             return (dmg, 0)
                     app.ent_dict[id].attack_effects.append(slow_atk)
-                    def undo(tar, sa):
+                    def undo(tar, sa, lockname = None):
                         app.ent_dict[tar].move_range_effects.remove(slow_move)
                         app.ent_dict[tar].attack_effects.remove(sa)
+                        root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
                     u = partial(undo, id, slow_atk)
                     n = 'Slow'+str(app.effects_counter)
                     app.effects_counter += 1
@@ -7239,8 +7363,9 @@ class Ghost(Bot):
                 else:
                     return (amount, 0)
             app.ent_dict[id].defense_effects.append(burn_effect)
-            def undo(tar):
+            def undo(tar, lockname = None):
                 app.ent_dict[tar].defense_effects.remove(burn_effect)
+                root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
             u = partial(undo, id)
             n = 'Burn'+str(app.effects_counter)
             app.effects_counter += 1
@@ -7860,7 +7985,7 @@ class Kobold_Cleric(Bot):
             app.ent_dict[id].rsn_effects.append(f)
             app.ent_dict[id].san_effects.append(f)
             app.ent_dict[id].init_effects.append(f)
-            def un(i):
+            def un(i, lockname = None):
                 app.ent_dict[i].str_effects.remove(hex_effect)
                 app.ent_dict[i].end_effects.remove(hex_effect)
                 app.ent_dict[i].agl_effects.remove(hex_effect)
@@ -7871,6 +7996,7 @@ class Kobold_Cleric(Bot):
                 app.ent_dict[i].rsn_effects.remove(hex_effect)
                 app.ent_dict[i].san_effects.remove(hex_effect)
                 app.ent_dict[i].init_effects.remove(hex_effect)
+                root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
             p = partial(un, id)
             n = 'Hex' + str(app.effects_counter)
             app.ent_dict[id].effects_dict[n] = Effect(name = 'Hex', undo_func = p, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
@@ -8150,9 +8276,10 @@ class Ghoul(Bot):
                         return stat
                 app.ent_dict[id].str_effects.append(ghoul_effect)
                 app.ent_dict[id].end_effects.append(ghoul_effect)
-                def un(i):
+                def un(i, lockname = None):
                     app.ent_dict[i].str_effects.remove(ghoul_effect)
                     app.ent_dict[i].end_effects.remove(ghoul_effect)
+                    root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
                 p = partial(un, id)
                 # EOT FUNC
                 def take_2(tar, lockname = None):
@@ -9091,13 +9218,13 @@ class Air_Mage(Bot):
                 app.ent_dict[id].agl_effects.append(p2)
                 app.ent_dict[id].dodge_effects.append(p2)
                 app.ent_dict[id].psyche_effects.append(p2)
-                def un(i, func):
+                def un(i, func, lockname = None):
                     app.ent_dict[i].str_effects.remove(func)
                     app.ent_dict[i].end_effects.remove(func)
                     app.ent_dict[i].agl_effects.remove(func)
                     app.ent_dict[i].dodge_effects.remove(func)
                     app.ent_dict[i].psyche_effects.remove(func)
-                    return None
+                    root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
                 p = partial(un, id, p2)
                 # EOT FUNC
                 def take_2(tar, lockname = None):
@@ -9699,8 +9826,9 @@ class Water_Mage(Bot):
                                     else:
                                         return move_range
                                 app.ent_dict[id].move_range_effects.append(deluge_move)
-                                def undo(i):
+                                def undo(i, lockname = None):
                                     app.ent_dict[i].move_range_effects.remove(deluge_move)
+                                    root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
                                 u = partial(undo, id)
                                 n = 'Deluge' + str(app.effects_counter)
                                 app.ent_dict[id].effects_dict[n] = Effect(name = 'Deluge', undo_func = u, duration = 6, level = 8)
@@ -9754,9 +9882,10 @@ class Water_Mage(Bot):
                                 return stat
                         app.ent_dict[id].str_effects.append(fog_effect)
                         app.ent_dict[id].psyche_effects.append(fog_effect)
-                        def undo(i):
+                        def undo(i, lockname = None):
                             app.ent_dict[i].str_effects.remove(fog_effect)
                             app.ent_dict[i].psyche_effects.remove(fog_effect)
+                            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
                         u = partial(undo, id)
                         n = 'Fog' + str(app.effects_counter)
                         app.ent_dict[id].effects_dict[n] = Effect(name = 'Fog', undo_func = u, duration = 5, level = 8)
@@ -12035,8 +12164,9 @@ class Berserker(Summon):
                     p = partial(track_effect)
                     ent.type_effects.append(p)
                     n = 'Track' + str(app.effects_counter)
-                    def un(i, func):
+                    def un(i, func, lockname = None):
                         app.ent_dict[i].type_effects.remove(func)
+                        root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
                     u = partial(un, id, p)
                     n = 'Track' + str(app.effects_counter)
                     ent.effects_dict[n] = Effect(name = 'Track', undo_func = u, duration = self.get_abl('end'), level = self.get_abl('str'))
@@ -12111,9 +12241,10 @@ class Berserker(Summon):
                     ent.san_effects.append(p)
                     ent.rsn_effects.append(p2)
                     n = 'Howl_From_Beyond' + str(app.effects_counter)
-                    def un(i, p, p2):
+                    def un(i, p, p2, lockname = None):
                         app.ent_dict[i].san_effects.remove(p)
                         app.ent_dict[i].rsn_effects.remove(p2)
+                        root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
                     u = partial(un, id, p, p2)
                     ent.effects_dict[n] = Effect(name = 'Howl_From_Beyond', undo_func = u, duration = self.get_abl('end'), level = self.get_abl('str'))
                     root.after(888, lambda t = 'text' : app.canvas.delete(t))
@@ -12246,12 +12377,15 @@ class Berserker(Summon):
         def rage_effect2(stat):
             return stat+4
         self.psyche_effects.append(rage_effect2)
-        def undo(id):
-            self.str_effects.remove(rage_effect)
-            self.end_effects.remove(rage_effect)
-            self.psyche_effects.remove(rage_effect2)
+        def undo(id, lockname = None):
+            app.ent_dict[id].str_effects.remove(rage_effect)
+            app.ent_dict[id].end_effects.remove(rage_effect)
+            app.ent_dict[id].psyche_effects.remove(rage_effect2)
             d = 3
-            lock(apply_damage, self, self, -d, 'magick', 'Rage', 'undo')
+            ent = app.ent_dict[id]
+            lock(apply_damage, ent, ent, -d, 'magick', 'Rage', 'undo')
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+        id = self.id
         u = partial(undo, id)
         self.effects_dict['Rage'] = Effect(name = 'Rage', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('str'))
         root.after(2666, self.finish_rage)
@@ -12616,49 +12750,49 @@ class Berserker(Summon):
     # confuse, target must make psyche check before attack
     # fuse trap, set global effect on sqr, when effect ends all ents within range 2 take 5 dmg 
 class Familiar_Homonculus(Summon):
-    def __init__(self, name, id, img, loc, owner):
+    def __init__(self, name, id, img, loc, owner, level):
         if level == 1:
             self.actions = {'Mesmerize':self.mesmerize, 'Fuse Trap':self.fuse_trap, 'Move':self.move}
-            self.str = 2
-            self.agl = 8
-            self.end = 3
-            self.mm = 7
-            self.msl = 3
-            self.bls = 7
-            self.dodge = 8
-            self.psyche = 4
-            self.wis = 8
-            self.rsn = 5
-            self.san = 12
-            self.init = 8
-            self.spirit = 13
-            self.magick = 13
+            self.str = 3
+            self.agl = 6
+            self.end = 5
+            self.mm = 1
+            self.msl = 0
+            self.bls = 0
+            self.dodge = 7
+            self.psyche = 5
+            self.wis = 7
+            self.rsn = 6
+            self.san = 14
+            self.init = 9
+            self.spirit = 19
+            self.magick = 11
             self.acts = 1
             self.mvs = 1
-            self.move_range = 5
+            self.move_range = 6
             self.level = level
         elif level == 2:
             self.actions = {'Mesmerize':self.mesmerize, 'Fuse Trap':self.fuse_trap, 'Move':self.move}
             self.str = 3
-            self.agl = 9
-            self.end = 4
-            self.mm = 8
-            self.msl = 4
-            self.bls = 8
-            self.dodge = 9
-            self.psyche = 5
-            self.wis = 9
-            self.rsn = 6
-            self.san = 13
-            self.init = 9
-            self.spirit = 15
-            self.magick = 19
+            self.agl = 6
+            self.end = 6
+            self.mm = 1
+            self.msl = 0
+            self.bls = 0
+            self.dodge = 7
+            self.psyche = 6
+            self.wis = 8
+            self.rsn = 7
+            self.san = 15
+            self.init = 10
+            self.spirit = 25
+            self.magick = 15
             self.acts = 2
             self.mvs = 2
-            self.move_range = 5
+            self.move_range = 6
         self.move_type = 'normal'
-        self.weak = ['cold', 'elec']
-        self.resist = ['fire', 'magick']
+        self.weak = ['crushing']
+        self.resist = ['magick']
         super().__init__(name, id, img, loc, owner)
         def familiar_trigger(lockname = None):
             if self.owner == 'p1':
@@ -12670,20 +12804,20 @@ class Familiar_Homonculus(Summon):
             lock(apply_damage, app.ent_dict[witch], app.ent_dict[witch], -4, 'magick', 'Familiar Death', 'dt')
             root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
         dt = partial(familiar_trigger)
-        def undo():
-            pass
+        def undo(lockname = None):
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
         u = partial(undo)
         d_inst = Death_Trigger(name = 'Familiar_Death', level = 10, undo_func = u, dt = dt)
         self.death_triggers.append(d_inst)
                     
                     
     def fuse_trap(self, event = None):
-        if self.attack_used == True:
+        if self.acts < 1:
             return
         app.depop_context(event = None)
         app.unbind_nonarrows()
         root.bind('<q>', self.cleanup_fuse_trap)
-        sqrs = [s for s in app.coords if dist(self.loc, s) <= 5]
+        sqrs = [s for s in app.coords if dist(self.loc, s) == 1 and app.grid[s[0]][s[1]] != 'block']
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_fuse_trap(event = e, sqr = s, sqrs = sqrs))
         b = tk.Button(app.context_menu, text = 'Choose Square For Fuse Trap', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_fuse_trap(e, s, sqrs))
@@ -12694,24 +12828,21 @@ class Familiar_Homonculus(Summon):
     def do_fuse_trap(self, event, sqr, sqrs):
         if sqr not in sqrs:
             return
-        if app.grid[sqr[0]][sqr[1]] != '':
-            return
         visuals = [v.name for k,v in app.vis_dict.items() if v.loc == sqr]
         if 'Fuse_Trap' in visuals:
             return
         effect1 = mixer.Sound('Sound_Effects/fuse_trap.ogg')
         effect1.set_volume(.07)
         sound_effects.play(effect1, 0)
-        self.attack_used = True
+        self.acts -= 1
         app.unbind_all()
         app.cleanup_squares()
         app.depop_context(event = None)
-        uniq_name = 'Fuse_Trap' + str(app.effects_counter)
-        app.effects_counter += 1
-        app.vis_dict[uniq_name] = Vis(name = 'Fuse_Trap', loc = sqr[:])
-        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict[uniq_name].img, tags = uniq_name)
+#         uniq_name = 'Fuse_Trap' + str(app.effects_counter)
+#         app.effects_counter += 1
+#         app.vis_dict[uniq_name] = Vis(name = 'Fuse_Trap', loc = sqr[:])
+#         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict[uniq_name].img, tags = uniq_name)
         app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Fuse Trap', font = ('chalkduster', 14), fill = 'white', tags = 'text')
-        
         # change to Local_Effect on sqr
         if 'Fuse_Trap' not in [v.name for k,v in app.loc_dict[tuple(sqr)].effects_dict.items()]:
             un = 'Fuse_Trap' + str(app.effects_counter)
@@ -12720,48 +12851,36 @@ class Familiar_Homonculus(Summon):
             app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict[un].img, tags = un)
             
             # on undo dmg each ent within range 3 of self.loc
-            def undo(s, un):
-                del app.vis_dict[un]
-                app.canvas.delete(un)
-                app.focus_square(s)
+            def undo(sqr = None, name = None, lockname = None):
+                del app.vis_dict[name]
+                app.canvas.delete(name)
+                app.focus_square(sqr)
                 effect1 = mixer.Sound('Sound_Effects/fuse_explosion.ogg')
                 effect1.set_volume(1)
                 sound_effects.play(effect1, 0)
-                ents = [k for k,v in app.ent_dict.items() if dist(v.loc, s) <= 3 and v.type != 'large']
+                ents = [k for k,v in app.all_ents().items() if dist(v.loc, sqr) <= 3]
                 def clean_explosion(n):
                     del app.vis_dict[n]
                     app.canvas.delete(n)
                     app.canvas.delete('text')
                 def fuse_loop(ents):
                     if ents == []:
-                        return 'Not None'
+                        root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
                     else:
                         id = ents[0]
                         ents = ents[1:]
-                        loc = app.ent_dict[id].loc[:]
+                        ent = app.ent_dict[id]
+                        loc = ent.loc[:]
                         n = 'Fuse_Explosion'+str(app.effects_counter)
                         app.effects_counter += 1
                         app.vis_dict[n] = Vis(name = 'Fuse_Explosion', loc = loc[:])
                         app.canvas.create_image(loc[0]*100+50-app.moved_right, loc[1]*100+50-app.moved_down, image = app.vis_dict[n].img, tags = n)
-                        app.canvas.create_text(loc[0]*100+49-app.moved_right, loc[1]*100+74-app.moved_down, text = 'Fuse Trap 5 spirit', font = ('chalkduster', 13), fill = 'black', tags = 'text')
-                        app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+75-app.moved_down, text = 'Fuse Trap 5 spirit', font = ('chalkduster', 13), fill = 'white', tags = 'text')
-                        lock(apply_damage, self, app.ent_dict[id], -5, 'explosive', 'Fuse Trap', 'undo')
-                        if app.ent_dict[id].spirit <= 0:
-                            app.canvas.create_text(loc[0]*100+49-app.moved_right, loc[1]*100+84-app.moved_down, text = app.ent_dict[id].name.replace('_', ' ') + ' Killed...', font = ('chalkduster', 13), fill = 'black', tags = 'text')
-                            app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+85-app.moved_down, text = app.ent_dict[id].name.replace('_', ' ') + ' Killed...', font = ('chalkduster', 13), fill = 'white', tags = 'text')
-                            name = 'Dethlok'+str(app.death_count)
-                            app.death_count += 1
-                            app.dethloks[name] = tk.IntVar(0)
-                            root.after(2333, lambda n = n : clean_explosion(n))
-                            root.after(2666, lambda id = id, name = name : app.kill(id, name))
-                            app.wait_variable(app.dethloks[name])
-                            fuse_loop(ents)
-                        else:
-                            root.after(2333, lambda n = n : clean_explosion(n))
-                            root.after(2666, lambda ents = ents : fuse_loop(ents))
+                        lock(apply_damage, self, ent, -5, 'explosive', 'Fuse Trap', 'eot')
+                        root.after(333, lambda n = n : clean_explosion(n))
+                        root.after(666, lambda ents = ents : fuse_loop(ents))
                 fuse_loop(ents)
-            u = partial(undo, sqr[:], un)
-            app.loc_dict[tuple(sqr)].effects_dict[un] = Local_Effect(name = 'Fuse_Trap', undo = u, duration = 3, level = 4, loc = sqr[:], avoid = 4)
+            u = partial(undo, sqr = sqr[:], name = un)
+            app.loc_dict[tuple(sqr)].effects_dict[un] = Local_Effect(name = 'Fuse_Trap', undo_func = u, duration = 1, level = 4, loc = sqr[:], avoid = 4)
         self.cleanup_fuse_trap()
                     
     def cleanup_fuse_trap(self, event = None):
@@ -12990,8 +13109,9 @@ class Lesser_Demon(Summon):
                         return max(0,move_range-2)
                     p = partial(brambles_move)
                     ent.move_range_effects.append(p)
-                    def un(i, func):
+                    def un(i, func, lockname = None):
                         app.ent_dict[i].move_range_effects.remove(func)
+                        root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
                     uf = partial(un, id, p)
                     n = 'Brambles' + str(app.effects_counter)
                     app.ent_dict[id].effects_dict[n] = Effect(name = 'Brambles', undo_func = uf, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
@@ -13066,8 +13186,9 @@ class Lesser_Demon(Summon):
                     return stat
             f = baleful_stare_effect
             app.ent_dict[id].psyche_effects.append(f)
-            def un(i):
+            def un(i, lockname = None):
                 app.ent_dict[i].psyche_effects.remove(baleful_stare_effect)
+                root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
             p = partial(un, id)
             # EOT FUNC
             def take_1(tar, lockname = None):
@@ -13259,9 +13380,10 @@ class Cenobite(Summon):
                     ent.end_effects.append(f)
                     ent.psyche_effects.append(f)
                     n = 'Strength_Through_Wounding' + str(app.effects_counter)
-                    def un(i, func):
+                    def un(i, func, lockname = None):
                         app.ent_dict[i].end_effects.remove(func)
                         app.ent_dict[i].psyche_effects.remove(func)
+                        root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
                     p = partial(un, id, f)
                     n = 'Strength_Through_Wounding' + str(app.effects_counter)
                     ent.effects_dict[n] = Effect(name = 'Strength_Through_Wounding', undo_func = p, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
@@ -13381,8 +13503,9 @@ class Cenobite(Summon):
         def hook_effect():
             pass
         f = hook_effect
-        def un(i, func):
+        def un(i, func, lockname = None):
             app.ent_dict[i].action_effects.remove(func)
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
         p = partial(un, id, p2)
         n = 'Hook_Attack' + str(app.effects_counter)
         app.ent_dict[id].effects_dict[n] = Effect(name = 'Hook_Attack', undo_func = p, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
@@ -13461,8 +13584,9 @@ class Cenobite(Summon):
                         return (amount, 0)
                 p = partial(burn_effect)
                 ent.defense_effects.append(p)
-                def undo(i, func):
+                def undo(i, func, lockname = None):
                     app.ent_dict[i].defense_effects.remove(func)
+                    root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
                 u = partial(undo, id, p)
                 n = 'Burn' + str(app.effects_counter)
                 ent.effects_dict[n] = Effect(name = 'Burn', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
@@ -13562,8 +13686,8 @@ class Familiar_Imp(Summon):
             lock(apply_damage, app.ent_dict[witch], app.ent_dict[witch], -4, 'magick', 'Familiar Death', 'dt')
             root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
         dt = partial(familiar_trigger)
-        def undo():
-            pass
+        def undo(lockname = None):
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
         u = partial(undo)
         d_inst = Death_Trigger(name = 'Familiar_Death', level = 10, undo_func = u, dt = dt)
         self.death_triggers.append(d_inst)
@@ -13612,10 +13736,11 @@ class Familiar_Imp(Summon):
                     return max(1, move_range-2)
                 p = partial(dark_move)
                 app.loc_dict[tuple(s)].move_range_effects.append(p)
-                def undo(s, un, p_dark_move):
+                def undo(s, un, p_dark_move, lockname = None):
                     app.loc_dict[tuple(s)].move_range_effects.remove(p_dark_move)
                     del app.vis_dict[un]
                     app.canvas.delete(un)
+                    root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
                 u = partial(undo, s, un, p)
                 app.loc_dict[tuple(s)].effects_dict[un] = Local_Effect(name = 'Darkness', undo_func = u, duration = 2, level = self.get_abl('wis'), loc = s[:], avoid = 6)
         self.cleanup_darkness()
@@ -13667,9 +13792,9 @@ class Familiar_Imp(Summon):
                 return max(1,stat-1)
             f = poison_sting_effect
             ent.str_effects.append(f)
-            def un(i):
+            def un(i, lockname = None):
                 app.ent_dict[i].str_effects.remove(poison_sting_effect)
-                return None
+                root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
             p = partial(un, id)
             # EOT FUNC
             def take_2(tar, lockname = None):
@@ -13750,8 +13875,8 @@ class Hunting_Hawk(Bot):
                 app.focus_square(g)
                 root.after(666, lambda sqr = g[:], ln = lockname : self.hawk_move(sqr, ln))
         e = partial(eot)
-        def undo():
-            return None
+        def undo(lockname = None):
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
         self.effects_dict['control'] = Effect(name = self.owner+"'s Hawk", eot_func = e, undo_func = undo, duration = 666, level = 666)
                 
     def hawk_attack(self, id, lockname):
@@ -14177,6 +14302,7 @@ class Witch(Summon):
         root.bind('4', lambda e, cls = 'Thaumaturge': self.place_summon(e, cls))
         root.bind('5', lambda e, cls = 'Murrain_Wolf' : self.place_summon(e, cls))
         root.bind('6', lambda e, cls = 'Fiend' : self.place_summon(e, cls))
+        root.bind('7', lambda e, cls = 'Wurdulak' : self.place_summon(e, cls))
         b1 = tk.Button(app.context_menu, text = '1:Berserker', font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, cls = 'Berserker' : self.place_summon(e, cls))
         b1.pack(side = 'top', pady = 2)
         app.context_buttons.append(b1)
@@ -14195,9 +14321,12 @@ class Witch(Summon):
         b6 = tk.Button(app.context_menu, text = '6:Fiend', font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, cls = 'Fiend' : self.place_summon(e, cls))
         b6.pack(side = 'top', pady = 2)
         app.context_buttons.append(b6)
-        b7 = tk.Button(app.context_menu, text = 'Cancel', font = ('chalkduster', 20), highlightbackground = 'tan3', fg='tan3', command = self.cancel_placement)
-        b7.pack(side = 'top')
+        b7 = tk.Button(app.context_menu, text = '7:Wurdulak', font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, cls = 'Wurdulak' : self.place_summon(e, cls))
+        b7.pack(side = 'top', pady = 2)
         app.context_buttons.append(b7)
+        b8 = tk.Button(app.context_menu, text = 'Cancel', font = ('chalkduster', 20), highlightbackground = 'tan3', fg='tan3', command = self.cancel_placement)
+        b8.pack(side = 'top')
+        app.context_buttons.append(b8)
     
     def cancel_placement(self, event = None):
         app.depop_context(event = None)
@@ -14225,6 +14354,8 @@ class Witch(Summon):
             cls = Murrain_Wolf
         elif type == 'Fiend':
             cls = Fiend
+        elif type == 'Wurdulak':
+            cls = Wurdulak
         cmd = lambda e = None, x = cls, y = sqrs, s = grid_pos : self.continue_place_summon(e, summon = x, sqrs = y, sqr = s)
         root.bind('<a>', lambda e, x = cls, y = sqrs, s = grid_pos : self.continue_place_summon(e, x, y, s))
         b = tk.Button(app.context_menu, text = 'Place '+type.replace('_',' '), font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', wraplength = 190, command = cmd)
@@ -14271,6 +14402,9 @@ class Witch(Summon):
         elif summon == Fiend:
             name = 'Fiend'
             img = ImageTk.PhotoImage(Image.open('summon_imgs/Fiend.png'))
+        elif summon == Wurdulak:
+            name = 'Wurdulak'
+            img = ImageTk.PhotoImage(Image.open('summon_imgs/Wurdulak.png'))
         s = summon(name = name, id = id, img = img, loc = sqr[:], owner = self.owner, level = self.level)
         app.cleanup_squares()
         app.depop_context(event = None)
@@ -14525,8 +14659,9 @@ class Witch(Summon):
         def energize_efct(stat):
             return stat+1
         app.ent_dict[id].mvs_effects.append(energize_efct)
-        def undo(id):
+        def undo(id, lockname = None):
             app.ent_dict[id].mvs_effects.remove(energize_efct)
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
         u = partial(undo,id)
         app.vis_dict['Energize'] = Vis(name = 'Energize', loc = sqr)
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Energize'].img, tags = 'Energize')
@@ -14571,9 +14706,10 @@ class Witch(Summon):
         f = minervas_gift_effect
         app.ent_dict[id].agl_effects.append(f)
         app.ent_dict[id].init_effects.append(f)
-        def un(i):
+        def un(i, lockname = None):
             app.ent_dict[i].agl_effects.remove(minervas_gift_effect)
             app.ent_dict[i].init_effects.remove(minervas_gift_effect)
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
         p = partial(un, id)
         n = "Minerva's_Gift" + str(app.effects_counter)
         app.ent_dict[id].effects_dict[n] = Effect(name = "Minerva's_Gift", undo_func = p, duration = 2, level = self.get_abl('wis'))
@@ -14620,8 +14756,9 @@ class Witch(Summon):
             return types+['psyshield']
         p = partial(bewitch_effect)
         app.ent_dict[id].type_effects.append(p)
-        def undo(id, func):
+        def undo(id, func, lockname = None):
             app.ent_dict[id].type_effects.remove(func)
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
         u = partial(undo, id, p)
         n = 'Bewitch' + str(app.effects_counter)
         app.ent_dict[id].effects_dict[n] = Effect(name = 'Bewitch', undo_func = u, duration = 1, level = self.get_abl('wis'))
@@ -14685,8 +14822,9 @@ class Witch(Summon):
                         return (amt, 0)
                 p = partial(rts_atk)
                 app.ent_dict[id].attack_effects.append(p)
-                def undo(id, func):
+                def undo(id, func, lockname = None):
                     app.ent_dict[id].attack_effects.remove(func)
+                    root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
                 un = partial(undo, id, p)
                 n = 'Read_the_Stars' + str(app.effects_counter)
                 app.ent_dict[id].effects_dict[n] = Effect(name = 'Read_the_Stars', undo_func = un, duration = 1, level = self.get_abl('wis'))
@@ -14795,8 +14933,9 @@ class Witch(Summon):
             return actions
         p2 = partial(add_psi_slash, func = p)
         app.ent_dict[id].action_effects.append(p2)
-        def un(i, func):
+        def un(i, func, lockname = None):
             app.ent_dict[i].action_effects.remove(func)
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
         p = partial(un, id, p2)
         n = 'Psi_Blades' + str(app.effects_counter)
         app.ent_dict[id].effects_dict[n] = Effect(name = 'Psi_Blades', undo_func = p, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
@@ -14963,13 +15102,14 @@ class Witch(Summon):
                 dfndr.psyche_effects.append(p)
                 dfndr.wis_effects.append(p)
                 dfndr.rsn_effects.append(p)
-                def undo(dfndr, func):
+                def undo(dfndr, func, lockname = None):
                     dfndr.str_effects.remove(p)
                     dfndr.agl_effects.remove(p)
                     dfndr.end_effects.remove(p)
                     dfndr.psyche_effects.remove(p)
                     dfndr.wis_effects.remove(p)
                     dfndr.rsn_effects.remove(p)
+                    root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
                 u = partial(undo, dfndr, p)
                 n = 'Vengeance_Boost'+str(app.effects_counter)
                 dfndr.effects_dict[n] = Effect(name = 'Vengeance_Boost', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
@@ -14981,8 +15121,9 @@ class Witch(Summon):
                 return (amt, 0)
         p = partial(vengeance_efct)
         ent.defense_effects.append(p)
-        def undo(id, func):
+        def undo(id, func, lockname = None):
             app.ent_dict[id].defense_effects.remove(func)
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
         u = partial(undo, id, p)
         n = 'Vengeance'+str(app.effects_counter)
         ent.effects_dict[n] = Effect(name = 'Vengeance', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
@@ -15078,9 +15219,9 @@ class Witch(Summon):
                         return stat
                 f = torment_effect
                 app.ent_dict[id].psyche_effects.append(f)
-                def un(i):
+                def un(i, lockname = None):
                     app.ent_dict[i].psyche_effects.remove(torment_effect)
-                    return None
+                    root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
                 p = partial(un, id)
                 n = 'Torment' + str(app.effects_counter)
                 app.ent_dict[id].effects_dict[n] = Effect(name = 'Torment', undo_func = p, duration = 7, level = self.get_abl('psyche'))
@@ -15252,7 +15393,7 @@ class Witch(Summon):
                     ef_type = 'mm'
                 app.canvas.create_text(loc[0]*100+49-app.moved_right, loc[1]*100+84-app.moved_down, text = '-3 '+ef_type, font = ('chalkduster', 14), fill = 'black', tags = 'text')
                 app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+85-app.moved_down, text = '-3 '+ef_type, font = ('chalkduster', 14), fill = 'limegreen', tags = 'text')
-                def un(i, ef_type):
+                def un(i, ef_type, lockname = None):
                     if ef_type == 'str':
                         app.ent_dict[i].str_effects.remove(plague_effect)
                     elif ef_type == 'end':
@@ -15273,6 +15414,7 @@ class Witch(Summon):
                         app.ent_dict[i].init_effects.remove(plague_effect)
                     elif ef_type == 'mm':
                         app.ent_dict[i].mm_effects.remove(plague_effect)
+                    root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
                 p_undo = partial(un, id, ef_type)
                 n = 'Plague' + str(app.effects_counter)
                 app.ent_dict[id].effects_dict['Plague'] = Effect(name = 'Plague', undo_func = p_undo, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
@@ -15515,14 +15657,15 @@ class Witch(Summon):
                                 app.canvas.create_image(s[0]*100+50-app.moved_right, s[1]*100+50-app.moved_down, image = app.vis_dict[n].img, tags = n)
                                 root.after(888, lambda n = n : cleanup_vis(n))
                                 p_inner = partial(pestil_death_trigger, app.ent_dict[id])
-                                def dt_undo():
-                                    pass
+                                def dt_undo(lockname = Non):
+                                    root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
                                 dt = Death_Trigger(name = 'Pestilence', level = self.get_abl('wis'), undo_func = dt_undo, dt = p_inner)
                                 app.ent_dict[id].death_triggers.append(dt)
-                                def un(id, ts):
+                                def un(id, ts, lockname = None):
                                     for dt in app.ent_dict[id].death_triggers[:]:
                                         if dt.ts == ts:
                                             app.ent_dict[id].death_triggers.remove(dt)
+                                    root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
                                 u = partial(un, id, dt.ts)
                                 def take_1(tar, lockname = None):
                                     app.get_focus(tar)
@@ -15534,14 +15677,15 @@ class Witch(Summon):
                             root.after(999, lambda ln = lockname : app.dethloks[ln].set(1))
                         # END inner effect passed on death trigger
                         p_death = partial(pestil_death_trigger, app.ent_dict[id])
-                        def dt_undo():
-                            pass
+                        def dt_undo(lockname = None):
+                            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
                         dt = Death_Trigger(name = 'Pestilence', level = self.get_abl('wis'), undo_func = dt_undo, dt = p_death)
                         app.ent_dict[id].death_triggers.append(dt)
-                        def un(id, ts):
+                        def un(id, ts, lockname = None):
                             for dt in app.ent_dict[id].death_triggers[:]:
                                 if dt.ts == ts:
                                     app.ent_dict[id].death_triggers.remove(dt)
+                            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
                         u = partial(un, id, dt.ts)
                         # EOT FUNC
                         def take_1(tar, lockname = None):
@@ -15609,12 +15753,13 @@ class Witch(Summon):
         app.ent_dict[id].rsn_effects.append(f)
         app.ent_dict[id].san_effects.append(f)
         app.ent_dict[id].init_effects.append(f)
-        def un(i):
+        def un(i, lockname = None):
             app.ent_dict[i].psyche_effects.remove(curse_of_oriax_effect)
             app.ent_dict[i].wis_effects.remove(curse_of_oriax_effect)
             app.ent_dict[i].rsn_effects.remove(curse_of_oriax_effect)
             app.ent_dict[i].san_effects.remove(curse_of_oriax_effect)
             app.ent_dict[i].init_effects.remove(curse_of_oriax_effect)
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
         p = partial(un, id)
         # EOT FUNC
         def take_2(tar, lockname = None):
@@ -15664,9 +15809,10 @@ class Witch(Summon):
         def molsub_wkns_effect(ws):
             return ws + ['acid', 'explosive']
         app.ent_dict[id].weak_effects.append(molsub_wkns_effect)
-        def un(i):
+        def un(i, lockname = None):
             app.ent_dict[i].resist_effects.remove(molsub_resist_effect)
             app.ent_dict[i].weak_effects.remove(molsub_wkns_effect)
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
         p = partial(un, id)
         n = 'Molecular_Subversion' + str(app.effects_counter)
         app.ent_dict[id].effects_dict[n] = Effect(name = 'Molecular_Subversion', undo_func = p, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
@@ -15716,8 +15862,9 @@ class Witch(Summon):
                         return types+['invisibility']
                     p = partial(plu_invis)
                     dfndr.type_effects.append(p)
-                    def undo(id, func):
+                    def undo(id, func, lockname = None):
                         app.ent_dict[id].type_effects.remove(func)
+                        root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
                     u = partial(undo, dfndr.id, p)
                     n = 'Plutonian_Cloak' + str(app.effects_counter)
                     dfndr.effects_dict[n] = Effect(name = 'Plutonian_Invisibility', undo_func = u, duration = 1, level = self.get_abl('wis'))
@@ -15730,8 +15877,9 @@ class Witch(Summon):
                         return types+['psyshield']
                     p = partial(plu_psysh)
                     dfndr.type_effects.append(p)
-                    def undo(id, func):
+                    def undo(id, func, lockname = None):
                         app.ent_dict[id].type_effects.remove(func)
+                        root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
                     u = partial(undo, dfndr.id, p)
                     n = 'Plutonian_Cloak' + str(app.effects_counter)
                     dfndr.effects_dict[n] = Effect(name = 'Plutonian_Psyshield', undo_func = u, duration = 1, level = self.get_abl('wis'))
@@ -15739,8 +15887,9 @@ class Witch(Summon):
             else:
                 return (amt, 0)
         app.ent_dict[id].defense_effects.append(plut_cloak_effect)
-        def undo(id):
+        def undo(id, lockname = None):
             app.ent_dict[id].defense_effects.remove(plut_cloak_effect)
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
         p = partial(undo, id)
         n = 'Plutonian_Cloak' + str(app.effects_counter)
         app.ent_dict[id].effects_dict[n] = Effect(name = 'Plutonian_Cloak', undo_func = p, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
@@ -15792,11 +15941,12 @@ class Witch(Summon):
             return types+['psyshield']
         p = partial(hfts_effect)
         app.ent_dict[id].type_effects.append(p)
-        def un(i, func):
+        def un(i, func, lockname = None):
             app.ent_dict[i].wis_effects.remove(hfts_stat_effect)
             app.ent_dict[i].san_effects.remove(hfts_stat_effect)
             app.ent_dict[i].rsn_effects.remove(hfts_stat_effect)
             app.ent_dict[i].type_effects.remove(func)
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
         u = partial(un, id, p)
         n = 'Hfts' + str(app.effects_counter)
         app.ent_dict[id].effects_dict[n] = Effect(name = 'Hidden_From_the_Stars', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
@@ -15859,8 +16009,9 @@ class Witch(Summon):
                         return [t for t in types if t != 'psyshield']
                     p = partial(cosmic_effect)
                     app.ent_dict[id].type_effects.append(p)
-                    def undo(id, func):
+                    def undo(id, func, lockname = None):
                         app.ent_dict[id].type_effects.remove(func)
+                        root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
                     u = partial(undo, id, p)
                     n = 'Cosmic_Sight' + str(app.effects_counter)
                     app.ent_dict[id].effects_dict[n] = Effect(name = 'Cosmic_Sight', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
@@ -15914,8 +16065,9 @@ class Witch(Summon):
                 return [t for t in types if t != 'invisibility']
             p = partial(demonic_invis)
             app.ent_dict[id].type_effects.append(p)
-            def undo(id, func):
+            def undo(id, func, lockname = None):
                 app.ent_dict[id].type_effects.remove(func)
+                root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
             u = partial(undo, id, p)
             n = 'Demonic_Sight' + str(app.effects_counter)
             app.ent_dict[id].effects_dict[n] = Effect(name = 'Demonic_Sight', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
@@ -15968,10 +16120,11 @@ class Witch(Summon):
         def gravity_move(move_range):
             return max(1,move_range-2)
         app.ent_dict[id].move_range_effects.append(gravity_move)
-        def un(i):
+        def un(i, lockname = None):
             app.ent_dict[i].agl_effects.remove(gravity_agil_effect)
             app.ent_dict[i].dodge_effects.remove(gravity_dodge_effect)
             app.ent_dict[i].move_range_effects.remove(gravity_move)
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
         p = partial(un, id)
         n = 'Gravity' + str(app.effects_counter)
         app.ent_dict[id].effects_dict[n] = Effect(name = 'Gravity', undo_func = p, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
@@ -16070,8 +16223,9 @@ class Witch(Summon):
                 return max(0,amt-1)
             p_stun = partial(beleths_stun_effect)
             app.ent_dict[id].mvs_effects.append(p_stun)
-            def un(i, func):
+            def un(i, func, lockname = None):
                 app.ent_dict[i].mvs_effects.remove(func)
+                root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
             p = partial(un, id, p_stun)
             n = 'Beleth_Stun' + str(app.effects_counter)
             app.ent_dict[id].effects_dict[n] = Effect(name = 'Beleth_Stun', undo_func = p, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
@@ -16103,9 +16257,10 @@ class Witch(Summon):
             f = beleths_command_effect
             self.end_effects.append(f)
             self.psyche_effects.append(f)
-            def un(i):
+            def un(i, lockname = None):
                 app.ent_dict[i].end_effects.remove(beleths_command_effect)
                 app.ent_dict[i].psyche_effects.remove(beleths_command_effect)
+                root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
             p = partial(un, self.id)
             self.effects_dict["Beleth's_Command"] = Effect(name = "Beleth's_Command", undo_func = p, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
         root.after(3666, lambda  name = "Beleth's_Command" : self.cleanup_spell(name = name))
@@ -16200,9 +16355,10 @@ class Witch(Summon):
         def meditate_move(move_range):
             return move_range + 2
         app.ent_dict[id].move_range_effects.append(meditate_move)
-        def un(i):
+        def un(i, lockname = None):
             app.ent_dict[i].psyche_effects.remove(meditate_effect)
             app.ent_dict[i].move_range_effects.remove(meditate_move)
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
         p = partial(un, id)
         n = 'Meditate' + str(app.effects_counter)
         app.ent_dict[id].effects_dict[n] = Effect(name = 'Meditate', undo_func = p, duration = 1, level = self.get_abl('wis'))
@@ -16255,10 +16411,11 @@ class Witch(Summon):
         ent.san_effects.append(p)
         ent.wis_effects.append(p2)
         ent.rsn_effects.append(p3)
-        def un(id, p, p2, p3):
+        def un(id, p, p2, p3, lockname = None):
             app.ent_dict[id].san_effects.remove(p)
             app.ent_dict[id].wis_effects.remove(p2)
             app.ent_dict[id].rsn_effects.remove(p3)
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
         u = partial(un, id, p, p2, p3)
         n = 'Mind_Rot' + str(app.effects_counter)
         ent.effects_dict[n] = Effect(name = 'Mind_Rot', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
@@ -16360,8 +16517,9 @@ class Witch(Summon):
                 return [t for t in types if t != 'psyshield' or t != 'invisibility']
             p = partial(grasp_effect)
             ent.type_effects.append(p)
-            def undo(id, func):
+            def undo(id, func, lockname = None):
                 app.ent_dict[id].type_effects.remove(func)
+                root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
             u = partial(undo, id, p)
             n = 'Grasp_of_the_Old_Ones' + str(app.effects_counter)
             ent.effects_dict[n] = Effect(name = 'Grasp_of_the_Old_Ones', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
@@ -16413,9 +16571,10 @@ class Witch(Summon):
             return max(1, stat-4)
         app.ent_dict[id].str_effects.append(boiling_blood_str_effect)
         app.ent_dict[id].end_effects.append(boiling_blood_end_effect)
-        def un(i):
+        def un(i, lockname = None):
             app.ent_dict[i].str_effects.remove(boiling_blood_str_effect)
             app.ent_dict[i].end_effects.remove(boiling_blood_end_effect)
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
         p = partial(un, id)
         # EOT FUNC
         def take_1(tar, lockname = None):
@@ -16483,8 +16642,9 @@ class Witch(Summon):
                 return acts+1
             p = partial(dark_acts)
             app.ent_dict[id].acts_effects.append(p)
-            def undo(id, func):
+            def undo(id, func, lockname = None):
                 app.ent_dict[id].acts_effects.remove(func)
+                root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
             u = partial(undo, id, p)
             n = 'Dark_Sun' + str(app.effects_counter)
             app.ent_dict[id].effects_dict[n] = Effect(name = 'Dark_Sun', undo_func = u, duration = 1, level = self.get_abl('wis'))
@@ -16546,9 +16706,10 @@ class Witch(Summon):
                 app.ent_dict[id].leap_used = True
             root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
         p_sot = partial(sot, id)
-        def un(i):
+        def un(i, lockname = None):
             app.ent_dict[i].end_effects.remove(mummify_effect)
             app.ent_dict[i].move_range_effects.remove(mummy_moves)
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
         u = partial(un, id)
         n = 'Mummify' + str(app.effects_counter)
         app.ent_dict[id].effects_dict[n] = Effect(name = 'Mummify', undo_func = u, sot_func = p_sot, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
@@ -16657,8 +16818,9 @@ class Witch(Summon):
                 return [t for t in types if t != 'psyshield']
             p = partial(dispel_effect)
             ent.type_effects.append(p)
-            def undo(id, func):
+            def undo(id, func, lockname = None):
                 app.ent_dict[id].type_effects.remove(func)
+                root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
             u = partial(undo, id, p)
             n = 'Dispel' + str(app.effects_counter)
             ent.effects_dict[n] = Effect(name = 'Dispel', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
@@ -19152,6 +19314,7 @@ class App(tk.Frame):
     def handle_action(self):
         app.active_ent = None
         if self.init_q == []:
+            app.unbind_all()
             self.active_ent = None
             app.canvas.delete('active_ent')
             self.handle_eot_effects()
@@ -19215,7 +19378,7 @@ class App(tk.Frame):
             # decr ef.dur
             ef.duration -= 1
             if ef.duration <= 0 and ef in [j for k,v in app.ent_dict.items() for i,j in v.effects_dict.items()] + [j for k,v in app.loc_dict.items() for i,j in v.effects_dict.items()]: # MUST CHECK IF STILL EXISTS AGAIN, in case eot removed owner
-                ef.undo_func()
+                lock(ef.undo_func)
                 # delete Effect from source dict
                 for efct,key,ent in [(j,i,v) for k,v in app.ent_dict.items() for i,j in v.effects_dict.items()]:
                     if efct == ef:
