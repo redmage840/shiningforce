@@ -1,5 +1,5 @@
-# all undo_func must now accept and set lockname (will be called by lock() in handle_eot_effects())
-# need some small delay (after sets lockname) at end of undo_func in order to give time for very next call (wait_var, in lock)
+# how will disintegrate undo funcs work with new lock undo func system?
+# each eot phase changes the Disintegrate Effect undo_func, passing the old func into the new one, which calls the old one before calling itself, arbitrary funcs are chained within this one undo_func in such a way
 
 # homunculus
 
@@ -17025,9 +17025,10 @@ class Witch(Summon):
             p = partial(osiris_effect)
             app.ent_dict[id].str_effects.append(p)
             app.ent_dict[id].end_effects.append(p)
-            def un(i, func):
+            def un(i, func, lockname = None):
                 app.ent_dict[i].str_effects.remove(func)
                 app.ent_dict[i].end_effects.remove(func)
+                root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
             u = partial(un, id, p)
             n = 'Command_of_Osiris' + str(app.effects_counter)
             app.ent_dict[id].effects_dict[n] = Effect(name = 'Osiris_Blessing', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
@@ -17054,9 +17055,10 @@ class Witch(Summon):
             p = partial(osiris_effect)
             app.ent_dict[id].str_effects.append(p)
             app.ent_dict[id].end_effects.append(p)
-            def un(i, func):
+            def un(i, func, lockname = None):
                 app.ent_dict[i].str_effects.remove(func)
                 app.ent_dict[i].end_effects.remove(func)
+                root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
             u = partial(un, id, p)
             n = 'Command_of_Osiris' + str(app.effects_counter)
             app.ent_dict[id].effects_dict[n] = Effect(name = 'Osiris_Curse', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
@@ -17105,9 +17107,9 @@ class Witch(Summon):
                         return r + 1
                     p = partial(fop_move)
                     app.ent_dict[id].move_range_effects.append(p)
-                    def un(id, f):
+                    def un(id, f, lockname = None):
                         app.ent_dict[id].move_range_effects.remove(f)
-                        return None
+                        root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
                     u = partial(un, id, p)
                     app.ent_dict[id].effects_dict[un] = Effect(name = 'Fleet_of_Paw', undo_func = u, duration = 1, level = self.get_abl('psyche'))
                     root.after(1555, lambda un = un : cleanup_fop(un))
