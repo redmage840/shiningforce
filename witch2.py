@@ -1,8 +1,3 @@
-# undo funcs, when called from actions/spells (not during natural undo due to effect duration ending), generate key error from not being called by lock
-# can change undo_funcs to: if lockname:set lockname...
-# OR can change dispel()
-# ACTUALLY need to change dispel, since calling undo_funcs from inside dispel() may need an arbitrary amount of time
-
 # wurdulak shift_form, currently checked/decremented by bat/wolf form, then in app.end_turn() is reset to 1. Should this change to some variable amount?
 
 # wurdulak action desc
@@ -718,7 +713,7 @@ class Death_Trigger():
         chance = 50 - mod # apx range (95=>5)
         r = randrange(0,101)
         if r < chance:
-            self.undo_func()
+            lock(self.undo_func)
             return 'Dispelled'
         else:
             return 'Not Dispelled'
@@ -739,7 +734,7 @@ class Effect():
         chance = 50 - mod # apx range (95=>5)
         r = randrange(0,101)
         if r < chance:
-            self.undo_func()
+            lock(self.undo_func)
             return 'Dispelled'
         else:
             return 'Not Dispelled'
@@ -764,7 +759,7 @@ class Local_Effect():
         chance = 50 - mod # apx range (95=>5)
         r = randrange(0,101)
         if r < chance:
-            self.undo_func()
+            lock(self.undo_func)
             return 'Dispelled'
         else:
             return 'Not Dispelled'
