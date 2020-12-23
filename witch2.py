@@ -1,9 +1,55 @@
 # active_ent names are cut off on bottom most possible ents, when highlighted with get_focus()
-# get_focus()/focus_square() seem to not function the same under some conditions? (focus on ents bottom of map) and not give a visual berth of at least one square width towards the bottom of map...
+# something between level load, loading save game on lev 2 seems fine
+# something about destroying widgets/children, see debug func
+# test if happens on transition from lev2 to lev3
+# same thing happens lev2 to lev3, lev3 is fine if loaded from save, when transition from lev to lev moving cursor down does not give 1 width berth
+# see output of printing canvas width/height
+# first is result from loading save, next two are transitioned into (lev2, lev3)
+'''
+Hello from the pygame community. https://www.pygame.org/contribute.html
+.!app
+.!button
+.!button2
+.!button3
+.!verticalscrolledframe
+.!frame
+.!button4
+.!canvas3
+.!canvas4
+1080
+799
+box:witchesAndwerewolves crazyfox$ python3 witch2.py 
+pygame 2.0.0.dev14 (SDL 2.0.12, python 3.8.5)
+Hello from the pygame community. https://www.pygame.org/contribute.html
+.!frame2
+.!button5
+.!button6
+.!frame3
+.!button7
+.!canvas7
+.!canvas8
+1080
+800
 
-# tortured soul attack visual
+.!frame4
+.!button8
+.!button9
+.!frame5
+.!button10
+.!canvas11
+.!canvas12
+1080
+800
+'''
 
-# make bewitch pyro_purple
+
+# trolls that fail sanity check skip their regen...
+
+# wherever 'q' is hotkeyed to a specific cancel function, r-click should be bound to that cancel function (although r-click otherwise is bound to move_cursor/populate_context) OR (if this is unintuitive) a cancel button should be created when binding 'q' to specific action-cancel function
+
+
+# continue change visuals and descriptions and sounds, # wurdulak action desc, hatred
+# sounds: bewitch, hfts, haste, dispel, dcube, analyze, rts, dsight, arrow, 
 
 # wurdulak, smn zombie w plaguebearer images?
 
@@ -13,17 +59,9 @@
 
 # change legal_attacks() for ents that have multiple kinds of attacks...
 
-# standardize visuals, name of spell, affected units, visual text
-
-# make later level with many imba units, overloaded on some axis, lacking on others...
-
 # to ai routines, if path is longer than epath by some amount, use epath
 
 # asteroid vis, add more images from spritesheet
-
-# wurdulak shift_form, currently checked/decremented by bat/wolf form, then in app.end_turn() is reset to 1. Should this change to some variable amount?
-
-# wurdulak action desc, hatred
 
 # fiend pounce images, bewitch text self
 
@@ -33,14 +71,8 @@
 
 # spell to change level of effects
 
-# sounds: bewitch, hfts, haste, dispel, dcube, analyze, rts, dsight, arrow, 
-
-# cancel button for everything (spells, actions)
-
 # show costs of actions, without disrupting the names for action_descr lookups...
 # alt five is infi symbol
-
-# r-click hotkey for targeting/confirming of spells/actions/move/summon
 
 # add note in help or clarify order resolution: currently local effects are gathered/queued AFTER all ent.effects are applied REGARDLESS of timestamp/cast-order
 
@@ -79,6 +111,11 @@ from copy import deepcopy
 from math import ceil
 # filehandler = open(filename, 'r') 
 # object = pickle.load(filehandler)
+
+def unique(listoflists):
+    tx = [tuple(s) for s in listoflists]
+    ts = list(set(tx))
+    return [list(t) for t in ts]
 
 def round_100(x):
     prefix = x // 100
@@ -278,7 +315,7 @@ def action_description(act):
     elif act == 'Concerted Volley':
         return 'Each friendly unit within range 2 of caster gets +X marksmanship where X is equal to the number of friendly units within range 2 of caster without this effect. Duration is wisdom. Level is wisdom. Costs 1.'
     elif act == 'Vengeance':
-        return 'Spell target gets defense effect, on receiving damage, not during start-of-turn or end-of-turn phase, adds a +1 effect to str,agl,end,psy,wis,rsn. Both +1 boosts and this effect have duration equal to caster reason and level equal to caster wisdom.'
+        return 'Spell target gets defense effect, on receiving melee or ranged or spell damage, adds a +1 effect to str,agl,end,psy,wis,rsn. Both +1 boosts and this effect have duration equal to caster reason and level equal to caster wisdom.'
     elif act == 'Pounce':
         return "'Jump'(move unimpeded by obstacles) to a location within move range that is adjacent to at least 1 enemy unit. After relocating, attack each adjacent enemy, to-hit agility vs agility, damage strength vs endurance, slashing melee. Does not target."
     elif act == 'Suplex':
@@ -674,7 +711,6 @@ def intersect(lx,ly):
 
 # GLOBALS
 curs_pos = [0, 0]
-# is_object_selected = False
 selected = []
 selected_vis = []
 map_pos = [0, 0]
@@ -2143,6 +2179,7 @@ class Illusionist(Summon):
     def mortar(self, event = None):
         if self.acts < 1:
             return
+        app.unbind_nonarrows()
         app.depop_context(event = None)
         root.bind('<q>', self.cleanup_mortar)
         sqrs = [s for s in app.coords if self.get_abl('bls') < dist(self.loc, s) <= (self.get_abl('bls')+2)]
@@ -7127,15 +7164,15 @@ class Tortured_Soul(Bot):
     def __init__(self, name, img, loc, owner, waiting = False):
         self.actions = {'Agony':self.ranged_attack, 'Rend':self.melee_attack}
         self.str = 8
-        self.agl = 6
+        self.agl = 5
         self.end = 8
         self.mm = 1
         self.msl = 0
         self.bls = 0
-        self.dodge = 6
+        self.dodge = 9
         self.psyche = 9
         self.wis = 9
-        self.rsn = 5
+        self.rsn = 6
         self.init = 7
         self.spirit = 23
         self.magick = 17
@@ -7145,7 +7182,7 @@ class Tortured_Soul(Bot):
         self.move_range = 5
         self.waiting = waiting
         self.move_type = 'normal'
-        self.resist = ['piercing', 'slashing', 'poison']
+        self.resist = ['piercing', 'explosive', 'poison']
         self.weak = []
         super().__init__(name, img, loc, owner)
         
@@ -7170,8 +7207,15 @@ class Tortured_Soul(Bot):
     def ranged_attack(self, id):
         self.init_attack_anims()
         app.get_focus(id)
+        ent = app.ent_dict[id]
 #         effect1 = mixer.Sound('Sound_Effects/undead_attack.ogg')
 #         sound_effects.play(effect1, 0)
+        app.vis_dict['Agony'] = Vis(name = 'Agony', loc = ent.loc[:])
+        app.canvas.create_image(ent.loc[0]*100+50-app.moved_right, ent.loc[1]*100+50-app.moved_down, image = app.vis_dict['Agony'].img, tags = 'Agony')
+        def cleanup_agony():
+            del app.vis_dict['Agony']
+            app.canvas.delete('Agony')
+            app.canvas.delete('text')
         my_agl = self.get_abl('wis')
         target_agl = app.ent_dict[id].get_abl('dodge')
         if to_hit(my_agl, target_agl):# HIT
@@ -7179,11 +7223,13 @@ class Tortured_Soul(Bot):
             tar_psy = app.ent_dict[id].get_abl('psyche')
             d = damage(my_psy, tar_psy)
             root.after(1666, self.init_normal_anims)
+            root.after(1666, cleanup_agony)
             lock(apply_damage, self, app.ent_dict[id], -d, 'magick', 'Agony', 'spell')
             self.finish_attack()
         else:# MISS
             loc = app.ent_dict[id].loc[:]
             miss(loc)
+            root.after(1666, cleanup_agony)
             root.after(1666, self.finish_attack)
         
     def melee_attack(self, id):
@@ -8651,125 +8697,66 @@ class Skeleton(Bot):
         
 class Undead_Knight(Bot):
     def __init__(self, name, img, loc, owner, waiting = False):
-        self.actions = {'attack':self.do_attack}
-        self.attack_used = False
+        self.actions = {'Cleave':self.melee_attack}
         self.str = 10
-        self.agl = 8
-        self.end = 6
+        self.agl = 9
+        self.end = 8
+        self.mm = 1
+        self.msl = 0
+        self.bls = 0
         self.dodge = 8
-        self.psyche = 6
+        self.psyche = 7
+        self.wis = 7
+        self.rsn = 4
+        self.init = 6
         self.spirit = 86
+        self.magick = 19
+        self.san = 15
+        self.acts = 2
+        self.mvs = 1
         self.move_range = 4
         self.waiting = waiting
         self.move_type = 'normal'
-        self.resist = ['slashing', 'piercing', 'magick', 'poison']
-        self.weak = ['fire', 'crushing']
+        self.resist = ['crushing', 'fire', 'poison']
+        self.weak = ['magick']
         super().__init__(name, img, loc, owner)
         
-    def pass_priority(self, ents_list):
-        self.ai_end_turn(ents_list)
-        
-    def do_ai(self, ents_list):
+    def do_round(self):
         if self.waiting == True:
-            self.pass_priority(ents_list)
+            app.handle_action()
         else:
-            self.continue_ai(ents_list)
-            
-    def continue_ai(self, ents_list):
-        atk_sqrs = self.legal_attacks()
-        if atk_sqrs != []: # CAN ATTACK BEFORE MOVING
-            any = atk_sqrs[0]
-            id = app.grid[any[0]][any[1]]
-            root.after(666, lambda id = id : app.get_focus(id))
-            root.after(1333, lambda el = ents_list, id = id : self.do_attack(el, id)) # ATTACK
-        else: # FIND PATH
-            self.get_path(ents_list)
-            
-    def get_path(self, ents_list):
-        els = [v.loc for k,v in app.action_target_ents().items() if v.owner != self.owner]
-        cs = [c for c in app.coords if sum([ef.avoid for k,ef in app.loc_dict[tuple(c)].effects_dict.items()])*10 < randrange(30,60)]
-        fls = [v.loc for k,v in app.all_ents().items() if v.owner == self.owner]
-        egrid = deepcopy(app.grid)
-        for s in fls:
-            egrid[s[0]][s[1]] = ''
-        gs1 = [g for g in cs for el in els if dist(el,g) == 1 and app.grid[g[0]][g[1]] == '']
-        gs2 = [g for g in cs for el in els if dist(el,g) == 1 and egrid[g[0]][g[1]] == '']
-        gs3 = [g for g in app.coords for el in els if dist(el,g) == 1 and app.grid[g[0]][g[1]] == '']
-        if bfs(self.loc[:], gs1, app.grid[:]):
-            path = bfs(self.loc[:], gs1, app.grid[:])
-            self.get_move(path, cs, ents_list)
-        elif bfs(self.loc[:], gs2, egrid[:]):
-            path = bfs(self.loc[:], gs2, egrid[:])
-            self.get_move(path, cs, ents_list)
-        elif bfs(self.loc[:], gs3, app.grid[:]):
-            path = bfs(self.loc[:], gs3, app.grid[:])
-            self.get_move(path, cs, ents_list)
-        elif bfs(self.loc[:], gs3, egrid[:]):
-            path = bfs(self.loc[:], gs3, egrid[:])
-            self.get_move(path, cs, ents_list)
-        else:
-            self.ai_end_turn(ents_list)
-            
-    def get_move(self, path, cs, ents_list):
-        # get m of ms in path in cs else m of ms in path else end
-        ms = self.legal_moves()
-        moves = [m for m in ms if m in path and m in cs]
-        if moves == []:
-            moves = [m for m in ms if m in path]
-            if moves == []:
-                self.ai_end_turn(ents_list)
+            if self. acts > 0 and [k for k,v in app.action_target_ents().items() if dist(v.loc, self.loc) == 1 and v.owner != self.owner and 'Cleave' in self.get_actions().keys()]:
+                Ai_man.melee_attack_attempt(self)
+            elif [k for k,v in app.action_target_ents().items() if v.owner != self.owner] != [] and self.mvs > 0 and self.legal_moves() != []:
+                Ai_man.melee_pursue(self) # PURSUE UNTIL NO MVS OR ADJ ENEMY
             else:
-                m = reduce(lambda a,b : a if dist(a,self.loc) > dist(b,self.loc) else b, moves)
-                root.after(666, lambda sqr = m : app.focus_square(sqr))
-                root.after(1333, lambda el = ents_list, sqr = m : self.ai_move(el, sqr))
-        else:
-            m = reduce(lambda a,b : a if dist(a,self.loc) > dist(b,self.loc) else b, moves)
-            root.after(666, lambda sqr = m : app.focus_square(sqr))
-            root.after(1333, lambda el = ents_list, sqr = m : self.ai_move(el, sqr))
-            
-    def do_attack(self, ents_list, id):
-        if self.attack_used == True:
-            self.cleanup_attack(ents_list)
-        else:
-            app.get_focus(id)
-            effect1 = mixer.Sound('Sound_Effects/undead_knight_attack.ogg')
-            sound_effects.play(effect1, 0)
-            my_agl = self.get_abl('agl')
-            target_agl = app.ent_dict[id].get_abl('agl')
-            if to_hit(my_agl, target_agl) == True:# HIT
-                my_str = self.get_abl('str')
-                tar_end = app.ent_dict[id].get_abl('end')
-                d = damage(my_str, tar_end)
-                pre = app.ent_dict[id].spirit
-                lock(apply_damage, self, app.ent_dict[id], -d, 'slashing', 'Sword Strike', 'melee')
-                root.after(666, lambda e = ents_list : self.finish_attack(e))
-            else:# MISS
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Miss!', justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Miss!', justify = 'center', fill = 'white', font = ('chalkduster', 13), tags = 'text')
-                root.after(1666, lambda e = ents_list : self.finish_attack(e))
+                app.handle_action()
         
-    def ai_finish_turn(self, ents_list):
-        if self.attack_used == False:
-            atk_sqrs = self.legal_attacks()
-            if atk_sqrs != []:
-                any = atk_sqrs[0]
-                id = app.grid[any[0]][any[1]]
-                root.after(666, lambda t = id : app.get_focus(t))
-                root.after(999, lambda el = ents_list, t = id : self.do_attack(el, t))
-            else:
-                self.ai_end_turn(ents_list)
-        else:
-            self.ai_end_turn(ents_list)
-
-        
-    def cleanup_attack(self):
+    # abstract this func into Ai_man, change to accept needed abl scores and apply_damage args
+    def melee_attack(self, id):
+#         self.init_attack_anims()
+        app.get_focus(id)
+        effect1 = mixer.Sound('Sound_Effects/undead_knight_attack.ogg')
+        sound_effects.play(effect1, 0)
+        my_agl = self.get_abl('agl')
+        target_agl = app.ent_dict[id].get_abl('agl')
+        if to_hit(my_agl, target_agl) == True:# HIT
+            my_str = self.get_abl('str')
+            tar_end = app.ent_dict[id].get_abl('end')
+            d = damage(my_str, tar_end)
+            root.after(1666, self.init_normal_anims)
+            lock(apply_damage, self, app.ent_dict[id], -d, 'slashing', 'Chop', 'melee')
+            self.finish_attack()
+        else:# MISS
+            loc = app.ent_dict[id].loc[:]
+            miss(loc)
+            root.after(1666, self.finish_attack)
+                
+    def finish_attack(self):
+        self.init_normal_anims()
         try: app.canvas.delete('text')
         except: pass
-            
-    def finish_attack(self, ents_list):
-        try: app.canvas.delete('text')
-        except: pass
-        self.ai_end_turn(ents_list)
+        self.do_round()
         
     def legal_attacks(self):
         sqrs = []
@@ -8802,148 +8789,84 @@ class Undead_Knight(Bot):
         
 class Troll(Bot):
     def __init__(self, name, img, loc, owner, waiting = False):
-        self.actions = {'attack':self.do_attack}
-        self.attack_used = False
+        self.actions = {'Pummel':self.melee_attack}
         self.str = 9
-        self.agl = 6
+        self.agl = 7
         self.end = 8
+        self.mm = 1
+        self.msl = 0
+        self.bls = 0
         self.dodge = 5
-        self.psyche = 2
+        self.psyche = 3
+        self.wis = 3
+        self.rsn = 2
+        self.init = 8
         self.spirit = 35
+        self.magick = 0
+        self.san = 11
+        self.acts = 1
+        self.mvs = 1
         self.move_range = 8
         self.waiting = waiting
         self.move_type = 'normal'
-        self.resist = ['slashing', 'piercing']
+        self.resist = ['crushing', 'slashing', 'piercing']
         self.weak = ['fire', 'acid']
+        self.regen_this_round = False
         super().__init__(name, img, loc, owner)
         
-    def pass_priority(self, ents_list):
-        self.ai_end_turn(ents_list)
+    def troll_regen(self):
+        app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+74-app.moved_down, text='Regen 2 Spirit', font= ('chalkduster', 13), fill = 'black', tags = 'regen_text')
+        app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+75-app.moved_down, text='Regen 2 Spirit', font= ('chalkduster', 13), fill = 'white', tags = 'regen_text')
+        root.after(999, lambda t = 'regen_text' : app.canvas.delete(t))
+        self.spirit += 2
+        if self.spirit > 35:
+            self.spirit = 35
+        self.regen_this_round = True
         
-    def do_ai(self, ents_list):
-        if self.waiting == True:
-            self.pass_priority(ents_list)
-        else:
-            self.continue_ai(ents_list)
-            
-    def continue_ai(self, ents_list):
+    def do_round(self):
         # TROLL REGEN
-        if self.spirit < 35:
-            app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+74-app.moved_down, text='Regen 2 Spirit', font= ('chalkduster', 13), fill = 'black', tags = 'regen_text')
-            app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+75-app.moved_down, text='Regen 2 Spirit', font= ('chalkduster', 13), fill = 'white', tags = 'regen_text')
-            root.after(999, lambda t = 'regen_text' : app.canvas.delete(t))
-            self.spirit += 2
-            if self.spirit > 35:
-                self.spirit = 35
-        atk_sqrs = self.legal_attacks()
-        if atk_sqrs != []: # CAN ATTACK BEFORE MOVING
-            any = atk_sqrs[0]
-            id = app.grid[any[0]][any[1]]
-            root.after(666, lambda id = id : app.get_focus(id))
-            root.after(1333, lambda el = ents_list, id = id : self.do_attack(el, id)) # ATTACK
-        else: # FIND PATH
-            self.get_path(ents_list)
-            
-    def get_path(self, ents_list):
-        els = [v.loc for k,v in app.action_target_ents().items() if v.owner != self.owner]
-        cs = [c for c in app.coords if sum([ef.avoid for k,ef in app.loc_dict[tuple(c)].effects_dict.items()])*10 < randrange(30,60)]
-        fls = [v.loc for k,v in app.all_ents().items() if v.owner == self.owner]
-        egrid = deepcopy(app.grid)
-        for s in fls:
-            egrid[s[0]][s[1]] = ''
-        gs1 = [g for g in cs for el in els if dist(el,g) == 1 and app.grid[g[0]][g[1]] == '']
-        gs2 = [g for g in cs for el in els if dist(el,g) == 1 and egrid[g[0]][g[1]] == '']
-        gs3 = [g for g in app.coords for el in els if dist(el,g) == 1 and app.grid[g[0]][g[1]] == '']
-        if bfs(self.loc[:], gs1, app.grid[:]):
-            path = bfs(self.loc[:], gs1, app.grid[:])
-            self.get_move(path, cs, ents_list)
-        elif bfs(self.loc[:], gs2, egrid[:]):
-            path = bfs(self.loc[:], gs2, egrid[:])
-            self.get_move(path, cs, ents_list)
-        elif bfs(self.loc[:], gs3, app.grid[:]):
-            path = bfs(self.loc[:], gs3, app.grid[:])
-            self.get_move(path, cs, ents_list)
-        elif bfs(self.loc[:], gs3, egrid[:]):
-            path = bfs(self.loc[:], gs3, egrid[:])
-            self.get_move(path, cs, ents_list)
+        if self.spirit < 35 and self.regen_this_round == False:
+            self.troll_regen()
+            root.after(1666, self.do_round)
+        elif self.waiting == True:
+            app.handle_action()
         else:
-            self.ai_end_turn(ents_list)
-            
-    def get_move(self, path, cs, ents_list):
-        # get m of ms in path in cs else m of ms in path else end
-        ms = self.legal_moves()
-        moves = [m for m in ms if m in path and m in cs]
-        if moves == []:
-            moves = [m for m in ms if m in path]
-            if moves == []:
-                self.ai_end_turn(ents_list)
+            if self. acts > 0 and [k for k,v in app.action_target_ents().items() if dist(v.loc, self.loc) == 1 and v.owner != self.owner and 'Pummel' in self.get_actions().keys()]:
+                Ai_man.melee_attack_attempt(self)
+            elif [k for k,v in app.action_target_ents().items() if v.owner != self.owner] != [] and self.mvs > 0 and self.legal_moves() != []:
+                Ai_man.melee_pursue(self) # PURSUE UNTIL NO MVS OR ADJ ENEMY
             else:
-                m = reduce(lambda a,b : a if dist(a,self.loc) > dist(b,self.loc) else b, moves)
-                root.after(666, lambda sqr = m : app.focus_square(sqr))
-                root.after(1333, lambda el = ents_list, sqr = m : self.ai_move(el, sqr))
-        else:
-            m = reduce(lambda a,b : a if dist(a,self.loc) > dist(b,self.loc) else b, moves)
-            root.after(666, lambda sqr = m : app.focus_square(sqr))
-            root.after(1333, lambda el = ents_list, sqr = m : self.ai_move(el, sqr))
-            
-    def do_attack(self, ents_list, id):
-        if self.attack_used == True:
-            self.cleanup_attack(ents_list)
-        else:
-            app.get_focus(id)
-            effect1 = mixer.Sound('Sound_Effects/troll_attack.ogg')
-            sound_effects.play(effect1, 0)
-            my_agl = self.get_abl('agl')
-            target_agl = app.ent_dict[id].get_abl('agl')
-            if to_hit(my_agl, target_agl) == True:# HIT
-                my_str = self.get_abl('str')
-                tar_end = app.ent_dict[id].get_abl('end')
-                d = damage(my_str, tar_end)
-                pre = app.ent_dict[id].spirit
-                lock(apply_damage, self, app.ent_dict[id], -d, 'crushing', 'Pummel', 'melee')
-                post = app.ent_dict[id].spirit
-                d = pre - post
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Hit! ' + str(d) + ' spirit', justify = 'center', fill = 'white', font = ('chalkduster', 13), tags = 'text')
-                if app.ent_dict[id].spirit <= 0:# HIT, KILL
-                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+84, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
-                    app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+85, text = app.ent_dict[id].name.replace('_',' ') + ' Killed...', justify = 'center', fill = 'white', font = ('chalkduster', 13), tags = 'text')
-                    name = 'dethlok'+str(app.death_count)
-                    app.death_count += 1
-                    app.dethloks[name] = tk.IntVar(0)
-                    root.after(2666, self.cleanup_attack)
-                    root.after(2666, lambda id = id, name = name : app.kill(id, name))
-                    root.wait_variable(app.dethloks[name])
-                    self.finish_attack(ents_list)
-                else:# HIT, NO KILL
-                    root.after(2666, lambda e = ents_list : self.finish_attack(e))
-            else:# MISS
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+49, app.ent_dict[id].loc[1]*100-app.moved_down+74, text = 'Miss!', justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
-                app.canvas.create_text(app.ent_dict[id].loc[0]*100-app.moved_right+50, app.ent_dict[id].loc[1]*100-app.moved_down+75, text = 'Miss!', justify = 'center', fill = 'white', font = ('chalkduster', 13), tags = 'text')
-                root.after(2666, lambda e = ents_list : self.finish_attack(e))
-        
-    def ai_finish_turn(self, ents_list):
-        if self.attack_used == False:
-            atk_sqrs = self.legal_attacks()
-            if atk_sqrs != []:
-                any = atk_sqrs[0]
-                id = app.grid[any[0]][any[1]]
-                root.after(666, lambda t = id : app.get_focus(t))
-                root.after(999, lambda el = ents_list, t = id : self.do_attack(el, t))
-            else:
-                self.ai_end_turn(ents_list)
-        else:
-            self.ai_end_turn(ents_list)
+                self.regen_this_round = False
+                app.handle_action()
 
+    def pass_priority(self):
+        app.handle_action()
         
-    def cleanup_attack(self):
+    # abstract this func into Ai_man, change to accept needed abl scores and apply_damage args
+    def melee_attack(self, id):
+#         self.init_attack_anims()
+        app.get_focus(id)
+        effect1 = mixer.Sound('Sound_Effects/orc_axeman_attack.ogg')
+        sound_effects.play(effect1, 0)
+        my_agl = self.get_abl('agl')
+        target_agl = app.ent_dict[id].get_abl('agl')
+        if to_hit(my_agl, target_agl) == True:# HIT
+            my_str = self.get_abl('str')
+            tar_end = app.ent_dict[id].get_abl('end')
+            d = damage(my_str, tar_end)
+            root.after(1666, self.init_normal_anims)
+            lock(apply_damage, self, app.ent_dict[id], -d, 'crushing', 'Pummel', 'melee')
+            self.finish_attack()
+        else:# MISS
+            loc = app.ent_dict[id].loc[:]
+            miss(loc)
+            root.after(1666, self.finish_attack)
+                
+    def finish_attack(self):
+        self.init_normal_anims()
         try: app.canvas.delete('text')
         except: pass
-            
-    def finish_attack(self, ents_list):
-        try: app.canvas.delete('text')
-        except: pass
-        self.ai_end_turn(ents_list)
+        self.do_round()
         
     def legal_attacks(self):
         sqrs = []
@@ -8955,33 +8878,6 @@ class Troll(Bot):
                         sqrs.append(c)
         return sqrs
         
-    
-#     def legal_moves(self):
-#         path = []
-#         q = [[c] for c in app.coords if dist(self.loc, c) == 1 and app.grid[c[0]][c[1]] == '']
-#         visited = [q[:]]
-#         mvlist = []
-#         while q:
-#             path = q[0]
-#             q = q[1:]
-#             if len(path) > 8 or path in visited:
-#                 continue
-#             else:
-#                 visited.append(path)
-#                 last = path[-1]
-#                 if last not in mvlist:
-#                     mvlist.append(last)
-#     #             if last in goal:
-#     #                 return path
-#                 adj = [c for c in app.coords if dist(c, last) == 1 and app.grid[c[0]][c[1]] == '']
-#                 for s in adj:
-#                     q.append(path + [s])
-# #                     visited.append(s)
-#         return mvlist
-        
-        
-    # every square has a 'cost', which is the number of moves required to reach
-    # if you reach a square with equal or lower cost than your own associated with it, return
     def legal_moves(self):
         loc = self.loc[:]
         mvlist = []
@@ -11327,7 +11223,7 @@ class Orc_Axeman(Bot):
                     mvlist.append(s)
                 findall(s, start+1, distance)
         findall(loc, 1, self.get_abl('move_range'))
-        return mvlist        
+        return mvlist
         
 class Fire_Elemental(Bot):
     def __init__(self, name, img, loc, owner, number, waiting = False):
@@ -13746,7 +13642,7 @@ class Cenobite(Summon):
             return
         app.unbind_nonarrows()
         root.bind('<q>', self.cancel_hellfire)
-        sqrs = [c for c in app.coords if dist(self.loc,c) <= max(1,self.get_abl('rsn')//2)]
+        sqrs = [c for c in app.coords if 1 <= dist(self.loc,c) <= max(1,self.get_abl('rsn')//2)]
         app.animate_squares(sqrs)
         app.depop_context(event = None)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_hellfire(event = e, sqr = s, sqrs = sqrs)) 
@@ -15308,7 +15204,7 @@ class Witch(Summon):
         app.vis_dict['Vengeance'] = Vis(name = 'Vengeance', loc = sqr)
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Vengeance'].img, tags = 'Vengeance')
         def vengeance_efct(atkr, dfndr, amt, type, sn, st):
-            if st != 'sot' and st != 'eot' and st != 'undo':
+            if st == 'melee' or st == 'ranged' or st == 'spell':
                 def vngnc_tmp(stat):
                     return stat+1
                 p = partial(vngnc_tmp)
@@ -17492,21 +17388,12 @@ class Ai_man():
                         flail_loop(ent)
                 elif ent.mvs > 0:
                     if mvs := ent.legal_moves():
-#                         ent.mvs -= 1
                         mv = choice(mvs)
                         app.focus_square(mv)
-                        #    def ai_normal_move(self, endloc, lockname)
-                        '''
-                        def lock(func, *args, **kwargs):
-    name = 'dethlok'+str(app.death_count)
-    app.death_count += 1
-    app.dethloks[name] = tk.IntVar(0)
-    func(*args, **kwargs, lockname = name)
-    app.wait_variable(app.dethloks[name])
-                        '''
                         name = 'dethlok'+str(app.death_count)
                         app.death_count += 1
                         app.dethloks[name] = tk.IntVar(0)
+                        # ent.mvs decr here
                         Bot.ai_normal_move(ent, mv, name)
                         app.wait_variable(app.dethloks[name])
 #                         lock(ent.do_move, mv)
@@ -17548,13 +17435,15 @@ class Ai_man():
         if ent.mvs < 1 or ent.legal_moves() == []:
             ent.do_round()
         else:
-            els = [v.loc for k,v in app.spell_target_ents().items() if v.owner != ent.owner]
+            els = [v.loc for k,v in app.all_ents().items() if v.owner != ent.owner]
             fls = [v.loc for k,v in app.all_ents().items() if v.owner == ent.owner]
             egrid = deepcopy(app.grid)
             for s in fls:
                 egrid[s[0]][s[1]] = ''
             gs1 = [g for g in app.coords for el in els if dist(el,g) <= ir and app.grid[g[0]][g[1]] == '']
+            gs1 = unique(gs1)
             gs2 = [g for g in app.coords for el in els if dist(el,g) <= ir and egrid[g[0]][g[1]] == '']
+            gs2 = unique(gs2)
             # strip of all not closest to self
             gs1 = list(filter(lambda a : dist(a,ent.loc) == min([dist(x,ent.loc) for x in gs1]), gs1))
             gs2 = list(filter(lambda a : dist(a,ent.loc) == min([dist(x,ent.loc) for x in gs2]), gs2))
@@ -17563,7 +17452,7 @@ class Ai_man():
             cs2 = cs + gs2
             mvs = ent.legal_moves()
             # 'flee' to maxim dist among legal_moves if already inside range of atk, already atked
-            if [k for k,v in app.spell_target_ents().items() if dist(v.loc,ent.loc) <= ir and v.owner != ent.owner]:
+            if [k for k,v in app.all_ents().items() if dist(v.loc,ent.loc) <= ir and v.owner != ent.owner]:
                 mv = reduce(lambda a,b : a if sum([dist(a,el) for el in els]) > sum([dist(b,el) for el in els]) else b, mvs)
                 ent.mvs -= 1
                 lock(ent.do_move, mv)
@@ -17605,7 +17494,11 @@ class Ai_man():
                 egrid[s[0]][s[1]] = ''
             mvs = ent.legal_moves()
             gs1 = [g for g in app.coords for el in els if dist(el,g) == 1 and app.grid[g[0]][g[1]] == '']
+            gs1 = unique(gs1)
+            print('melee_pursue')
+            print(gs1)
             gs2 = [g for g in app.coords for el in els if dist(el,g) == 1 and egrid[g[0]][g[1]] == '']
+            gs2 = unique(gs2)
             cs = [c for c in app.coords if sum([ef.avoid for k,ef in app.loc_dict[tuple(c)].effects_dict.items()])*10 < randrange(40,60)]
             cs1 = cs + gs1
             cs2 = cs + gs2
@@ -17678,7 +17571,9 @@ class Ai_man():
             for s in fls:
                 egrid[s[0]][s[1]] = ''
             gs1 = [g for g in cs for el in els if dist(el,g) == 1 and app.grid[g[0]][g[1]] == '']
+            gs1 = unique(gs1)
             gs2 = [g for g in cs for el in els if dist(el,g) == 1 and egrid[g[0]][g[1]] == '']
+            gs2 = unique(gs2)
             if path := bfs(ent.loc[:], gs1, app.grid[:]):
                 mv = reduce(lambda a,b : a if dist(a,ent.loc)>dist(b,ent.loc) else b, intersect(path,ent.legal_moves()))
                 ent.mvs -= 1
@@ -17711,7 +17606,6 @@ class App(tk.Frame):
         self.image_holder = []
         self.global_effects_dict = {}
         self.init_q = []
-#         self.active_player = 'p1'
         self.num_players = 1
         self.moved_right = 0
         self.moved_down = 0
@@ -17723,8 +17617,6 @@ class App(tk.Frame):
         self.enemy_cycle_q = []
         self.current_ent = ''
         self.active_ent = None
-        # list to hold entity that is being animated as 'attacking'
-#         self.attacking = [] # is this still used?
         self.effects_counter = 0 # used for uniquely naming Effects with the same prefix/name
         self.p1_witch = ''
         self.p2_witch = ''
@@ -18023,36 +17915,26 @@ class App(tk.Frame):
                 if app.p1_witch not in app.ent_dict.keys():
                     return 'game over'
             self.map_triggers.append(self_death)
-#             def summon_trick():
-#                 all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
-#                 if 'Thaumaturge' in all:
-#                     return 'door'
-#                 else:
-#                     return None
-#             self.map_triggers.append(summon_trick)
 #             depending on which is killed, load certain level
-#             knight near stairway is b7, knight near doorway is b8
-            def kill_stair_knight():
-                all_knights = [v.id for k,v in self.ent_dict.items() if v.name == 'Undead_Knight']
-                if 'b7' not in all_knights and 'b8' in all_knights:
-                    return 'stairway'
-                else:
-                    return None
-            self.map_triggers.append(kill_stair_knight)
-            def kill_door_knight():
-                all_knights = [v.id for k,v in self.ent_dict.items() if v.name == 'Undead_Knight']
-                if 'b8' not in all_knights and 'b7' in all_knights:
-                    return 'door'
-                else:
-                    return None
-            self.map_triggers.append(kill_door_knight)
-#             def kill_one_undead_knight(): # change to kill both handling
-#                 all_knights = [v.name for k,v in self.ent_dict.items() if v.name == 'Undead_Knight']
-#                 if len(all_knights) <= 1:
-#                     return 'victory'
-#                 else:
-#                     return None
-#             self.map_triggers.append(kill_one_undead_knight)
+#             knight near stairway is on 19,13, knight near doorway is on 28,17
+            # make trigger that loads other trigger, has to grab the generated ids once level is loaded
+            def kill_knight_kickoff():
+                for ent in app.all_ents().values():
+                    if ent.loc == [19,13]:
+                        stair_id = ent.id
+                    elif ent.loc == [28,17]:
+                        doorway_id = ent.id
+                def kill_knight(s_id, d_id):
+                    if s_id not in [v.id for k,v in app.all_ents().items()]:
+                        return 'stairway'
+                    elif d_id not in [v.id for k,v in app.all_ents().items()]:
+                        return 'door'
+                    else:
+                        return None
+                p = partial(kill_knight, stair_id, doorway_id)
+                self.map_triggers.append(p)
+                self.map_triggers.remove(kill_knight_kickoff)
+            self.map_triggers.append(kill_knight_kickoff)
             
             self.load_intro_scene(map_number, protaganist_object = protaganist_object)
 #             self.create_map_curs_context(map_number, protaganist_object = protaganist_object)
@@ -19212,7 +19094,10 @@ class App(tk.Frame):
         
         # IF PROTAG, LOAD PROTAG AND DO NOT RE-INIT WITCH
     def create_map_curs_context(self, map_number, protaganist_object = None):
-        global curs_pos, grid_pos
+        global curs_pos, grid_pos, map_pos
+        for child in root.winfo_children():
+            if child._name != '!app':
+                child.destroy()
         self.map_number = map_number
         try: self.intro_canvas.destroy()
         except: pass
@@ -19277,6 +19162,7 @@ class App(tk.Frame):
         self.vis_dict['cursor'] = Vis(name = 'cursor', loc = [0,0])
         curs_pos = [0,0]
         grid_pos = [0,0]
+        map_pos = [0,0]
         self.canvas.create_image(0, 0, image=self.cursor_img, tags='cursor')
         # CHOOSE WITCH IF 2 PLAYER OR FIRST LEVEL
         if protaganist_object:
@@ -19349,7 +19235,7 @@ class App(tk.Frame):
         if player_num == 1:
             self.p1_witch = witch
             if self.num_players == 2:
-                loc = [2,2]
+                loc = self.start_loc
             else:
                 loc = self.start_loc
         elif player_num == 2:
@@ -19362,7 +19248,7 @@ class App(tk.Frame):
             protaganist_object.loc = loc[:]
             witch_img = ImageTk.PhotoImage(Image.open('avatars/' + witch +'.png'))
             protaganist_object.img = witch_img
-            protaganist_object.init_normal_anims()
+#             protaganist_object.init_normal_anims()
             self.ent_dict[witch] = protaganist_object
         else:
             witch_img = ImageTk.PhotoImage(Image.open('avatars/' + witch +'.png'))
@@ -19386,8 +19272,6 @@ class App(tk.Frame):
                 c1 += 1
                 if c1 == end:
                     break
-#             root.after(999, self.start_turn)
-#             root.after(999, self.rebind_all)
             self.animate()
             self.start_level_popup()
             self.map_trigger_loop()
@@ -19889,7 +19773,8 @@ class App(tk.Frame):
                 self.map_trigger_id = root.after(1666, self.map_trigger_loop)
         
     def end_level(self, alt_route = None):
-        global curs_pos, selected, selected_vis, map_pos, grid_pos#, is_object_selected
+        global curs_pos, selected, selected_vis, map_pos, grid_pos
+#         self.canvas.destroy()
         root.after_cancel(self.animate_id)
         root.after_cancel(self.map_trigger_id)
         # for each effect in witch and global, call its undo
@@ -19901,12 +19786,14 @@ class App(tk.Frame):
         else:
             prev_map_num = int(self.map[3:])
             new_map_num = prev_map_num + 1
+#         for child in root.winfo_children():
+#             child.destroy()
         for child in root.winfo_children():
-            child.destroy()
+            if child._name != '!app':
+                child.destroy()
         # THIS WORKS, JUST NEED TO CLEAN ALL VARS LIKE GRID, SELF.STUFF, GLOBALS
         # GLOBALS
-        curs_pos = [2, 2]
-        # is_object_selected = False
+        curs_pos = [0, 0]
         selected = []
         selected_vis = []
         map_pos = [0, 0]
@@ -19922,8 +19809,6 @@ class App(tk.Frame):
         self.moved_down = 0
         self.context_buttons = []
         self.help_buttons = []
-        # list to hold entity that is being animated as 'attacking'
-#         self.attacking = []
         self.turn_counter = 0
         self.effects_counter = 0 # used for uniquely naming Effects with the same prefix/name
         self.death_count = 0
@@ -19962,20 +19847,7 @@ class App(tk.Frame):
         self.sb.pack(side = 'right', fill = 'y')
         self.cut_text.configure(yscrollcommand = self.sb.set)
         self.sb.config(command = self.cut_text.yview)
-            
-            
-            
-        '''
-
-        
-        
-
-
-# # CONT OR SAVE BUTTONS        
-        self.start_area_button = tk.Button(root, text = 'Start Area', fg = 'tan3', highlightbackground = 'tan3', font = ('chalkduster', 22), command = lambda n = map_number, po = protaganist_object : self.create_map_curs_context(n,po))
-        self.intro_canvas.create_window(root.winfo_screenwidth()//2-100, root.winfo_screenheight()-80, anchor='s', window = self.start_area_button)
-        '''
-# CONT OR SAVE BUTTONS        
+        # CONT OR SAVE BUTTONS        
         self.next_area_button = tk.Button(root, text = 'Next Area', fg = 'tan3', highlightbackground = 'tan3', font = ('chalkduster', 22), command = lambda n = new_map_num, po = protaganist_object : self.next_area(n,po))
         self.cut_canvas.create_window(root.winfo_screenwidth()/2-100, root.winfo_screenheight()-80, anchor='s', window = self.next_area_button)
         self.save_game_button = tk.Button(root, text = 'Save Game', fg = 'tan3', highlightbackground = 'tan3', font = ('chalkduster', 22), command = lambda n = new_map_num, po = protaganist_object : self.save_game(n, po))
@@ -20010,8 +19882,8 @@ class App(tk.Frame):
             text_var.set('game saved')
             ####********
             # strip attrs, write all spell names to file
-            f.write(protag_obj.name+'\n')
-            f.write(protag_obj.level+'\n')
+            f.write(str(protag_obj.name)+'\n')
+            f.write(str(protag_obj.level)+'\n')
             f.write(str(list(protag_obj.cantrip_dict.keys()))+'\n')
             f.write(str(list(protag_obj.arcane_dict.keys()))+'\n')
             f.write(str(protag_obj.summon_cap)+'\n')
@@ -20117,6 +19989,7 @@ class App(tk.Frame):
     
     
     def move_curs(self, event = None, dir = None):
+        global map_pos, grid_pos, curs_pos
         # need to either unbind arrows, or unbind as much as possible during execution without becoming rebound on ai turn
         if event == None:
             event = Dummy()
@@ -20170,7 +20043,7 @@ class App(tk.Frame):
                 app.vis_dict['cursor'].loc = curs_pos[:]
                 app.canvas.delete('cursor')
                 app.canvas.create_image(curs_pos[0]*100+50,curs_pos[1]*100+50, image = app.vis_dict['cursor'].img, tags = 'cursor')
-            elif map_pos[1] < ((self.map_height//100)-(frame_height//100)-1):
+            elif map_pos[1] < ((self.map_height//100)-(frame_height//100)-0):
                 self.move_map('Up')
                 map_pos[1] += 1
                 grid_pos[1] += 1
@@ -20320,53 +20193,7 @@ class App(tk.Frame):
         self.text.pack()
         sb.config(command = self.text.yview)
         self.mi_popup.bind('<q>', lambda e, win = self.mi_popup : self.destroy_release(win))
-#         self.mi_popup = tk.Toplevel(bg = 'black')
-#         sb = tk.Scrollbar(self.mi_popup)
-#         self.mi_popup.grab_set()
-#         self.mi_popup.attributes('-topmost', 'true')
-# #         self.help_popup.config(resize = False)
-# #         self.help_popup.geometry(root.winfo_screenwidth(), root.winfo_screenheight())
-#         def on_close():
-#             pass
-#         self.mi_popup.protocol('WM_DELETE_WINDOW', on_close)
-# #         self.text = tk.List(self.help_popup, yscrollcommand = sb.set, text = help_text, wraplength = 750, font = ('chalkduster', 20), fg='indianred', bg = 'black')
-#         self.text = tk.Text(self.mi_popup, yscrollcommand = sb.set, bg = 'black', fg = 'tan3', font = ('chalkduster', 20))
-#         self.text.insert('end', txt)
-#         self.text.configure(state = 'disabled')
-#         self.close = tk.Button(self.mi_popup, text = 'Close', font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda win = self.mi_popup : self.destroy_release(win))
-#         self.close.pack()
-#         self.text.pack()
-#         sb.pack(side = 'right', fill = 'y')
-#         sb.config(command = self.text.yview)
-#         self.mi_popup.bind('<q>', lambda e, win = self.mi_popup : self.destroy_release(win))
 
-#         bg = tk.Canvas(self.context_menu, width = 190, height = 363, bg = 'burlywood4', bd=0, relief='raised', highlightthickness=0)
-#         bg.pack(side = 'top')
-#         bg.create_image(0,0, image = self.cntxt_info_bg, anchor = 'nw')        
-#     def more_info(self, txt):
-#         img = ImageTk.PhotoImage(Image.open('page.png'))
-#         self.mi_popup = tk.Toplevel(bg = 'black')
-#         bg = tk.Canvas(self.mi_popup, bg = 'burlywood4', bd=0, relief='raised', highlightthickness=0)
-#         bg.pack()
-#         bg.create_image(0,0, image = img, anchor = 'nw')
-#         sb = tk.Scrollbar(self.mi_popup)
-#         self.mi_popup.grab_set()
-#         self.mi_popup.attributes('-topmost', 'true')
-# #         self.help_popup.config(resize = False)
-# #         self.help_popup.geometry(root.winfo_screenwidth(), root.winfo_screenheight())
-#         def on_close():
-#             pass
-#         self.mi_popup.protocol('WM_DELETE_WINDOW', on_close)
-# #         self.text = tk.List(self.help_popup, yscrollcommand = sb.set, text = help_text, wraplength = 750, font = ('chalkduster', 20), fg='indianred', bg = 'black')
-#         self.text = tk.Text(self.mi_popup, yscrollcommand = sb.set, bg = 'black', fg = 'tan3', font = ('chalkduster', 20))
-#         self.text.insert('end', txt)
-#         self.text.configure(state = 'disabled')
-#         self.close = tk.Button(self.mi_popup, text = 'Close', font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda win = self.mi_popup : self.destroy_release(win))
-#         self.close.pack()
-#         self.text.pack()
-#         sb.pack(side = 'right', fill = 'y')
-#         sb.config(command = self.text.yview)
-#         self.mi_popup.bind('<q>', lambda e, win = self.mi_popup : self.destroy_release(win))
     def more_info(self, txt):
         self.mi_popup = tk.Toplevel(bg = 'black')
         self.img = ImageTk.PhotoImage(Image.open('paper.png').resize((self.mi_popup.winfo_screenwidth(),self.mi_popup.winfo_screenheight())))
@@ -20821,7 +20648,10 @@ class App(tk.Frame):
 
         
     def debugger(self, event):
-        print(app.ent_dict['Agnes_Sampson'].level)
+        for child in root.winfo_children():
+            print(child)
+        print(self.canvas.winfo_width())
+        print(self.canvas.winfo_height())
 
 root = tk.Tk()
 app = App(master=root)
