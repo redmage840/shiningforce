@@ -1,69 +1,30 @@
-# active_ent names are cut off on bottom most possible ents, when highlighted with get_focus()
-# something between level load, loading save game on lev 2 seems fine
-# something about destroying widgets/children, see debug func
-# test if happens on transition from lev2 to lev3
-# same thing happens lev2 to lev3, lev3 is fine if loaded from save, when transition from lev to lev moving cursor down does not give 1 width berth
-# see output of printing canvas width/height
-# first is result from loading save, next two are transitioned into (lev2, lev3)
-'''
-Hello from the pygame community. https://www.pygame.org/contribute.html
-.!app
-.!button
-.!button2
-.!button3
-.!verticalscrolledframe
-.!frame
-.!button4
-.!canvas3
-.!canvas4
-1080
-799
-box:witchesAndwerewolves crazyfox$ python3 witch2.py 
-pygame 2.0.0.dev14 (SDL 2.0.12, python 3.8.5)
-Hello from the pygame community. https://www.pygame.org/contribute.html
-.!frame2
-.!button5
-.!button6
-.!frame3
-.!button7
-.!canvas7
-.!canvas8
-1080
-800
+# visuals: stw, darkblast, encumber, devils mark, chop, vampiric bite, unholy chant, warpfire, pierce shield, scarab gest, tendrils, lepr bite, howl fb, analyze, bite, 
 
-.!frame4
-.!button8
-.!button9
-.!frame5
-.!button10
-.!canvas11
-.!canvas12
-1080
-800
-'''
+# text: pierce shield, 
 
+# sounds: bewitch, hfts, haste, dispel, dcube, analyze, rts, dsight, arrow, enthrall, devils mark, bless, haste, vampiric bite, scarab gest, aura, arrow of d, com of osi, tendrils, lepr bite, howl fb, analyze, bite, 
+
+# descriptions: fuse trap, entrance, enthrall, chill touch, enervating grasp, wolf form, bat form, vampiric bite, pain, hatred, entomb, sum l demon, sum cenobite,
+
+# effect descr: hatred, hook attack
+
+# mesmerize too good
+
+# music/sound adjust in menu
+
+# visuals for eot/sot effects...
 
 # trolls that fail sanity check skip their regen...
 
 # wherever 'q' is hotkeyed to a specific cancel function, r-click should be bound to that cancel function (although r-click otherwise is bound to move_cursor/populate_context) OR (if this is unintuitive) a cancel button should be created when binding 'q' to specific action-cancel function
 
-
 # continue change visuals and descriptions and sounds, # wurdulak action desc, hatred
-# sounds: bewitch, hfts, haste, dispel, dcube, analyze, rts, dsight, arrow, 
-
-# wurdulak, smn zombie w plaguebearer images?
 
 # proximity effects in ent.get_abl(str)
-
-# concurrent functions set to run before an attack (like tortured soul's init_normal_anims, which is set to be called after 1666 before its own attack happens, this call will reference self when the ent may have died due to its own attack (due to atk/def efcts or death triggers) 
 
 # change legal_attacks() for ents that have multiple kinds of attacks...
 
 # to ai routines, if path is longer than epath by some amount, use epath
-
-# asteroid vis, add more images from spritesheet
-
-# fiend pounce images, bewitch text self
 
 # orcs allow for abeyance (check for existence of 'chop'), also- using Ai_man.melee_pursue() they avoid effects along a path but ignore them when they exist on goal locations
 
@@ -1111,7 +1072,7 @@ class Entity():
         sound_effects.play(effect1, 0)
         un ='Teleport'+str(app.effects_counter)
         app.effects_counter += 1
-        app.vis_dict[un] = Vis(name = 'Teleport', loc = oldloc[:])
+        app.vis_dict[un] = Vis(name = 'Legerdemain', loc = oldloc[:])
         vis = app.vis_dict[un]
         app.canvas.create_image(oldloc[0]*100+50-app.moved_right, oldloc[1]*100+50-app.moved_down, image = vis.img, tags = un)
         root.after(999, lambda end = end, un = un : self.leger_move_finish(end, un))
@@ -1126,7 +1087,7 @@ class Entity():
         effect1.set_volume(1)
         sound_effects.play(effect1, 0)
         del app.vis_dict[un]
-        app.vis_dict[un] = Vis(name = 'Teleport', loc = endloc[:])
+        app.vis_dict[un] = Vis(name = 'Legerdemain', loc = endloc[:])
         vis = app.vis_dict[un]
         app.canvas.create_image(endloc[0]*100+50-app.moved_right, endloc[1]*100+50-app.moved_down, image = vis.img, tags = un)
         root.after(999, lambda endloc = endloc, un = un : self.cleanup_leger_move(endloc, un))
@@ -1676,12 +1637,12 @@ class Tomb(Summon):
             self.actions = {}
             self.str = 1
             self.agl = 1
-            self.end = 8
+            self.end = 6
             self.mm = 1
             self.msl = 0
             self.bls = 0
             self.dodge = 1
-            self.psyche = 6
+            self.psyche = 5
             self.wis = 3
             self.rsn = 1
             self.san = 20
@@ -1696,12 +1657,12 @@ class Tomb(Summon):
             self.actions = {}
             self.str = 1
             self.agl = 1
-            self.end = 10
+            self.end = 7
             self.mm = 1
             self.msl = 0
             self.bls = 0
             self.dodge = 1
-            self.psyche = 8
+            self.psyche = 6
             self.wis = 4
             self.rsn = 1
             self.san = 20
@@ -2949,6 +2910,51 @@ class Umbrae_Wolf(Summon):
         ent = app.ent_dict[id]
         my_wis = self.get_abl('wis')
         tar_wis = ent.get_abl('wis')
+        # DO Encumber VISUALS
+        start_loc = ent.loc[:]
+        app.vis_dict['Encumber'] = Vis(name = 'Encumber', loc = start_loc[:])
+        app.canvas.create_image(start_loc[0]*100+50-app.moved_right, start_loc[1]*100+50-app.moved_down, image = ent.img, tags = 'left')
+        app.canvas.create_image(start_loc[0]*100+50-app.moved_right, start_loc[1]*100+50-app.moved_down, image = ent.img, tags = 'right')
+        app.canvas.create_image(start_loc[0]*100+50-app.moved_right, start_loc[1]*100+50-app.moved_down, image = app.vis_dict['Encumber'].img, tags = ('Encumber','right'))
+        app.canvas.create_image(start_loc[0]*100+50-app.moved_right, start_loc[1]*100+50-app.moved_down, image = app.vis_dict['Encumber'].img, tags = ('Encumber','left'))
+        app.canvas.create_text(start_loc[0]*100+49-app.moved_right, start_loc[1]*100+84-app.moved_down, text = 'Encumber', font = ('chalkduster', 14), fill = 'black', tags = 'text')
+        app.canvas.create_text(start_loc[0]*100+50-app.moved_right, start_loc[1]*100+85-app.moved_down, text = 'Encumber', font = ('chalkduster', 14), fill = 'ghostwhite', tags = 'text')
+        x = start_loc[0]*100+50-app.moved_right
+        y = start_loc[1]*100+50-app.moved_down
+        end_left = start_loc[0]*100-app.moved_right # minus 50 from center
+        end_right = start_loc[0]*100+100-app.moved_right # plus 50 from center
+        selected_vis = ['Encumber']
+        def simulacrum_loop_left(vis, x, y, end_left, tar):
+            if x % 5 == 0: # this just gets new image (flickers simulacrum opacity)
+                app.vis_dict[vis].rotate_image()
+                app.canvas.delete('left') # this deletes both vis left and right
+                app.canvas.create_image(x, y, image = app.ent_dict[tar].img, tags = 'left')
+                app.canvas.create_image(x, y, image = app.vis_dict[vis].img, tags = ('Encumber','left'))
+            app.canvas.tag_raise(vis)
+            if x > end_left:
+                x -= 10
+                app.canvas.move('left',-10,0)
+            if x == end_left:
+                pass
+            else:
+                root.after(100, lambda vis = 'Encumber', x = x, y = y, end_left = end_left, tar = tar : simulacrum_loop_left(vis, x, y, end_left, tar))
+        def simulacrum_loop_right(vis, x, y, end_right, tar):
+            if x % 5 == 0: # this just gets new image (flickers simulacrum opacity)
+                app.vis_dict[vis].rotate_image()
+                app.canvas.delete('right') # this deletes both vis left and right
+                app.canvas.create_image(x, y, image = app.ent_dict[tar].img, tags = 'right')
+                app.canvas.create_image(x, y, image = app.vis_dict[vis].img, tags = ('Encumber','right'))
+            app.canvas.tag_raise(vis)
+            if x < end_right:
+                x += 10
+                app.canvas.move('right',10,0)
+            if x == end_right:
+                root.after(666, self.cleanup_encumber)
+            else:
+                root.after(100, lambda vis = 'Encumber', x = x, y = y, end_right = end_right, tar = tar : simulacrum_loop_right(vis, x, y, end_right, tar))
+        simulacrum_loop_left('Encumber', x, y, end_left, id)
+        simulacrum_loop_right('Encumber', x, y, end_right, id)
+        # End visuals
         if to_hit(my_wis, tar_wis):
             def encumber_init(stat):
                 return max(1,stat-4)
@@ -2976,50 +2982,6 @@ class Umbrae_Wolf(Summon):
             u = partial(undo, id, p1, p2, p3)
             n = 'Encumber' + str(app.effects_counter)
             ent.effects_dict['Encumber'] = Effect(name = 'Encumber', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
-            # DO Encumber VISUALS
-            start_loc = ent.loc[:]
-            app.vis_dict['Encumber'] = Vis(name = 'Encumber', loc = start_loc[:])
-            app.canvas.create_image(start_loc[0]*100+50-app.moved_right, start_loc[1]*100+50-app.moved_down, image = ent.img, tags = 'left')
-            app.canvas.create_image(start_loc[0]*100+50-app.moved_right, start_loc[1]*100+50-app.moved_down, image = ent.img, tags = 'right')
-            app.canvas.create_image(start_loc[0]*100+50-app.moved_right, start_loc[1]*100+50-app.moved_down, image = app.vis_dict['Encumber'].img, tags = ('Encumber','right'))
-            app.canvas.create_image(start_loc[0]*100+50-app.moved_right, start_loc[1]*100+50-app.moved_down, image = app.vis_dict['Encumber'].img, tags = ('Encumber','left'))
-            app.canvas.create_text(start_loc[0]*100+49-app.moved_right, start_loc[1]*100+84-app.moved_down, text = 'Encumber', font = ('chalkduster', 14), fill = 'black', tags = 'text')
-            app.canvas.create_text(start_loc[0]*100+50-app.moved_right, start_loc[1]*100+85-app.moved_down, text = 'Encumber', font = ('chalkduster', 14), fill = 'ghostwhite', tags = 'text')
-            x = start_loc[0]*100+50-app.moved_right
-            y = start_loc[1]*100+50-app.moved_down
-            end_left = start_loc[0]*100-app.moved_right # minus 50 from center
-            end_right = start_loc[0]*100+100-app.moved_right # plus 50 from center
-            selected_vis = ['Encumber']
-            def simulacrum_loop_left(vis, x, y, end_left, tar):
-                if x % 5 == 0: # this just gets new image (flickers simulacrum opacity)
-                    app.vis_dict[vis].rotate_image()
-                    app.canvas.delete('left') # this deletes both vis left and right
-                    app.canvas.create_image(x, y, image = app.ent_dict[tar].img, tags = 'left')
-                    app.canvas.create_image(x, y, image = app.vis_dict[vis].img, tags = ('Encumber','left'))
-                app.canvas.tag_raise(vis)
-                if x > end_left:
-                    x -= 10
-                    app.canvas.move('left',-10,0)
-                if x == end_left:
-                    pass
-                else:
-                    root.after(100, lambda vis = 'Encumber', x = x, y = y, end_left = end_left, tar = tar : simulacrum_loop_left(vis, x, y, end_left, tar))
-            def simulacrum_loop_right(vis, x, y, end_right, tar):
-                if x % 5 == 0: # this just gets new image (flickers simulacrum opacity)
-                    app.vis_dict[vis].rotate_image()
-                    app.canvas.delete('right') # this deletes both vis left and right
-                    app.canvas.create_image(x, y, image = app.ent_dict[tar].img, tags = 'right')
-                    app.canvas.create_image(x, y, image = app.vis_dict[vis].img, tags = ('Encumber','right'))
-                app.canvas.tag_raise(vis)
-                if x < end_right:
-                    x += 10
-                    app.canvas.move('right',10,0)
-                if x == end_right:
-                    root.after(666, self.cleanup_encumber)
-                else:
-                    root.after(100, lambda vis = 'Encumber', x = x, y = y, end_right = end_right, tar = tar : simulacrum_loop_right(vis, x, y, end_right, tar))
-            simulacrum_loop_left('Encumber', x, y, end_left, id)
-            simulacrum_loop_right('Encumber', x, y, end_right, id)
         else:
             miss(ent.loc)
             root.after(1333, self.cleanup_encumber)
@@ -6083,7 +6045,7 @@ class Fiend(Summon):
             self.msl = 0
             self.bls = 0
             self.dodge = 4
-            self.psyche = 5
+            self.psyche = 3
             self.wis = 6
             self.rsn = 4
             self.san = 14
@@ -6103,7 +6065,7 @@ class Fiend(Summon):
             self.msl = 0
             self.bls = 0
             self.dodge = 5
-            self.psyche = 6
+            self.psyche = 4
             self.wis = 7
             self.rsn = 5
             self.san = 16
@@ -6112,7 +6074,7 @@ class Fiend(Summon):
             self.magick = 16
             self.acts = 2
             self.mvs = 2
-            self.move_range = 4
+            self.move_range = 3
             self.level = level
         self.move_type = 'normal'
         self.weak = ['elec']
@@ -12984,7 +12946,7 @@ class Familiar_Homunculus(Summon):
                         app.effects_counter += 1
                         app.vis_dict[n] = Vis(name = 'Fuse_Explosion', loc = loc[:])
                         app.canvas.create_image(loc[0]*100+50-app.moved_right, loc[1]*100+50-app.moved_down, image = app.vis_dict[n].img, tags = n)
-                        lock(apply_damage, self, ent, -4, 'explosive', 'Fuse Trap', 'undo')
+                        lock(apply_damage, self, ent, -3, 'explosive', 'Fuse Trap', 'undo')
                         root.after(111, lambda n = n : clean_explosion(n))
                         root.after(222, lambda ents = ents : fuse_loop(ents))
                 fuse_loop(ents)
@@ -13035,6 +12997,8 @@ class Familiar_Homunculus(Summon):
         ent = app.ent_dict[id]
         my_wis = self.get_abl('wis')
         tar_wis = ent.get_abl('wis')
+        app.vis_dict['Mesmerize'] = Vis(name = 'Mesmerize', loc = sqr)
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Mesmerize'].img, tags = 'Mesmerize')
         if to_hit(my_wis, tar_wis):
             def un(lockname = None):
                 root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
@@ -13059,8 +13023,6 @@ class Familiar_Homunculus(Summon):
             ent.effects_dict['Mesmerize'] = Effect(sot_func = sot, name = 'Mesmerize', undo_func = un, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
             app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+74-app.moved_down, text = 'Mesmerized...', fill = 'black', font = ('chalkduster', 14), tags = 'text')
             app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Mesmerized...', fill = 'ghostwhite', font = ('chalkduster', 14), tags = 'text')
-            app.vis_dict['Mesmerize'] = Vis(name = 'Mesmerize', loc = sqr)
-            app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Mesmerize'].img, tags = 'Mesmerize')
             root.after(2333, self.cancel_mesmerize)
         else:
             miss(ent.loc)
@@ -15090,10 +15052,6 @@ class Witch(Summon):
         id = prefix + str(num)
         if self.name == 'Agnes_Sampson':
             img = ImageTk.PhotoImage(Image.open('summon_imgs/Familiar_Imp.png'))
-            print(id)
-            print(sqr)
-            print(self.owner)
-            print(self.level)
             app.ent_dict[id] = Familiar_Imp(name = 'Familiar_Imp', id = id, img = img, loc = sqr[:], owner = self.owner, level = self.level)
             app.grid[sqr[0]][sqr[1]] = id
         elif self.name == 'Fakir_Ali':
@@ -17495,8 +17453,6 @@ class Ai_man():
             mvs = ent.legal_moves()
             gs1 = [g for g in app.coords for el in els if dist(el,g) == 1 and app.grid[g[0]][g[1]] == '']
             gs1 = unique(gs1)
-            print('melee_pursue')
-            print(gs1)
             gs2 = [g for g in app.coords for el in els if dist(el,g) == 1 and egrid[g[0]][g[1]] == '']
             gs2 = unique(gs2)
             cs = [c for c in app.coords if sum([ef.avoid for k,ef in app.loc_dict[tuple(c)].effects_dict.items()])*10 < randrange(40,60)]
