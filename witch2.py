@@ -1,20 +1,24 @@
-# visuals: stw, darkblast, encumber, devils mark, chop, vampiric bite, unholy chant, warpfire, pierce shield, scarab gest, tendrils, lepr bite, howl fb, analyze, bite, 
+# last active ent in initiative queue is shown as still in initiative queue, otherwise the active ent is not part of the initq
+
+# double line names overwrite context menu
+
+# visuals: encumber, chop, vampiric bite, unholy chant, warpfire, pierce shield, tendrils, lepr bite, howl fb, analyze, 
 
 # text: pierce shield, 
 
 # sounds: bewitch, hfts, haste, dispel, dcube, analyze, rts, dsight, arrow, enthrall, devils mark, bless, haste, vampiric bite, scarab gest, aura, arrow of d, com of osi, tendrils, lepr bite, howl fb, analyze, bite, 
 
-# descriptions: fuse trap, entrance, enthrall, chill touch, enervating grasp, wolf form, bat form, vampiric bite, pain, hatred, entomb, sum l demon, sum cenobite,
+# descriptions: fuse trap, , enthrall, pain, hatred, entomb, sum l demon, sum cenobite, grasp of the old ones, 
 
 # effect descr: hatred, hook attack
 
-# mesmerize too good
+# mesmerize too good? just make both familiars fragile...
 
 # music/sound adjust in menu
 
 # visuals for eot/sot effects...
 
-# trolls that fail sanity check skip their regen...
+# trolls that fail sanity check skip their regen..., anything with specific behavior in do_round() would... minotaur, dragon, etc...
 
 # wherever 'q' is hotkeyed to a specific cancel function, r-click should be bound to that cancel function (although r-click otherwise is bound to move_cursor/populate_context) OR (if this is unintuitive) a cancel button should be created when binding 'q' to specific action-cancel function
 
@@ -132,7 +136,7 @@ def action_description(act):
     elif act == 'Bewitch':
         return 'Any non-witch target, friendly or enemy, within range of reason, gains an effect granting psyshield until the end of this turn. Level is wisdom. Spell target.'
     elif act == 'Read the Stars':
-        return 'All friendly summons gain attack effect that increases elec and cold type damage by 3. Lasts 1 turn  at level of wisdom.'
+        return 'All friendly summons gain attack effect that increases elec and cold type damage by 2 when the source is melee, ranged, or spell. Lasts 1 turn  at level of wisdom.'
     elif act == 'Demonic Sight':
         return 'Any target in range of reason, on to hit psyche vs psyche, gets an effect that strips invisibility. Duration is reason. Level is wisdom. (must be targetable by spells).'
     elif act == 'Mist Move':
@@ -297,8 +301,20 @@ def action_description(act):
         return 'Spell target within range rsn, on to hit wisdom vs wisdom, gets an effect causing a start-of-turn psyche save check(mod 0). On failure, the unit loses one action, if it has any, and is dealt crushing melee damage equal to its own strength vs endurance. Duration is reason. Level is wisdom.'
     elif act == 'Torment':
         return 'A spell target within range reason gets an effect that gives -2 psyche, if it does not already have this effect. It then takes psyche vs endurance magick spell damage.'
-    elif act == '':
-        return ''
+    elif act == 'Entrance':
+        return 'A spell target in range reason, on to-hit psyche vs psyche, gets -3 sanity at duration reason and level wisdom. Costs 2 magick.'
+    elif act == 'Enthrall':
+        return 'A spell target within range reason, on to-hit psyche vs psyche, gets -2 strength, agility, marksmanship, dodge at duration reason and level wisdom. Costs 2 magick.'
+    elif act == 'Chill Touch':
+        return 'An adjacent action target, on to-hit agility vs agility, gets -1 wisdom at duration reason and level wisdom, then takes psyche vs psyche cold melee damage.'
+    elif act == 'Enervating Grasp':
+        return 'An adjacent action target, on to-hit agility vs agility, has magick drained and given to the caster equal to psyche vs psyche damage. The caster cannot go above their base magick in this manner.'
+    elif act == 'Vampiric Bite':
+        return 'An adjacent action target, on to-hit agility vs agility, takes strength vs endurance piercing melee damage. Caster gets +1 strength and psyche at duration reason and level wisdom.'
+    elif act == 'Bat Form':
+        return 'Once per round, Wurdulak may shift form into either bat or wolf form, an Effect lasting 1 turn at level wisdom. Bat form gives +5 to move range, changes move type to flying, and -3 to strength, agility, endurance.'
+    elif act == 'Wolf Form':
+        return 'Once per round, Wurdulak may shift form into either bat or wolf form, an Effect lasting 1 turn at level wisdom. Wolf form gives +4 agility, +3 move range, and -3 to psyche, wisdom.'
     elif act == '':
         return ''
     else:
@@ -494,6 +510,18 @@ def effect_description(ef):
         return '-3 strength, agility, endurance, dodge. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Mesmerize':
         return 'At start-of-turn, on psyche save check fail (mod 0), unit takes crushing melee damage equal to its own strength vs endurance. dur = '+str(ef.duration)+', level = '+str(ef.level)
+    elif ef.name == 'Entrance':
+        return '-3 sanity. dur = '+str(ef.duration)+', level = '+str(ef.level)
+    elif ef.name == 'Enthrall':
+        return '-2 strength, agility, marksmanship, dodge. dur = '+str(ef.duration)+', level = '+str(ef.level)
+    elif ef.name == 'Chill_Touch':
+        return '-1 wisdom. dur = '+str(ef.duration)+', level = '+str(ef.level)
+    elif ef.name == 'Vampiric_Bite':
+        return '+1 strength and psyche. dur = '+str(ef.duration)+', level = '+str(ef.level)
+    elif ef.name == 'Bat_Form':
+        return '+5 move range, flying move type, -3 strength, agility, endurance. dur = '+str(ef.duration)+', level = '+str(ef.level)
+    elif ef.name == 'Wolf_Form':
+        return '+4 agility, +3 move range, -3 psyche and wisdom. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == '':
         return '. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == '':
@@ -758,6 +786,7 @@ class Local_Effect():
         r = randrange(0,101)
         if r < chance:
             lock(self.undo_func)
+            
             return 'Dispelled'
         else:
             return 'Not Dispelled'
@@ -3558,9 +3587,14 @@ class Umbrae_Wolf(Summon):
         app.depop_context(event = None)
         app.cleanup_squares()
         self.acts -= 1
-#         app.vis_dict['Darkblast'] = Vis(name = 'Darkblast', loc = sqr[:])
-#         vis = app.vis_dict['Darkblast']
-#         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = vis.img, tags = 'Darkblast')
+        n = 'Darkblast'+str(app.effects_counter)
+        app.effects_counter += 1
+        app.vis_dict[n] = Vis(name = 'Darkblast', loc = sqr[:])
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict[n].img, tags = n)
+        def cleanup_darkb(n):
+            del app.vis_dict[n]
+            app.canvas.delete(n)
+        root.after(1999, lambda n = n : cleanup_darkb(n))
         if app.ent_dict[id].owner != self.owner:
             my_mm = self.get_abl('mm')
             tar_dodge = app.ent_dict[id].get_abl('dodge')
@@ -3632,10 +3666,6 @@ class Umbrae_Wolf(Summon):
             
             
     def finish_darkblast(self, event = None):
-        try: 
-            del app.vis_dict['Darkblast']
-            app.canvas.delete('Darkblast')
-        except: pass
         app.depop_context(event = None)
         app.canvas.delete('text')
         app.cleanup_squares()
@@ -4175,7 +4205,7 @@ class Wurdulak(Summon):
             my_psy = self.get_abl('psyche')
             tar_end = ent.get_abl('end')
             d = damage(my_psy, tar_end)
-            lock(apply_damage, self, ent, -d, 'magick', 'Chill Touch', 'melee')
+            lock(apply_damage, self, ent, -d, 'cold', 'Chill Touch', 'melee')
             root.after(111, self.finish_chill_touch)
         else:
             miss(ent.loc)
@@ -4292,7 +4322,6 @@ class Wurdulak(Summon):
         p2 = partial(bat_move)
         self.move_range_effects.append(p2)
         self.move_type = 'flying'
-        
         def legal_moves(obj):
             move_list = []
             for c in app.coords:
@@ -4902,10 +4931,10 @@ class Murrain_Wolf(Summon):
             u = partial(un, id, dt_inst.ts)
             n = 'Scarab_Gestation' + str(app.effects_counter)
             app.ent_dict[id].effects_dict[n] = Effect(name = 'Scarab_Gestation', undo_func = u, duration = 13, level = self.get_abl('psyche'))
-            root.after(2666, self.finish_scarab_gestation)
+            root.after(1999, self.finish_scarab_gestation)
         else:
             miss(app.ent_dict[id].loc)
-            root.after(2666, self.finish_scarab_gestation)
+            root.after(1999, self.finish_scarab_gestation)
         
     def finish_scarab_gestation(self, event = None):
         try: 
@@ -5238,9 +5267,14 @@ class Scarab_Swarm(Summon):
         app.depop_context(event = None)
         app.cleanup_squares()
         self.acts -= 1
-#         app.vis_dict['Bite'] = Vis(name = 'Bite', loc = sqr[:])
-#         vis = app.vis_dict['Bite']
-#         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = vis.img, tags = 'Bite')
+        n = 'Bite' + str(app.effects_counter)
+        app.effects_counter += 1
+        app.vis_dict[n] = Vis(name = 'Bite', loc = sqr[:])
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict[n].img, tags = n)
+        def cleanup_bite(n):
+            del app.vis_dict[n]
+            app.canvas.delete(n)
+        root.after(1666, lambda n = n : cleanup_bite(n))
         my_agl = self.get_abl('agl')
         tar_agl = app.ent_dict[id].get_abl('agl')
         if to_hit(my_agl, tar_agl) == True:
@@ -5254,10 +5288,6 @@ class Scarab_Swarm(Summon):
             root.after(1666, self.finish_bite)
         
     def finish_bite(self, event = None):
-#         try: 
-#             del app.vis_dict['Bite']
-#             app.canvas.delete('Bite')
-#         except: pass
         app.depop_context(event = None)
         app.canvas.delete('text')
         app.cleanup_squares()
@@ -5655,11 +5685,14 @@ class Thaumaturge(Summon):
         app.canvas.create_text(sqr[0]*100-app.moved_right+49, sqr[1]*100-app.moved_down+74, text = 'Dispel Attempt\n Local Effects', justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
         app.canvas.create_text(sqr[0]*100-app.moved_right+50, sqr[1]*100-app.moved_down+75, text = 'Dispel Attempt\n Local Effects', justify = 'center', fill = 'white', font = ('chalkduster', 13), tags = 'text')
         to_remove = []
-        for k,v in app.loc_dict[tuple(sqr)].effects_dict.items():
+        effect_loc = sqr[:]
+        for k,v in app.loc_dict[tuple(sqr[:])].effects_dict.items():
             if v.dispel(self.get_abl('wis')) == 'Dispelled':
                 to_remove.append(k)
+        def remove_entry(s, key):
+            del app.loc_dict[tuple(s)].effects_dict[key]
         for k in to_remove:
-            del app.loc_dict[tuple(sqr)].effects_dict[k]
+            root.after(333, lambda s = effect_loc, k = k : remove_entry(s, k))
         root.after(2666, self.finish_tranquility)
         
     def finish_tranquility(self, event = None):
@@ -6172,7 +6205,7 @@ class Fiend(Summon):
                 app.canvas.create_image(x, y, image = self.img, tags = self.tags)
                 app.canvas.tag_raise(self.id)
             if abs(x - endx) < 13 and abs(y - endy) < 13:
-                root.after(666, lambda e = end_sqr, s = start_sqr : self.finish_pounce(e, s))
+                root.after(23, lambda e = end_sqr, s = start_sqr : self.finish_pounce(e, s))
             else: # CONTINUE LOOP
                 root.after(23, lambda x = x, y = y, e = endx, e2 = endy, s = start_sqr, s2 = end_sqr, acm = acm, tic = tic, xs = xstep, ys = ystep : leap_loop(x, y, e, e2, s, s2, acm, tic, xs, ys))
         leap_loop(x, y, endx, endy, start_sqr, end_sqr, tic+1, tic, xstep, ystep)
@@ -6413,6 +6446,14 @@ class Fiend(Summon):
         app.cleanup_squares()
         self.acts -= 1
         ent = app.ent_dict[id]
+        n = 'Abeyance'+str(app.effects_counter)
+        app.effects_counter += 1
+        app.vis_dict[n] = Vis(name = 'Abeyance', loc = sqr[:])
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict[n].img, tags = n)
+        def cleanup_abey(n):
+            del app.vis_dict[n]
+            app.canvas.delete(n)
+        root.after(1999, lambda n = n : cleanup_abey(n))
         my_wis = self.get_abl('wis')
         tar_wis = ent.get_abl('wis')
         if to_hit(my_wis, tar_wis):
@@ -6459,10 +6500,6 @@ class Fiend(Summon):
         root.after(1999, self.finish_abeyance)
         
     def finish_abeyance(self, event = None):
-        try: 
-            del app.vis_dict['Abeyance']
-            app.canvas.delete('Abeyance')
-        except: pass
         app.depop_context(event = None)
         app.canvas.delete('text')
         app.cleanup_squares()
@@ -8091,7 +8128,7 @@ class Kobold_Cleric(Bot):
         self.msl = 0
         self.bls = 0
         self.dodge = 6
-        self.psyche = 5
+        self.psyche = 8
         self.wis = 6
         self.rsn = 4
         self.init = 6
@@ -11095,13 +11132,13 @@ class Sorceress(Bot):
 class Orc_Axeman(Bot):
     def __init__(self, name, img, loc, owner, waiting = False):
         self.actions = {'Chop':self.melee_attack}
-        self.str = 7
+        self.str = 11
         self.agl = 7
         self.end = 6
         self.mm = 1
         self.msl = 0
         self.bls = 0
-        self.dodge = 8
+        self.dodge = 6
         self.psyche = 4
         self.wis = 4
         self.rsn = 3
@@ -12714,7 +12751,7 @@ class Berserker(Summon):
                 app.canvas.create_image(x, y, image = self.img, tags = self.tags)
                 app.canvas.tag_raise(self.id)
             if abs(x - endx) < 13 and abs(y - endy) < 13:
-                self.finish_leap(end_sqr, start_sqr) # EXIT
+                root.after(23, lambda es = end_sqr, ss = start_sqr : self.finish_leap(es, ss)) # EXIT
             else: # CONTINUE LOOP
                 root.after(23, lambda x = x, y = y, e = endx, e2 = endy, s = start_sqr, s2 = end_sqr, acm = acm, tic = tic, xs = xstep, ys = ystep : leap_loop(x, y, e, e2, s, s2, acm, tic, xs, ys))
         leap_loop(x, y, endx, endy, start_sqr, end_sqr, tic+1, tic, xstep, ystep)
@@ -12951,7 +12988,7 @@ class Familiar_Homunculus(Summon):
                         root.after(222, lambda ents = ents : fuse_loop(ents))
                 fuse_loop(ents)
             u = partial(undo, sqr = sqr[:], name = un)
-            app.loc_dict[tuple(sqr)].effects_dict[un] = Local_Effect(name = 'Fuse_Trap', undo_func = u, duration = 1, level = 5, loc = sqr[:], avoid = 5)
+            app.loc_dict[tuple(sqr[:])].effects_dict[un] = Local_Effect(name = 'Fuse_Trap', undo_func = u, duration = 1, level = 5, loc = sqr[:], avoid = 5)
         self.cleanup_fuse_trap()
                     
     def cleanup_fuse_trap(self, event = None):
@@ -13435,6 +13472,7 @@ class Cenobite(Summon):
                 self.finish_strength_through_wounding()
             else:
                 id = ents[0]
+                app.get_focus(id)
                 ents = ents[1:]
                 ent = app.ent_dict[id]
                 s = ent.loc[:]
@@ -14864,8 +14902,8 @@ class Witch(Summon):
             app.canvas.delete('text')
             del app.vis_dict['Read_the_Stars']
             app.canvas.delete('Read_the_Stars')
-        # caster and all friendly summons get atk efct that adds 1 to magick type, lasts 1 turn
-        ids = [k for k,v in app.all_ents().items() if v.owner == self.owner]
+        # all friendly summons get atk efct that adds 1 to magick type, lasts 1 turn
+        ids = [k for k,v in app.all_ents().items() if v.owner == self.owner and v != self]
         root.after(1555, cleanup_read)
         root.after(1666, lambda ids = ids : self.continue_read_the_stars(ids))
         
@@ -14890,7 +14928,7 @@ class Witch(Summon):
                     app.canvas.delete(name)
                 def rts_atk(atkr, dfndr, amt, type, sn, st):
                     if (type == 'cold' or type == 'elec') and (st == 'melee' or st == 'ranged' or st == 'spell'):
-                        amt -= 3
+                        amt -= 2
                         return (amt, 0)
                     else:
                         return (amt, 0)
@@ -16562,7 +16600,7 @@ class Witch(Summon):
         app.depop_context(event = None)
         app.unbind_nonarrows()
         root.bind('<q>', lambda name = 'Grasp_of_the_Old_Ones' : self.cleanup_spell(name = name))
-        sqrs = [s for s in app.coords if dist(self.loc, s) == 1]
+        sqrs = [s for s in app.coords if 1 <= dist(self.loc, s) <= self.get_abl('rsn')]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_grasp(event = e, sqr = s, sqrs = sqrs))
         b = tk.Button(app.context_menu, text = 'Choose Target For Grasp', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_grasp(e, s, sqrs))
@@ -16825,9 +16863,15 @@ class Witch(Summon):
         ent = app.ent_dict[id]
         my_wis = self.get_abl('wis')
         tar_wis = ent.get_abl('wis')
+        n = 'Dust_Devil'+str(app.effects_counter)
+        app.effects_counter += 1
+        app.vis_dict[n] = Vis(name = n, loc = sqr[:])
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict[n].img, tags = n)
+        def cleanup_dustd(n):
+            del app.vis_dict[n]
+            app.canvas.delete(n)
+        root.after(1999, lambda n = n : cleanup_dustd(n))
         if to_hit(my_wis, tar_wis):
-            app.vis_dict['Dust_Devil'] = Vis(name = 'Dust_Devil', loc = sqr[:])
-            app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Dust_Devil'].img, tags = 'Dust_Devil')
             my_psyche = self.get_abl('psyche')
             tar_psyche = ent.get_abl('psyche')
             d = damage(my_psyche, tar_psyche)
