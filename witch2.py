@@ -1,48 +1,18 @@
-# dire charm too good, brambles still too good (-1 mov)
+# caves of sorrow (Music, lev 2) turn up volume on source file
 
-# flip howl vis
+# enthrall vis
 
-# make kobold shamans target as spell (firebolt)
+# familiar imp flying/move anims
 
-# are all cancels reducable to the same function? ie need for cancel button for actions
-
-# below should be solved by adding 'return' in handle_action()
-'''
-Traceback (most recent call last):
-  File "/Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/tkinter/__init__.py", line 1883, in __call__
-    return self.func(*args)
-  File "witch2.py", line 20206, in end_round
-  File "witch2.py", line 19327, in handle_action
-    id = self.init_q[0]
-KeyError: 'a0'
-'''
-
+# wurdulak/wolf form anims
 
 # ranged_pursue() does not avoid effects
 
-# ranged, melee pursue is different for dif move types...
+# ranged, melee pursue is different for dif move types... current version only works for normal type move
 
-# rage, stalk visuals, oriax hard to see, arrow diana, unholy chant, tendrils,
+# remove 'action' as sourcetype?
 
-# organize all enums, dmg: type, sourcetype, sourcename, 
-
-# energize vis to electr
-
-# mind rot too good
-
-# desc: grasp range,
-
-# change spells that affect one type of summon, dark sun, bblood
-
-# strip effects granted by local_effects? they are applied after...
-
-# change torment
-
-# double line names overwrite context menu
-
-# visuals: encumber, chop, unholy chant, pierce shield, tendrils, howl fb, analyze, gaze?, 
-
-# text: pierce shield, 
+# strip effects granted by local_effects? they are applied after... adding an effect that removes all instances of 'invisibility' that is a normal effect (non-local) will NOT remove instances granted by local effects (even if the local effect has an earlier timestamp)
 
 # sounds: bewitch, hfts, haste, dispel, dcube, analyze, rts, dsight, arrow, enthrall, devils mark, bless, haste, vampiric bite, scarab gest, aura, arrow of d, com of osi, tendrils, lepr bite, howl fb, analyze, bite, enerv grasp, gaze, pain
 
@@ -50,23 +20,17 @@ KeyError: 'a0'
 
 # effect descr: hatred, hook attack
 
-# mesmerize too good? just make both familiars fragile...
-
 # music/sound adjust in menu
 
 # visuals for eot/sot effects...
 
 # trolls that fail sanity check skip their regen..., anything with specific behavior in do_round() would... minotaur, dragon, etc...
 
-# wherever 'q' is hotkeyed to a specific cancel function, r-click should be bound to that cancel function (although r-click otherwise is bound to move_cursor/populate_context) OR (if this is unintuitive) a cancel button should be created when binding 'q' to specific action-cancel function
-
 # proximity effects in ent.get_abl(str)
 
 # change legal_attacks() for ents that have multiple kinds of attacks...
 
 # to ai routines, if path is longer than epath by some amount, use epath
-
-# orcs allow for abeyance (check for existence of 'chop'), also- using Ai_man.melee_pursue() they avoid effects along a path but ignore them when they exist on goal locations
 
 # same color text for each summon actions, murrain-orchid1/2, ...
 
@@ -248,9 +212,9 @@ def action_description(act):
     elif act == 'Bless':
         return 'Heal a friendly spell target within range reason equal to caster psyche.'
     elif act == 'Boiling Blood':
-        return 'Adjacent spell target Berserker gets +4 str, -4 end, end-of-turn 2 fire damage. Duration is reason. Level is wisdom.'
+        return 'Adjacent spell target that you own gets +4 str, -4 end, end-of-turn 2 fire damage. Duration is reason. Level is wisdom.'
     elif act == 'Dark Sun':
-        return 'Adjacent spell target Umbrae Wolf/Mist gets +1 actions until the end of this turn if it passes an endurance save check. Level is wisdom.'
+        return 'Adjacent spell target gets +1 actions until the end of this turn if it passes a wisdom save check. Level is wisdom.'
     elif act == 'Meditate':
         return 'Caster gets +1 psyche and +2 move range until the end of this turn. Level is wisdom.'
     elif act == 'Horrid Wilting':
@@ -270,21 +234,21 @@ def action_description(act):
     elif act == 'Poison Sting':
         return 'Range ballistics, marksmanship vs dodge to-hit, missle vs endurance poison damage. Hit also causes effect, -1 strength and 1 poison damage end-of-turn, stackable. Duration is missle. Level is ballistics.'
     elif act == 'Dire Charm':
-        return 'All units within range reason, upon to-hit psyche vs endurance, damage themselves using their own strength vs endurance, crushing. Costs 2 magick. Does not target.'
+        return 'All units within range reason, upon to-hit psyche vs psyche, damage themselves using their own strength vs endurance, crushing melee. Costs 3 magick. Does not target.'
     elif act == 'Baleful Stare':
-        return 'Spell target within range reason, upon to-hit wisdom vs strength, that does not have this effect gets -1 psyche and end-of-turn 1 acid damage. Duration is reason. Level is wisdom.'
+        return 'Spell target within range reason, upon to-hit wisdom vs strength, that does not have this effect gets -1 psyche and end-of-turn 2 acid damage. Duration is reason. Level is wisdom.'
     elif act == 'Mind Rot':
         return 'Spell target in range reason gets -2 wisdom, -1 reason, -3 sanity. Duration is reason. Level is wisdom.'
     elif act == 'Legerdemain':
         return 'Exchange position of two spell target units.'
     elif act == 'Grasp of the Old Ones':
-        return 'An adjacent unit, upon to-hit psyche vs psyche, gets an effect that strips invisibility and psyshield. Duration is reason. Level is wisdom. Does not target.'
+        return 'Any unit within range reason, upon to-hit psyche vs psyche, gets an effect that strips invisibility and psyshield. Duration is reason. Level is wisdom. Does not target.'
     elif act == 'Dust Devil':
         return 'A spell target within range reason, upon to-hit wisdom vs wisdom, takes psyche vs psyche explosive damage and is relocated to any of the locations (chosen randomly) furthest away from the caster among the locations within distance from the target equal to caster psyche.'
     elif act == 'Dispel':
         return 'An action target within range reason, upon failing to-hit wisdom vs wisdom, has all effects attempted to dispel using caster wisdom. Upon another to-hit using wisdom vs wisdom, the unit gets an effect that strips psyshield. Duration is reason. Level is wisdom.'
     elif act == 'Brambles':
-        return 'Spell target within range reason, and all units within distance 2, get -2 move range if they have normal type movement and, on to-hit wisdom vs agility, take psyche vs endurance slashing spell damage. Costs 3.'
+        return 'Spell target within range reason, and all units within distance 2, get -1 move range if they have normal type movement and, on to-hit wisdom vs agility, take psyche vs endurance slashing spell damage. Costs 3.'
     elif act == 'Flesh Hooks':
         return 'An adjacent friendly action target, without this ability, is granted Hook Attack action. This action targets a unit within range reason that, on to-hit wisdom vs dodge, does psyche vs endurance piercing ranged damage. Action is granted for duration reason at level wisdom.'
     elif act == 'Hellfire':
@@ -331,7 +295,7 @@ def action_description(act):
         return 'All units within range reason, that do not have either psyshield or invisibility, have each of their effects attempted to dispel using the caster wisdom. Costs 3 magick.'
     elif act == 'Roar':
         return 'All units within range reason, enemy units on strength vs psyche to-hit get -2 sanity, friendly units on wisdom save check get +2 sanity. Duration is endurance. Level is srength.'
-    elif act == "Devil's_Mark":
+    elif act == "Devil's Mark":
         return 'A spell target unit gets +2 to any chosen ability. Costs 2. Duration is reason. Level is wisdom.'
     elif act == 'Mesmerize':
         return 'Spell target within range rsn, on to hit wisdom vs wisdom, gets an effect causing a start-of-turn psyche save check(mod 0). On failure, the unit loses one action, if it has any, and is dealt crushing melee damage equal to its own strength vs endurance. Duration is reason. Level is wisdom.'
@@ -453,7 +417,7 @@ def effect_description(ef):
     elif ef.name == 'Bewitch':
         return 'Adds psyshield. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Read_the_Stars':
-        return 'Caster and all friendly summons get +3 when dealing cold or electric damage. dur = '+str(ef.duration)+', level = '+str(ef.level)
+        return 'Caster and all friendly summons get +2 when dealing cold or electric damage. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Psi_Blades':
         return 'Adds Psi Slash action. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Energize':
@@ -483,9 +447,9 @@ def effect_description(ef):
     elif ef.name == 'Unholy_Chant':
         return '+1 all abilities (not actions, moves). dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Baleful_Stare':
-        return '-1 psyche, end-of-turn 1 acid damage. dur = '+str(ef.duration)+', level = '+str(ef.level)
+        return '-1 psyche, end-of-turn 2 acid damage. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Brambles':
-        return '-2 move range. dur = '+str(ef.duration)+', level = '+str(ef.level)
+        return '-1 move range. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Mind_Rot':
         return '-3 wisdom, reason, sanity. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Grasp_of_the_Old_Ones':
@@ -1804,6 +1768,9 @@ class Illusionist(Summon):
         b = tk.Button(app.context_menu, text = 'Confirm Analyze Target', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_analyze(event = e, sqr = sqr, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_analyze(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -1875,6 +1842,9 @@ class Illusionist(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Smoke Bomb Location', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_smoke_bomb(event = e, sqr = s, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_smoke_bomb(self, event = None, sqr = None, sqrs = None):
         if sqr not in sqrs:
@@ -1927,6 +1897,9 @@ class Illusionist(Summon):
         b = tk.Button(app.context_menu, text = 'Confirm Doubling Cube Target', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_doubling_cube(event = e, sqr = sqr, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
         
     def do_doubling_cube(self, event = None, sqr = None, sqrs = None):
@@ -2006,6 +1979,9 @@ class Illusionist(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Location for Grenade', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_tracer_grenade(e, s, sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_tracer_grenade(self, event, sqr, sqrs):
         global selected_vis
@@ -2164,6 +2140,9 @@ class Illusionist(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Location for Mortar', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_mortar(e, s, sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_mortar(self, event, sqr, sqrs):
         global selected_vis
@@ -2304,6 +2283,9 @@ class Illusionist(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Target For Pyrotechnics', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_pyrotechnics(e, s, sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_pyrotechnics(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -2352,6 +2334,9 @@ class Illusionist(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Target For Simulacrum', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_simulacrum(e, s, sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_simulacrum(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -2455,6 +2440,9 @@ class Illusionist(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Target', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.choose_target(event = e, sqr = sqr, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
         
     def choose_target(self, event = None, sqr = None, sqrs = None):
@@ -2631,6 +2619,9 @@ class Umbrae_Wolf(Summon):
         b = tk.Button(app.context_menu, text = 'Confirm Phase Shift', font = ('chalkduster', 22), fg='tan3', wraplength = 190, highlightbackground = 'tan3', command = lambda e = None : self.do_phase_shift(event = e))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_phase_shift(self, event = None):
         global selected
@@ -2833,6 +2824,9 @@ class Umbrae_Wolf(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Target for Gaze', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_gaze(event = e, sqr = s, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_gaze(self, event = None, sqr = None, sqrs = None):
         if sqr not in sqrs:
@@ -2903,6 +2897,9 @@ class Umbrae_Wolf(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Target For Encumber', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_encumber(e, s, sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_encumber(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -3027,6 +3024,9 @@ class Umbrae_Wolf(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Target For Haste', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_haste(e, s, sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_haste(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -3137,6 +3137,9 @@ class Umbrae_Wolf(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Location', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_rend_space(event = e, sqr = sqr, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_rend_space(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -3187,6 +3190,9 @@ class Umbrae_Wolf(Summon):
         b = tk.Button(app.context_menu, text = 'Confirm Analyze Target', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_pierce_shield(event = e, sqr = sqr, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_pierce_shield(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -3261,6 +3267,9 @@ class Umbrae_Wolf(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Target Tendrils of Chaos', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_tendrils_of_chaos(e, sqr = s, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_tendrils_of_chaos(self, event = None, sqr = None, sqrs = None):
         if sqr not in sqrs:
@@ -3378,6 +3387,9 @@ class Umbrae_Wolf(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Warpfire Location', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_warpfire(event = e, sqr = s, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_warpfire(self, event = None, sqr = None, sqrs = None):
         if sqr not in sqrs:
@@ -3486,6 +3498,9 @@ class Umbrae_Wolf(Summon):
         b = tk.Button(app.context_menu, text = 'Confirm Stalk Target', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_stalk(event = e, sqr = sqr, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_stalk(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -3557,6 +3572,9 @@ class Umbrae_Wolf(Summon):
         b = tk.Button(app.context_menu, text = 'Confirm Darkblast Target', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_darkblast(event = e, sqr = sqr, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_darkblast(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -3669,6 +3687,9 @@ class Umbrae_Wolf(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Target Dark Shroud', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_dark_shroud(event = e, sqr = sqr, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_dark_shroud(self, event = None, sqr = None, sqrs = None):
         if sqr not in sqrs:
@@ -3745,6 +3766,9 @@ class Umbrae_Wolf(Summon):
         b = tk.Button(app.context_menu, text = 'Confirm Drain Life Target', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_drain_life(event = e, sqr = sqr, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_drain_life(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -3809,6 +3833,9 @@ class Umbrae_Wolf(Summon):
         b = tk.Button(app.context_menu, text = 'Confirm Muddle', font = ('chalkduster', 22), fg='tan3', wraplength = 190, highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs: self.do_muddle(event = e, sqr = sqr, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_muddle(self, event = None, sqr = None, sqrs = None):
         if sqr not in sqrs:
@@ -3880,6 +3907,9 @@ class Umbrae_Wolf(Summon):
         b = tk.Button(app.context_menu, text = 'Confirm Attack', font = ('chalkduster', 22), fg='tan3', wraplength = 190, highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs: self.do_umbrae_strike(event = e, sqr = sqr, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_umbrae_strike(self, event = None, sqr = None, sqrs = None):
         if sqr not in sqrs:
@@ -4012,6 +4042,9 @@ class Wurdulak(Summon):
         b = tk.Button(app.context_menu, text = 'Confirm Entrance Target', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_entrance(event = e, sqr = sqr, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_entrance(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -4080,6 +4113,9 @@ class Wurdulak(Summon):
         b = tk.Button(app.context_menu, text = 'Confirm Enthrall Target', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_enthrall(event = e, sqr = sqr, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_enthrall(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -4154,6 +4190,9 @@ class Wurdulak(Summon):
         b = tk.Button(app.context_menu, text = 'Confirm Chill Touch Target', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_chill_touch(event = e, sqr = sqr, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_chill_touch(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -4221,6 +4260,9 @@ class Wurdulak(Summon):
         b = tk.Button(app.context_menu, text = 'Confirm Enervating Grasp Target', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_enervating_grasp(event = e, sqr = sqr, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_enervating_grasp(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -4283,6 +4325,9 @@ class Wurdulak(Summon):
         b = tk.Button(app.context_menu, text = 'Confirm Bat Form', font = ('chalkduster', 22), fg='tan3', wraplength = 190, highlightbackground = 'tan3', command = lambda e = None : self.do_bat_form(event = e))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_bat_form(self, event = None):
         effect1 = mixer.Sound('Sound_Effects/phase_shift.ogg')
@@ -4384,6 +4429,9 @@ class Wurdulak(Summon):
         b = tk.Button(app.context_menu, text = 'Confirm Wolf Form', font = ('chalkduster', 22), fg='tan3', wraplength = 190, highlightbackground = 'tan3', command = lambda e = None : self.do_wolf_form(event = e))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_wolf_form(self, event = None):
         effect1 = mixer.Sound('Sound_Effects/phase_shift.ogg')
@@ -4456,6 +4504,9 @@ class Wurdulak(Summon):
         b = tk.Button(app.context_menu, text = 'Confirm Vampiric Bite Target', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_vampiric_bite(event = e, sqr = sqr, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_vampiric_bite(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -4645,6 +4696,9 @@ class Murrain_Wolf(Summon):
         b = tk.Button(app.context_menu, text = 'Confirm Bite Target', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_leprous_bite(event = e, sqr = sqr, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_leprous_bite(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -4728,6 +4782,9 @@ class Murrain_Wolf(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Scarab To Transform', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_scarab_swarm(e, s, sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_scarab_swarm(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -4796,6 +4853,9 @@ class Murrain_Wolf(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Spore Cloud Location', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_spore_cloud(event = e, sqr = s, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_spore_cloud(self, event = None, sqr = None, sqrs = None):
         if sqr not in sqrs:
@@ -4862,6 +4922,9 @@ class Murrain_Wolf(Summon):
         b = tk.Button(app.context_menu, text = 'Confirm Scarab Target', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_scarab_gestation(event = e, sqr = sqr, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_scarab_gestation(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -4945,6 +5008,9 @@ class Murrain_Wolf(Summon):
         b = tk.Button(app.context_menu, text = 'Confirm Paralyze Target', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_paralyze(event = e, sqr = sqr, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_paralyze(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -5019,6 +5085,9 @@ class Murrain_Wolf(Summon):
         b = tk.Button(app.context_menu, text = 'Confirm Pox', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, s = sqrs : self.do_pox(event = e, sqrs = s))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_pox(self, event = None, sqrs = None):
         effect1 = mixer.Sound('Sound_Effects/pox.ogg')
@@ -5085,8 +5154,11 @@ class Murrain_Wolf(Summon):
         b = tk.Button(app.context_menu, text = 'Confirm Toxic Miasma', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqrs = sqrs : self.do_toxic_miasma(event = e, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
-    def do_toxic_miasma(self, event = None):
+    def do_toxic_miasma(self, event = None, sqrs = None):
         self.acts -= 1
 #         effect1 = mixer.Sound('Sound_Effects/toxic_miasma.ogg')
 #         effect1.set_volume(1)
@@ -5190,9 +5262,9 @@ class Scarab_Swarm(Summon):
             self.msl = 4
             self.bls = 7
             self.dodge = 9
-            self.psyche = 7
-            self.wis = 6
-            self.rsn = 5
+            self.psyche = 5
+            self.wis = 4
+            self.rsn = 4
             self.san = 16
             self.init = 9
             self.spirit = 21
@@ -5209,9 +5281,9 @@ class Scarab_Swarm(Summon):
             self.msl = 4
             self.bls = 7
             self.dodge = 9
-            self.psyche = 7
-            self.wis = 6
-            self.rsn = 5
+            self.psyche = 5
+            self.wis = 4
+            self.rsn = 4
             self.san = 16
             self.init = 9
             self.spirit = 21
@@ -5226,7 +5298,6 @@ class Scarab_Swarm(Summon):
         super().__init__(name, id, img, loc, owner)
         
         
-    # add -1 san, init cumul efct
     def bite(self, event = None):
         if self.acts < 1:
             return
@@ -5295,37 +5366,37 @@ class Scarab(Summon):
             self.actions = {'Bite':self.bite, 'Move':self.move}
             self.str = 3
             self.agl = 5
-            self.end = 6
+            self.end = 5
             self.mm = 1
             self.msl = 0
             self.bls = 0
-            self.dodge = 7
-            self.psyche = 6
-            self.wis = 4
+            self.dodge = 5
+            self.psyche = 4
+            self.wis = 3
             self.rsn = 4
             self.san = 14
             self.init = 6
-            self.spirit = 13
             self.magick = 0
+            self.spirit = 13
             self.acts = 1
             self.mvs = 1
             self.move_range = 4
         elif level == 2:
             self.actions = {'Bite':self.bite, 'Move':self.move}
             self.str = 4
-            self.agl = 7
-            self.end = 7
+            self.agl = 6
+            self.end = 6
             self.mm = 1
             self.msl = 0
             self.bls = 0
-            self.dodge = 8
-            self.psyche = 7
-            self.wis = 5
-            self.rsn = 5
+            self.dodge = 6
+            self.psyche = 4
+            self.wis = 4
+            self.rsn = 4
             self.san = 16
             self.init = 7
-            self.spirit = 19
             self.magick = 0
+            self.spirit = 19
             self.acts = 2
             self.mvs = 2
             self.move_range = 4
@@ -5335,7 +5406,6 @@ class Scarab(Summon):
         self.resist = ['magick', 'slashing', 'piercing', 'fire', 'poison', 'elec']
         super().__init__(name, id, img, loc, owner)
         
-    # add -1 san, init cumul efct
     def bite(self, event = None):
         if self.acts < 1:
             return
@@ -5362,9 +5432,14 @@ class Scarab(Summon):
         app.depop_context(event = None)
         app.cleanup_squares()
         self.acts -= 1
-#         app.vis_dict['Bite'] = Vis(name = 'Bite', loc = sqr[:])
-#         vis = app.vis_dict['Bite']
-#         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = vis.img, tags = 'Bite')
+        n = 'Bite' + str(app.effects_counter)
+        app.effects_counter += 1
+        app.vis_dict[n] = Vis(name = 'Bite', loc = sqr[:])
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict[n].img, tags = n)
+        def cleanup_bite(n):
+            del app.vis_dict[n]
+            app.canvas.delete(n)
+        root.after(1666, lambda n = n : cleanup_bite(n))
         my_agl = self.get_abl('agl')
         tar_agl = app.ent_dict[id].get_abl('agl')
         if to_hit(my_agl, tar_agl) == True:
@@ -5372,16 +5447,12 @@ class Scarab(Summon):
             tar_end = app.ent_dict[id].get_abl('end')
             d = damage(my_str, tar_end)
             lock(apply_damage, self, app.ent_dict[id], -d, 'acid', 'Bite', 'melee')
-            root.after(111, self.finish_bite)
+            root.after(333, self.finish_bite)
         else:
             miss(app.ent_dict[id].loc)
             root.after(1666, self.finish_bite)
         
     def finish_bite(self, event = None):
-#         try: 
-#             del app.vis_dict['Bite']
-#             app.canvas.delete('Bite')
-#         except: pass
         app.depop_context(event = None)
         app.canvas.delete('text')
         app.cleanup_squares()
@@ -5432,7 +5503,7 @@ class Thaumaturge(Summon):
             self.move_range = 5
             self.level = level
         elif level == 2:
-            self.actions = {'Move':self.move, 'Unholy Chant':self.unholy_chant, 'Arrow of Diana' : self.arrow_of_diana, 'Moonlight' : self.moonlight, 'Esuna':self.esuna, 'Concerted Volley':self.concerted_volley, 'Aura':self.aura, 'Tranquility':self.tranquility, 'Concerted Volley':self.concerted_volley, "Devil's Mark":self.devils_mark}
+            self.actions = {'Move':self.move, 'Unholy Chant':self.unholy_chant, 'Arrow of Diana' : self.arrow_of_diana, 'Moonlight' : self.moonlight, 'Esuna':self.esuna, 'Aura':self.aura, 'Tranquility':self.tranquility, 'Concerted Volley':self.concerted_volley, "Devil's Mark":self.devils_mark}
             self.str = 4
             self.agl = 9
             self.end = 5
@@ -5470,6 +5541,9 @@ class Thaumaturge(Summon):
         b = tk.Button(app.context_menu, text = "Confirm Devil's Mark Target", wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_devils_mark(event = e, sqr = sqr, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_devils_mark(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -5591,6 +5665,9 @@ class Thaumaturge(Summon):
         b = tk.Button(app.context_menu, text = 'Confirm Aura', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_aura(event = e, sqr = sqr, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_aura(self, event = None, sqr = None, sqrs = None):
         if sqr not in sqrs:
@@ -5652,6 +5729,9 @@ class Thaumaturge(Summon):
         b = tk.Button(app.context_menu, text = 'Confirm Tranquility Target', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_tranquility(event = e, sqr = sqr, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_tranquility(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -5704,6 +5784,9 @@ class Thaumaturge(Summon):
         b = tk.Button(app.context_menu, text = 'Confirm Esuna Target', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_esuna(event = e, sqr = sqr, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_esuna(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -5773,6 +5856,9 @@ class Thaumaturge(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Target For Moonlight', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_moonlight(e, s, sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_moonlight(self, event, s, sqrs):
         global selected_vis
@@ -5845,6 +5931,9 @@ class Thaumaturge(Summon):
         b = tk.Button(app.context_menu, text = 'Confirm Unholy Chant', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqrs = sqrs : self.do_unholy_chant(event = e, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
         
     def do_unholy_chant(self, event = None, sqrs = None):
@@ -5930,6 +6019,9 @@ class Thaumaturge(Summon):
         b = tk.Button(app.context_menu, text = 'Confirm Concerted Volley', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqrs = sqrs : self.do_concerted_volley(event = e, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
         
     def do_concerted_volley(self, event = None, sqrs = None):
@@ -5992,6 +6084,9 @@ class Thaumaturge(Summon):
         b = tk.Button(app.context_menu, text = 'Confirm Arrow Target', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_arrow(event = e, sqr = sqr, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_arrow(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -6123,6 +6218,9 @@ class Fiend(Summon):
         b = tk.Button(app.context_menu, text = 'Confirm Pounce', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqrs = sqrs, sqr = grid_pos : self.do_pounce(event = e, sqrs = sqrs, sqr = sqr))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_pounce(self, event = None, sqrs = None, sqr = None):
         global selected
@@ -6250,6 +6348,9 @@ class Fiend(Summon):
         b = tk.Button(app.context_menu, text = 'Confirm Roar', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqrs = sqrs : self.do_roar(event = e, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_roar(self, event = None, sqrs = None):
         self.acts -= 1
@@ -6346,6 +6447,9 @@ class Fiend(Summon):
         b = tk.Button(app.context_menu, text = 'Confirm Nullify', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqrs = sqrs : self.do_nullify(event = e, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_nullify(self, event = None, sqrs = None):
         if self.magick < 3:
@@ -6412,6 +6516,9 @@ class Fiend(Summon):
         b = tk.Button(app.context_menu, text = 'Confirm Abeyance Target', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_abeyance(event = e, sqr = sqr, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_abeyance(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -6506,6 +6613,9 @@ class Fiend(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Target For Anoint', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_anoint(e, s, sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_anoint(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -6577,6 +6687,9 @@ class Fiend(Summon):
         b = tk.Button(app.context_menu, text = 'Confirm Reveal Target', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_reveal(event = e, sqr = sqr, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_reveal(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -6652,6 +6765,9 @@ class Fiend(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Target', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.choose_target(event = e, sqr = sqr, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def choose_target(self, event = None, sqr = None, sqrs = None):
         if sqr not in sqrs:
@@ -6674,7 +6790,6 @@ class Fiend(Summon):
         b.pack(side = 'top')
         app.context_buttons.append(b)
     
-    # CHANGE - if sqr is ocpd, dmg both ents, else just target, move ocpr to clst uncpd
     def do_suplex(self, event = None, id = None, sqr = None, sqrs = None):
         if sqr not in sqrs:
             return
@@ -7996,7 +8111,7 @@ class Kobold_Cleric(Bot):
         self.spirit = 15
         self.magick = 11
         self.san = 12
-        self.acts = 1
+        self.acts = 2
         self.mvs = 1
         self.move_range = 4
         self.waiting = waiting
@@ -8179,7 +8294,7 @@ class Kobold_Shaman(Bot):
         self.spirit = 11
         self.magick = 13
         self.san = 11
-        self.acts = 1
+        self.acts = 2
         self.mvs = 1
         self.move_range = 4
         self.waiting = waiting
@@ -12100,6 +12215,9 @@ class Berserker(Summon):
         b = tk.Button(app.context_menu, text = 'Confirm Track', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqrs = sqrs : self.do_track(event = e, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_track(self, event = None, sqrs = None):
         self.acts -= 1
@@ -12173,6 +12291,9 @@ class Berserker(Summon):
         b = tk.Button(app.context_menu, text = 'Confirm Howl From Beyond', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqrs = sqrs : self.do_howl(event = e, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_howl(self, event = None, sqrs = None):
         self.acts -= 1
@@ -12251,6 +12372,9 @@ class Berserker(Summon):
         b = tk.Button(app.context_menu, text = 'Confirm Whirlwind', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, s = sqrs : self.do_whirlwind(event = e, sqrs = s))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_whirlwind(self, event = None, sqrs = None):
 #         effect1 = mixer.Sound('Sound_Effects/whirlwind.ogg')
@@ -12319,6 +12443,9 @@ class Berserker(Summon):
         b = tk.Button(app.context_menu, text = 'Confirm Rage', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_rage(event = e, sqr = sqr, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_rage(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -12389,6 +12516,9 @@ class Berserker(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Target', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.choose_target(event = e, sqr = sqr, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def choose_target(self, event = None, sqr = None, sqrs = None):
         if sqr not in sqrs:
@@ -12545,6 +12675,9 @@ class Berserker(Summon):
         b = tk.Button(app.context_menu, text = 'Confirm Leap', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqrs = sqrs, sqr = grid_pos : self.do_leap(event = e, sqrs = sqrs, sqr = sqr))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_leap(self, event = None, sqrs = None, sqr = None):
         global selected
@@ -12628,7 +12761,7 @@ class Berserker(Summon):
         self.init_normal_anims()
         self.end_leap()
         
-    def end_leap(self):
+    def end_leap(self, event = None):
         app.depop_context(event = None)
         app.cleanup_squares()
         app.unbind_all()
@@ -12647,6 +12780,9 @@ class Berserker(Summon):
         b = tk.Button(app.context_menu, text = 'Confirm Attack', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqrs = sqrs, sqr = grid_pos : self.check_hit(event = e, sqrs = sqrs, sqr = sqr))
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def check_hit(self, event = None, sqrs = None, sqr = None):
         if sqr not in sqrs:
@@ -12732,41 +12868,41 @@ class Familiar_Homunculus(Summon):
             self.actions = {'Mesmerize':self.mesmerize, 'Fuse Trap':self.fuse_trap, 'Move':self.move}
             self.str = 3
             self.agl = 6
-            self.end = 5
+            self.end = 3
             self.mm = 1
             self.msl = 0
             self.bls = 0
-            self.dodge = 7
-            self.psyche = 5
-            self.wis = 5
-            self.rsn = 5
-            self.san = 14
+            self.dodge = 6
+            self.psyche = 4
+            self.wis = 4
+            self.rsn = 3
+            self.san = 11
             self.init = 9
-            self.spirit = 19
             self.magick = 11
+            self.spirit = 15
             self.acts = 1
             self.mvs = 1
             self.move_range = 6
             self.level = level
         elif level == 2:
             self.actions = {'Mesmerize':self.mesmerize, 'Fuse Trap':self.fuse_trap, 'Move':self.move}
-            self.str = 3
-            self.agl = 6
-            self.end = 6
+            self.str = 4
+            self.agl = 7
+            self.end = 4
             self.mm = 1
             self.msl = 0
             self.bls = 0
             self.dodge = 7
-            self.psyche = 6
-            self.wis = 6
-            self.rsn = 6
-            self.san = 15
+            self.psyche = 5
+            self.wis = 5
+            self.rsn = 4
+            self.san = 13
             self.init = 10
-            self.spirit = 25
             self.magick = 15
+            self.spirit = 21
             self.acts = 2
             self.mvs = 2
-            self.move_range = 6
+            self.move_range = 7
         self.move_type = 'normal'
         self.weak = ['crushing']
         self.resist = ['magick']
@@ -12963,40 +13099,40 @@ class Lesser_Demon(Summon):
     def __init__(self, name, id, img, loc, owner, level):
         if level == 1:
             self.actions = {'Dire Charm':self.dire_charm, 'Baleful Stare':self.baleful_stare, 'Brambles':self.brambles, 'Move': self.move}
-            self.str = 6
-            self.agl = 6
-            self.end = 6
+            self.str = 4
+            self.agl = 4
+            self.end = 5
             self.mm = 1
             self.msl = 0
             self.bls = 0
-            self.dodge = 7
-            self.psyche = 6
-            self.wis = 6
-            self.rsn = 5
+            self.dodge = 4
+            self.psyche = 5
+            self.wis = 5
+            self.rsn = 4
             self.san = 13
             self.init = 8
-            self.spirit = 16
             self.magick = 19
+            self.spirit = 16
             self.acts = 1
             self.mvs = 1
             self.move_range = 4
             self.level = level
         elif level == 2:
             self.actions = {'Dire Charm':self.dire_charm, 'Baleful Stare':self.baleful_stare, 'Brambles':self.brambles, 'Move': self.move}
-            self.str = 7
-            self.agl = 7
-            self.end = 7
+            self.str = 5
+            self.agl = 5
+            self.end = 6
             self.mm = 1
             self.msl = 0
             self.bls = 0
-            self.dodge = 8
-            self.psyche = 7
-            self.wis = 7
+            self.dodge = 5
+            self.psyche = 6
+            self.wis = 6
             self.rsn = 5
-            self.san = 15
+            self.san = 14
             self.init = 9
-            self.spirit = 19
             self.magick = 27
+            self.spirit = 19
             self.acts = 2
             self.mvs = 1
             self.move_range = 4
@@ -13077,10 +13213,10 @@ class Lesser_Demon(Summon):
                 app.canvas.create_image(s[0]*100+50-app.moved_right, s[1]*100+50-app.moved_down, image = app.vis_dict[u].img, tags = 'Brambles')
                 # ADD brambles effects
                 if app.ent_dict[id].move_type == 'normal':
-                    app.canvas.create_text(s[0]*100+49-app.moved_right, s[1]*100+14-app.moved_down, text = '-2 move range', justify ='center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
-                    app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+15-app.moved_down, text = '-2 move range', justify ='center', font = ('chalkduster', 13), fill = 'white', tags = 'text')
+                    app.canvas.create_text(s[0]*100+49-app.moved_right, s[1]*100+14-app.moved_down, text = '-1 move range', justify ='center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
+                    app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+15-app.moved_down, text = '-1 move range', justify ='center', font = ('chalkduster', 13), fill = 'white', tags = 'text')
                     def brambles_move(move_range):
-                        return max(0,move_range-2)
+                        return max(0,move_range-1)
                     p = partial(brambles_move)
                     ent.move_range_effects.append(p)
                     def un(i, func, lockname = None):
@@ -13089,7 +13225,7 @@ class Lesser_Demon(Summon):
                     uf = partial(un, id, p)
                     n = 'Brambles' + str(app.effects_counter)
                     app.ent_dict[id].effects_dict[n] = Effect(name = 'Brambles', undo_func = uf, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
-                if to_hit(self.get_abl('wis'),ent.get_abl('agl')) == True:
+                if to_hit(self.get_abl('wis'),ent.get_abl('agl')):
                     my_psyche = self.get_abl('psyche')
                     tar_end = app.ent_dict[id].get_abl('end')
                     d = damage(my_psyche, tar_end)
@@ -13149,8 +13285,8 @@ class Lesser_Demon(Summon):
         my_wis = self.get_abl('wis')
         target_str = app.ent_dict[id].get_abl('str')
         if to_hit(my_wis, target_str) == True:
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100+49-app.moved_right, app.ent_dict[id].loc[1]*100+74-app.moved_down, text = '-1 psyche, eot 1 acid dmg', justify ='center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
-            app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+75-app.moved_down, text = '-1 psyche, eot 1 acid dmg', justify ='center', font = ('chalkduster', 13), fill = 'white', tags = 'text')
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100+49-app.moved_right, app.ent_dict[id].loc[1]*100+74-app.moved_down, text = '-1 psyche, eot 2 acid dmg', justify ='center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+75-app.moved_down, text = '-1 psyche, eot 2 acid dmg', justify ='center', font = ('chalkduster', 13), fill = 'white', tags = 'text')
             # baleful effect
             def baleful_stare_effect(stat):
                 stat -= 1
@@ -13165,12 +13301,12 @@ class Lesser_Demon(Summon):
                 root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
             p = partial(un, id)
             # EOT FUNC
-            def take_1(tar, lockname = None):
+            def take_2(tar, lockname = None):
                 app.get_focus(tar)
-                lock(apply_damage, self, app.ent_dict[tar], -1, 'acid', 'Baleful Stare', 'eot')
+                lock(apply_damage, self, app.ent_dict[tar], -2, 'acid', 'Baleful Stare', 'eot')
                 root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
             n = 'Baleful_Stare' + str(app.effects_counter)
-            eot = partial(take_1, id)
+            eot = partial(take_2, id)
             app.ent_dict[id].effects_dict[n] = Effect(name = 'Baleful_Stare', eot_func = eot, undo_func = p, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
         else:
             miss(app.ent_dict[id].loc)
@@ -13201,9 +13337,9 @@ class Lesser_Demon(Summon):
         app.context_buttons.append(b)
         
     def do_dire_charm(self, event = None, sqrs = None):
-        if self.magick < 2:
+        if self.magick < 3:
             return
-        self.magick -= 2
+        self.magick -= 3
         self.acts -= 1
 #         effect1 = mixer.Sound('Sound_Effects/dire_charm.ogg')
 #         effect1.set_volume(1)
@@ -13231,10 +13367,8 @@ class Lesser_Demon(Summon):
                 app.effects_counter += 1
                 app.vis_dict[uniq] = Vis(name = 'Dire_Charmed', loc = s)
                 app.canvas.create_image(s[0]*100+50-app.moved_right, s[1]*100+50-app.moved_down, image = app.vis_dict[uniq].img, tags = 'Dire_Charm')
-                if to_hit(self.get_abl('psyche'),ent.get_abl('end')):
-                    tar_str = app.ent_dict[id].get_abl('str')
-                    tar_end = app.ent_dict[id].get_abl('end')
-                    d = damage(tar_str, tar_end)
+                if to_hit(self.get_abl('psyche'),ent.get_abl('psyche')):
+                    d = damage(ent.get_abl('str'), ent.get_abl('end'))
                     root.after(1555, lambda n = uniq : cleanup_charm(n))
                     lock(apply_damage, ent, ent, -d, 'crushing', 'Dire Charmed', 'melee')
                     root.after(111, lambda ents = ents : dire_charm_loop(ents))
@@ -13611,19 +13745,19 @@ class Familiar_Imp(Summon):
         if level == 1:
             self.actions = {'Poison Sting':self.poison_sting, 'Darkness':self.darkness, 'Flying Move':self.move}
             self.str = 2
-            self.agl = 8
+            self.agl = 6
             self.end = 3
-            self.mm = 7
+            self.mm = 6
             self.msl = 3
-            self.bls = 7
-            self.dodge = 8
+            self.bls = 6
+            self.dodge = 7
             self.psyche = 4
-            self.wis = 8
-            self.rsn = 5
+            self.wis = 6
+            self.rsn = 4
             self.san = 12
-            self.init = 8
-            self.spirit = 13
+            self.init = 7
             self.magick = 13
+            self.spirit = 13
             self.acts = 1
             self.mvs = 1
             self.move_range = 5
@@ -13631,19 +13765,19 @@ class Familiar_Imp(Summon):
         elif level == 2:
             self.actions = {'Poison Sting':self.poison_sting, 'Darkness':self.darkness, 'Flying Move':self.move}
             self.str = 3
-            self.agl = 9
+            self.agl = 7
             self.end = 4
-            self.mm = 8
+            self.mm = 7
             self.msl = 4
-            self.bls = 8
-            self.dodge = 9
+            self.bls = 7
+            self.dodge = 8
             self.psyche = 5
-            self.wis = 9
-            self.rsn = 6
+            self.wis = 7
+            self.rsn = 5
             self.san = 13
             self.init = 9
-            self.spirit = 15
             self.magick = 19
+            self.spirit = 15
             self.acts = 2
             self.mvs = 2
             self.move_range = 5
@@ -14336,6 +14470,9 @@ class Witch(Summon):
         b = tk.Button(app.context_menu, text = 'Place '+type.replace('_',' '), font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', wraplength = 190, command = cmd)
         b.pack(side = 'top')
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
         
     def continue_place_summon(self, event, summon, sqrs, sqr):
@@ -14515,6 +14652,9 @@ class Witch(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Familiar To Transform', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_summon_lesser_demon(e, s, sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_summon_lesser_demon(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -14566,6 +14706,9 @@ class Witch(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Location', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_summon_cenobite(e, s, sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_summon_cenobite(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -14614,6 +14757,9 @@ class Witch(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Target For Energize', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_energize(e, s, sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_energize(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -14655,6 +14801,9 @@ class Witch(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Target For Gift', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_minervas_gift(e, s, sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_minervas_gift(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -14704,6 +14853,9 @@ class Witch(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Target For Bewitch', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_bewitch(e, s, sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_bewitch(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -14748,6 +14900,9 @@ class Witch(Summon):
         b = tk.Button(app.context_menu, text = 'Confirm Read the Stars', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None : self.do_read_the_stars(e))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_read_the_stars(self, event):
 #         self.init_cast_anims()
@@ -14820,6 +14975,9 @@ class Witch(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Target For Psi Blades', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_psi_blades(e, s, sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_psi_blades(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -14930,6 +15088,9 @@ class Witch(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Location', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_foul_familiar(e, s, sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
     
     def do_foul_familiar(self, event = None, sqr = None, sqrs = None):
         if sqr not in sqrs:
@@ -14975,6 +15136,9 @@ class Witch(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Location', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_entomb(e, s, sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_entomb(self, event, sqr, sqrs):
         global selected
@@ -15041,6 +15205,9 @@ class Witch(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Target For Vengeance', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_vengeance(e, s, sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
     
     def do_vengeance(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -15111,6 +15278,9 @@ class Witch(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Target For Hatred', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_hatred(e, s, sqrs = sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_hatred(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -15174,6 +15344,9 @@ class Witch(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Target For Torment', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_torment(e, s, sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
     
     def do_torment(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -15223,6 +15396,9 @@ class Witch(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Target For Pain', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_pain(e, s, sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_pain(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -15292,6 +15468,9 @@ class Witch(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Target For Plague', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_plague(e, s, sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_plague(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -15416,6 +15595,9 @@ class Witch(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Target For Psionic Push', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_psionic_push(e, s, sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_psionic_push(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -15562,6 +15744,9 @@ class Witch(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Area For Pestilence', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_pestilence(e, s, sqrs = sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_pestilence(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -15693,6 +15878,9 @@ class Witch(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Target For Curse of Oriax', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_curse_of_oriax(e, s, sqrs = sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_curse_of_oriax(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -15759,6 +15947,9 @@ class Witch(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Target For Molecular Subversion', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_molecular_subversion(e, s, sqrs = sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_molecular_subversion(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -15809,6 +16000,9 @@ class Witch(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Target For Plutonian Cloak', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_plutonian_cloak(e, s, sqrs = sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_plutonian_cloak(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -15883,6 +16077,9 @@ class Witch(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Target For Hidden From the Stars', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_hfts(e, s, sqrs = sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_hfts(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -15940,6 +16137,9 @@ class Witch(Summon):
         b = tk.Button(app.context_menu, text = 'Confirm Cosmic Sight', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_cosmic_sight(e, s, sqrs = sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_cosmic_sight(self, event, sqr, sqrs):
         self.init_cast_anims()
@@ -16013,6 +16213,9 @@ class Witch(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Target For Demonic Sight', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_demonic_sight(e, s, sqrs = sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_demonic_sight(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -16063,6 +16266,9 @@ class Witch(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Target For Gravity', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_gravity(e, s, sqrs = sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_gravity(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -16121,6 +16327,9 @@ class Witch(Summon):
         b = tk.Button(app.context_menu, text = "Beleth's Command Target", wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda sqr = grid_pos, sqrs = sqrs : self.do_beleths_command(sqr = sqr, sqrs = sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_beleths_command(self, event = None, sqr = None, sqrs = None):
         global selected_vis
@@ -16256,6 +16465,9 @@ class Witch(Summon):
         b = tk.Button(app.context_menu, text = 'Choose First Target', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_legerdemain(e, s, sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_legerdemain(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -16308,6 +16520,9 @@ class Witch(Summon):
         b = tk.Button(app.context_menu, text = 'Confirm Meditate', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None : self.do_meditate(e))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_meditate(self, event):
 #         self.init_cast_anims()
@@ -16346,12 +16561,15 @@ class Witch(Summon):
     def mind_rot(self, event = None):
         app.depop_context(event = None)
         root.bind('<q>', self.cleanup_spell)
-        sqrs = [s for s in app.coords if 1 <= dist(self.loc, s) <= self.get_abl('rsn')]
+        sqrs = [s for s in app.coords if 1 <= dist(self.loc, s) <= max(1,self.get_abl('rsn')//2)]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_mind_rot(event = e, sqr = s, sqrs = sqrs))
         b = tk.Button(app.context_menu, text = 'Choose Target For Mind Rot', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_mind_rot(e, s, sqrs = sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_mind_rot(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -16411,6 +16629,9 @@ class Witch(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Location For Horrid Wilting', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_horrid_wilting(e, s, sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_horrid_wilting(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -16467,6 +16688,9 @@ class Witch(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Target For Grasp', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_grasp(e, s, sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_grasp(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -16519,6 +16743,9 @@ class Witch(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Target For Boiling Blood', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_boiling_blood(e, s, sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_boiling_blood(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -16526,9 +16753,10 @@ class Witch(Summon):
         id = app.grid[sqr[0]][sqr[1]]
         if id not in app.spell_target_ents().keys():
             return
-        if not isinstance(app.ent_dict[id], Berserker):
+        ent = app.ent_dict[id]
+        if ent.owner != self.owner:
             return
-        effs = [v.name for k,v in app.ent_dict[id].effects_dict.items()]
+        effs = [v.name for k,v in ent.effects_dict.items()]
         if 'Boiling_Blood' in effs:
             return
         effect1 = mixer.Sound('Sound_Effects/boiling_blood.ogg')
@@ -16547,21 +16775,21 @@ class Witch(Summon):
             return stat
         def boiling_blood_end_effect(stat):
             return max(1, stat-4)
-        app.ent_dict[id].str_effects.append(boiling_blood_str_effect)
-        app.ent_dict[id].end_effects.append(boiling_blood_end_effect)
+        ent.str_effects.append(boiling_blood_str_effect)
+        ent.end_effects.append(boiling_blood_end_effect)
         def un(i, lockname = None):
             app.ent_dict[i].str_effects.remove(boiling_blood_str_effect)
             app.ent_dict[i].end_effects.remove(boiling_blood_end_effect)
             root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
         p = partial(un, id)
         # EOT FUNC
-        def take_1(tar, lockname = None):
+        def take_2(tar, lockname = None):
             app.get_focus(tar)
             lock(apply_damage, self, app.ent_dict[tar], -2, 'fire', 'Boiling Blood', 'eot')
             root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
-        eot = partial(take_1, id)
+        eot = partial(take_2, id)
         n = 'Boiling_Blood' + str(app.effects_counter)
-        app.ent_dict[id].effects_dict[n] = Effect(name = 'Boiling_Blood', eot_func = eot, undo_func = p, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
+        ent.effects_dict[n] = Effect(name = 'Boiling_Blood', eot_func = eot, undo_func = p, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
         root.after(2333, lambda  name = 'Boiling_Blood' : self.cleanup_spell(name = name))
         
     
@@ -16576,6 +16804,9 @@ class Witch(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Target For Dark Sun', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_dark_sun(e, s, sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_dark_sun(self, event, sqr, sqrs):
         global selected_vis
@@ -16583,8 +16814,6 @@ class Witch(Summon):
             return
         id = app.grid[sqr[0]][sqr[1]]
         if id not in app.spell_target_ents().keys():
-            return
-        if not isinstance(app.ent_dict[id], Umbrae_Wolf):
             return
         if 'Dark_Sun' in [v.name for k,v in app.ent_dict[id].effects_dict.items()]:
             return
@@ -16615,7 +16844,7 @@ class Witch(Summon):
         locy = sqr[1]*100+70-app.moved_down
         locx = sqr[0]*100+50-app.moved_right
         # Effect
-        if app.ent_dict[id].save_check('end') == 'Pass':
+        if app.ent_dict[id].save_check('wis') == 'Pass':
             def dark_acts(acts):
                 return acts+1
             p = partial(dark_acts)
@@ -16642,6 +16871,9 @@ class Witch(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Target For Mummify', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_mummify(e, s, sqrs = sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_mummify(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -16703,6 +16935,9 @@ class Witch(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Target For Dust Devil', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_dust_devil(e, s, sqrs = sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_dust_devil(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -16756,6 +16991,9 @@ class Witch(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Target For Dispel', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_dispel(e, s, sqrs = sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_dispel(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -16821,6 +17059,9 @@ class Witch(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Target For Immolate', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_immolate(e, s, sqrs = sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_immolate(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -16858,6 +17099,9 @@ class Witch(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Target For Disintegrate', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_disintegrate(e, s, sqrs = sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_disintegrate(self, event, sqr, sqrs):
         if sqr not in sqrs:
@@ -16966,6 +17210,9 @@ class Witch(Summon):
         b = tk.Button(app.context_menu, text = 'Confirm Command of Osiris', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, sqrs = sqrs : self.do_command_of_osiris(e, sqrs = sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_command_of_osiris(self, event, sqrs):
         self.magick -= self.arcane_dict['Command_of_Osiris'][1]
@@ -17059,6 +17306,9 @@ class Witch(Summon):
         b = tk.Button(app.context_menu, text = 'Confirm Fleet of Paw', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None : self.do_fleet_of_paw(e))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def do_fleet_of_paw(self, event):
 #         self.init_cast_anims()
@@ -17115,6 +17365,9 @@ class Witch(Summon):
         b = tk.Button(app.context_menu, text = 'Confirm Hunting Hawk', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None : self.do_hunting_hawk(e))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
     
     def do_hunting_hawk(self, event = None):
         if 'Hunting_Hawk' in [v.name for k,v in app.ent_dict.items() if v.owner == self.owner]:
@@ -17805,7 +18058,7 @@ class App(tk.Frame):
             self.map_triggers = []
             sound1 = mixer.Sound('Music/Caves of sorrow.ogg')
             background_music.play(sound1, -1)
-            sound1.set_volume(1.6)
+            sound1.set_volume(1.0)
 #             def summon_trick():
 #                 all = [v.name for k,v in self.ent_dict.items() if v.owner == 'p1']
 #                 if 'Thaumaturge' in all:
@@ -20567,7 +20820,11 @@ class App(tk.Frame):
 #         self.mi_popup.bind('<q>', lambda e, win = self.mi_popup : self.destroy_release(win))
 
 
-
+    def generic_cancel(self, event = None):
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        app.unbind_all()
+        app.rebind_all()
         
     def debugger(self, event):
         for child in root.winfo_children():
