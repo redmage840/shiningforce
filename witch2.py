@@ -1,8 +1,10 @@
-# spell cost change (check per level)
+# chirurgeon/cadaver descr
+
+# hook attack/psi blades/bone pincers cancel button
 
 # victory may be achieved (via map trigger) by a condition set during effect resolution (sot/eot), at least until those sets of effects stop on some timing issue (lock) or finish executing, the concurrent thread which checks map triggers will not see the victory condition.
 # this MAY cause some issues when eliminating ALL enemy ents AND some effect expects there to be at least 1 enemy ent (none should)
-# OR just calls against the old canvas object (deletes creates)
+# OR just calls against the old canvas object (deletes, creates)
 '''
 Traceback (most recent call last):
   File "/Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/tkinter/__init__.py", line 1883, in __call__
@@ -112,6 +114,8 @@ _tkinter.TclError: invalid command name ".!canvas4"
 # enemy to dispel stuff...
 
 # test LOS, implement it with something (gorgon at least)
+
+
 
 import tkinter as tk
 # from tkinter import ttk
@@ -366,6 +370,24 @@ def action_description(act):
         return 'Once per round, Wurdulak may shift form into either bat or wolf form, an Effect lasting 1 turn at level wisdom. Wolf form gives +4 agility, +3 move range, and -3 to psyche, wisdom.'
     elif act == 'Hook Attack':
         return 'To-hit wisdom vs dodge. Damage psyche vs endurance, piercing ranged.'
+    elif act == 'Stitch Cadaver':
+        return 'Summon a Cadaver under your control within range reason. Cadaver performs a round during the end-of-turn phase. If it can  move adjacent to an enemy by moving its move range, it will, and then perform an attack (agility vs agility to-hit, strength vs endurance crushing melee damage). Otherwise it moves randomly within its move range. Cadaver gets a normal round during the turn, but has no actions to use unless granted by the Chirurgeon (or other source).'
+    elif act == 'Bone Pincers':
+        return 'Action target cadaver you own. It gains an effect granting an action, which targets as action an adjacent unit and on to-hit agility vs agility does strength vs endurance slashing melee damage. This effect has duration reason and level wisdom.'
+    elif act == 'Willful Perambulation':
+        return 'Action target cadaver you own. It gains an effect granting an action, which allows it to move using its moves. This effect has duration reason and level wisdom.'
+    elif act == 'Corrosive Glands':
+        return 'Action target cadaver you own. It gains an effect granting an action, which targets as action a unit within range ballistics and on to-hit marksmanship vs dodge does missle vs endurance acid ranged damage. This effect has duration reason and level wisdom.'
+    elif act == 'Bone Pincer Attack':
+        return 'Action target adjacent unit. On to-hit agility vs agility, does strength vs endurance slashing melee damage.'
+    elif act == 'Corrosive Attack':
+        return 'Action target unit within range ballistics. On to-hit marksmanship vs dodge, does missle vs endurance acid ranged damage.'
+    elif act == '':
+        return ''
+    elif act == '':
+        return ''
+    elif act == '':
+        return ''
     else:
         return 'Some description'
         '''
@@ -574,6 +596,18 @@ def effect_description(ef):
         return 'Whenever dealing melee damage, this unit gets +1 strength at duration reason and level wisdom of caster of this effect. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Hatred_Strength':
         return '+1 strength. dur = '+str(ef.duration)+', level = '+str(ef.level)
+    elif ef.name == 'Bone_Pincer_Attack':
+        return 'Grants Bone Pincer Attack. dur = '+str(ef.duration)+', level = '+str(ef.level)
+    elif ef.name == 'Willful_Move':
+        return 'Grants Move. dur = '+str(ef.duration)+', level = '+str(ef.level)
+    elif ef.name == 'Corrosive_Attack':
+        return 'Grants Corrosive Attack. dur = '+str(ef.duration)+', level = '+str(ef.level)
+    elif ef.name == '':
+        return '. dur = '+str(ef.duration)+', level = '+str(ef.level)
+    elif ef.name == '':
+        return '. dur = '+str(ef.duration)+', level = '+str(ef.level)
+    elif ef.name == '':
+        return '. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == '':
         return '. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == '':
@@ -5548,7 +5582,7 @@ class Chirurgeon(Summon):
     def __init__(self, name, id, img, loc, owner, level):
         self.level = level
         if level == 1:
-            self.actions = {'Move':self.move, 'Stitch Cadaver':self.stitch_cadaver}
+            self.actions = {'Move':self.move, 'Stitch Cadaver':self.stitch_cadaver, 'Bone Pincers':self.bone_pincers, 'Willful Perambulation':self.willful_perambulation, 'Corrosive Glands':self.corrosive_glands}
             self.str = 3
             self.agl = 4
             self.end = 4
@@ -5568,7 +5602,7 @@ class Chirurgeon(Summon):
             self.move_range = 3
             self.level = level
         elif level == 2:
-            self.actions = {'Move':self.move, 'Stitch Cadaver':self.stitch_cadaver}
+            self.actions = {'Move':self.move, 'Stitch Cadaver':self.stitch_cadaver, 'Bone Pincers':self.bone_pincers, 'Willful Perambulation':self.willful_perambulation, 'Corrosive Glands':self.corrosive_glands}
             self.str = 3
             self.agl = 5
             self.end = 5
@@ -5588,8 +5622,334 @@ class Chirurgeon(Summon):
             self.move_range = 4
         self.move_type = 'normal'
         self.weak = []
-        self.resist = ['poison', 'acid']
+        self.resist = ['poison', 'acid', 'fire', 'magick']
         super().__init__(name, id, img, loc, owner)
+        
+        
+        
+    def willful_perambulation(self, event = None):
+        if self.acts < 1:
+            return
+        app.unbind_nonarrows()
+        root.bind('<q>', self.finish_willful_p)
+        sqrs = [c for c in app.coords if 1 <= dist(self.loc, c) <= self.get_abl('rsn')]
+        app.animate_squares(sqrs)
+        app.depop_context(event = None)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_willful_p(event = e, sqr = s, sqrs = sqrs)) 
+        ##
+        b = tk.Button(app.context_menu, text = 'Grant Willful Perambulation to Cadaver', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_willful_p(event = e, sqr = s, sqrs = sqrs))
+        b.pack(side = 'top')
+        app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
+        
+    def do_willful_p(self, event = None, sqr = None, sqrs = None):
+        if sqr not in sqrs:
+            return
+        id = app.grid[sqr[0]][sqr[1]]
+        if id not in app.action_target_ents().keys():
+            return
+        ent = app.ent_dict[id]
+        if ent.owner != self.owner:
+            return
+        if ent.name != 'Cadaver':
+            return
+        self.acts -= 1
+#         self.init_attack_anims()
+#         effect1 = mixer.Sound('Sound_Effects/bone_pincers.ogg')
+#         effect1.set_volume(1)
+#         sound_effects.play(effect1, 0)
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        app.unbind_all()
+        app.vis_dict['Willful_Perambulation'] = Vis(name = 'Willful_Perambulation', loc = sqr)
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Willful_Perambulation'].img, tags = 'Willful_Perambulation')
+        app.canvas.create_text(self.loc[0]*100-app.moved_right+49, self.loc[1]*100-app.moved_down+84, text = 'Willful Perambulation', justify = 'center', fill = 'black', font = ('chalkduster', 14), tags = 'text')
+        app.canvas.create_text(self.loc[0]*100-app.moved_right+50, self.loc[1]*100-app.moved_down+85, text = 'Willful Perambulation', justify = 'center', fill = 'thistle3', font = ('chalkduster', 14), tags = 'text')
+        loc = ent.loc
+        app.canvas.create_text(loc[0]*100-app.moved_right+49, loc[1]*100-app.moved_down+84, text = 'Move Granted', justify = 'center', fill = 'black', font = ('chalkduster', 14), tags = 'text')
+        app.canvas.create_text(loc[0]*100-app.moved_right+50, loc[1]*100-app.moved_down+85, text = 'Move Granted', justify = 'center', fill = 'thistle3', font = ('chalkduster', 14), tags = 'text')
+        # add action to ent
+        # ADD ACTION TO TARGET
+        def add_move(actions = None, obj = None):
+            actions['Move'] = ent.move
+            return actions
+        p2 = partial(add_move, obj = ent)
+        ent.action_effects.append(p2)
+        def un(i, func, lockname = None):
+            app.ent_dict[i].action_effects.remove(func)
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+        u = partial(un, id, p2)
+        n = 'Willful_Move' + str(app.effects_counter)
+        ent.effects_dict[n] = Effect(name = 'Willful_Move', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
+        root.after(1999, self.finish_willful_p)
+        
+    def finish_willful_p(self, event = None):
+#         self.init_normal_anims()
+        try:
+            del app.vis_dict['Willful_Perambulation']
+            app.canvas.delete('Willful_Perambulation')
+        except: pass
+        app.cleanup_squares()
+        app.unbind_all()
+        app.rebind_all()
+        app.canvas.delete('text')
+        app.depop_context(event = None)
+        
+        
+    def corrosive_glands(self, event = None):
+        if self.acts < 1:
+            return
+        app.unbind_nonarrows()
+        root.bind('<q>', self.finish_c_glands)
+        sqrs = [c for c in app.coords if 1 <= dist(self.loc, c) <= self.get_abl('rsn')]
+        app.animate_squares(sqrs)
+        app.depop_context(event = None)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_c_glands(event = e, sqr = s, sqrs = sqrs)) 
+        b = tk.Button(app.context_menu, text = 'Grant Corrosive Glands to Cadaver', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_c_glands(event = e, sqr = s, sqrs = sqrs))
+        b.pack(side = 'top')
+        app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
+        
+    def do_c_glands(self, event = None, sqr = None, sqrs = None):
+        if sqr not in sqrs:
+            return
+        id = app.grid[sqr[0]][sqr[1]]
+        if id not in app.action_target_ents().keys():
+            return
+        ent = app.ent_dict[id]
+        if ent.owner != self.owner:
+            return
+        if ent.name != 'Cadaver':
+            return
+        self.acts -= 1
+#         self.init_attack_anims()
+#         effect1 = mixer.Sound('Sound_Effects/corrosive_glands.ogg')
+#         effect1.set_volume(1)
+#         sound_effects.play(effect1, 0)
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        app.unbind_all()
+        app.vis_dict['Corrosive_Glands'] = Vis(name = 'Corrosive_Glands', loc = sqr)
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Corrosive_Glands'].img, tags = 'Corrosive_Glands')
+        app.canvas.create_text(self.loc[0]*100-app.moved_right+49, self.loc[1]*100-app.moved_down+84, text = 'Corrosive Glands', justify = 'center', fill = 'black', font = ('chalkduster', 14), tags = 'text')
+        app.canvas.create_text(self.loc[0]*100-app.moved_right+50, self.loc[1]*100-app.moved_down+85, text = 'Corrosive Glands', justify = 'center', fill = 'thistle3', font = ('chalkduster', 14), tags = 'text')
+        loc = ent.loc
+        app.canvas.create_text(loc[0]*100-app.moved_right+49, loc[1]*100-app.moved_down+84, text = 'Corrosive Attack', justify = 'center', fill = 'black', font = ('chalkduster', 14), tags = 'text')
+        app.canvas.create_text(loc[0]*100-app.moved_right+50, loc[1]*100-app.moved_down+85, text = 'Corrosive Attack', justify = 'center', fill = 'thistle3', font = ('chalkduster', 14), tags = 'text')
+        # add action to ent
+        def c_glands_attack(event = None, obj = None):
+            if obj.acts < 1:
+                return
+            app.unbind_nonarrows()
+            root.bind('<q>', lambda e, obj = obj : cancel_attack(obj = obj))
+            sqrs = [c for c in app.coords if 1 <= dist(obj.loc,c) <= obj.get_abl('bls')]
+            app.animate_squares(sqrs)
+            app.depop_context(event = None)
+            root.bind('<a>', lambda e, sqrs = sqrs, sqr = grid_pos, obj = obj : check_hit(event = e, sqrs = sqrs, sqr = sqr, obj = obj)) 
+            b = tk.Button(app.context_menu, text = 'Confirm Corrosive Attack', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqrs = sqrs, sqr = grid_pos, obj = obj : check_hit(event = e, sqrs = sqrs, sqr = sqr, obj = obj))
+            b.pack(side = 'top')
+            app.context_buttons.append(b)
+            # INNER-INNER FUNCS, context must be passed to obj receiving this action
+            def check_hit(event = None, sqrs = None, sqr = None, obj = None):
+                if sqr not in sqrs:
+                    return
+                id = app.grid[sqr[0]][sqr[1]]
+                if id not in app.action_target_ents().keys():
+                    return
+                ent = app.ent_dict[id]
+                obj.acts -= 1
+#                 obj.init_attack_anims()
+#                 effect1 = mixer.Sound('Sound_Effects/corrosive_attack.ogg')
+#                 effect1.set_volume(1)
+#                 sound_effects.play(effect1, 0)
+                app.depop_context(event = None)
+                app.unbind_all()
+                app.cleanup_squares()
+                visloc = ent.loc[:]
+                app.vis_dict['Corrosive_Attack'] = Vis(name = 'Corrosive_Attack', loc = visloc)
+                app.canvas.create_image(visloc[0]*100+50-app.moved_right, visloc[1]*100+50-app.moved_down, image = app.vis_dict['Corrosive_Attack'].img, tags = 'Corrosive_Attack')
+                my_mm = obj.get_abl('mm')
+                tar_dodge = ent.get_abl('dodge')
+                if to_hit(my_mm, tar_dodge):
+                    my_msl = obj.get_abl('msl')
+                    tar_end = ent.get_abl('end')
+                    d = damage(my_msl, tar_end)
+                    lock(apply_damage, obj, ent, -d, 'acid', 'Corrosive Attack', 'ranged')
+                    root.after(111, lambda e = None, obj = obj : cancel_attack(e, obj))
+                else:
+                    miss(app.ent_dict[id].loc)
+                    root.after(1666, lambda e = None, obj = obj : cancel_attack(event = e, obj = obj))
+            # INNER INNER FUNC
+            def cancel_attack(event = None, obj = None):
+                obj.init_normal_anims() # to init attack anims, provide them for each possible unit that can gain hook_attack
+                app.rebind_all()
+                app.canvas.delete('text')
+                try:
+                    del app.vis_dict['Corrosive_Attack']
+                    app.canvas.delete('Corrosive_Attack')
+                except: pass
+                app.depop_context(event = None)
+                app.cleanup_squares()
+            # END INNER-INNER FUNCS
+        # ADD ACTION TO TARGET
+        p = partial(c_glands_attack, obj = ent)
+        def add_c_glands_attack(actions = None, func = None):
+            actions['Corrosive Attack'] = func
+            return actions
+        p2 = partial(add_c_glands_attack, func = p)
+        ent.action_effects.append(p2)
+        def un(i, func, lockname = None):
+            app.ent_dict[i].action_effects.remove(func)
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+        u = partial(un, id, p2)
+        n = 'Corrosive_Attack' + str(app.effects_counter)
+        ent.effects_dict[n] = Effect(name = 'Corrosive_Attack', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
+        root.after(1999, self.finish_c_glands)
+        
+    def finish_c_glands(self, event = None):
+#         self.init_normal_anims()
+        try:
+            del app.vis_dict['Corrosive_Glands']
+            app.canvas.delete('Corrosive_Glands')
+        except: pass
+        app.cleanup_squares()
+        app.unbind_all()
+        app.rebind_all()
+        app.canvas.delete('text')
+        app.depop_context(event = None)
+        
+        
+    def bone_pincers(self, event = None):
+        if self.acts < 1:
+            return
+        app.unbind_nonarrows()
+        root.bind('<q>', self.finish_bone_pincers)
+        sqrs = [c for c in app.coords if 1 <= dist(self.loc, c) <= self.get_abl('rsn')]
+        app.animate_squares(sqrs)
+        app.depop_context(event = None)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_bone_pincers(event = e, sqr = s, sqrs = sqrs)) 
+        b = tk.Button(app.context_menu, text = 'Graft Bone Pincers to Cadaver', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_bone_pincers(event = e, sqr = s, sqrs = sqrs))
+        b.pack(side = 'top')
+        app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
+        
+    def do_bone_pincers(self, event = None, sqr = None, sqrs = None):
+        if sqr not in sqrs:
+            return
+        id = app.grid[sqr[0]][sqr[1]]
+        if id not in app.action_target_ents().keys():
+            return
+        ent = app.ent_dict[id]
+        if ent.owner != self.owner:
+            return
+        if ent.name != 'Cadaver':
+            return
+        self.acts -= 1
+#         self.init_attack_anims()
+#         effect1 = mixer.Sound('Sound_Effects/bone_pincers.ogg')
+#         effect1.set_volume(1)
+#         sound_effects.play(effect1, 0)
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        app.unbind_all()
+        app.vis_dict['Bone_Pincers'] = Vis(name = 'Bone_Pincers', loc = sqr)
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Bone_Pincers'].img, tags = 'Bone_Pincers')
+        app.canvas.create_text(self.loc[0]*100-app.moved_right+49, self.loc[1]*100-app.moved_down+84, text = 'Bone Pincers', justify = 'center', fill = 'black', font = ('chalkduster', 14), tags = 'text')
+        app.canvas.create_text(self.loc[0]*100-app.moved_right+50, self.loc[1]*100-app.moved_down+85, text = 'Bone Pincers', justify = 'center', fill = 'thistle3', font = ('chalkduster', 14), tags = 'text')
+        loc = ent.loc
+        app.canvas.create_text(loc[0]*100-app.moved_right+49, loc[1]*100-app.moved_down+84, text = 'Bone Pincer Attack', justify = 'center', fill = 'black', font = ('chalkduster', 14), tags = 'text')
+        app.canvas.create_text(loc[0]*100-app.moved_right+50, loc[1]*100-app.moved_down+85, text = 'Bone Pincer Attack', justify = 'center', fill = 'thistle3', font = ('chalkduster', 14), tags = 'text')
+        # add action to ent
+        def pincer_attack(event = None, obj = None):
+            if obj.acts < 1:
+                return
+            app.unbind_nonarrows()
+            root.bind('<q>', lambda e, obj = obj : cancel_attack(obj = obj))
+            sqrs = [c for c in app.coords if dist(obj.loc,c) == 1]
+            app.animate_squares(sqrs)
+            app.depop_context(event = None)
+            root.bind('<a>', lambda e, sqrs = sqrs, sqr = grid_pos, obj = obj : check_hit(event = e, sqrs = sqrs, sqr = sqr, obj = obj)) 
+            b = tk.Button(app.context_menu, text = 'Confirm Bone Pincer Attack', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqrs = sqrs, sqr = grid_pos, obj = obj : check_hit(event = e, sqrs = sqrs, sqr = sqr, obj = obj))
+            b.pack(side = 'top')
+            app.context_buttons.append(b)
+            # INNER-INNER FUNCS, context must be passed to obj receiving this action
+            def check_hit(event = None, sqrs = None, sqr = None, obj = None):
+                if sqr not in sqrs:
+                    return
+                id = app.grid[sqr[0]][sqr[1]]
+                if id not in app.action_target_ents().keys():
+                    return
+                ent = app.ent_dict[id]
+                obj.acts -= 1
+#                 obj.init_attack_anims()
+#                 effect1 = mixer.Sound('Sound_Effects/pincer_attack.ogg')
+#                 effect1.set_volume(1)
+#                 sound_effects.play(effect1, 0)
+                app.depop_context(event = None)
+                app.unbind_all()
+                app.cleanup_squares()
+                visloc = app.ent_dict[id].loc[:]
+                app.vis_dict['Bone_Pincer_Attack'] = Vis(name = 'Bone_Pincer_Attack', loc = visloc)
+                app.canvas.create_image(visloc[0]*100+50-app.moved_right, visloc[1]*100+50-app.moved_down, image = app.vis_dict['Bone_Pincer_Attack'].img, tags = 'Bone_Pincer_Attack')
+                my_agl = obj.get_abl('agl')
+                tar_agl = ent.get_abl('agl')
+                if to_hit(my_agl, tar_agl):
+                    my_str = obj.get_abl('str')
+                    tar_end = ent.get_abl('end')
+                    d = damage(my_str, tar_end)
+                    lock(apply_damage, obj, ent, -d, 'slashing', 'Bone Pincers', 'melee')
+                    root.after(111, lambda e = None, obj = obj : cancel_attack(e, obj))
+                else:
+                    miss(app.ent_dict[id].loc)
+                    root.after(1666, lambda e = None, obj = obj : cancel_attack(event = e, obj = obj))
+            # INNER INNER FUNC
+            def cancel_attack(event = None, obj = None):
+                obj.init_normal_anims()
+                app.rebind_all()
+                app.canvas.delete('text')
+                try:
+                    del app.vis_dict['Bone_Pincer_Attack']
+                    app.canvas.delete('Bone_Pincer_Attack')
+                except: pass
+                app.depop_context(event = None)
+                app.cleanup_squares()
+            # END INNER-INNER FUNCS
+        # ADD ACTION TO TARGET
+        p = partial(pincer_attack, obj = ent)
+        def add_pincer_attack(actions = None, func = None):
+            actions['Bone Pincer Attack'] = func
+            return actions
+        p2 = partial(add_pincer_attack, func = p)
+        ent.action_effects.append(p2)
+#         def hook_effect():
+#             pass
+#         f = hook_effect
+        def un(i, func, lockname = None):
+            app.ent_dict[i].action_effects.remove(func)
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+        u = partial(un, id, p2)
+        n = 'Bone_Pincer_Attack' + str(app.effects_counter)
+        ent.effects_dict[n] = Effect(name = 'Bone_Pincer_Attack', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
+        root.after(1999, self.finish_bone_pincers)
+        
+    def finish_bone_pincers(self, event = None):
+#         self.init_normal_anims()
+        try:
+            del app.vis_dict['Bone_Pincers']
+            app.canvas.delete('Bone_Pincers')
+        except: pass
+        app.cleanup_squares()
+        app.unbind_all()
+        app.rebind_all()
+        app.canvas.delete('text')
+        app.depop_context(event = None)
+        
         
         
     def stitch_cadaver(self, event = None):
@@ -5597,7 +5957,7 @@ class Chirurgeon(Summon):
             return
         app.unbind_nonarrows()
         root.bind('<q>', self.finish_stitch_cadaver)
-        sqrs = [c for c in app.coords if 1 <= dist(self.loc, c) <= self.get_abl('rsn')]
+        sqrs = [c for c in app.coords if 1 <= dist(self.loc, c) <= self.get_abl('rsn') and app.grid[c[0]][c[1]]=='']
         app.animate_squares(sqrs)
         app.depop_context(event = None)
         root.bind('<a>', lambda e, sqr = grid_pos, sqrs = sqrs : self.do_stitch_cadaver(event = e, sqr = sqr, sqrs = sqrs))
@@ -5646,7 +6006,7 @@ class Chirurgeon(Summon):
         app.grid[sqr[0]][sqr[1]] = id
         self.finish_stitch_cadaver()
         
-    def finish_stitch_cadaver(self):
+    def finish_stitch_cadaver(self, event = None):
         app.generic_cancel()
         
         
@@ -14336,26 +14696,45 @@ class Cadaver(Summon):
     def __init__(self, name, id, img, loc, owner, level):
         self.actions = {}
         self.level = level
-        self.str = 3
-        self.agl = 4
-        self.end = 5
-        self.mm = 1
-        self.msl = 0
-        self.bls = 0
-        self.dodge = 3
-        self.psyche = 2
-        self.wis = 2
-        self.rsn = 2
-        self.san = 10
-        self.init = 3
-        self.spirit = 13
-        self.magick = 0
-        self.acts = 1
-        self.mvs = 1
-        self.move_range = 3
+        if level == 1:
+            self.str = 4
+            self.agl = 4
+            self.end = 6
+            self.mm = 4
+            self.msl = 3
+            self.bls = 4
+            self.dodge = 3
+            self.psyche = 2
+            self.wis = 2
+            self.rsn = 2
+            self.san = 10
+            self.init = 3
+            self.spirit = 13
+            self.magick = 0
+            self.acts = 1
+            self.mvs = 1
+            self.move_range = 2
+        elif level == 2:
+            self.str = 5
+            self.agl = 5
+            self.end = 7
+            self.mm = 5
+            self.msl = 4
+            self.bls = 5
+            self.dodge = 3
+            self.psyche = 2
+            self.wis = 2
+            self.rsn = 2
+            self.san = 10
+            self.init = 3
+            self.spirit = 13
+            self.magick = 0
+            self.acts = 2
+            self.mvs = 1
+            self.move_range = 3
         self.move_type = 'normal'
         self.attack_range = 1
-        self.resist = ['elec', 'cold', 'poison']
+        self.resist = ['elec', 'cold', 'poison', 'slashing', 'crushing', 'acid', 'magick']
         self.weak = ['fire']
         super().__init__(name, id, img, loc, owner)
 #         self.id = id
@@ -14564,12 +14943,11 @@ class Witch(Summon):
                 self.arcane_dict['Pestilence'] = (self.pestilence, 5)
                 self.arcane_dict['Curse_of_Oriax'] = (self.curse_of_oriax, 4)
                 self.arcane_dict['Demonic_Sight'] = (self.demonic_sight, 3)
-                self.arcane_dict['Molecular_Subversion'] = (self.molecular_subversion, 5)
+                self.arcane_dict['Molecular_Subversion'] = (self.molecular_subversion, 6)
                 self.arcane_dict['Plutonian_Cloak'] = (self.plutonian_cloak, 6)
-                self.arcane_dict['Hidden_From_the_Stars'] = (self.hidden_from_the_stars, 6)
-                self.arcane_dict['Gravity'] = (self.gravity, 5)
-                self.arcane_dict["Beleth's_Command"] = (self.beleths_command, 8)
-                self.arcane_dict['Vengeance'] = (self.vengeance, 8)
+                self.arcane_dict['Hidden_From_the_Stars'] = (self.hidden_from_the_stars, 8)
+                self.arcane_dict['Gravity'] = (self.gravity, 4)
+                self.arcane_dict["Beleth's_Command"] = (self.beleths_command, 7)
                 self.base_cantrips = 1
                 self.cantrips = 1
                 self.base_smns = 1
@@ -14611,16 +14989,16 @@ class Witch(Summon):
                 self.arcane_dict['Pestilence'] = (self.pestilence, 5)
                 self.arcane_dict['Curse_of_Oriax'] = (self.curse_of_oriax, 4)
                 self.arcane_dict['Demonic_Sight'] = (self.demonic_sight, 3)
-                self.arcane_dict['Molecular_Subversion'] = (self.molecular_subversion, 4)
+                self.arcane_dict['Molecular_Subversion'] = (self.molecular_subversion, 6)
                 self.arcane_dict['Plutonian_Cloak'] = (self.plutonian_cloak, 6)
-                self.arcane_dict['Hidden_From_the_Stars'] = (self.hidden_from_the_stars, 6)
-                self.arcane_dict['Gravity'] = (self.gravity, 5)
+                self.arcane_dict['Hidden_From_the_Stars'] = (self.hidden_from_the_stars, 8)
+                self.arcane_dict['Gravity'] = (self.gravity, 4)
                 self.arcane_dict["Beleth's_Command"] = (self.beleths_command, 7)
                 self.arcane_dict['Vengeance'] = (self.vengeance, 8)
-                self.arcane_dict['Pain'] = (self.pain, 5)
-                self.arcane_dict['Torment'] = (self.torment, 5)
+                self.arcane_dict['Pain'] = (self.pain, 4)
+                self.arcane_dict['Torment'] = (self.torment, 7)
                 self.arcane_dict['Hatred'] = (self.hatred, 7)
-                self.arcane_dict['Entomb'] = (self.entomb, 6)
+                self.arcane_dict['Entomb'] = (self.entomb, 4)
                 self.arcane_dict['Summon_Lesser_Demon'] = (self.summon_lesser_demon, 10)
                 self.arcane_dict['Summon_Cenobite'] = (self.summon_cenobite, 10)
                 self.base_cantrips = 1
@@ -14678,15 +15056,14 @@ class Witch(Summon):
                 self.cantrip_dict['Legerdemain'] = (self.legerdemain, 0)
                 self.cantrip_dict['Grasp_of_the_Old_Ones'] = (self.grasp_of_the_old_ones, 0)
                 self.cantrip_dict['Foul_Familiar'] = (self.foul_familiar, 0)
-                self.arcane_dict['Horrid_Wilting'] = (self.horrid_wilting,5)
-                self.arcane_dict['Mind_Rot'] = (self.mind_rot,3)
+                self.arcane_dict['Horrid_Wilting'] = (self.horrid_wilting,6)
+                self.arcane_dict['Mind_Rot'] = (self.mind_rot,8)
                 self.arcane_dict['Dust_Devil'] = (self.dust_devil,5)
-                self.arcane_dict['Dispel'] = (self.dispel,4)
-                self.arcane_dict['Disintegrate'] = (self.disintegrate, 5)
-                self.arcane_dict['Mummify'] = (self.mummify, 5)
-                self.arcane_dict['Immolate'] = (self.immolate, 7)
+                self.arcane_dict['Dispel'] = (self.dispel,7)
+                self.arcane_dict['Disintegrate'] = (self.disintegrate, 6)
+                self.arcane_dict['Mummify'] = (self.mummify, 3)
+                self.arcane_dict['Immolate'] = (self.immolate, 8)
                 self.arcane_dict['Command_of_Osiris'] = (self.command_of_osiris, 8)
-                self.arcane_dict['Vengeance'] = (self.vengeance, 4)
                 self.base_cantrips = 1
                 self.cantrips = 1
                 self.base_smns = 1
@@ -14722,19 +15099,19 @@ class Witch(Summon):
                 self.cantrip_dict['Legerdemain'] = (self.legerdemain, 0)
                 self.cantrip_dict['Grasp_of_the_Old_Ones'] = (self.grasp_of_the_old_ones, 0)
                 self.cantrip_dict['Foul_Familiar'] = (self.foul_familiar, 0)
-                self.arcane_dict['Horrid_Wilting'] = (self.horrid_wilting,5)
-                self.arcane_dict['Mind_Rot'] = (self.mind_rot,3)
+                self.arcane_dict['Horrid_Wilting'] = (self.horrid_wilting,6)
+                self.arcane_dict['Mind_Rot'] = (self.mind_rot,8)
                 self.arcane_dict['Dust_Devil'] = (self.dust_devil,5)
-                self.arcane_dict['Dispel'] = (self.dispel,4)
-                self.arcane_dict['Disintegrate'] = (self.disintegrate, 5)
-                self.arcane_dict['Mummify'] = (self.mummify, 5)
-                self.arcane_dict['Immolate'] = (self.immolate, 7)
+                self.arcane_dict['Dispel'] = (self.dispel,7)
+                self.arcane_dict['Disintegrate'] = (self.disintegrate, 6)
+                self.arcane_dict['Mummify'] = (self.mummify, 3)
+                self.arcane_dict['Immolate'] = (self.immolate, 8)
                 self.arcane_dict['Command_of_Osiris'] = (self.command_of_osiris, 8)
-                self.arcane_dict['Vengeance'] = (self.vengeance, 4)
+                self.arcane_dict['Vengeance'] = (self.vengeance, 8)
                 self.arcane_dict['Pain'] = (self.pain, 4)
-                self.arcane_dict['Torment'] = (self.torment, 5)
-                self.arcane_dict['Hatred'] = (self.hatred, 9)
-                self.arcane_dict['Entomb'] = (self.entomb, 7)
+                self.arcane_dict['Torment'] = (self.torment, 7)
+                self.arcane_dict['Hatred'] = (self.hatred, 7)
+                self.arcane_dict['Entomb'] = (self.entomb, 4)
                 self.arcane_dict['Summon_Lesser_Demon'] = (self.summon_lesser_demon, 10)
                 self.arcane_dict['Summon_Cenobite'] = (self.summon_cenobite, 10)
                 self.base_cantrips = 1
