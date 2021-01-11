@@ -1,10 +1,21 @@
-# chirurgeon/cadaver descr
+# desc alacrity farsight
 
-# hook attack/psi blades/bone pincers cancel button
+# color themes : chirurgeon - thistle3
+
+# update simulacrum (more recent canonical) maybe others...
+
+# fuse trap desc
+
+# action desc of enemy stuff firebolt etc...
+
+# chirurgeon - stitch monster - combine cadavers
+# stitch cadaver desc of eot behavior?
 
 # victory may be achieved (via map trigger) by a condition set during effect resolution (sot/eot), at least until those sets of effects stop on some timing issue (lock) or finish executing, the concurrent thread which checks map triggers will not see the victory condition.
 # this MAY cause some issues when eliminating ALL enemy ents AND some effect expects there to be at least 1 enemy ent (none should)
 # OR just calls against the old canvas object (deletes, creates)
+# OR more likely the map_trigger loop returns victory while things are still resolving in sot/eot loop
+# basically the map trigger loop is interrupting regardless of where the game loop is...
 '''
 Traceback (most recent call last):
   File "/Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/tkinter/__init__.py", line 1883, in __call__
@@ -36,25 +47,17 @@ _tkinter.TclError: invalid command name ".!canvas4"
 
 # change morgan stats, spells
 
-# show name of action/effect in desc popup
-
 # eot/sot delay/visual notification/text on screen
 
 # make hawk target action targets?
 
 # skeleton archer attack vis and sound and timing for focus
 
-# standardize placement of 'move' top? hotkey1
-
-# consider 'no summon limit' mode? (only witch death ends game)
-
 # tendrils more clear what abils
 
 # all damage loops should not cleanup text when they cleanup their indv vis, since it can interfere with atk/def efct loop
 
-# vampiric bite/hatred boosts need limit OR stat boosts need limit in general
-
-# vengeance nerf
+# vampiric bite/hatred boosts need limit OR stat boosts need limit in general?
 
 # visual reminders of effects? stack a bunch of text objects... on overflow just stop displaying and force user to use 'more info' button
 
@@ -83,16 +86,8 @@ _tkinter.TclError: invalid command name ".!canvas4"
 
 # to ai routines, if path is longer than epath by some amount, use epath
 
-# same color text for each summon actions, murrain-orchid1/2, ...
-
-# spell to change level of effects
-
 # show costs of actions, without disrupting the names for action_descr lookups...
 # alt five is infi symbol
-
-# add note in help or clarify order resolution: currently local effects are gathered/queued AFTER all ent.effects are applied REGARDLESS of timestamp/cast-order
-
-# stylize action_description() entries (newlines, indentation)
 
 # psi-push onto sparkle, was 'fixed' with 'psi-push-text', changed back...
 # this is solved by tagging ALL text objects with both 'text' and a unique name ie tags = ('text', 'psionic_push'), delete by unique name, unless 'delete all/some text instances' needed
@@ -333,7 +328,7 @@ def action_description(act):
     elif act == 'Concerted Volley':
         return 'Each friendly unit within range 2 of caster gets +X marksmanship where X is equal to the number of friendly units within range 2 of caster without this effect. Duration is wisdom. Level is wisdom. Costs 1.'
     elif act == 'Vengeance':
-        return 'Spell target gets defense effect, on receiving melee or ranged or spell damage, adds a +1 effect to str,agl,end,psy,wis,rsn. Both +1 boosts and this effect have duration equal to caster reason and level equal to caster wisdom.'
+        return 'Spell target gets defense effect, on receiving melee or ranged damage, adds a +1 effect to str,agl,end,psy,wis,rsn. Both +1 boosts and this effect have duration equal to caster reason and level equal to caster wisdom.'
     elif act == 'Pounce':
         return "'Jump'(move unimpeded by obstacles) to a location within move range that is adjacent to at least 1 enemy unit. After relocating, attack each adjacent enemy, to-hit agility vs agility, damage strength vs endurance, slashing melee. Does not target."
     elif act == 'Suplex':
@@ -382,10 +377,10 @@ def action_description(act):
         return 'Action target adjacent unit. On to-hit agility vs agility, does strength vs endurance slashing melee damage.'
     elif act == 'Corrosive Attack':
         return 'Action target unit within range ballistics. On to-hit marksmanship vs dodge, does missle vs endurance acid ranged damage.'
-    elif act == '':
-        return ''
-    elif act == '':
-        return ''
+    elif act == 'Alacrity':
+        return 'Action target cadaver you own within range reason gets +5 agility, +2 move range, and +1 moves. Duration is reason. Level is wisdom.'
+    elif act == 'Farsight':
+        return 'Action target cadaver you own within range reason gets +6 marksmanship, +2 ballistics, and +1 missle. Duration is reason. Level is wisdom.'
     elif act == '':
         return ''
     else:
@@ -5582,7 +5577,7 @@ class Chirurgeon(Summon):
     def __init__(self, name, id, img, loc, owner, level):
         self.level = level
         if level == 1:
-            self.actions = {'Move':self.move, 'Stitch Cadaver':self.stitch_cadaver, 'Bone Pincers':self.bone_pincers, 'Willful Perambulation':self.willful_perambulation, 'Corrosive Glands':self.corrosive_glands}
+            self.actions = {'Move':self.move, 'Stitch Cadaver':self.stitch_cadaver, 'Bone Pincers':self.bone_pincers, 'Willful Perambulation':self.willful_perambulation, 'Corrosive Glands':self.corrosive_glands, 'Alacrity':self.alacrity, 'Farsight':self.farsight}
             self.str = 3
             self.agl = 4
             self.end = 4
@@ -5602,7 +5597,7 @@ class Chirurgeon(Summon):
             self.move_range = 3
             self.level = level
         elif level == 2:
-            self.actions = {'Move':self.move, 'Stitch Cadaver':self.stitch_cadaver, 'Bone Pincers':self.bone_pincers, 'Willful Perambulation':self.willful_perambulation, 'Corrosive Glands':self.corrosive_glands}
+            self.actions = {'Move':self.move, 'Stitch Cadaver':self.stitch_cadaver, 'Bone Pincers':self.bone_pincers, 'Willful Perambulation':self.willful_perambulation, 'Corrosive Glands':self.corrosive_glands, 'Alacrity':self.alacrity, 'Farsight':self.farsight}
             self.str = 3
             self.agl = 5
             self.end = 5
@@ -5624,6 +5619,158 @@ class Chirurgeon(Summon):
         self.weak = []
         self.resist = ['poison', 'acid', 'fire', 'magick']
         super().__init__(name, id, img, loc, owner)
+        
+        
+        
+    def farsight(self, event = None):
+        if self.acts < 1:
+            return
+        app.depop_context(event = None)
+        app.unbind_nonarrows()
+        root.bind('<q>', self.cleanup_farsight)
+        sqrs = [s for s in app.coords if 1 <= dist(self.loc, s) <= self.get_abl('rsn')]
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_farsight(event = e, sqr = s, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Grant Farsight to Cadaver', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_farsight(e, s, sqrs))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
+        
+    def do_farsight(self, event, sqr, sqrs):
+        if sqr not in sqrs:
+            return
+        id = app.grid[sqr[0]][sqr[1]]
+        if id not in app.action_target_ents().keys():
+            return
+        ent = app.ent_dict[id]
+        if ent.name != 'Cadaver':
+            return
+        app.unbind_all()
+#         effect1 = mixer.Sound('Sound_Effects/farsight.ogg')
+#         effect1.set_volume(1)
+#         sound_effects.play(effect1, 0)
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        self.acts -= 1
+        app.vis_dict['Farsight'] = Vis(name = 'Farsight', loc = sqr[:])
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Farsight'].img, tags = 'Farsight')
+        app.canvas.create_text(self.loc[0]*100-app.moved_right+49, self.loc[1]*100-app.moved_down+84, text = 'Farsight', justify = 'center', fill = 'black', font = ('chalkduster', 14), tags = 'text')
+        app.canvas.create_text(self.loc[0]*100-app.moved_right+50, self.loc[1]*100-app.moved_down+85, text = 'Farsight', justify = 'center', fill = 'thistle3', font = ('chalkduster', 14), tags = 'text')
+        loc = ent.loc
+        app.canvas.create_text(loc[0]*100-app.moved_right+49, loc[1]*100-app.moved_down+84, text = '+6 mm, +2 bls, +1 msl', justify = 'center', fill = 'black', font = ('chalkduster', 14), tags = 'text')
+        app.canvas.create_text(loc[0]*100-app.moved_right+50, loc[1]*100-app.moved_down+85, text = '+6 mm, +2 bls, +1 msl', justify = 'center', fill = 'thistle3', font = ('chalkduster', 14), tags = 'text')
+        # +6 mm, +2 bls, +1 msl
+        def alacrity_mm(stat):
+            return stat+6
+        p1 = partial(alacrity_mm)
+        ent.mm_effects.append(p1)
+        def alacrity_bls(stat):
+            return stat+2
+        p2 = partial(alacrity_bls)
+        ent.bls_effects.append(p2)
+        def alacrity_msl(stat):
+            return stat+1
+        p3 = partial(alacrity_msl)
+        ent.msl_effects.append(p3)
+        def un(ent, p1, p2, p3, lockname = None):
+            ent.mm_effects.remove(p1)
+            ent.bls_effects.remove(p2)
+            ent.msl_effects.remove(p3)
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+        u = partial(un, ent, p1, p2, p3)
+        n = 'Farsight' + str(app.effects_counter)
+        ent.effects_dict['Farsight'] = Effect(name = 'Farsight', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
+        root.after(1999, self.cleanup_farsight)
+        
+        
+    def cleanup_farsight(self, event = None):
+#         app.unbind_all()
+        app.rebind_all()
+        app.cleanup_squares()
+        app.depop_context(event = None)
+        try: 
+            del app.vis_dict['Farsight']
+            app.canvas.delete('Farsight')
+        except: pass
+        app.canvas.delete('text')
+        
+        
+    def alacrity(self, event = None):
+        if self.acts < 1:
+            return
+        app.depop_context(event = None)
+        app.unbind_nonarrows()
+        root.bind('<q>', self.cleanup_alacrity)
+        sqrs = [s for s in app.coords if 1 <= dist(self.loc, s) <= self.get_abl('rsn')]
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_alacrity(event = e, sqr = s, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Grant Alacrity to Cadaver', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_alacrity(e, s, sqrs))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
+        
+    def do_alacrity(self, event, sqr, sqrs):
+        if sqr not in sqrs:
+            return
+        id = app.grid[sqr[0]][sqr[1]]
+        if id not in app.action_target_ents().keys():
+            return
+        ent = app.ent_dict[id]
+        if ent.name != 'Cadaver':
+            return
+        app.unbind_all()
+#         effect1 = mixer.Sound('Sound_Effects/alacrity.ogg')
+#         effect1.set_volume(1)
+#         sound_effects.play(effect1, 0)
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        self.acts -= 1
+        app.vis_dict['Alacrity'] = Vis(name = 'Alacrity', loc = sqr[:])
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Alacrity'].img, tags = 'Alacrity')
+        app.canvas.create_text(self.loc[0]*100-app.moved_right+49, self.loc[1]*100-app.moved_down+84, text = 'Alacrity', justify = 'center', fill = 'black', font = ('chalkduster', 14), tags = 'text')
+        app.canvas.create_text(self.loc[0]*100-app.moved_right+50, self.loc[1]*100-app.moved_down+85, text = 'Alacrity', justify = 'center', fill = 'thistle3', font = ('chalkduster', 14), tags = 'text')
+        loc = ent.loc
+        app.canvas.create_text(loc[0]*100-app.moved_right+49, loc[1]*100-app.moved_down+84, text = '+5 agl, +2 move range, +1 moves', justify = 'center', fill = 'black', font = ('chalkduster', 14), tags = 'text')
+        app.canvas.create_text(loc[0]*100-app.moved_right+50, loc[1]*100-app.moved_down+85, text = '+5 agl, +2 move range, +1 moves', justify = 'center', fill = 'thistle3', font = ('chalkduster', 14), tags = 'text')
+        # +1 mvs, +5 agl, +2 mv rng
+        def alacrity_mvs(stat):
+            return stat+1
+        p = partial(alacrity_mvs)
+        ent.mvs_effects.append(p)
+        def alacrity_agl(stat):
+            return stat+5
+        p2 = partial(alacrity_agl)
+        ent.agl_effects.append(p2)
+        def alacrity_mv_rng(stat):
+            return stat+2
+        p3 = partial(alacrity_mv_rng)
+        ent.move_range_effects.append(p3)
+        def un(ent, p1, p2, p3, lockname = None):
+            ent.mvs_effects.remove(p1)
+            ent.agl_effects.remove(p2)
+            ent.move_range_effects.remove(p3)
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+        u = partial(un, ent, p1, p2, p3)
+        n = 'Alacrity' + str(app.effects_counter)
+        ent.effects_dict['Alacrity'] = Effect(name = 'Alacrity', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
+        root.after(1999, self.cleanup_alacrity)
+        
+        
+    def cleanup_alacrity(self, event = None):
+#         app.unbind_all()
+        app.rebind_all()
+        app.cleanup_squares()
+        app.depop_context(event = None)
+        try: 
+            del app.vis_dict['Alacrity']
+            app.canvas.delete('Alacrity')
+        except: pass
+        app.canvas.delete('text')
+        
         
         
         
@@ -5663,7 +5810,7 @@ class Chirurgeon(Summon):
         app.depop_context(event = None)
         app.cleanup_squares()
         app.unbind_all()
-        app.vis_dict['Willful_Perambulation'] = Vis(name = 'Willful_Perambulation', loc = sqr)
+        app.vis_dict['Willful_Perambulation'] = Vis(name = 'Willful_Perambulation', loc = sqr[:])
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Willful_Perambulation'].img, tags = 'Willful_Perambulation')
         app.canvas.create_text(self.loc[0]*100-app.moved_right+49, self.loc[1]*100-app.moved_down+84, text = 'Willful Perambulation', justify = 'center', fill = 'black', font = ('chalkduster', 14), tags = 'text')
         app.canvas.create_text(self.loc[0]*100-app.moved_right+50, self.loc[1]*100-app.moved_down+85, text = 'Willful Perambulation', justify = 'center', fill = 'thistle3', font = ('chalkduster', 14), tags = 'text')
@@ -5753,6 +5900,9 @@ class Chirurgeon(Summon):
             b = tk.Button(app.context_menu, text = 'Confirm Corrosive Attack', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqrs = sqrs, sqr = grid_pos, obj = obj : check_hit(event = e, sqrs = sqrs, sqr = sqr, obj = obj))
             b.pack(side = 'top')
             app.context_buttons.append(b)
+            b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+            b2.pack(side = 'top')
+            app.context_buttons.append(b2)
             # INNER-INNER FUNCS, context must be passed to obj receiving this action
             def check_hit(event = None, sqrs = None, sqr = None, obj = None):
                 if sqr not in sqrs:
@@ -5878,6 +6028,9 @@ class Chirurgeon(Summon):
             b = tk.Button(app.context_menu, text = 'Confirm Bone Pincer Attack', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqrs = sqrs, sqr = grid_pos, obj = obj : check_hit(event = e, sqrs = sqrs, sqr = sqr, obj = obj))
             b.pack(side = 'top')
             app.context_buttons.append(b)
+            b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+            b2.pack(side = 'top')
+            app.context_buttons.append(b2)
             # INNER-INNER FUNCS, context must be passed to obj receiving this action
             def check_hit(event = None, sqrs = None, sqr = None, obj = None):
                 if sqr not in sqrs:
@@ -5927,9 +6080,6 @@ class Chirurgeon(Summon):
             return actions
         p2 = partial(add_pincer_attack, func = p)
         ent.action_effects.append(p2)
-#         def hook_effect():
-#             pass
-#         f = hook_effect
         def un(i, func, lockname = None):
             app.ent_dict[i].action_effects.remove(func)
             root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
@@ -13697,7 +13847,7 @@ class Lesser_Demon(Summon):
             self.level = level
         self.move_type = 'normal'
         self.weak = ['acid']
-        self.resist = ['fire', 'magick']
+        self.resist = []
         super().__init__(name, id, img, loc, owner)
         
     def legal_moves(self):
@@ -13974,7 +14124,7 @@ class Cenobite(Summon):
             self.rsn = 5
             self.san = 15
             self.init = 6
-            self.spirit = 23
+            self.spirit = 16
             self.magick = 19
             self.acts = 1
             self.mvs = 1
@@ -13994,7 +14144,7 @@ class Cenobite(Summon):
             self.rsn = 5
             self.san = 16
             self.init = 7
-            self.spirit = 27
+            self.spirit = 19
             self.magick = 21
             self.acts = 2
             self.mvs = 2
@@ -14134,6 +14284,9 @@ class Cenobite(Summon):
             b = tk.Button(app.context_menu, text = 'Confirm Hook Attack', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqrs = sqrs, sqr = grid_pos, obj = obj : check_hit(event = e, sqrs = sqrs, sqr = sqr, obj = obj))
             b.pack(side = 'top')
             app.context_buttons.append(b)
+            b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+            b2.pack(side = 'top')
+            app.context_buttons.append(b2)
             # INNER-INNER FUNCS, context must be passed to obj receiving this action
             def check_hit(event = None, sqrs = None, sqr = None, obj = None):
                 if sqr not in sqrs:
@@ -14182,9 +14335,6 @@ class Cenobite(Summon):
             return actions
         p2 = partial(add_hook_attack, func = p)
         app.ent_dict[id].action_effects.append(p2)
-        def hook_effect():
-            pass
-        f = hook_effect
         def un(i, func, lockname = None):
             app.ent_dict[i].action_effects.remove(func)
             root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
@@ -15902,6 +16052,9 @@ class Witch(Summon):
             b = tk.Button(app.context_menu, text = 'Confirm Psi Slash', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqrs = sqrs, sqr = grid_pos, obj = obj : check_hit(event = e, sqrs = sqrs, sqr = sqr, obj = obj))
             b.pack(side = 'top')
             app.context_buttons.append(b)
+            b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+            b2.pack(side = 'top')
+            app.context_buttons.append(b2)
             # INNER-INNER FUNCS, context must be passed to obj receiving this action
             def check_hit(event = None, sqrs = None, sqr = None, obj = None):
                 if sqr not in sqrs:
@@ -16123,7 +16276,7 @@ class Witch(Summon):
         app.vis_dict['Vengeance'] = Vis(name = 'Vengeance', loc = sqr)
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Vengeance'].img, tags = 'Vengeance')
         def vengeance_efct(atkr, dfndr, amt, type, sn, st):
-            if st == 'melee' or st == 'ranged' or st == 'spell':
+            if st == 'melee' or st == 'ranged':
                 def vngnc_tmp(stat):
                     return stat+1
                 p = partial(vngnc_tmp)
@@ -20702,10 +20855,10 @@ class App(tk.Frame):
                         txt += ent.id.replace('_',' ') + ' '
                     else:
                         txt += ent.name.replace('_',' ') +'-'+ ent.id + ' '
-            self.canvas.create_text(14, 14, text='Initiative Queue: ', anchor = 'nw', font = ('chalkduster', 16), width = 1000, fill = 'black', tags = 'init_q')
-            self.canvas.create_text(15, 15, text='Initiative Queue: ', anchor = 'nw', font = ('chalkduster', 16), width = 1000, fill = 'indianred', tags = 'init_q')
-            self.canvas.create_text(174, 14, text= txt, anchor = 'nw', font = ('chalkduster', 16), width = 1000, fill = 'black', tags = 'init_ents')
-            self.canvas.create_text(175, 15, text= txt, anchor = 'nw', font = ('chalkduster', 16), width = 1000, fill = 'indianred', tags = 'init_ents')
+            self.canvas.create_text(14, 14, text='Initiative Queue: ', anchor = 'nw', font = ('chalkduster', 16), width = 900, fill = 'black', tags = 'init_q')
+            self.canvas.create_text(15, 15, text='Initiative Queue: ', anchor = 'nw', font = ('chalkduster', 16), width = 900, fill = 'indianred', tags = 'init_q')
+            self.canvas.create_text(174, 14, text= txt, anchor = 'nw', font = ('chalkduster', 16), width = 900, fill = 'black', tags = 'init_ents')
+            self.canvas.create_text(175, 15, text= txt, anchor = 'nw', font = ('chalkduster', 16), width = 900, fill = 'indianred', tags = 'init_ents')
         # Show Name, Active Ent
         self.redraw_active_ent()
         self.animate_id = root.after(200, self.animate)
@@ -21677,7 +21830,8 @@ class App(tk.Frame):
 #         self.close.pack()
 
     def action_info(self, event = None, name = None, button = None):
-        txt = action_description(name)
+        txt = name+'\n'
+        txt += action_description(name)
         self.mi_popup = tk.Toplevel(bg = 'black')
         self.img = ImageTk.PhotoImage(Image.open('paper.png').resize((self.mi_popup.winfo_screenwidth(),self.mi_popup.winfo_screenheight())))
         bg = tk.Canvas(self.mi_popup, bg = 'burlywood4', bd=3, relief='raised', highlightthickness=0)
