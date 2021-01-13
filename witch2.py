@@ -1,6 +1,24 @@
-# main menu / back buttons in load
+# lev2, lots of skeleton archers
 
-# visual notification effects
+# pain and hatred desc
+
+# curse of oriax vis
+
+# chirurgeon +1 acts?
+
+# check pounce? ent targeting
+
+# finish other Bots with updated system
+
+# ranged_pursue() may not be avoiding effects
+
+# muddle is free right now, haste
+
+# wurdulak bat form, longer move range
+
+# nerf wilting? good on low level mobs, prob as it should be, loses value on strong single target
+
+# main menu / back buttons in load
 
 # summon r-click desc
 
@@ -17,40 +35,6 @@
 # chirurgeon - stitch monster - combine cadavers
 # stitch cadaver desc of eot behavior?
 
-# victory may be achieved (via map trigger) by a condition set during effect resolution (sot/eot), at least until those sets of effects stop on some timing issue (lock) or finish executing, the concurrent thread which checks map triggers will not see the victory condition.
-# this MAY cause some issues when eliminating ALL enemy ents AND some effect expects there to be at least 1 enemy ent (none should)
-# OR just calls against the old canvas object (deletes, creates)
-# OR more likely the map_trigger loop returns victory while things are still resolving in sot/eot loop
-# basically the map trigger loop is interrupting regardless of where the game loop is...
-'''
-Traceback (most recent call last):
-  File "/Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/tkinter/__init__.py", line 1883, in __call__
-    return self.func(*args)
-  File "witch2.py", line 20973, in end_round
-    l.pack(side = 'bottom')
-  File "witch2.py", line 20086, in handle_action
-    def handle_action(self):
-  File "witch2.py", line 20156, in handle_eot_effects
-    for efct,key,ent in [(j,i,v) for k,v in app.ent_dict.items() for i,j in v.effects_dict.items()]:
-  File "witch2.py", line 20195, in handle_eot_campaign
-    self.effects_counter += 3
-  File "witch2.py", line 20212, in end_turn
-    ent.cantrips = ent.get_abl('cantrips')
-  File "witch2.py", line 20010, in start_turn
-    self.close.pack()
-  File "witch2.py", line 20021, in handle_sot_campaign
-    # exit on generate_init_q()
-  File "witch2.py", line 20051, in generate_init_q
-    if ent.get_abl('dodge') >= qent.get_abl('dodge'):
-  File "witch2.py", line 20074, in handle_sot_effects
-    else:
-  File "witch2.py", line 20085, in handle_action
-    # EXITS on app.handle_eot_effects()
-  File "/Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/tkinter/__init__.py", line 2818, in delete
-    self.tk.call((self._w, 'delete') + args)
-_tkinter.TclError: invalid command name ".!canvas4"
-'''
-
 # change morgan stats, spells
 
 # make hawk target action targets?
@@ -58,10 +42,6 @@ _tkinter.TclError: invalid command name ".!canvas4"
 # skeleton archer attack vis and sound and timing for focus
 
 # all damage loops should not cleanup text when they cleanup their indv vis, since it can interfere with atk/def efct loop
-
-# vampiric bite/hatred boosts need limit OR stat boosts need limit in general?
-
-# visual reminders of effects? stack a bunch of text objects... on overflow just stop displaying and force user to use 'more info' button
 
 # familiar imp flying/move anims
 
@@ -107,7 +87,6 @@ _tkinter.TclError: invalid command name ".!canvas4"
 # enemy to dispel stuff...
 
 # test LOS, implement it with something (gorgon at least)
-
 
 
 import tkinter as tk
@@ -356,7 +335,7 @@ def action_description(act):
     elif act == 'Enervating Grasp':
         return 'An adjacent action target, on to-hit agility vs agility, has magick drained and given to the caster equal to psyche vs psyche damage. The caster cannot go above their base magick in this manner.'
     elif act == 'Vampiric Bite':
-        return 'An adjacent action target, on to-hit agility vs agility, takes strength vs endurance piercing melee damage. Caster gets +1 strength and psyche at duration reason and level wisdom.'
+        return 'An adjacent action target, on to-hit agility vs agility, takes strength vs endurance piercing melee damage. Caster gets +1 psyche at duration reason and level wisdom.'
     elif act == 'Bat Form':
         return 'Once per round, Wurdulak may shift form into either bat or wolf form, an Effect lasting 1 turn at level wisdom. Bat form gives +5 to move range, changes move type to flying, and -3 to strength, agility, endurance.'
     elif act == 'Wolf Form':
@@ -567,7 +546,7 @@ def effect_description(ef):
     elif ef.name == 'Chill_Touch':
         return '-1 wisdom. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Vampiric_Bite':
-        return '+1 strength and psyche. dur = '+str(ef.duration)+', level = '+str(ef.level)
+        return '+1 psyche. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Bat_Form':
         return '+5 move range, flying move type, -3 strength, agility, endurance. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Wolf_Form':
@@ -2176,11 +2155,11 @@ class Illusionist(Summon):
                         return [t for t in types if t != 'invisibility']
                     p2 = partial(tracer_strip)
                     app.ent_dict[id].type_effects.append(p2)
-                    def undo(id, p, p2):
+                    def undo(id, p, p2, lockname = None):
                         app.ent_dict[id].dodge_effects.remove(p)
                         app.ent_dict[id].type_effects.remove(p2)
                         root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
-                    u = partial(undo, id, p, p2, lockname = None)
+                    u = partial(undo, id, p, p2)
                     app.ent_dict[id].effects_dict['Tracer_Grenade'] = Effect(name = 'Tracer_Grenade', undo_func = u, duration = self.get_abl('msl'), level = self.get_abl('bls'))
                     root.after(1666, lambda n = n : cleanup_vis(n))
                     root.after(1777, lambda ents = ents : mortar_loop(ents))
@@ -2436,7 +2415,7 @@ class Illusionist(Summon):
             stat += 4
             return stat
         p = partial(simulacrum_effect)
-        ent.agl_effects.append(f)
+        ent.agl_effects.append(p)
         def un(ent, func, lockname = None):
             ent.agl_effects.remove(func)
             root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
@@ -4629,18 +4608,16 @@ class Wurdulak(Summon):
             def vamp_effect(stat):
                 return stat+1
             p = partial(vamp_effect)
-            self.str_effects.append(p)
             self.psyche_effects.append(p)
             def undo(ent, f, lockname = None):
-                ent.str_effects.remove(f)
                 ent.psyche_effects.remove(f)
                 root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
             u = partial(undo, self, p)
             un = 'Vampiric_Bite'+str(app.effects_counter)
             app.effects_counter += 1
             self.effects_dict[un] = Effect(name = 'Vampiric_Bite', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
-            app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+24-app.moved_down, text = '+1 str,psy', font = ('chalkduster', 14), fill = 'black', tags = 'text')
-            app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+25-app.moved_down, text = '+1 str,psy', font = ('chalkduster', 14), fill = 'green2', tags = 'text')
+            app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+24-app.moved_down, text = '+1 psy', font = ('chalkduster', 14), fill = 'black', tags = 'text')
+            app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+25-app.moved_down, text = '+1 psy', font = ('chalkduster', 14), fill = 'green2', tags = 'text')
             lock(apply_damage, self, ent, -d, 'piercing', 'Vampiric Bite', 'melee')
             root.after(111, self.finish_vampiric_bite)
         else:
@@ -20859,24 +20836,32 @@ class App(tk.Frame):
                 img = app.ent_dict[app.p2_witch].color_img
                 self.canvas.create_image(ent.loc[0]*100+50-self.moved_right, ent.loc[1]*100+50-self.moved_down, image = img, tags = 'color')
         
+    
+    def redraw_effects_text(self):
+        app.canvas.delete('effects_text')
+        for ent in self.ent_dict.values():
+            efs = [v for v in ent.effects_dict.values()]
+            starty = 5
+            for ef in efs[0:5]:
+                self.canvas.create_text(ent.loc[0]*100+4-self.moved_right, ent.loc[1]*100+starty-1-self.moved_down, text=ef.name.replace('_',' ')[0:9]+'...', anchor = 'nw', font = ('chalkduster', 10), width = 95, fill = 'black', tags = 'effects_text')
+                self.canvas.create_text(ent.loc[0]*100+5-self.moved_right, ent.loc[1]*100+starty-self.moved_down, text=ef.name.replace('_',' ')[0:9]+'...', anchor = 'nw', font = ('chalkduster', 10), width = 95, fill = 'gray66', tags = 'effects_text')
+                starty += 10
+            if len(efs) > 5:
+                self.canvas.create_text(ent.loc[0]*100+4-self.moved_right, ent.loc[1]*100+starty-1-self.moved_down, text='...', anchor = 'nw', font = ('chalkduster', 10), width = 95, fill = 'black', tags = 'effects_text')
+                self.canvas.create_text(ent.loc[0]*100+5-self.moved_right, ent.loc[1]*100+starty-self.moved_down, text='...', anchor = 'nw', font = ('chalkduster', 10), width = 95, fill = 'gray66', tags = 'effects_text')
+        
+        
     def animate(self):
         global selected, selected_vis
 #         app.canvas.delete('color')
         self.redraw_colors()
-        # DELETE OLD EFFECTS TEXT
-        app.canvas.delete('effects_text')
+        self.redraw_effects_text()
         for ent in self.ent_dict.values():
             if ent.id not in selected:
                 ent.rotate_image()
                 self.canvas.delete(ent.id)
                 self.canvas.create_image(ent.loc[0]*100+50-self.moved_right, ent.loc[1]*100+50-self.moved_down, image = ent.img, tags = ent.tags)
                 app.canvas.tag_lower((ent.tags), 'maptop')
-                # ADD EFFECT TEXT FOR ENT
-                efs = [v for v in ent.effects_dict.values()]
-                startx = 5
-                starty = 5
-                for ef in efs[0:6]:
-                    
         for sqr in self.sqr_dict.keys():
             self.sqr_dict[sqr].rotate_image()
             self.canvas.delete(sqr)
@@ -21390,7 +21375,7 @@ class App(tk.Frame):
                 self.canvas.move(sqr, 0, 100)
         self.redraw_active_ent()
         self.redraw_colors()
-
+        self.redraw_effects_text()
     # Helper functions
     def help(self):
         self.help_popup = tk.Toplevel(bg = 'black')
