@@ -5,4 +5,4 @@
 ImageTk.PhotoImage(Image.open('summon_imgs/Earth_Mage.png'))
 Earth_Mage(name = 'Earth_Mage', img = img, loc =[18, 19], owner = 'p2')
 ImageTk.PhotoImage(Image.open('summon_imgs/Air_Mage.png'))
-Air_Mage(name = 'Air_Mage', img = img, loc =[16, 17], owner = 'p2')
+Air_Mage(name = 'Air_Mage', img = img, loc =[18, 15], owner = 'p2')

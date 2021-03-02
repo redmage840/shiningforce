@@ -4,4 +4,6 @@ most still images, sound effects, and music from pixabay.com and opengameart.org
 
 great tileset used for all levels from kenney.nl
 
+most spell effects / particle effects opengameart.org   user=joesalotofthings
+
 metadata retained when possible on individual files from free sources
