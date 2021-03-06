@@ -1,20 +1,14 @@
-# toxic miasma only affect enemy
+# minimap highlight active screen area
 
-# balance hysteria
+# brsrkr claw efcts, either/or?
 
-# dampening eman not affect self, rng
-
-# locked functions may now use return args if needed
+# organize notes - pathfinding optimization, witch spells, summons/summon actions, levels, concepts/features to add more content of: map effects, proximity effects, atk/def effects, invis/psyshield, wkns/resists, move type/range modifiers, tomb augmentation, magick regen augmentation, witch actions(spells that add them), 
 
 # mirror armor, reduce phys dmg, spell dmg is redirected? to all wi range 2
 
-# desc aura of agony, dampening emanation
-
-# more spells that punish grouping, besides aoe dmg, like fog
+# aoe reduce agility
 
 # prox efcts can add atk/def efcts
-
-# flail sound move/atk
 
 # maybe make charge pursue
 
@@ -128,13 +122,8 @@ source material - changelings, leprechaun, puca, banshee, loughleagh (lake of he
 
 # plague eot something... -1 like disintegrate, passable like pestil...
 
-# time warp place self back in init-q, call of the void empty init-q
-
 # level with 'waypoints' end/start turn on waypoint to move between areas...
 
-# brskr 2nd atk type fire melee-some dmg eot, atk efct on self that changes type to fire or mult types...combine with ww...
-
-# make enemy pursue/targeting (smart) avoid low value ents like tomb (maybe?...)
 # pathfinding (esp along long paths) should avoid moving entirely along one axis
 
 # dmg types: murrain: psn eot, slsh ml; thaum prc rng, slsh spl ; fnd crsh ml, slsh ml ; brsk slsh ml, ?(fire ml) ; ills explsv rng, fire rng ; umbrWlf elec rng, prc rng ; UmbrShdw mgk spl, explsv spl ; Chrgn acid rng, slsh ml ; Wrdlk cold ml, prc ml
@@ -145,19 +134,13 @@ source material - changelings, leprechaun, puca, banshee, loughleagh (lake of he
 
 # make function 'log_text(string_text)', log text in context menu or as transparency on main canvas
 
-# stuff in desktop.scratchwitch
-
 # save game during level?
 
 # throw drawback/cost, dmg to target?
 
 # make darkness use LOS...
 
-# minotaur move sound
-
 # get_focus/focus_square should 'center' screen on area...
-
-# proximity effects like map effects, abstract function relocate_ent()
 
 # main menu / back buttons in load
 
@@ -171,11 +154,6 @@ source material - changelings, leprechaun, puca, banshee, loughleagh (lake of he
 # change morgan stats, spells
 
 # make hawk target action targets?
-
-# below is probably fine, local_effects supersede an ent's effects (applied after in their own order)
-# strip effects granted by local_effects? they are applied after... adding an effect that removes all instances of 'invisibility' that is a normal effect (non-local) will NOT remove instances granted by local effects (even if the local effect has an earlier timestamp)
-
-# sounds: bewitch, hfts, haste, dispel, dcube, analyze, rts, dsight, arrow, enthrall, devils mark, bless, haste, vampiric bite, scarab gest, aura, arrow of d, com of osi, tendrils, lepr bite, howl fb, analyze, bite, enerv grasp, gaze, pain, dust devil, 
 
 # music/sound adjust in menu
 
@@ -397,7 +375,7 @@ def action_description(act):
     elif act == 'Track':
         return 'All enemy units within range reason, on to-hit agility vs agility, get an effect that removes invisibility. Duration is endurance. Level is strength.'
     elif act == 'Toxic Miasma':
-        return 'All units within range reason, on to-hit psyche vs endurance, get an effect that removes invisibility. Another to-hit psyche vs endurance gives -1 wisdom and reason. Duration is reason. Level is wisdom.'
+        return 'All enemy units, which are not Murrain Wolves, within range reason, on to-hit psyche vs endurance, get an effect that removes invisibility. Another to-hit psyche vs endurance gives -1 wisdom and reason. Duration is reason. Level is wisdom.'
     elif act == 'Leprous Bite':
         return 'An adjacent action target unit, on to-hit agility vs agility, gets -1 str, end, agl, mm, psy, wis, rsn, san, init and takes strength vs endurance slashing melee damage.'
     elif act == 'Concerted Volley':
@@ -555,7 +533,7 @@ def action_description(act):
     elif act == 'Lift':
         return 'Spell target gets effect that changes move type to flying. Duration is reason. Level is wisdom.'
     elif act == 'Mass Hysteria':
-        return 'All units remaining to act in initiative queue, on to-hit wisdom vs wisdom, get -5 sanity effect. Duration is reason. Level is wisdom.'
+        return 'The next five units remaining to act in initiative queue, on to-hit wisdom vs wisdom, get -5 sanity effect. Duration is reason. Level is wisdom.'
     elif act == 'Riposte':
         return 'An adjacent action target, on to-hit agility vs agility, gets an attack effect that causes its melee damage dealt to be reduced to 1 on failing an agility vs agility to-hit check vs defender. Duration is reason. Level is wisdom.'
     elif act == 'Cloister':
@@ -566,10 +544,10 @@ def action_description(act):
         return 'Adds attack effect to self. Changes damage type to fire and adds 2 damage if type is melee. Duration is reason. Level is wisdom.'
     elif act == 'Bane Claws':
         return 'Adds attack effect to self. Changes damage type to poison, adds end-of-turn 2 poison damage effect to hit melee targets. Duration is reason. Level is wisdom.'
-    elif act == '':
-        return ''
-    elif act == '':
-        return ''
+    elif act == 'Aura of Agony':
+        return 'Spell target within range reason gets an effect that gives all enemy units (of caster) within range 2, -3 sanity. Duration is reason. Level is wisdom.'
+    elif act == 'Dampening Emanation':
+        return 'Spell target within range reason gets an effect that gives all units within range 2, -3 move range. Duration is reason. Level is wisdom.'
     elif act == '':
         return ''
     elif act == '':
@@ -5052,7 +5030,7 @@ class Wurdulak(Summon):
                 app.effects_counter += 1
                 self.effects_dict[un] = Effect(name = 'Vampiric_Bite', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
                 app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+24-app.moved_down, text = '+3 psy', font = ('chalkduster', 14), fill = 'black', tags = 'text')
-                app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+25-app.moved_down, text = '+3 psy', font = ('chalkduster', 14), fill = 'green3', tags = 'text')
+                app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+25-app.moved_down, text = '+3 psy', font = ('chalkduster', 14), fill = 'green4', tags = 'text')
             lock(apply_damage, self, ent, -d, 'piercing', 'Vampiric Bite', 'melee')
             root.after(111, self.finish_vampiric_bite)
         else:
@@ -5664,7 +5642,7 @@ class Murrain_Wolf(Summon):
         s = self.loc[:]
         app.canvas.create_text(s[0]*100+49-app.moved_right, s[1]*100+84-app.moved_down, text = 'Toxic Miasma', font = ('chalkduster', 13), fill = 'black', tags = 'text')
         app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+85-app.moved_down, text = 'Toxic Miasma', font = ('chalkduster', 13), fill = 'orchid1', tags = 'text')
-        ents = [k for k,v in app.all_ents().items() if v.loc in sqrs and isinstance(v,Murrain_Wolf) == False]
+        ents = [k for k,v in app.all_ents().items() if v.loc in sqrs and isinstance(v,Murrain_Wolf) == False and v.owner != self.owner]
         def cleanup_toxic_miasma(n):
             del app.vis_dict[n]
             app.canvas.delete(n)
@@ -8515,8 +8493,8 @@ class Ghost(Bot):
         self.msl = 0
         self.bls = 0
         self.dodge = 13
-        self.psyche = 10
-        self.wis = 12
+        self.psyche = 13
+        self.wis = 13
         self.rsn = 10
         self.init = 12
         self.spirit = 99
@@ -12211,10 +12189,14 @@ class Minotaur(Bot):
                         egrid[eloc[0]][eloc[1]] = '' # EGRID NOW EMPTIED OF ENTS
                     path = bfs(self.loc[:], goals, egrid)
                 moves = intersect(self.legal_moves(), path)
-                move = reduce(lambda a,b : a if dist(a, self.loc) > dist(b, self.loc) else b, moves)
-                self.mvs -= 1
-                app.focus_square(move)
-                root.after(666, lambda m = move : self.minotaur_move(m))
+                if moves == []:
+                    self.mvs -= 1
+                    self.do_round()
+                else:
+                    move = reduce(lambda a,b : a if dist(a, self.loc) > dist(b, self.loc) else b, moves)
+                    self.mvs -= 1
+                    app.focus_square(move)
+                    root.after(666, lambda m = move : self.minotaur_move(m))
             # EXIT BACK TO HANDLE_ACTION THROUGH STOMP
             else:
                 app.get_focus(self.id)
@@ -14804,6 +14786,7 @@ class Witch(Summon):
 #                 self.base_magick = 85
                 self.magick_regen = 3
             self.color_img = ImageTk.PhotoImage(Image.open('animations/Agnes_Sampson_Color/Agnes_Sampson_Color.png'))
+            self.minimap_img = ImageTk.PhotoImage(Image.open('animations/Agnes_Sampson_Minimap_Img/0.png').resize((10,10)))
         elif name == 'Fakir_Ali':
             if level == 1:
                 self.arcane_dict['Entomb'] = (self.entomb, 0)
@@ -14901,6 +14884,7 @@ class Witch(Summon):
                 self.base_spirit = 60
                 self.magick_regen = 3
             self.color_img = ImageTk.PhotoImage(Image.open('animations/Fakir_Ali_Color/Fakir_Ali_Color.png'))
+            self.minimap_img = ImageTk.PhotoImage(Image.open('animations/Fakir_Ali_Minimap_Img/0.png').resize((10,10)))
         elif name == 'Morgan_LeFay':
             if level == 1:
                 self.arcane_dict['Fleet_of_Paw'] = (self.fleet_of_paw, 0)
@@ -15005,6 +14989,7 @@ class Witch(Summon):
                 self.base_spirit = 60
 #                 self.base_magick = 80
             self.color_img = ImageTk.PhotoImage(Image.open('animations/Morgan_LeFay_Color/Morgan_LeFay_Color.png'))
+            self.minimap_img = ImageTk.PhotoImage(Image.open('animations/Morgan_LeFay_Minimap_Img/0.png').resize((10,10)))
         id = self.name
         super().__init__(name, id, img, loc, owner, type = 'normal')
         
@@ -16604,7 +16589,7 @@ class Witch(Summon):
         def damp_ef(stat):
             return max(0,stat-3)
         p = partial(damp_ef)
-        prox_ef = Proximity_Effect(name = 'Dampening_Emanation', ent = ent, range = (0,3), abl = 'move_range', abl_func = p)
+        prox_ef = Proximity_Effect(name = 'Dampening_Emanation', ent = ent, range = (1,2), abl = 'move_range', abl_func = p)
         def get_locs(prx_ef):
             locs = [c for c in app.coords if prx_ef.range[0] <= dist(c,prx_ef.ent.loc) <= prx_ef.range[1]]
             locs = [c for c in locs if app.grid[c[0]][c[1]] in app.all_ents().keys()]
@@ -17491,7 +17476,7 @@ class Witch(Summon):
                     root.after(1777, lambda t = 'text' : app.canvas.delete(t))
                     root.after(1888, lambda n = name : cleanup_hysteria(n))
                     root.after(1999, lambda ids = ids : hysteria_loop(ids))
-        ids = [k for k,v in app.all_ents().items() if v.id in app.init_q]
+        ids = app.init_q[:5]
         root.after(1333, lambda t = 'text' : app.canvas.delete(t))
         root.after(1444, lambda ids = ids : hysteria_loop(ids))
         
@@ -19030,6 +19015,10 @@ class App(tk.Frame):
         
         self.proximity_effects_dict = {}
         
+        self.bot_minimap_img = ImageTk.PhotoImage(Image.open('animations/Bot_Minimap_Img/0.png').resize((10,10)))
+        
+
+        
         self.sqr_anims = {}
         anims = [a for r,d,a in walk('animations/move/')][0]
         anims = [a for a in anims[:] if a[0] != '.']
@@ -20372,6 +20361,13 @@ class App(tk.Frame):
         grid_pos = [0,0]
         map_pos = [0,0]
         self.canvas.create_image(0, 0, image=self.cursor_img, tags='cursor')
+        # MINI MAP
+        w = self.map_width//10
+        h = self.map_height//10
+        self.minimap = ImageTk.PhotoImage(Image.open('minimap.png').resize((w,h)))
+        w2 = root.winfo_screenwidth()//10
+        h2 = root.winfo_screenheight()//10
+        self.minimap_screen = ImageTk.PhotoImage(Image.open('minimap_screen.png').resize((w2,h2)))
         # CHOOSE WITCH IF 2 PLAYER OR FIRST LEVEL
         if protaganist_object:
             self.load_witch(witch = protaganist_object.name, player_num = 1, protaganist_object = protaganist_object)
@@ -21037,7 +21033,42 @@ class App(tk.Frame):
             self.canvas.create_text(175, 15, text= txt, anchor = 'nw', font = ('chalkduster', 16), width = 900, fill = 'indianred', tags = 'init_ents')
         # Show Name, Active Ent
         self.redraw_active_ent()
+        # MINI MAP
+        self.redraw_minimap()
         self.animate_id = root.after(200, self.animate)
+        
+    def redraw_minimap(self):
+        self.canvas.delete('minimap')
+        self.canvas.create_image(100,self.canvas.winfo_height()-100, anchor='sw', image =self.minimap, tags = 'minimap')
+        col = self.map_width//100
+        row = self.map_height//100
+        startx = 100
+        starty = self.canvas.winfo_height()-self.minimap.height()-90
+        ticx = app.map_width//col
+        ticy = app.map_height//row
+        incrx = 0
+        incry = 0
+        for x in range(col):
+            for y in range(row):
+                if app.grid[x][y] in app.all_ents().keys():
+                    ent = app.ent_dict[app.grid[x][y]]
+                    if ent.owner == app.ent_dict[app.p1_witch].owner:
+                        self.canvas.create_image(startx+incrx,starty+incry, anchor='sw', image =app.ent_dict[app.p1_witch].minimap_img, tags = 'minimap')
+                    elif app.num_players == 2:
+                        self.canvas.create_image(startx+incrx,starty+incry, anchor='sw', image =app.ent_dict[app.p2_witch].minimap_img, tags = 'minimap')
+                    else:
+                        self.canvas.create_image(startx+incrx,starty+incry, anchor='sw', image =app.bot_minimap_img, tags = 'minimap')
+                incry += 10
+            incrx += 10
+            incry = 0
+        # redraw minimap screen
+        down = app.moved_down//10
+        right = app.moved_right//10
+        self.canvas.create_image(100+right-5,self.canvas.winfo_height()-20-self.minimap.height()+down, anchor='sw', image =self.minimap_screen, tags = 'minimap')
+
+
+        
+        
         
         # MAP TRIGGER LOOP
         # ALL MAP TRIGGERS ARE FUNCTIONS THAT CHECK FOR CONDITIONS AND EITHER DO STUFF IN RESPONSE
@@ -21519,6 +21550,7 @@ class App(tk.Frame):
         self.redraw_active_ent()
         self.redraw_colors()
         self.redraw_effects_text()
+        
     # Helper functions
     def help(self):
         self.help_popup = tk.Toplevel(bg = 'black')
