@@ -1,12 +1,18 @@
-# minimap highlight active screen area
+# hexmage - prox efcts? gain/lose resist/wkns?
 
-# brsrkr claw efcts, either/or?
+# will need page summons, like page spells/actions
+
+# mousehover popup spell/action desc?
+
+# r-click on minimap to jump screen position...show block sqrs
+
+# bsrkr void claws, change type to magick, rmv resist to mgk, drain mgk?
+
+# log relevant text items in background of context menu
 
 # organize notes - pathfinding optimization, witch spells, summons/summon actions, levels, concepts/features to add more content of: map effects, proximity effects, atk/def effects, invis/psyshield, wkns/resists, move type/range modifiers, tomb augmentation, magick regen augmentation, witch actions(spells that add them), 
 
 # mirror armor, reduce phys dmg, spell dmg is redirected? to all wi range 2
-
-# aoe reduce agility
 
 # prox efcts can add atk/def efcts
 
@@ -205,7 +211,7 @@ def action_description(act):
     elif act == 'Spell':
         return 'Cast cantrip or arcane spell'
     elif act == 'Gravity':
-        return 'A unit within range equal to caster rsn gets move range reduced by 2 to minimum 1, -1 agility and -2 dodge. Duration equal to caster rsn. Level equal to caster wis. Target as spell.'
+        return 'A unit within range equal to caster rsn gets move range reduced by 2, also -2 agility and dodge. Duration equal to caster rsn. Level equal to caster wis. Target as spell.'
     elif act == 'Curse of Oriax':
         return 'A unit within range of caster rsn gets -1 to each (psy,wis,rsn,san,init) and takes 2 magick dmg at end of turn. Duration equal to caster rsn. Level equal to caster wis. Target as spell.'
     elif act == 'Pestilence':
@@ -263,9 +269,9 @@ def action_description(act):
     elif act == 'Leap':
         return 'Move over obstacles to any square within move range. Movement effects do not affect the range of Leap unless specifically noted. Does not count as either an action or a move. Can only be used once per turn.'
     elif act == 'Rage':
-        return 'Dispel(level = strength) attempt all current effects on self. Gain +1 str, end, +4 psy. Take 3 magick damage when effect ends OR is dispelled. While rage effect exists, Berserker may only use Move, Leap, and Whirlwind. Duration is reason. Level is strength.'
-    elif act == 'Throw':
-        return 'Move an adjacent unit to a location up to distance strength from Berserker. Target as action.'
+        return 'Dispel(level = strength) attempt all current effects on self. Gain +3 str, end, +4 psy. Take 3 magick damage when effect ends OR is dispelled. While rage effect exists, Berserker may only use Move, Leap, and Whirlwind. Duration is reason. Level is strength.'
+    elif act == 'Hurl':
+        return 'Move an adjacent friendly unit to a location up to distance strength from Berserker. Target as action.'
     elif act == 'Whirlwind':
         return 'Attack each adjacent unit (does not target). To-hit: agl-3(min 1) vs agl, slashing damage: str vs end'
     elif act == 'Simulacrum':
@@ -548,8 +554,8 @@ def action_description(act):
         return 'Spell target within range reason gets an effect that gives all enemy units (of caster) within range 2, -3 sanity. Duration is reason. Level is wisdom.'
     elif act == 'Dampening Emanation':
         return 'Spell target within range reason gets an effect that gives all units within range 2, -3 move range. Duration is reason. Level is wisdom.'
-    elif act == '':
-        return ''
+    elif act == 'Blind':
+        return 'Spell target in range reason gets -3 ballistics and reason. Duration is reason. Level is wisdom.'
     elif act == '':
         return ''
     elif act == '':
@@ -590,7 +596,7 @@ def effect_description(ef):
     elif ef.name == 'Plague':
         return '-4 random effect, dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Gravity':
-        return '-2 agility, dodge, and move range, minimum 1, dur = '+str(ef.duration)+', level = '+str(ef.level)
+        return '-2 agility, dodge, and move range, dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Hidden_From_the_Stars':
         return '+1 agility, dodge, wisdom. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Plutonian_Cloak':
@@ -622,7 +628,7 @@ def effect_description(ef):
     elif ef.name == 'Tendrils_Drain':
         return '-2 random ability. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Rage':
-        return '+1 strength, endurance, +4 psyche. 3 magick damage on end. dur = '+str(ef.duration)+', level = '+str(ef.level)
+        return '+3 strength, endurance, +4 psyche. 3 magick damage on end. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Doubling_Cube':
         return 'When receiving slashing, piercing, or crushing damage, attacker must hit (psyche vs psyche) or the damage is reduced to 1. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Tracer_Grenade':
@@ -797,8 +803,8 @@ def effect_description(ef):
         return 'Change melee damage to poison, add end-of-turn 2 poison damage bane poison to hit melee targets. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Bane_Poison':
         return 'End of turn 2 poison damage. dur = '+str(ef.duration)+', level = '+str(ef.level)
-    elif ef.name == '':
-        return '. dur = '+str(ef.duration)+', level = '+str(ef.level)
+    elif ef.name == 'Blind':
+        return '-3 ballistics and reason. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == '':
         return '. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == '':
@@ -5348,16 +5354,18 @@ class Murrain_Wolf(Summon):
             return stat+2
         p = partial(spore_effect)
         app.loc_dict[tuple(sqr)].dodge_effects.append(p)
-        def spore_def(attacker, defender, amount, type, source, sn):
+        def spore_def(attacker, defender, amount, type, source, sn, lockname = None):
             if amount < 0 and (type == 'slashing' or type == 'piercing' or type == 'fire') and sn != 'eot' and sn != 'sot':
                 app.canvas.create_text(defender.loc[0]*100+49-app.moved_right, defender.loc[1]*100+54-app.moved_down, text = '-2 (min1) spirit spore cloud', justify ='center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
                 app.canvas.create_text(defender.loc[0]*100+50-app.moved_right, defender.loc[1]*100+55-app.moved_down, text = '-2 (min1) spirit spore cloud', justify ='center', font = ('chalkduster', 13), fill = 'olivedrab2', tags = 'text')
                 root.after(1555, lambda t = 'text' : app.canvas.delete(t))
                 amount += 2
                 if amount > -1:
-                    return (-1,1666)
+                    root.after(1666, lambda ln = lockname : app.dethloks[ln].set(1))
+                    return (-1,type)
                 else:
-                    return (amount,1666)
+                    root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+                    return (amount,type)
             else:
                 return (amount,0)
         app.loc_dict[tuple(sqr)].def_effects.append(spore_def)
@@ -6575,6 +6583,54 @@ class Chirurgeon(Summon):
         
     def finish_stitch_cadaver(self, event = None):
         app.generic_cancel()
+        
+        
+class Hexmage(Summon):
+    def __init__(self, name, id, img, loc, owner, level):
+        if level == 1:
+            self.actions = {'Move':self.move}
+            self.str = 3
+            self.agl = 5
+            self.end = 5
+            self.mm = 1
+            self.msl = 0
+            self.bls = 0
+            self.dodge = 5
+            self.psyche = 7
+            self.wis = 7
+            self.rsn = 5
+            self.san = 15
+            self.init = 6
+            self.spirit = 19
+            self.magick = 18
+            self.acts = 1
+            self.mvs = 1
+            self.move_range = 4
+            self.level = level
+        elif level == 2:
+            self.actions = {'Move':self.move}
+            self.str = 4
+            self.agl = 6
+            self.end = 6
+            self.mm = 1
+            self.msl = 0
+            self.bls = 0
+            self.dodge = 6
+            self.psyche = 8
+            self.wis = 8
+            self.rsn = 5
+            self.san = 16
+            self.init = 6
+            self.spirit = 27
+            self.magick = 29
+            self.acts = 2
+            self.mvs = 1
+            self.move_range = 5
+            self.level = level
+        self.move_type = 'normal'
+        self.weak = []
+        self.resist = ['psn', 'magick']
+        super().__init__(name, id, img, loc, owner)
         
         
 class Thaumaturge(Summon):
@@ -9817,9 +9873,10 @@ class Warlock(Bot):
                 return max(1,stat-7)
             p2 = partial(san_ef)
             ent.san_effects.append(p2)
-            def undo(ent, p, p2):
+            def undo(ent, p, p2, lockname = None):
                 ent.rsn_effects.remove(p)
                 ent.san_effects.remove(p2)
+                root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
             u = partial(undo, ent, p, p2)
             n = 'Duress' + str(app.effects_counter)
             ent.effects_dict[n] = Effect(name = 'Duress', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
@@ -9862,9 +9919,10 @@ class Warlock(Bot):
             p = partial(hymn_ef)
             ent.str_effects.append(p)
             ent.agl_effects.append(p)
-            def undo(ent, p):
+            def undo(ent, p, lockname = None):
                 ent.str_effects.remove(p)
                 ent.agl_effects.remove(p)
+                root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
             u = partial(undo, ent, p)
             n = "Tourach's_Hymn" + str(app.effects_counter)
             ent.effects_dict[n] = Effect(name = "Tourach's_Hymn", undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
@@ -9899,8 +9957,9 @@ class Warlock(Bot):
             return [t for t in ts if t != 'psyshield']
         p = partial(staff_ef)
         ent.type_effects.append(p)
-        def undo(ent, p):
+        def undo(ent, p, lockname = None):
             ent.type_effects.remove(p)
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
         u = partial(undo, ent, p)
         n = 'Staff_of_Vecna' + str(app.effects_counter)
         ent.effects_dict[n] = Effect(name = 'Staff_of_Vecna', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
@@ -11247,8 +11306,9 @@ class Sorceress(Bot):
             return [t for t in ts if t != 'psyshield']
         p = partial(staff_ef)
         ent.type_effects.append(p)
-        def undo(ent, p):
+        def undo(ent, p, lockname = None):
             ent.type_effects.remove(p)
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
         u = partial(undo, ent, p)
         n = 'Staff_of_Vecna' + str(app.effects_counter)
         ent.effects_dict[n] = Effect(name = 'Staff_of_Vecna', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
@@ -11910,7 +11970,7 @@ class Minotaur_Top(Bot):
         self.san = 19
         self.acts = 2
         self.mvs = 2
-        self.move_range = 4
+        self.move_range = 5
         self.waiting = waiting
         self.resist = ['crushing', 'piercing', 'magick']
         self.weak = []
@@ -11956,7 +12016,7 @@ class Minotaur(Bot):
         self.san = 19
         self.acts = 2
         self.mvs = 2
-        self.move_range = 4
+        self.move_range = 5
         self.waiting = waiting
         self.resist = ['crushing', 'piercing', 'magick']
         self.weak = []
@@ -12425,7 +12485,7 @@ class Berserker(Summon):
             self.move_range = 3
             self.level = level
         elif level == 2:
-            self.actions = {'Move':self.move, 'Leap':self.leap, 'Slash':self.slash, 'Whirlwind':self.whirlwind, 'Howl From Beyond':self.howl_from_beyond, 'Track':self.track,  'Throw':self.throw, 'Rage':self.rage, 'Molten Claws':self.molten_claws, 'Bane Claws':self.bane_claws}
+            self.actions = {'Move':self.move, 'Leap':self.leap, 'Slash':self.slash, 'Whirlwind':self.whirlwind, 'Howl From Beyond':self.howl_from_beyond, 'Track':self.track,  'Hurl':self.hurl, 'Rage':self.rage, 'Molten Claws':self.molten_claws, 'Bane Claws':self.bane_claws}
             self.str = 8
             self.agl = 8
             self.end = 6
@@ -12735,7 +12795,7 @@ class Berserker(Summon):
             del self.effects_dict[k]
         # add effects
         def rage_effect(stat):
-            return stat+1
+            return stat+3
         self.str_effects.append(rage_effect)
         self.end_effects.append(rage_effect)
         def rage_effect2(stat):
@@ -12788,6 +12848,10 @@ class Berserker(Summon):
         if sqr not in sqrs:
             return
         if 'Molten_Claws' in [v.name for v in self.effects_dict.values()]:
+            return
+        if 'Bane_Claws' in [v.name for v in self.effects_dict.values()]:
+            return
+        if 'Rage' in [v.name for v in self.effects_dict.values()]:
             return
 #         effect1 = mixer.Sound('Sound_Effects/rage.ogg')
 #         effect1.set_volume(.5)
@@ -12856,6 +12920,10 @@ class Berserker(Summon):
             return
         if 'Bane_Claws' in [v.name for v in self.effects_dict.values()]:
             return
+        if 'Molten_Claws' in [v.name for v in self.effects_dict.values()]:
+            return
+        if 'Rage' in [v.name for v in self.effects_dict.values()]:
+            return
 #         effect1 = mixer.Sound('Sound_Effects/rage.ogg')
 #         effect1.set_volume(.5)
 #         sound_effects.play(effect1, 0)
@@ -12912,7 +12980,7 @@ class Berserker(Summon):
         
         
         
-    def throw(self, event = None):
+    def hurl(self, event = None):
         if self.acts < 1:
             return
         app.unbind_nonarrows()
@@ -12937,6 +13005,8 @@ class Berserker(Summon):
         if id not in [k for k in app.action_target_ents().keys()]:
             return
         if app.ent_dict[id].immovable == True:
+            return
+        if app.ent_dict[id].owner != self.owner:
             return
         app.depop_context(event = None)
         app.unbind_all()
@@ -14667,7 +14737,7 @@ class Witch(Summon):
         if name == 'Agnes_Sampson':
             if level == 1:
                 self.arcane_dict['Entomb'] = (self.entomb, 0)
-                self.arcane_dict['Psionic_Push'] = (self.psionic_push, 1)
+                self.arcane_dict['Psionic_Push'] = (self.psionic_push, 2)
                 self.arcane_dict["Minerva's_Gift"] = (self.minervas_gift, 1)
                 self.arcane_dict['Bewitch'] = (self.bewitch, 1)
                 self.arcane_dict['Read_the_Stars'] = (self.read_the_stars, 1)
@@ -14692,6 +14762,8 @@ class Witch(Summon):
                 self.arcane_dict['Cloister'] = (self.cloister, 3)
                 self.arcane_dict['Aura_of_Agony'] = (self.aura_of_agony, 4)
                 self.arcane_dict['Dampening_Emanation'] = (self.dampening_emanation, 5)
+                self.arcane_dict['Blind'] = (self.blind, 6)
+                self.arcane_dict['Enmeshing_Coils'] = (self.enmeshing_coils, 6)
 #                 self.base_cantrips = 1
 #                 self.cantrips = 1
                 self.base_smns = 1
@@ -14723,7 +14795,7 @@ class Witch(Summon):
                 self.magick_regen = 2
             elif level == 2:
                 self.arcane_dict['Entomb'] = (self.entomb, 0)
-                self.arcane_dict['Psionic_Push'] = (self.psionic_push, 1)
+                self.arcane_dict['Psionic_Push'] = (self.psionic_push, 2)
                 self.arcane_dict["Minerva's_Gift"] = (self.minervas_gift, 1)
                 self.arcane_dict['Bewitch'] = (self.bewitch, 1)
                 self.arcane_dict['Read_the_Stars'] = (self.read_the_stars, 1)
@@ -14754,6 +14826,8 @@ class Witch(Summon):
                 self.arcane_dict['Genjutsushi'] = (self.genjutsushi, 3)
                 self.arcane_dict['Aura_of_Agony'] = (self.aura_of_agony, 4)
                 self.arcane_dict['Dampening_Emanation'] = (self.dampening_emanation, 5)
+                self.arcane_dict['Blind'] = (self.blind, 6)
+                self.arcane_dict['Enmeshing_Coils'] = (self.enmeshing_coils, 6)
 #                 self.arcane_dict['Summon_Lesser_Demon'] = (self.summon_lesser_demon, 10)
 #                 self.arcane_dict['Summon_Cenobite'] = (self.summon_cenobite, 10)
 #                 self.base_cantrips = 1
@@ -15045,6 +15119,7 @@ class Witch(Summon):
         root.bind('6', lambda e, cls = 'Fiend' : self.place_summon(e, cls))
         root.bind('7', lambda e, cls = 'Wurdulak' : self.place_summon(e, cls))
         root.bind('8', lambda e, cls = 'Chirurgeon' : self.place_summon(e, cls))
+        root.bind('9', lambda e, cls = 'Hexmage' : self.place_summon(e, cls))
         b1 = tk.Button(app.context_menu, text = '1:Berserker', font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, cls = 'Berserker' : self.place_summon(e, cls))
         b1.pack(side = 'top', pady = 2)
         app.context_buttons.append(b1)
@@ -15069,6 +15144,9 @@ class Witch(Summon):
         b9 = tk.Button(app.context_menu, text = '8:Chirurgeon', font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, cls = 'Chirurgeon' : self.place_summon(e, cls))
         b9.pack(side = 'top', pady = 2)
         app.context_buttons.append(b9)
+        b10 = tk.Button(app.context_menu, text = '9:Hexmage', font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, cls = 'Hexmage' : self.place_summon(e, cls))
+        b10.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b10)
         b8 = tk.Button(app.context_menu, text = 'Cancel', font = ('chalkduster', 20), highlightbackground = 'tan3', fg='tan3', command = self.cancel_placement)
         b8.pack(side = 'top')
         app.context_buttons.append(b8)
@@ -15103,6 +15181,8 @@ class Witch(Summon):
             cls = Wurdulak
         elif type == 'Chirurgeon':
             cls = Chirurgeon
+        elif type == 'Hexmage':
+            cls = Hexmage
         cmd = lambda e = None, x = cls, y = sqrs, s = grid_pos : self.continue_place_summon(e, summon = x, sqrs = y, sqr = s)
         root.bind('<a>', lambda e, x = cls, y = sqrs, s = grid_pos : self.continue_place_summon(e, x, y, s))
         b = tk.Button(app.context_menu, text = 'Place '+type.replace('_',' '), font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', wraplength = 190, command = cmd)
@@ -15162,6 +15242,9 @@ class Witch(Summon):
         elif summon == Chirurgeon:
             name = 'Chirurgeon'
             img = ImageTk.PhotoImage(Image.open('summon_imgs/Chirurgeon.png'))
+        elif summon == Hexmage:
+            name = 'Hexmage'
+            img = ImageTk.PhotoImage(Image.open('summon_imgs/Hexmage.png'))
         s = summon(name = name, id = id, img = img, loc = sqr[:], owner = self.owner, level = self.level)
         app.cleanup_squares()
         app.depop_context(event = None)
@@ -16205,6 +16288,67 @@ class Witch(Summon):
                 root.after(1666, lambda ents = ents, v = visited : plague_loop(ents, v))
         plague_loop(ents, visited)
 
+
+
+    def enmeshing_coils(self, event = None):
+        app.depop_context(event = None)
+        root.bind('<q>', lambda name = 'Enmeshing_Coils' : self.cleanup_spell(name = name))
+        sqrs = [s for s in app.coords if 1 <= dist(self.loc, s) <= self.get_abl('rsn')]
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_enmeshing_coils(event = e, sqr = s, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Choose Location For Enmeshing Coils', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_enmeshing_coils(e, s, sqrs))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
+        
+    def do_enmeshing_coils(self, event, sqr, sqrs):
+        if sqr not in sqrs:
+            return
+        self.init_cast_anims()
+#         effect1 = mixer.Sound('Sound_Effects/plague.ogg')
+#         effect1.set_volume(1)
+#         sound_effects.play(effect1, 0)
+        self.magick -= self.arcane_dict['Enmeshing_Coils'][1]
+        app.unbind_all()
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+24-app.moved_down, text = 'Enmeshing Coils', font = ('chalkduster', 14), fill = 'black', tags = 'text')
+        app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+25-app.moved_down, text = 'Enmeshing Coils', font = ('chalkduster', 14), fill = 'limegreen', tags = 'text')
+        def cleanup_enmesh(name):
+            del app.vis_dict[name]
+            app.canvas.delete(name)
+        def enmesh_loop(ids):
+            if ids == []:
+                self.cleanup_spell(name = 'Enmeshing_Coils')
+            else:
+                id = ids[0]
+                ids = ids[1:]
+                app.get_focus(id)
+                ent = app.ent_dict[id]
+                name = 'Enmeshing_Coils'+str(app.effects_counter)
+                app.effects_counter += 1
+                app.vis_dict[name] = Vis(name = 'Enmeshing_Coils', loc = ent.loc)
+                def enmesh_efct(stat):
+                    return max(1,stat-4)
+                p = partial(enmesh_efct)
+                ent.agl_effects.append(p)
+                app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+84-app.moved_down, text = '-4 agility', font = ('chalkduster', 14), fill = 'black', tags = 'text')
+                app.canvas.create_text(ent.loc[0]*100+50-app.moved_right, ent.loc[1]*100+85-app.moved_down, text = '-4 agility', font = ('chalkduster', 14), fill = 'limegreen', tags = 'text')
+                def un(ent, p, lockname = None):
+                    ent.agl_effects.remove(p)
+                    root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+                u = partial(un, ent, p)
+                n = 'Enmeshing_Coils' + str(app.effects_counter)
+                ent.effects_dict[n] = Effect(name = 'Enmeshing_Coils', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
+                root.after(1999, lambda n = name : cleanup_enmesh(n))
+                root.after(1555, lambda t = 'text' : app.canvas.delete(t))
+                root.after(1666, lambda ids = ids : enmesh_loop(ids))
+        locs = [c for c in app.coords if dist(c,sqr) <= 1]
+        ids = [k for k,v in app.all_ents().items() if v.loc in locs and 'Enmeshing_Coils' not in [j.name for i,j in v.effects_dict.items()]]
+        enmesh_loop(ids)
+
             
     # PSIONIC PUSH
     def psionic_push(self, event = None):
@@ -16487,7 +16631,7 @@ class Witch(Summon):
         # Any target is inflicted with 'curse', while cursed takes 2 spirit damage at end of every owner's turn and minus 1 to every stat (not spirit, magick, movement)
         app.depop_context(event = None)
         root.bind('<q>', self.cleanup_spell)
-        sqrs = [s for s in app.coords if dist(self.loc, s) <= self.get_abl('rsn')]
+        sqrs = [s for s in app.coords if 1 <= dist(self.loc, s) <= self.get_abl('rsn')]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_curse_of_oriax(event = e, sqr = s, sqrs = sqrs))
         b = tk.Button(app.context_menu, text = 'Choose Target For Curse of Oriax', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_curse_of_oriax(e, s, sqrs = sqrs))
@@ -16642,8 +16786,8 @@ class Witch(Summon):
         app.depop_context(event = None)
         app.cleanup_squares()
         app.vis_dict['Aura_of_Agony'] = Vis(name = 'Aura_of_Agony', loc = sqr[:])
-        app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+84-app.moved_down, text = 'Aura of Agony', justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
-        app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+85-app.moved_down, text = 'Aura of Agony', justify = 'center', font = ('chalkduster', 14), fill = 'olivedrab2', tags = 'text')
+        app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+24-app.moved_down, text = 'Aura of Agony', justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
+        app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+25-app.moved_down, text = 'Aura of Agony', justify = 'center', font = ('chalkduster', 14), fill = 'olivedrab2', tags = 'text')
         def aura_ag_ef(stat):
             return max(1,stat-3)
         p = partial(aura_ag_ef)
@@ -17481,6 +17625,58 @@ class Witch(Summon):
         root.after(1444, lambda ids = ids : hysteria_loop(ids))
         
         
+    def blind(self, event = None):
+        app.depop_context(event = None)
+        root.bind('<q>', self.cleanup_spell)
+        sqrs = [s for s in app.coords if 1 <= dist(self.loc, s) <= self.get_abl('rsn')]
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_blind(event = e, sqr = s, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Choose Target For Blind', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_blind(e, s, sqrs = sqrs))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
+        
+    def do_blind(self, event, sqr, sqrs):
+        if sqr not in sqrs:
+            return
+        id = app.grid[sqr[0]][sqr[1]]
+        if id not in app.spell_target_ents().keys():
+            return
+        ent = app.ent_dict[id]
+        effs = [v.name for k,v in ent.effects_dict.items()]
+        if 'Blind' in effs:
+            return
+        self.magick -= self.arcane_dict['Blind'][1]
+        effect1 = mixer.Sound('Sound_Effects/dark_sun.ogg')
+        effect1.set_volume(1)
+        sound_effects.play(effect1, 0)
+        self.init_cast_anims()
+        app.unbind_all()
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        app.vis_dict['Blind'] = Vis(name = 'Blind', loc = sqr[:])
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Blind'].img, tags = 'Blind')
+        app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+84-app.moved_down, text = 'Blind', justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
+        app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+85-app.moved_down, text = 'Blind', justify = 'center', font = ('chalkduster', 14), fill = 'olivedrab2', tags = 'text')
+        def blind_efct(stat):
+            return max(1, stat-3)
+        p = partial(blind_efct)
+        ent.rsn_effects.append(p)
+        ent.bls_effects.append(p)
+        def un(ent, p, lockname = None):
+            ent.rsn_effects.remove(p)
+            ent.bls_effects.remove(p)
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+        u = partial(un, ent, p)
+        n = 'Blind' + str(app.effects_counter)
+        ent.effects_dict[n] = Effect(name = 'Blind', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
+        loc = ent.loc
+        app.canvas.create_text(loc[0]*100+49-app.moved_right, loc[1]*100+84-app.moved_down, text = '-3 ballistics, reason', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
+        app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+85-app.moved_down, text = '-3 ballistics, reason', justify = 'center', font = ('chalkduster', 13), fill = 'olivedrab2', tags = 'text')
+        root.after(2666, lambda  name = 'Blind' : self.cleanup_spell(name = name))
+        
         
     def gravity(self, event = None):
         app.depop_context(event = None)
@@ -17501,10 +17697,10 @@ class Witch(Summon):
         id = app.grid[sqr[0]][sqr[1]]
         if id not in app.spell_target_ents().keys():
             return
-        effs = [v.name for k,v in app.ent_dict[id].effects_dict.items()]
-        if 'Gravity' in effs:
+        ent = app.ent_dict[id]
+        if 'Gravity' in [v.name for k,v in ent.effects_dict.items()]:
             return
-        if app.ent_dict[id].immovable == True:
+        if ent.immovable == True:
             return
         self.magick -= self.arcane_dict['Gravity'][1]
         effect1 = mixer.Sound('Sound_Effects/gravity.ogg')
@@ -17519,23 +17715,23 @@ class Witch(Summon):
         app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+84-app.moved_down, text = 'Gravity', justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
         app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+85-app.moved_down, text = 'Gravity', justify = 'center', font = ('chalkduster', 14), fill = 'olivedrab2', tags = 'text')
         # DO gravity EFFECTS
-        def gravity_agil_effect(stat):
+        def grav_minus2(stat):
             return max(1, stat-2)
-        def gravity_dodge_effect(stat):
-            return max(1, stat-2)
-        app.ent_dict[id].agl_effects.append(gravity_agil_effect)
-        app.ent_dict[id].dodge_effects.append(gravity_dodge_effect)
+        p = partial(grav_minus2)
+        ent.agl_effects.append(p)
+        ent.dodge_effects.append(p)
         def gravity_move(move_range):
-            return max(1,move_range-2)
-        app.ent_dict[id].move_range_effects.append(gravity_move)
-        def un(i, lockname = None):
-            app.ent_dict[i].agl_effects.remove(gravity_agil_effect)
-            app.ent_dict[i].dodge_effects.remove(gravity_dodge_effect)
-            app.ent_dict[i].move_range_effects.remove(gravity_move)
+            return max(0,move_range-2)
+        p2 = partial(gravity_move)
+        ent.move_range_effects.append(p2)
+        def un(ent, p, p2, lockname = None):
+            ent.agl_effects.remove(p)
+            ent.dodge_effects.remove(p)
+            ent.move_range_effects.remove(p2)
             root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
-        p = partial(un, id)
+        u = partial(un, ent, p, p2)
         n = 'Gravity' + str(app.effects_counter)
-        app.ent_dict[id].effects_dict[n] = Effect(name = 'Gravity', undo_func = p, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
+        ent.effects_dict[n] = Effect(name = 'Gravity', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
         loc = app.ent_dict[id].loc
         app.canvas.create_text(loc[0]*100+49-app.moved_right, loc[1]*100+84-app.moved_down, text = '-2 move range, agl, dod', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
         app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+85-app.moved_down, text = '-2 move range, agl, dod', justify = 'center', font = ('chalkduster', 13), fill = 'olivedrab2', tags = 'text')
@@ -19016,7 +19212,7 @@ class App(tk.Frame):
         self.proximity_effects_dict = {}
         
         self.bot_minimap_img = ImageTk.PhotoImage(Image.open('animations/Bot_Minimap_Img/0.png').resize((10,10)))
-        
+        self.block_minimap_img = ImageTk.PhotoImage(Image.open('minimap_block.png').resize((10,10)))
 
         
         self.sqr_anims = {}
@@ -20365,7 +20561,7 @@ class App(tk.Frame):
         w = self.map_width//10
         h = self.map_height//10
         self.minimap = ImageTk.PhotoImage(Image.open('minimap.png').resize((w,h)))
-        w2 = root.winfo_screenwidth()//10
+        w2 = root.winfo_screenwidth()//10-10
         h2 = root.winfo_screenheight()//10
         self.minimap_screen = ImageTk.PhotoImage(Image.open('minimap_screen.png').resize((w2,h2)))
         # CHOOSE WITCH IF 2 PLAYER OR FIRST LEVEL
@@ -21058,6 +21254,8 @@ class App(tk.Frame):
                         self.canvas.create_image(startx+incrx,starty+incry, anchor='sw', image =app.ent_dict[app.p2_witch].minimap_img, tags = 'minimap')
                     else:
                         self.canvas.create_image(startx+incrx,starty+incry, anchor='sw', image =app.bot_minimap_img, tags = 'minimap')
+#                 elif app.grid[x][y] == 'block':
+#                         self.canvas.create_image(startx+incrx,starty+incry, anchor='sw', image =self.block_minimap_img, tags = 'minimap')
                 incry += 10
             incrx += 10
             incry = 0
