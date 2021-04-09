@@ -1,36 +1,22 @@
-<b>TACTICS GAME! shining force, final fantasy tactics, advance wars genre</b><br>
+<b>TACTICS GAME!</b><br>
 <br> note: game not complete but first few levels should be complete enough although will certainly change<br>
 <br>
-<b>Quickstart</b>: use left-click for buttons, 'a' is select-unit/confirm-target, 'q' is cancel<br>
-one cantrip (free), one arcane (costs magick), one summon (free, capped per level), one move per turn for witch<br>
-one action, one move for summons<br>
-check spell descriptions and stat explanations as needed<br>
-Agnes character is most well tested, Fakir Ali mostly works but probably has quite a few bugs,<br>
-Morgan LeFay is not yet implemented.
+<b>Quickstart</b>: Use left-click or arrow keys to move cursor around map. Right-click a unit on the map, or press 'a' when the cursor is over it, to select the unit. The selected unit's information appears in the left-hand menu. Pressing the 'more info' button, or 'i' hotkey, gives more detailed information.<br>
+Right-click a button to see a description of the spell/action. The hotkey 'q' cancels most actions, while 'a' confirms.<br>
+Protagonist may place one Tomb, using the spell 'Entomb' from the arcane menu, every turn. At the beginning of the turn, the protagonist(s) or Witch units, receive magick equal to 3 times the number of owned tombs, plus their own magick regeneration rate. Your witch may cast as many spells from the arcane menu as can be afforded. <br>
+All units may move equal to their 'moves' value, and use actions equal to 'acts'. Actions are any attack/spell buttons that are NOT from the witch arcane menu.<br>
+Many more things implemented in game than listed in remainder of readme. Descriptions of most everything is in game help popup menus. Use r-click on actions to see descriptions and use 'more-info' button on your own and enemy units.<br>
 <br>
 <br>
-<b>Controls:</b><br>
--Actions besides 'end turn' can be actuated with EITHER keyboard or mouse<br>
--'end turn' button must be left clicked and has no keyboard hotkey<br>
--Left click spot on the map to move cursor there, OR use arrow keys to move cursor<br>
--Continuously clicking the edge of the map will scroll until map ends<br>
--Press 'a' when cursor is over a unit to bring up its context menu<br>
 -Units controlled by you will have a list of available actions in context menu<br>
 -Number hotkeys (1-9) are assigned to actions and spells in the context menu<br>
--Press 'q' to cancel actions<br>
--In the context of an action (when choosing targets or confirming an action), pressing 'a' will confirm the target<br>
 -Cycle through your units with ',' and 'l', cycle through enemies with '.' and ';'<br>
 <br>
 <b>Constraints:</b><br>
 -Player starts most levels with only witch<br>
 -Witch death ends game<br>
--Per turn, witch may cast 1 cantrip AND 1 arcane spell AND use 1 summon AND move<br>
--Summons may use an action AND move (shadows use mist move as their move)<br>
 -Summons are capped according to the witch (start at 6), means you can summon 6 times per level<br>
 -Summon death does not 'lower' summon limit cap<br>
--After using actions/moves for each of your units, 'end turn' will pass to computer<br>
--A warrior has the unique ability to use Leap, a movement action which counts towards neither move or action<br>
-and can be used once per turn, allowing the warrior to both move, leap, and attack in one turn<br>
 -Most units that are not 'flying' type or not using a teleport-type movement action (or leap) are impeded<br>
 by other units and walls and obstacles, meaning that they must move 'around' obstacles and cannot necessarily<br>
 move to any empty square within their 'maximum range'.<br>
