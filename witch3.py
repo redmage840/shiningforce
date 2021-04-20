@@ -5211,7 +5211,7 @@ class Murrain_Wolf(Summon):
             self.rsn = 5
             self.san = 14
             self.init = 4
-            self.spirit = 1
+            self.spirit = 31
             self.magick = 35
             self.acts = 2
             self.mvs = 2
@@ -8944,7 +8944,7 @@ class Inquisitor(Summon):
             self.rsn = 6
             self.san = 16
             self.init = 8
-            self.spirit = 1
+            self.spirit = 27
             self.magick = 26
             self.acts = 2
             self.mvs = 2
@@ -17690,11 +17690,11 @@ class Witch(Summon):
                 self.rsn = 7
                 self.san = 15
                 self.init = 9
-                self.spirit = 1
+                self.spirit = 50
                 self.magick = 0
                 self.weak = []
                 self.resist = ['poison', 'fire']
-                self.base_spirit = 1
+                self.base_spirit = 50
 #                 self.base_magick = 85
                 self.magick_regen = 3
             self.color_img = ImageTk.PhotoImage(Image.open('animations/Agnes_Sampson_Color/Agnes_Sampson_Color.png'))
