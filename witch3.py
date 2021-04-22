@@ -1,10 +1,10 @@
-# an ent that dies during its own action that contains a loop over multiple ents...
-# execution of loop continues as normal ONLY if the ent referenced itself through self (if at all)
-# attempting to look up the ent (or any ent) that has been removed through kill() during the loop will throw error
-# HOWEVER, execution completes and the current round still belongs to the ent that has been removed...
-# may pass round as normal, but somehow should check if the ent still exists.../pass directly to next round...
+# add exists check to spell/summons familiars/lesserdemon/cenobite/scarab/scarabswarm
 
-# kill checks for death of witch/gameover (1 or 2 player), check_victory_cond() checks for victory at eot for 1 player campaign
+# consider changing eot victory check? after kill()?
+
+# duel when both players run out of summons...?
+
+# balance wurdulak?
 
 # squamous carapace descr piercing?
 
@@ -588,11 +588,11 @@ def action_description(act):
     elif act == 'Enmeshing Coils':
         return 'Spell target in range reason, and each adjacent enemy without this effect, get -3 agility.'
     elif act == 'Cleanse with Fire':
-        return 'All enemy units within range 3 of caster, on to-hit wisdom vs wisdom, take psyche vs psyche fire spell damage.'
+        return 'All enemy units within range 3 of caster, on to-hit wisdom vs wisdom, take psyche vs psyche fire spell damage. Costs 2 magick.'
     elif act == 'Persecute':
-        return 'All enemy units within range 3 of caster, on to-hit wisdom vs wisdom, lose magick equal to caster psyche.'
+        return 'All enemy units within range 3 of caster, on to-hit wisdom vs wisdom, lose magick equal to caster psyche. Costs 3 magick.'
     elif act == 'Prophecy':
-        return 'Spell target within range reason gets +3 reason effect at duraton reason and level wisdom.'
+        return 'Spell target within range reason gets +3 reason effect at duraton reason and level wisdom. Costs 4 magick.'
     elif act == 'Chain Lightning':
         return 'Action target within range ballistics, on to-hit marksmanship vs dodge, takes missle vs endurance electric ranged damage. If target is hit, chain lightning attempts to hit a random unit that has not yet been hit within range 3 and is not the caster. Chain lightning continues to pass as long as it successfully hits and there is a target in range.'
     elif act == 'Overload':
@@ -1973,6 +1973,7 @@ class Summon(Entity):
         app.cleanup_squares()
         app.unbind_all()
         app.rebind_all()
+        app.exists_check(app.active_ent)
         
         
     def do_move(self, loc, lockname = None):
@@ -2308,7 +2309,7 @@ class Illusionist(Summon):
             self.wis = 6
             self.rsn = 4
             self.san = 14
-            self.init = 6
+            self.init = 7
             self.spirit = 14
             self.magick = 13
             self.acts = 1
@@ -2328,7 +2329,7 @@ class Illusionist(Summon):
             self.wis = 7
             self.rsn = 5
             self.san = 14
-            self.init = 6
+            self.init = 8
             self.spirit = 21
             self.magick = 17
             self.acts = 2
@@ -2863,6 +2864,7 @@ class Illusionist(Summon):
         app.canvas.delete('text')
 #         app.unbind_all()
         app.rebind_all()
+        app.exists_check(app.active_ent)
         
     def pyrotechnics(self, event = None):
         if self.acts < 1:
@@ -2913,6 +2915,7 @@ class Illusionist(Summon):
         app.canvas.delete('text')
         app.unbind_all()
         app.rebind_all()
+        app.exists_check(app.active_ent)
         
         
     def simulacrum(self, event = None):
@@ -3124,6 +3127,7 @@ class Illusionist(Summon):
         app.depop_context(event = None)
         app.cleanup_squares()
         app.rebind_all()
+        app.exists_check(app.active_ent)
     
     
 class Umbrae_Wolf(Summon):
@@ -3778,6 +3782,7 @@ class Umbrae_Wolf(Summon):
         app.cleanup_squares()
         app.unbind_all()
         app.rebind_all()
+        app.exists_check(app.active_ent)
         
     def pierce_shield(self, event = None):
         if self.acts < 1:
@@ -4300,6 +4305,7 @@ class Umbrae_Wolf(Summon):
         app.canvas.delete('text')
         app.cleanup_squares()
         app.rebind_all()
+        app.exists_check(app.active_ent)
         
     def dark_shroud(self, event = None):
         if self.acts < 1:
@@ -4447,6 +4453,7 @@ class Umbrae_Wolf(Summon):
         app.cleanup_squares()
 #         app.unbind_all()
         app.rebind_all()
+        app.exists_check(app.active_ent)
         
     def muddle(self, event = None):
         if self.acts < 1:
@@ -4586,6 +4593,7 @@ class Umbrae_Wolf(Summon):
         app.depop_context(event = None)
         app.cleanup_squares()
         app.rebind_all()
+        app.exists_check(app.active_ent)
     
     
 class Wurdulak(Summon):
@@ -4857,6 +4865,7 @@ class Wurdulak(Summon):
         app.cleanup_squares()
         app.unbind_all()
         app.rebind_all()
+        app.exists_check(app.active_ent)
     
     # drain magick  agl vs agl to hit
     def enervating_grasp(self, event = None):
@@ -5172,6 +5181,7 @@ class Wurdulak(Summon):
         app.cleanup_squares()
         app.unbind_all()
         app.rebind_all()
+        app.exists_check(app.active_ent)
         
         
 
@@ -5359,6 +5369,7 @@ class Murrain_Wolf(Summon):
         app.cleanup_squares()
         app.unbind_all()
         app.rebind_all()
+        app.exists_check(app.active_ent)
     
     # must choose a scarab, remove (do not kill) and replace with scarab swarm
     def scarab_swarm(self, event = None):
@@ -6057,7 +6068,7 @@ class Chirurgeon(Summon):
             self.rsn = 5
             self.san = 16
             self.init = 5
-            self.spirit = 16
+            self.spirit = 12
             self.magick = 19
             self.acts = 2
             self.mvs = 1
@@ -6077,7 +6088,7 @@ class Chirurgeon(Summon):
             self.rsn = 5
             self.san = 17
             self.init = 6
-            self.spirit = 19
+            self.spirit = 17
             self.magick = 28
             self.acts = 3
             self.mvs = 2
@@ -6486,6 +6497,7 @@ class Chirurgeon(Summon):
                 except: pass
                 app.depop_context(event = None)
                 app.cleanup_squares()
+                app.exists_check(app.active_ent)
             # END INNER-INNER FUNCS
         # ADD ACTION TO TARGET
         p = partial(c_glands_attack, obj = ent)
@@ -6616,6 +6628,7 @@ class Chirurgeon(Summon):
                 except: pass
                 app.depop_context(event = None)
                 app.cleanup_squares()
+                app.exists_check(app.active_ent)
             # END INNER-INNER FUNCS
         # ADD ACTION TO TARGET
         p = partial(pincer_attack, obj = ent)
@@ -6995,6 +7008,7 @@ class Fell_Evolver(Summon):
         app.cleanup_squares()
         app.unbind_all()
         app.rebind_all()
+        app.exists_check(app.active_ent)
         
     # changes attack to crushing that adds 'splinter' efct, eot 2 piercing, adds rst crsh, wkns fire, cannot use with calcify
     def wooden_skin(self, event = None):
@@ -7372,6 +7386,7 @@ class Fell_Evolver(Summon):
                 app.canvas.delete('text')
                 app.depop_context(event = None)
                 app.cleanup_squares()
+                app.exists_check(app.active_ent)
             # END INNER-INNER FUNCS
         # ADD ACTION TO TARGET
         ap = partial(scorch_attack, obj = self)
@@ -7775,6 +7790,7 @@ class Hexmage(Summon):
         app.cleanup_squares()
         app.unbind_all()
         app.rebind_all()
+        app.exists_check(app.active_ent)
         
         
     def psychic_suffocation(self, event = None):
@@ -7929,6 +7945,7 @@ class Hexmage(Summon):
         app.cleanup_squares()
         app.unbind_all()
         app.rebind_all()
+        app.exists_check(app.active_ent)
         
         
     def torpor_field(self, event = None):
@@ -8205,6 +8222,7 @@ class Hexmage(Summon):
         app.cleanup_squares()
         app.unbind_all()
         app.rebind_all()
+        app.exists_check(app.active_ent)
     
         
         
@@ -8561,6 +8579,7 @@ class Thaumaturge(Summon):
         app.cleanup_squares()
         app.unbind_all()
         app.rebind_all()
+        app.exists_check(app.active_ent)
         
     def moonlight(self, event = None):
         if self.acts < 1:
@@ -8847,6 +8866,7 @@ class Thaumaturge(Summon):
         app.cleanup_squares()
         app.unbind_all()
         app.rebind_all()
+        app.exists_check(app.active_ent)
     
     
     
@@ -8905,6 +8925,7 @@ class Thaumaturge(Summon):
         app.cleanup_squares()
         app.unbind_all()
         app.rebind_all()
+        app.exists_check(app.active_ent)
         
         
 # finish inquisitor, cleanse with fire- all wi range3 on wis v wis tohit take psy v psy fire spl, persecute- all wi rng3 on wis v wis tohit lose mgk = psy, prophecy- tar gets +3 rsn efct
@@ -8924,8 +8945,8 @@ class Inquisitor(Summon):
             self.rsn = 5
             self.san = 14
             self.init = 7
-            self.spirit = 19
-            self.magick = 21
+            self.spirit = 18
+            self.magick = 18
             self.acts = 1
             self.mvs = 1
             self.move_range = 3
@@ -8944,7 +8965,7 @@ class Inquisitor(Summon):
             self.rsn = 6
             self.san = 16
             self.init = 8
-            self.spirit = 27
+            self.spirit = 26
             self.magick = 26
             self.acts = 2
             self.mvs = 2
@@ -9045,9 +9066,9 @@ class Inquisitor(Summon):
         app.context_buttons.append(b2)
         
     def do_cleanse_with_fire(self, event = None, sqrs = None):
-        if self.magick < 3:
+        if self.magick < 2:
             return
-        self.magick -= 3
+        self.magick -= 2
         self.acts -= 1
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -9055,7 +9076,7 @@ class Inquisitor(Summon):
         s = self.loc[:]
         app.canvas.create_text(s[0]*100+49-app.moved_right, s[1]*100+84-app.moved_down, text = 'Cleanse with Fire', font = ('chalkduster', 13), fill = 'black', tags = 'text')
         app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+85-app.moved_down, text = 'Cleanse with Fire', font = ('chalkduster', 13), fill = 'ghostwhite', tags = 'text')
-        ids = [k for k,v in app.all_ents().items() if v.loc in sqrs]
+        ids = [k for k,v in app.all_ents().items() if v.loc in sqrs and v.owner != self.owner]
         def cleanup_cleanse(n):
             del app.vis_dict[n]
             app.canvas.delete(n)
@@ -9093,6 +9114,7 @@ class Inquisitor(Summon):
         app.unbind_all()
         app.rebind_all()
         app.depop_context(event = None)
+        app.exists_check(app.active_ent)
         
         
     # all wi rng, dispel atmpt all efcts
@@ -9765,6 +9787,7 @@ class Transmuter(Summon):
         app.canvas.delete('text')
         app.cleanup_squares()
         app.rebind_all()
+        app.exists_check(app.active_ent)
         
         
     def asthenia(self, event = None):
@@ -10003,6 +10026,7 @@ class Drake(Summon):
         app.canvas.delete('text')
         app.unbind_all()
         app.rebind_all()
+        app.exists_check(app.active_ent)
         
     def chameleon_camouflage(self, event = None):
         if self.acts < 1:
@@ -10157,7 +10181,7 @@ class Drake(Summon):
             if id != []:
                 id = id[0]
                 if app.ent_dict[id].get_move_type() == 'normal':
-                    return max(1,stat-3)
+                    return max(0,stat-3)
                 else:
                     return stat
             else:
@@ -10244,6 +10268,7 @@ class Drake(Summon):
         app.canvas.delete('text')
         app.unbind_all()
         app.rebind_all()
+        app.exists_check(app.active_ent)
         
         
 class Fiend(Summon):
@@ -10409,6 +10434,7 @@ class Fiend(Summon):
         app.cleanup_squares()
         app.unbind_all()
         app.rebind_all()
+        app.exists_check(app.active_ent)
         
         
     def chain_lightning(self, event = None):
@@ -10475,6 +10501,7 @@ class Fiend(Summon):
         app.canvas.delete('text')
         app.unbind_all()
         app.rebind_all()
+        app.exists_check(app.active_ent)
         
         
     # jump to loc wi agl that is adj to an ent, atk all adj
@@ -10600,6 +10627,7 @@ class Fiend(Summon):
         app.cleanup_squares()
         app.unbind_all()
         app.rebind_all()
+        app.exists_check(app.active_ent)
         
         
         
@@ -10803,7 +10831,7 @@ class Fiend(Summon):
         app.cleanup_squares()
         app.unbind_all()
         app.rebind_all()
-        
+        app.exists_check(app.active_ent)
         
 class White_Dragon_Top(Bot):
     def __init__(self, name, img, loc, owner, id, waiting = False):
@@ -11410,7 +11438,7 @@ class Ghost(Bot):
                         p = partial(fear_move)
                         ent.move_range_effects.append(p)
                         def fear_effect(stat):
-                            return max(1, stat-1)
+                            return max(0, stat-1)
                         p2 = partial(fear_effect)
                         ent.psyche_effects.append(p2)
                         def undo(ent, p, p2, lockname = None):
@@ -15579,6 +15607,7 @@ class Berserker(Summon):
         app.unbind_all()
         app.rebind_all()
         app.canvas.delete('text')
+        app.exists_check(app.active_ent)
         
     def rage(self, event = None):
         if self.acts < 1:
@@ -16141,6 +16170,7 @@ class Berserker(Summon):
         app.cleanup_squares()
         app.unbind_all()
         app.rebind_all()
+        app.exists_check(app.active_ent)
                     
                     
     # confuse, target must make psyche check before attack
@@ -16376,7 +16406,7 @@ class Familiar_Homunculus(Summon):
 class Lesser_Demon(Summon):
     def __init__(self, name, id, img, loc, owner, level):
         if level == 1:
-            self.actions = {'Dire Charm':self.dire_charm, 'Baleful Stare':self.baleful_stare, 'Brambles':self.brambles, 'Move': self.move}
+            self.actions = {'Move': self.move, 'Dire Charm':self.dire_charm, 'Baleful Stare':self.baleful_stare, 'Brambles':self.brambles}
             self.str = 4
             self.agl = 4
             self.end = 5
@@ -16396,7 +16426,7 @@ class Lesser_Demon(Summon):
             self.move_range = 4
             self.level = level
         elif level == 2:
-            self.actions = {'Dire Charm':self.dire_charm, 'Baleful Stare':self.baleful_stare, 'Brambles':self.brambles, 'Move': self.move}
+            self.actions = {'Move': self.move, 'Dire Charm':self.dire_charm, 'Baleful Stare':self.baleful_stare, 'Brambles':self.brambles}
             self.str = 5
             self.agl = 5
             self.end = 6
@@ -16663,7 +16693,7 @@ class Lesser_Demon(Summon):
 class Cenobite(Summon):
     def __init__(self, name, id, img, loc, owner, level):
         if level == 1:
-            self.actions = {'Strength Through Wounding':self.strength_through_wounding, 'Flesh Hooks': self.flesh_hooks, 'Hellfire': self.hellfire, 'Move': self.move}
+            self.actions = {'Move': self.move, 'Strength Through Wounding':self.strength_through_wounding, 'Flesh Hooks': self.flesh_hooks, 'Hellfire': self.hellfire}
             self.str = 5
             self.agl = 5
             self.end = 8
@@ -16683,7 +16713,7 @@ class Cenobite(Summon):
             self.move_range = 3
             self.level = level
         elif level == 2:
-            self.actions = {'Strength Through Wounding':self.strength_through_wounding, 'Flesh Hooks': self.flesh_hooks, 'Hellfire': self.hellfire, 'Move': self.move}
+            self.actions = {'Move': self.move, 'Strength Through Wounding':self.strength_through_wounding, 'Flesh Hooks': self.flesh_hooks, 'Hellfire': self.hellfire}
             self.str = 6
             self.agl = 6
             self.end = 9
@@ -17107,7 +17137,7 @@ class Familiar_Imp(Summon):
                     if id in app.all_ents().keys():
                         ent = app.ent_dict[id]
                         if (ent.get_move_type() == 'normal' or ent.get_move_type() == 'flying') and ent.immovable == False:
-                            return max(1, move_range-2)
+                            return max(0, move_range-2)
                         else:
                             return move_range
                     else:
@@ -19463,7 +19493,7 @@ class Witch(Summon):
                             def take_3(tar, lockname = None):
                                 app.get_focus(tar)
                                 lock(apply_damage, self, app.ent_dict[tar], -3, 'poison', 'Pestilence', 'eot')
-                                root.after(666, lambda ln = lockname : app.dethloks[ln].set(1))
+                                root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
                             eot = partial(take_3, id)
                             n = 'Pestilence' + str(app.count)
                             app.ent_dict[id].effects_dict[n] = Effect(name = 'Pestilence', eot_func = eot, undo_func = u, duration = self.get_abl('rsn')*2, level = self.get_abl('wis'))
@@ -22094,13 +22124,13 @@ class App(tk.Frame):
         self.p2_witch = ''
         self.two_player_map_num = 0
         self.turn_counter = 0
-        
         self.proximity_effects_dict = {}
         self.enemy_color_img = ImageTk.PhotoImage(Image.open('animations/Enemy_Color_Img/0.png'))
         self.bot_minimap_img = ImageTk.PhotoImage(Image.open('animations/Bot_Minimap_Img/0.png').resize((10,10)))
         self.block_minimap_img = ImageTk.PhotoImage(Image.open('minimap_block.png').resize((10,10)))
 
-        
+        # the following few anim dicts are for testing 'load images on game start, instead of as needed'
+        # results in faster response for image loading in game, longer load time (as would be expected)
         self.sqr_anims = {}
         anims = [a for r,d,a in walk('animations/move/')][0]
         anims = [a for a in anims[:] if a[0] != '.']
@@ -22158,6 +22188,15 @@ class App(tk.Frame):
             self.pounce_anims[i] = a
             
         self.choose_num_players()
+        
+        
+    # testing func for 'check for ent existence after action, if removed then go to next round'
+    def exists_check(self, id):
+        if id not in self.all_ents().keys():
+            self.handle_action()
+        else:
+            self.get_focus(id)
+        
         
         # Luminari 280
         # Herculanum 240
@@ -23082,7 +23121,7 @@ class App(tk.Frame):
         '''
         else:
             start_text = '''
-        Defeat all the enemies...\n
+        Defeat all the enemies and end the turn...\n
         '''
         self.text = tk.Label(self.start_popup, text = start_text, font = ('chalkduster', 22), fg='indianred', bg = 'black')
         self.text.pack()
@@ -23465,9 +23504,11 @@ class App(tk.Frame):
         if app.num_players == 1:
             if self.check_victory_conditions(self.map_number) == 'victory':
                 next_level = self.get_next_level(self.map_number)
-                lockname = 'victory_lock'+str(app.death_count)
-                app.death_count += 1
-                lock(self.victory_popup, lockname, next_level)
+#                 lockname = 'victory_lock'+str(app.death_count)
+#                 app.death_count += 1
+                lock(self.victory_popup, next_level)
+            else:
+                self.end_turn()
         else:
             self.end_turn()
         
@@ -23667,7 +23708,7 @@ class App(tk.Frame):
         self.close = tk.Button(self.vic_popup, text = 'OK', font = ('chalkduster', 22), fg='tan3', command = lambda win = self.vic_popup : end(win))
         self.close.pack()
     
-    def victory_popup(self, lockname, next_level = None):
+    def victory_popup(self, next_level = None, lockname = None):
         def end(window):
             self.destroy_release(window)
             app.dethloks[lockname].set(1)
@@ -23879,6 +23920,10 @@ class App(tk.Frame):
         for i, name_action in enumerate(tup_list[index:index+5]):
             name = name_action[0].replace('_', ' ')
             action = name_action[1]
+#             def wrapper(event = None, func = None):
+#                 func()
+#                 app.exists_check(app.active_ent)
+#             action = partial(wrapper, func = action)
             i += 1
             root.bind(str(i), action)
             b1 = tk.Button(app.context_menu, wraplength = 190, text = str(i) +' : '+ name, font = ('chalkduster', 18), fg='tan3', highlightbackground = 'tan3', command = action)
