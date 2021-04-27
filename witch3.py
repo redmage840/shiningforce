@@ -1,6 +1,10 @@
-# add exists check to spell/summons familiars/lesserdemon/cenobite/scarab/scarabswarm
+# scarab swarm should keep effects_dict of scarab used
+
+# computer needs a way to dispel invis/psysh
 
 # consider changing eot victory check? after kill()?
+# continuing turn/round with no enemies in play?...
+# do actions assume some enemy?
 
 # duel when both players run out of summons...?
 
@@ -292,7 +296,7 @@ def action_description(act):
     elif act == 'Scarab Gestation':
         return 'Spell target, range reason (non-scarab/scarab swarm/familiar). Upon to hit psyche vs strength, gives a death trigger that summons a scarab under your control. Costs 2 magick. Duration is 13 turns. Level is psyche.'
     elif act == 'Bite':
-        return 'Scarab bites an adjacent unit. To-hit: agl vs agl, damage: str vs end, melee.'
+        return 'Scarab bites an adjacent unit. To-hit: agl vs agl, damage: str vs end, acid melee.'
     elif act == 'Scarab Swarm':
         return 'Transform a scarab into a flying scarab swarm.'
     elif act == 'Spore Cloud':
@@ -1017,8 +1021,6 @@ def atk_loop(effects_list, attacker, defender, amount, type, sourcename, sourcet
         effects_list = effects_list[1:]
         amount, type = lock(ef, attacker, defender, amount, type, sourcename, sourcetype)
         atk_loop(effects_list, attacker, defender, amount, type, sourcename, sourcetype, lockname)
-#         amount, time, type = ef(attacker, defender, amount, type, sourcename, sourcetype)
-#         root.after(time, lambda el = effects_list, at = attacker, de = defender, am = amount, ty = type, sn = sourcename, st = sourcetype, ln = lockname : atk_loop(el, at, de, am, ty, sn, st, ln))
         
 def defense_loop(effects_list, attacker, defender, amount, type, sourcename, sourcetype, lockname):
     if effects_list == []:
@@ -1029,7 +1031,6 @@ def defense_loop(effects_list, attacker, defender, amount, type, sourcename, sou
         effects_list = effects_list[1:]
         amount, type = lock(ef, attacker, defender, amount, type, sourcename, sourcetype)
         defense_loop(effects_list, attacker, defender, amount, type, sourcename, sourcetype, lockname)
-#         root.after(time, lambda el = effects_list, at = attacker, de = defender, am = amount, ty = type, sn = sourcename, st = sourcetype, ln = lockname : defense_loop(el, at, de, am, ty, sn, st, ln))
 
 # func that is called with 'lock' must accept lockname which it changes after executing to signal completion
 def lock(func, *args, **kwargs):
@@ -5847,7 +5848,7 @@ class Murrain_Wolf(Summon):
 class Scarab_Swarm(Summon):
     def __init__(self, name, id, img, loc, owner, level):
         if level == 1:
-            self.actions = {'Bite':self.bite, 'Move':self.move}
+            self.actions = {'Move':self.move, 'Bite':self.bite}
             self.str = 4
             self.agl = 9
             self.end = 7
@@ -5866,7 +5867,7 @@ class Scarab_Swarm(Summon):
             self.mvs = 2
             self.move_range = 4
         elif level == 2: # level should start at 2 unless spell gained early...same stats as lvl 1 for now
-            self.actions = {'Bite':self.bite, 'Move':self.move}
+            self.actions = {'Move':self.move, 'Bite':self.bite}
             self.str = 4
             self.agl = 9
             self.end = 7
@@ -5946,12 +5947,13 @@ class Scarab_Swarm(Summon):
         app.cleanup_squares()
         app.unbind_all()
         app.rebind_all()
+        app.exists_check(app.active_ent)
         
 
 class Scarab(Summon):
     def __init__(self, name, id, img, loc, owner, level):
         if level == 1:
-            self.actions = {'Bite':self.bite, 'Move':self.move}
+            self.actions = {'Move':self.move, 'Bite':self.bite}
             self.str = 3
             self.agl = 5
             self.end = 5
@@ -5970,7 +5972,7 @@ class Scarab(Summon):
             self.mvs = 1
             self.move_range = 4
         elif level == 2:
-            self.actions = {'Bite':self.bite, 'Move':self.move}
+            self.actions = {'Move':self.move, 'Bite':self.bite}
             self.str = 4
             self.agl = 6
             self.end = 6
@@ -6049,6 +6051,8 @@ class Scarab(Summon):
         app.cleanup_squares()
         app.unbind_all()
         app.rebind_all()
+        app.exists_check(app.active_ent)
+
     
     
 class Chirurgeon(Summon):
@@ -7563,6 +7567,7 @@ class Fell_Evolver(Summon):
         app.canvas.create_text(self.loc[0]*100-app.moved_right+50, self.loc[1]*100-app.moved_down+75, text = 'eot heal 4, remove wkns slsh, prcng, fire, cold, +2 str, agl', justify = 'center', fill = 'white', font = ('chalkduster', 13), tags = 'text')
         # EOT EFCT
         def squam_eot(ent, lockname = None):
+            app.focus_square(ent.loc)
             app.canvas.create_text(ent.loc[0]*100-app.moved_right+49, ent.loc[1]*100-app.moved_down+74, text = '+4 spirit', justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
             app.canvas.create_text(ent.loc[0]*100-app.moved_right+50, ent.loc[1]*100-app.moved_down+75, text = '+4 spirit', justify = 'center', fill = 'white', font = ('chalkduster', 13), tags = 'text')
             apply_heal(ent, ent, 4)
@@ -11224,7 +11229,7 @@ class Tortured_Soul(Bot):
         if to_hit(my_mm, target_dod):# HIT
             my_msl = self.get_abl('msl')
             tar_psy = app.ent_dict[id].get_abl('psyche')
-            d = damage(my_psy, tar_psy)
+            d = damage(my_msl, tar_psy)
             root.after(1666, self.init_normal_anims)
             root.after(1666, cleanup_agony)
             lock(apply_damage, self, app.ent_dict[id], -d, 'magick', 'Agony', 'spell')
@@ -11263,7 +11268,7 @@ class Tortured_Soul(Bot):
         
 class Skeleton_Archer(Bot):
     def __init__(self, name, img, loc, owner, waiting = False):
-        self.actions = {'Black Arrow':self.ranged_attack}
+        self.actions = {'Barrage':self.ranged_attack}
         self.str = 3
         self.agl = 5
         self.end = 3
@@ -11292,7 +11297,7 @@ class Skeleton_Archer(Bot):
         if self.waiting == True:
             app.handle_action()
         else:
-            if self.acts > 0 and [k for k,v in app.action_target_ents().items() if dist(v.loc, self.loc) <= self.get_abl('bls') and v.owner != self.owner] and 'Black Arrow' in self.actions.keys():
+            if self.acts > 0 and [k for k,v in app.action_target_ents().items() if dist(v.loc, self.loc) <= self.get_abl('bls') and v.owner != self.owner] and 'Barrage' in self.actions.keys():
                 target = choice([k for k,v in app.action_target_ents().items() if dist(v.loc,self.loc) <= self.get_abl('bls') and v.owner != self.owner])
                 self.acts -= 1
                 self.ranged_attack(target)
@@ -11302,31 +11307,87 @@ class Skeleton_Archer(Bot):
                 app.handle_action()
         
     def ranged_attack(self, id):
+        global selected_vis
         app.get_focus(id)
-        visloc = app.ent_dict[id].loc[:]
-        app.vis_dict['Black_Arrow'] = Vis(name = 'Black_Arrow', loc = visloc)
-        app.canvas.create_image(visloc[0]*100+50-app.moved_right, visloc[1]*100+50-app.moved_down, image = app.vis_dict['Black_Arrow'].img, tags = 'Black_Arrow')
-        my_agl = self.get_abl('agl')
-        target_dodge = app.ent_dict[id].get_abl('dodge')
-        if to_hit(my_agl, target_dodge):# HIT
+#         self.init_attack_anims()
+#         effect1 = mixer.Sound('Sound_Effects/flare.ogg')
+#         effect1.set_volume(1)
+#         sound_effects.play(effect1, 0)
+        loc = app.ent_dict[id].loc[:]
+        app.vis_dict['Barrage'] = Vis(name = 'Barrage', loc = self.loc[:])
+        app.canvas.create_image(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+50-app.moved_down, image = app.vis_dict['Barrage'].img, tags = 'Barrage')
+        selected_vis = ['Barrage']
+        def fireball_loop(startx, endx, starty, endy, xstep, ystep):
+            if starty > endy:
+                starty -= ystep
+                app.canvas.delete('Barrage')
+                app.canvas.create_image(startx, starty, image = app.vis_dict['Barrage'].img, tags = 'Barrage')
+                app.canvas.tag_raise('Barrage')
+            elif starty < endy:
+                starty += ystep
+                app.canvas.delete('Barrage')
+                app.canvas.create_image(startx, starty, image = app.vis_dict['Barrage'].img, tags = 'Barrage')
+                app.canvas.tag_raise('Barrage')
+            if startx > endx:
+                startx -= xstep
+                app.canvas.delete('Barrage')
+                app.canvas.create_image(startx, starty, image = app.vis_dict['Barrage'].img, tags = 'Barrage')
+                app.canvas.tag_raise('Barrage')
+            elif startx < endx:
+                startx += xstep
+                app.canvas.delete('Barrage')
+                app.canvas.create_image(startx, starty, image = app.vis_dict['Barrage'].img, tags = 'Barrage')
+                app.canvas.tag_raise('Barrage')
+                # debug here, if within certain range...
+            app.vis_dict['Barrage'].rotate_image()
+            if abs(starty - endy) < 13 and abs(startx - endx) < 13:
+                root.after(111, lambda id = id : self.continue_ranged_attack(id))
+            else:
+                root.after(15, lambda sx = startx, ex = endx, sy = starty, ey = endy, xs = xstep, ys = ystep  : fireball_loop(sx, ex, sy, ey, xs, ys))
+        startx = self.loc[0]*100+50-app.moved_right
+        starty = self.loc[1]*100+50-app.moved_down
+        endx = loc[0]*100+50-app.moved_right
+        endy = loc[1]*100+50-app.moved_down
+        if startx == endx:
+            xstep = 0
+            ystep = 10
+        elif starty == endy:
+            xstep = 10
+            ystep = 0
+        else:
+            slope = Fraction(abs(startx - endx), abs(starty - endy))
+            # needs to be moving at least 10 pixels, xstep + ystep >= 10
+            xstep = slope.numerator
+            ystep = slope.denominator
+            while xstep + ystep < 10:
+                xstep *= 2
+                ystep *= 2
+        fireball_loop(startx, endx, starty, endy, xstep, ystep)
+            
+    def continue_ranged_attack(self, id):
+        loc = app.ent_dict[id].loc[:]
+        my_mm = self.get_abl('mm')
+        tar_dod = app.ent_dict[id].get_abl('dodge')
+        def cleanup_fireball():
+            global selected_vis
+            selected_vis = []
+            self.init_normal_anims()
+            try: 
+                del app.vis_dict['Barrage']
+                app.canvas.delete('Barrage')
+            except: pass
+        if to_hit(my_mm, tar_dod) == True:
             my_msl = self.get_abl('msl')
             tar_end = app.ent_dict[id].get_abl('end')
             d = damage(my_msl, tar_end)
-            lock(apply_damage, self, app.ent_dict[id], -d, 'piercing', 'Black Arrow', 'ranged')
-            root.after(111, self.finish_attack)
+            root.after(666, cleanup_fireball)
+            lock(apply_damage, self, app.ent_dict[id], -d, 'piercing', 'Barrage', 'ranged')
+            root.after(666, self.do_round)
         else:# MISS
-            miss(app.ent_dict[id].loc)
-            root.after(1666, self.finish_attack)
-        
-        
-    def finish_attack(self):
-        self.init_normal_anims()
-        try:
-            app.canvas.delete('text')
-            del app.vis_dict['Black_Arrow']
-            app.canvas.delete('Black_Arrow')
-        except: pass
-        self.do_round()
+            miss(loc)
+            root.after(666, cleanup_fireball)
+            root.after(888, lambda t = 'text' : app.canvas.delete(t))
+            root.after(999, self.do_round)
             
             
             
@@ -16538,6 +16599,8 @@ class Lesser_Demon(Summon):
         app.rebind_all()
         app.canvas.delete('text')
         app.depop_context(event = None)
+        app.exists_check(app.active_ent)
+
     
         
     def baleful_stare(self, event = None):
@@ -16688,6 +16751,8 @@ class Lesser_Demon(Summon):
         app.rebind_all()
         app.canvas.delete('text')
         app.depop_context(event = None)
+        app.exists_check(app.active_ent)
+
 
 
 class Cenobite(Summon):
@@ -16810,6 +16875,8 @@ class Cenobite(Summon):
         app.unbind_all()
         app.rebind_all()
         app.depop_context(event = None)
+        app.exists_check(app.active_ent)
+
         
     # give ranged attack to friendly ent
     def flesh_hooks(self, event = None):
@@ -16909,6 +16976,7 @@ class Cenobite(Summon):
                 except: pass
                 app.depop_context(event = None)
                 app.cleanup_squares()
+                app.exists_check(app.active_ent)
             # END INNER-INNER FUNCS
         # ADD ACTION TO TARGET
         p = partial(hook_attack, obj = app.ent_dict[id])
@@ -17026,6 +17094,8 @@ class Cenobite(Summon):
         except: pass
         app.depop_context(event = None)
         app.cleanup_squares()
+        app.exists_check(app.active_ent)
+
         
         
 class Familiar_Imp(Summon):
@@ -17234,6 +17304,8 @@ class Familiar_Imp(Summon):
         except: pass
         app.depop_context(event = None)
         app.cleanup_squares()
+        app.exists_check(app.active_ent)
+
                     
                     
 class Hunting_Hawk(Summon):
@@ -21494,9 +21566,10 @@ class Witch(Summon):
                 return max(1,stat-1)
             f = disintegrate_effect
             rnd = choice(['str','end','agl','rsn','san'])
-            sqr = app.ent_dict[tar].loc[:]
-            app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+14-app.moved_down, text = 'Disintegrate, -1 '+rnd, justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
-            app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+15-app.moved_down, text = 'Disintegrate, -1 '+rnd, justify = 'center', font = ('chalkduster', 14), fill = 'antiquewhite', tags = 'text')
+            ent = app.ent_dict[tar]
+            app.get_focus(tar)
+            app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+14-app.moved_down, text = 'Disintegrate, -1 '+rnd, justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
+            app.canvas.create_text(ent.loc[0]*100+50-app.moved_right, ent.loc[1]*100+15-app.moved_down, text = 'Disintegrate, -1 '+rnd, justify = 'center', font = ('chalkduster', 14), fill = 'antiquewhite', tags = 'text')
             if rnd == 'str':
                 app.ent_dict[tar].str_effects.append(f)
             elif rnd == 'end':
@@ -21523,7 +21596,6 @@ class Witch(Summon):
                 if v.name == 'Disintegrate':
                     key = k
             app.ent_dict[tar].effects_dict[k].undo_func = partial(un, app.ent_dict[tar].effects_dict[k].undo_func, tar, f)
-            app.get_focus(tar)
             lock(apply_damage, self, app.ent_dict[tar], -1, 'acid', 'Disintegrate', 'eot')
             root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
         eot = partial(disint, id)
