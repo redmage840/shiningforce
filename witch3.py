@@ -1,10 +1,14 @@
-# redo help
+# single duel takes a long time to complete, no fast win strats
+
+# library, other lvls, way to remove psyshield/invis
 
 # less magick per tomb? curve out spells/costs
 
 # should only one unique hex affect a unit?
 
 # Morgan spells/arcane dict cost, times_cast
+
+# scarabs/swarm, to keep same effects, instead of creating new object, change old one
 
 # both sot and eot campaign effects, make sure not redundant
 
@@ -183,7 +187,7 @@ def action_description(act):
     elif act == 'Pox':
         return 'Adjacent units get end-of-turn effect: 3 poison dmg. Duration is reason. Level is wisdom.'
     elif act == 'Summon':
-        return 'Summon 1 wolf'
+        return 'Place a Summon at an adjacent location, once per turn. Does not use actions.'
     elif act == 'Move':
         return 'Move according to move type and move range'
     elif act == 'Spell':
@@ -191,7 +195,7 @@ def action_description(act):
     elif act == 'Gravity':
         return 'A unit within range equal to caster rsn gets move range reduced by 2, also -2 agility and dodge. Duration equal to caster rsn. Level equal to caster wis. Target as spell.'
     elif act == 'Curse of Oriax':
-        return 'A unit within range of caster rsn gets -1 to each (psy,wis,rsn,san,init) and takes 2 magick dmg at end of turn. Duration equal to caster rsn. Level equal to caster wis. Target as spell.'
+        return 'A non-witch unit within range of caster rsn gets -1 to each (psy,wis,rsn,san,init) and takes 2 magick dmg at end of turn. Duration equal to caster rsn. Level equal to caster wis. Target as spell.'
     elif act == 'Pestilence':
         return 'Range rsn, psy vs psy poison spell dmg, psy vs psy (minus distance from primary target times 2) to all within range 3 on hit. Primary target gets effect: eot 3 poison dmg and a death trigger that passes new eot effect to all adjacent (dur and level based on current caster abilities). Duration = rsn times 2, level = wis. Does not target unit. Targets location (can cast on units with psyshield).'
     elif act == 'Plague':
@@ -349,7 +353,7 @@ def action_description(act):
     elif act == 'Rend Space':
         return 'Deal explosive spell damage to a unit equal to 3 times the number of map effects at that location. Costs 2.'
     elif act == 'Haste':
-        return 'A spell target within range, without this effect, reason gets +4 initiative, +1 agility, dodge, and moves. Duration is reason. Level is wisdom. Costs 2 magick.'
+        return 'A spell target within range, without this effect, reason gets +4 initiative, +1 agility, dodge, and moves. Duration is reason. Level is wisdom. Costs 5 magick.'
     elif act == 'Encumber':
         return 'A spell target within range reason, without this effect, on to-hit wisdom vs wisdom, gets -4 initiative and -2 agility, marksmanship, dodge, move range, and -1 moves. Duration is reason. Level is wisdom. Costs 1.'
     elif act == 'Gaze':
@@ -387,7 +391,7 @@ def action_description(act):
     elif act == 'Torment':
         return 'A spell target within range reason gets an effect that gives -2 psyche, if it does not already have this effect. It then takes psyche vs endurance magick spell damage.'
     elif act == 'Entrance':
-        return 'A spell target in range reason, on to-hit psyche vs psyche, gets -3 sanity at duration reason and level wisdom. Costs 2 magick.'
+        return 'A spell target in range reason, on to-hit psyche vs psyche, gets -4 sanity at duration reason and level wisdom. Costs 2 magick.'
     elif act == 'Enthrall':
         return 'A spell target within range reason without this effect, on to-hit psyche vs psyche, gets -2 strength, agility, marksmanship, dodge at duration reason and level wisdom. Costs 2 magick.'
     elif act == 'Chill Touch':
@@ -421,7 +425,9 @@ def action_description(act):
     elif act == 'Fuse Trap':
         return 'Add local effect to a location within reason. On undo, do 3 explosive undo damage to each unit within range 3 of the effect (damage source is caster of fuse trap). Duration is 1. Level is wisdom.'
     elif act == 'Entomb':
-        return 'Place tomb at empty adjacent location. Imprint one arcana spell. Spells may be cast once per turn for each imprint, as long as you have the necessary magick to spend. The tomb has no moves and one action, Vivify, that restores spirit and magick to summons based on Tomb psyche. Witch gains 3 magick at the beginning of the start-of-turn phase for each tomb controlled. Entomb may be used once per turn.'
+        return 'Place tomb at empty adjacent location. Imprint one arcana spell. Spells may be cast once per turn for each imprint, as long as you have the necessary magick to spend. The tomb has no moves and one action, Vivify, that restores spirit and magick to summons based on Tomb psyche. Witch gains 2 magick at the beginning of the start-of-turn phase for each tomb controlled. Entomb costs 1 action to use.'
+    elif act == 'Arcana':
+        return 'Cast an arcane spell. Spells may be cast once for each time they are imprinted on Tombs you created, and as long as you have the magick to spend. Using an arcane spell does not use up actions.'
     elif act == 'Pain':
         return 'Destroy a summon you own within range reason. All adjacent units take psyche (of caster) vs endurance explosive ranged damage.'
     elif act == 'Hatred':
@@ -543,7 +549,7 @@ def action_description(act):
     elif act == 'Unstable Fervor':
         return 'Evolution that gives +1 acts, +3 endurance, removes weakness and adds resist to electric. Cannot be used with chimeric mutation. Must have wooden skin or calcify.'
     elif act == 'Chimeric Mutation':
-        return 'Evolution that changes move type to flying, gives +4 move range, removes weakness and adds resist to fire. +3 mm. Adds Scorch action that targets as action any within range ballistics, and all within range 1 of that target, on mm vs dodge to-hit, does msl vs end fire ranged damage. Cannot be used with unstable fervor. Must have either wooden skin or calcify.'
+        return 'Evolution that changes move type to flying, gives +2 move range, removes weakness and adds resist to fire. +3 mm. Adds Scorch action that targets as action any within range ballistics, and all within range 1 of that target, on mm vs dodge to-hit, does msl vs end fire ranged damage. Cannot be used with unstable fervor. Must have either wooden skin or calcify.'
     elif act == 'Moldering Effluvium':
         return 'Evolution that granting end of turn effect that gives -4 endurance to all adjacent enemies at duration reason and level wisdom. Adds resistance and removes weakness to acid. Changes melee, ranged, and spell damage to acid. +3 dodge. Cannot be used with squamous carapace. Must have one of each wooden skin or calcify, unstable fervor or chimeric mutation.'
     elif act == 'Squamous Carapace':
@@ -644,8 +650,8 @@ def loc_effect_description(ef):
         return 'Grants invisibility.'+' Duration = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Fuse_Trap':
         return 'On undo, do 3 explosive undo damage to each unit within range 3.'+' Duration = '+str(ef.duration)+', level = '+str(ef.level)
-    elif ef.name == '':
-        return ''+' Duration = '+str(ef.duration)+', level = '+str(ef.level)
+    elif ef.name == 'Hindering_Mucilage':
+        return '-3 agility, dodge, and move range for units with normal move type.'+' Duration = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == '':
         return ''+' Duration = '+str(ef.duration)+', level = '+str(ef.level)
     else:
@@ -894,7 +900,7 @@ def effect_description(ef):
     elif ef.name == 'Unstable_Fervor':
         return '+1 acts, +3 endurance. Remove weakness and adds resist to electric. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Chimeric_Mutation':
-        return 'Changes move type to flying, gives +4 move range and +3 mm. Removes weakness and adds resist to fire. Adds scorch action. dur = '+str(ef.duration)+', level = '+str(ef.level)
+        return 'Changes move type to flying, gives +2 move range and +3 mm. Removes weakness and adds resist to fire. Adds scorch action. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Moldering_Effluvium':
         return 'End-of-turn -4 endurance to adjacent enemies. Add resist and removes weakness to acid. Changes melee, ranged, and spell damage to acid. +3 dodge. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Squamous_Carapace':
@@ -1014,7 +1020,7 @@ def to_hit(a1, a2):
         
 # add random element?
 def damage(a1, a2):
-    base = 4
+    base = 6
     dif = a1 - a2
     if base + dif < 1: return 1 
     else: return base + dif
@@ -2327,10 +2333,10 @@ class Chronomancer(Summon):
             self.msl = 0
             self.bls = 0
             self.dodge = 7
-            self.psyche = 6
+            self.psyche = 5
             self.wis = 6
-            self.rsn = 2
-            self.san = 15
+            self.rsn = 5
+            self.san = 14
             self.init = 8
             self.spirit = 19
             self.magick = 23
@@ -2347,10 +2353,10 @@ class Chronomancer(Summon):
             self.msl = 0
             self.bls = 0
             self.dodge = 8
-            self.psyche = 7
+            self.psyche = 6
             self.wis = 7
-            self.rsn = 3
-            self.san = 16
+            self.rsn = 6
+            self.san = 15
             self.init = 9
             self.spirit = 27
             self.magick = 27
@@ -3586,7 +3592,7 @@ class Umbrae_Wolf(Summon):
                 self.bls = 6
                 self.dodge = 7
                 self.psyche = 7
-                self.wis = 6
+                self.wis = 7
                 self.rsn = 6
                 self.san = 12
                 self.init = 4
@@ -3622,7 +3628,7 @@ class Umbrae_Wolf(Summon):
                 self.bls = 6
                 self.dodge = 7
                 self.psyche = 8
-                self.wis = 7
+                self.wis = 8
                 self.rsn = 7
                 self.san = 16
                 self.init = 5
@@ -3986,7 +3992,7 @@ class Umbrae_Wolf(Summon):
         id = app.grid[sqr[0]][sqr[1]]
         if id not in app.spell_target_ents().keys():
             return
-        if self.magick < 2:
+        if self.magick < 5:
             return
         if 'Haste' in app.ent_dict[id].effects_dict.keys():
             return
@@ -3997,7 +4003,7 @@ class Umbrae_Wolf(Summon):
         app.depop_context(event = None)
         app.cleanup_squares()
         self.acts -= 1
-        self.magick -= 2
+        self.magick -= 5
         ent = app.ent_dict[id]
         def haste_init(stat):
             return stat+4
@@ -5036,7 +5042,7 @@ class Wurdulak(Summon):
         tar_psy = ent.get_abl('psyche')
         if to_hit(my_psy, tar_psy):
             def entrance_effect(stat):
-                return max(1,stat-3)
+                return max(1,stat-4)
             p = partial(entrance_effect)
             ent.san_effects.append(p)
             def undo(id, p, lockname = None):
@@ -7663,7 +7669,7 @@ class Fell_Evolver(Summon):
         app.canvas.create_text(self.loc[0]*100-app.moved_right+50, self.loc[1]*100-app.moved_down+75, text = 'flying, +4 mv rng, +3 mm, add fire resist, scorch fire attack', justify = 'center', fill = 'white', font = ('chalkduster', 13), tags = 'text')
         # +ABLS
         def chi_mu_efct(stat):
-            return stat+4
+            return stat+2
         p = partial(chi_mu_efct)
         self.move_range_effects.append(p)
         def chi_mv_type(type):
@@ -7828,6 +7834,7 @@ class Fell_Evolver(Summon):
                     id = ids[0]
                     ids = ids[1:]
                     ent = app.ent_dict[id]
+                    app.get_focus(id)
                     app.canvas.create_text(ent.loc[0]*100-app.moved_right+49, ent.loc[1]*100-app.moved_down+74, text = '-4 endurance', justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
                     app.canvas.create_text(ent.loc[0]*100-app.moved_right+50, ent.loc[1]*100-app.moved_down+75, text = '-4 endurance', justify = 'center', fill = 'white', font = ('chalkduster', 13), tags = 'text')
                     def mold_plag(stat):
@@ -10560,10 +10567,10 @@ class Drake(Summon):
         if level == 1:
             self.actions = {'Move':self.move, 'Spit Venom':self.spit_venom, 'Hindering Mucilage':self.hindering_mucilage, 'Wing Buffet':self.wing_buffet, 'Chameleon Camouflage':self.chameleon_camouflage, 'Shimmering Scales':self.shimmering_scales}
             self.str = 6
-            self.agl = 6
+            self.agl = 7
             self.end = 6
             self.mm = 8
-            self.msl = 4
+            self.msl = 5
             self.bls = 4
             self.dodge = 4
             self.psyche = 3
@@ -10575,15 +10582,15 @@ class Drake(Summon):
             self.magick = 0
             self.acts = 1
             self.mvs = 1
-            self.move_range = 5
+            self.move_range = 4
             self.level = level
         elif level == 2:
             self.actions = {'Move':self.move, 'Spit Venom':self.spit_venom, 'Hindering Mucilage':self.hindering_mucilage, 'Wing Buffet':self.wing_buffet, 'Chameleon Camouflage':self.chameleon_camouflage, 'Shimmering Scales':self.shimmering_scales}
             self.str = 7
-            self.agl = 7
+            self.agl = 8
             self.end = 7
             self.mm = 9
-            self.msl = 5
+            self.msl = 6
             self.bls = 5
             self.dodge = 5
             self.psyche = 4
@@ -10595,7 +10602,7 @@ class Drake(Summon):
             self.magick = 0
             self.acts = 1
             self.mvs = 1
-            self.move_range = 6
+            self.move_range = 5
             self.level = level
         self.move_type = 'flying'
         self.weak = ['elec']
@@ -12360,7 +12367,7 @@ class Revenant(Bot):
         self.mvs = 2
         self.move_range = 5
         self.waiting = waiting
-        self.move_type = 'flying'
+        self.move_type = 'ethereal'
         self.resist = ['slashing', 'piercing', 'crushing', 'poison']
         self.weak = ['fire', 'elec', 'cold', 'acid']
         super().__init__(name, img, loc, owner)
@@ -16048,7 +16055,7 @@ class Berserker(Summon):
         if level == 1:
             self.actions = {'Move':self.move, 'Leap':self.leap, 'Slash':self.slash, 'Howl From Beyond':self.howl_from_beyond, 'Track':self.track}
             self.str = 7
-            self.agl = 7
+            self.agl = 8
             self.end = 5
             self.mm = 2
             self.msl = 0
@@ -16068,7 +16075,7 @@ class Berserker(Summon):
         elif level == 2:
             self.actions = {'Move':self.move, 'Leap':self.leap, 'Slash':self.slash, 'Whirlwind':self.whirlwind, 'Howl From Beyond':self.howl_from_beyond, 'Track':self.track,  'Hurl':self.hurl, 'Rage':self.rage, 'Molten Claws':self.molten_claws, 'Bane Claws':self.bane_claws}
             self.str = 8
-            self.agl = 8
+            self.agl = 9
             self.end = 6
             self.mm = 3
             self.msl = 0
@@ -18368,7 +18375,7 @@ class Witch(Summon):
                 self.acts = 1
                 self.base_mvs = 1
                 self.mvs = 1
-                self.move_range = 3
+                self.move_range = 4
                 self.move_type = 'normal'
                 self.str = 4
                 self.agl = 4
@@ -18432,7 +18439,7 @@ class Witch(Summon):
                 self.acts = 1
                 self.base_mvs = 1
                 self.mvs = 1
-                self.move_range = 3
+                self.move_range = 4
                 self.move_type = 'normal'
                 self.str = 7
                 self.agl = 7
@@ -18497,7 +18504,7 @@ class Witch(Summon):
                 self.acts = 1
                 self.base_mvs = 1
                 self.mvs = 1
-                self.move_range = 3
+                self.move_range = 4
                 self.move_type = 'normal'
                 self.str = 3
                 self.agl = 3
@@ -18559,7 +18566,7 @@ class Witch(Summon):
                 self.acts = 1
                 self.base_mvs = 1
                 self.mvs = 1
-                self.move_range = 3
+                self.move_range = 4
                 self.move_type = 'normal'
                 self.str = 8
                 self.agl = 7
@@ -18613,7 +18620,7 @@ class Witch(Summon):
                 self.acts = 1
                 self.base_mvs = 1
                 self.mvs = 1
-                self.move_range = 3
+                self.move_range = 4
                 self.move_type = 'flying'
                 self.str = 3
                 self.agl = 3
@@ -18670,7 +18677,7 @@ class Witch(Summon):
                 self.acts = 1
                 self.base_mvs = 1
                 self.mvs = 1
-                self.move_range = 3
+                self.move_range = 4
                 self.move_type = 'flying'
                 self.str = 8
                 self.agl = 7
@@ -20348,6 +20355,9 @@ class Witch(Summon):
             return
         id = app.grid[sqr[0]][sqr[1]]
         if id not in app.spell_target_ents().keys():
+            return
+        ent = app.ent_dict[id]
+        if isinstance(ent,Witch):
             return
         effs = [v.name for k,v in app.ent_dict[id].effects_dict.items()]
         if 'Curse_of_Oriax' in effs:
@@ -24140,15 +24150,15 @@ class App(tk.Frame):
         witch = app.ent_dict[app.p1_witch]
         tombs = len([k for k,v in app.all_ents().items() if v.name == 'Tomb' and v.owner == witch.owner])
         witch.magick += witch.magick_regen
-        witch.magick += (tombs*3)
+        witch.magick += (tombs*2)
         # p2
         if app.num_players == 2:
             witch = app.ent_dict[app.p2_witch]
             tombs = len([k for k,v in app.all_ents().items() if v.name == 'Tomb' and v.owner == witch.owner])
             witch.magick += witch.magick_regen
             if app.turn_counter == 0:
-                witch.magick += 6
-            witch.magick += (tombs*3)
+                witch.magick += 5
+            witch.magick += (tombs*2)
         self.handle_sot_effects()
         
     # Resolve start-of-turn effects on each entity AND loc_effects(on map)
@@ -24945,23 +24955,30 @@ class App(tk.Frame):
             pass
         self.help_popup.protocol('WM_DELETE_WINDOW', on_close)
         help_text = '''
-        R-click on spell or action buttons to see descriptions. 
+        R-click on Spell or Action buttons to see descriptions. 
         L-click on map to move cursor. 
         Arrow keys move cursor around map. 
-        Press 'a' when cursor is over a unit to populate the context menu (left side of screen) with information. If you own the unit and it has available actions, then those will be in the context menu when you have selected the unit with 'a'. 
-        To cancel an action after you have chosen it, press 'q'. 
+        Press 'a' when cursor is over a unit to see info and available actions if it is 'active' (during its round in the turn).
+        Effects from spells or actions may happen during the end/start-of-turn. 
+        'q' is the generic cancel for most actions/selections.
         'i' is the hotkey for the 'more info' button.
-        'e' is the hotkey for 'end round. (press 'e' again to confirm 'end round')
+        'p' is the hotkey for 'end round'. (press 'p' again to confirm 'end round')
         ',' and 'l' cycle cursor over friendly units. 
         '.' and ';' cycle cursor over enemy units. 
-        Your witch (main protagonist) may cast as many arcane spells that can be afforded with magick and move a number of times equal to move ability. Witch can cast Entomb once per turn to place tomb at current location. Magick is generated for your witch every turn equal to 3 times the number of tombs you have placed plus your magick regeneration rate. Your witch can place one summon per turn.
-        Summons may move and act according to the number of moves and actions they have (calculated at the begin its round).
-        A turn consists of a start-of-turn phase, the round for each unit in the initiative queue, and an end-of-turn phase.
-        Effects placed by spells/actions may happen during the start/end-of-turn phase.
         The order of rounds is determined by the initiative-queue, which is displayed at the top of the screen, showing the order of units to act in this turn. The ordering happens before applying start-of-turn effects and is determined by 'initiative' ability (ties broken with 'agility', those ties broken with 'dodge', those ties randomly ordered).
+        Tombs created by the Entomb ability produce magick and allow for the casting of their imprinted arcane spell.
+        Arcane spells may be cast by spending magick (generated every turn) as long as the spell is imprinted.
+        You may cast an arcane spell for as many times as it is imprinted, and can afford with magick.
+        You may place one summon each round. It will be placed in the initiative queue next turn.
         Actions/arcane spells EITHER target as ACTIONS (and cannot target units with INVISIBILITY) OR as SPELLS (and cannot target units with PSYSHIELD).
         Some actions/spells do not target at all.
         Every unit makes a 'sanity check' before its round. A fail makes it move randomly and attempt melee attacks (using agility vs agility to-hit, and strength vs endurance damage) using the number of moves and actions available to it. A sanity check generates a random number between 0-100. If this value is higher than the unit's sanity times ten, it fails. So once sanity abilities start falling below 10, units will randomly go berserk.
+        Effects applied to units are resolved in the order of 'most recent first' or 'last in, first out' AND in 'batches'.
+        There are only 3 'batches' of effects: Local, Proximity, and Map; with each batch resolved 'most recent first'.
+        When looking up an ability score of any unit, all Local effects are applied, then all Proximity, and finally all Map Effects. So if a unit has an older Local effect that removes all instances of 'invisibility' from its types, and it occupies a location with a Map effect (even if it is an older effect) that adds 'invisibility', then that unit will have 'invisibility' when its types are retrieved. Conversely, A unit with an older Local effect that adds 'invisibility' will have it removed when applying a newer Local effect that does so.
+        Effects that are not noted as Proximity or Map are considered Local (they exist on a unit that they effect).
+        Proximity effects exist on a unit, and may effect it, and also may affect other units within some distance.
+        
         Ability Scores:
         *NOTE* The use of abilities is determined by the specific action/spell being used, which will always declare (in its right-click description) WHICH specific abilities are used in any to-hit, damage, save, dispel checks, etc. Abilities do have a tendency to be used by certain kinds of actions. For example, ranged attacks will often compare marksmanship vs dodge to-hit, missle vs endurance for damage, and ballistics for range/distance. In contrast, a spell-action (costing magick points) that causes damage will often use wisdom vs wisdom to-hit, psyche vs psyche for damage, reason for range. A spell/action that grants an effect often uses reason for determining the duration of the effect and wisdom for the 'level' (affects dispel/removal attempts).***
         Strength: used mostly for damage from melee actions
@@ -24980,7 +24997,7 @@ class App(tk.Frame):
         Effects can be dispelled with some modifier (usually provided by some ability score of the dispelling unit). A dispel is an attempt to remove the effect, the success of which depends on the level of the effect, usually the caster's wisdom score (higher level effects are harder to dispel). The dispel formula is random-value-between-neg1-and-101 compared to spell-level minus modifier times 10. 
         Save-checks are implemented similarly except they only use one ability score times 10 (plus 50).
         Damage happens to the units 'spirit' ability and function like hit-points/health.
-        The damage formula (similar to to-hit) compares some ability score against another (usually a value of the attacker compared to a value of the defender). The BASE VALUE for damage when ability scores are equal is FOUR. For example, if the strength value 6 of the attacker is compared to the endurance value 6 of the defender, the damage is 4.
+        The damage formula (similar to to-hit) compares some ability score against another (usually a value of the attacker compared to a value of the defender). The BASE VALUE for DAMAGE when ability scores are equal is SIX. For example, if the strength value 6 of the attacker is compared to the endurance value 6 of the defender, the damage is 6.
         Multiple effects can be applied to abilities like strength, agility, etc and also move range. Multiple changes of abilities caused by effects are resolved in the order in which they were applied (the most recently added effect is resolved last).
         '''
 #         self.text = tk.List(self.help_popup, yscrollcommand = sb.set, text = help_text, wraplength = 750, font = ('chalkduster', 20), fg='indianred', bg = 'black')
@@ -25262,7 +25279,7 @@ class App(tk.Frame):
                 witch_ent = app.ent_dict[app.p1_witch]
             elif ent.owner == 'p2':
                 witch_ent = app.ent_dict[app.p2_witch]
-                spell = witch_ent.arcane_dict[ent.imprint]
+            spell = witch_ent.arcane_dict[ent.imprint]
             witch_ent.arcane_dict[ent.imprint] = Spell(spell.name,spell.func,spell.cost,max(0,spell.times_imprint-1),spell.times_cast)
         app.dethloks[lockname].set(1)
 
