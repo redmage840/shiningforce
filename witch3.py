@@ -1,3 +1,7 @@
+# in reaping
+
+# hindering mucilage with kobold cleric
+
 # single duel takes a long time to complete, no fast win strats
 
 # library, other lvls, way to remove psyshield/invis
@@ -57,7 +61,7 @@ Agnes Stuff
 themes- 'Psionics', movement augmentation ; 'Disease' debilitating spells affected by proximity of ents ; 'Astrology|Astronomy' ... ; 'Demonic Pantheon' (Lesser Key of Soloman), Beleth patron
 
 Mind Leech
-redirect magick dmg to target, how to do this... changing dfndr object: func that called apply_damage() still assumes it has to only check spirit of initial target...
+redirect magick dmg to target
 
 armor of thorns
 sot/eot all adj take 1 piercing, add phys resist
@@ -572,6 +576,8 @@ def action_description(act):
         return 'Proximity effect giving all enemy within range 1 of caster -1 acts (remember that acts are determined for each unit at the begin of its round).'
     elif act == 'Mirror Armor':
         return 'Spell target in range reason gets effect: on taking spell type damage, if attacker misses wisdom vs dodge to-hit, redirect the damage to a random unit within range 3, if one exists, and reduce damage to original target to 1. Duration reason. Level wisdom.'
+    elif act == 'Forcefield':
+        return 'Spell target in range reason gets effect: on taking ranged type damage, if attacker misses marksmanship vs dodge to-hit, redirect the damage to a random unit within range 3, if one exists, and reduce damage to original target to 1. Duration reason. Level wisdom.'
     elif act == 'Pierce the Heart':
         return 'An adjacent action target unit, on to-hit agility vs agility, takes strength vs endurance piercing melee damage and gets an effect giving -2 strength at duration reason and level wisdom.'
     elif act == 'Nix':
@@ -628,8 +634,8 @@ def action_description(act):
         return 'Effect on caster causing all friendly units in range 3 of caster to gain resistance to slashing, piercing, and crushing. Costs 3 magick. Duration is reason and level is wisdom.'
     elif act == 'Stasis':
         return 'The next 5 non-witch units in the initiative queue, on caster passing a wisdom check, get -1 actions if they do not already have this effect, at duration reason and level wisdom. Costs 4 magick.'
-    elif act == '':
-        return ''
+    elif act == 'Astrological Guidance':
+        return 'Move a spell target within its legal moves and decrease its moves for this turn by 1.'
     elif act == '':
         return ''
     elif act == '':
@@ -913,6 +919,8 @@ def effect_description(ef):
         return 'All enemy in range 2 get -3 sanity. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Mirror_Armor':
         return 'On taking spell type damage, if attacker misses wisdom vs dodge to-hit, redirect the damage to a random unit within range 3, if one exists, and reduce damage to original target to 1. dur = '+str(ef.duration)+', level = '+str(ef.level)
+    elif ef.name == 'Forcefield':
+        return 'On taking ranged type damage, if attacker misses marksmanship vs dodge to-hit, redirect the damage to a random unit within range 3, if one exists, and reduce damage to original target to 1. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Elemental_Langour':
         return 'Removes resistance and adds weakness to fire, cold, electric. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Asthenia':
@@ -921,8 +929,8 @@ def effect_description(ef):
         return 'Strength and psyche are switched. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Slow_Motion':
         return '-5 initiative. dur = '+str(ef.duration)+', level = '+str(ef.level)
-    elif ef.name == '':
-        return '. dur = '+str(ef.duration)+', level = '+str(ef.level)
+    elif ef.name == 'Astrological_Guidance':
+        return '-1 moves. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == '':
         return '. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == '':
@@ -1619,9 +1627,6 @@ class Entity():
         elif abl == 'mvs':
             q = self.mvs_effects + prox_efcts + app.loc_dict[tuple(self.loc)].mvs_effects
             base = self.base_mvs
-#         elif abl == 'cantrips':
-#             q = self.cantrips_effects + app.loc_dict[tuple(self.loc)].cantrips_effects
-#             base = self.base_cantrips
         elif abl == 'smns':
             q = self.smns_effects + prox_efcts + app.loc_dict[tuple(self.loc)].smns_effects
             base = self.base_smns
@@ -12587,7 +12592,7 @@ class Kobold_Cleric(Bot):
         self.spirit = 15
         self.magick = 11
         self.san = 12
-        self.acts = 2
+        self.acts = 1
         self.mvs = 1
         self.move_range = 4
         self.waiting = waiting
@@ -12745,7 +12750,7 @@ class Kobold_Shaman(Bot):
         self.spirit = 11
         self.magick = 13
         self.san = 11
-        self.acts = 2
+        self.acts = 1
         self.mvs = 1
         self.move_range = 4
         self.waiting = waiting
@@ -15119,7 +15124,7 @@ class Orc_Axeman(Bot):
         self.wis = 4
         self.rsn = 3
         self.init = 6
-        self.spirit = 29
+        self.spirit = 21
         self.magick = 0
         self.san = 11
         self.acts = 2
@@ -16055,7 +16060,7 @@ class Berserker(Summon):
         if level == 1:
             self.actions = {'Move':self.move, 'Leap':self.leap, 'Slash':self.slash, 'Howl From Beyond':self.howl_from_beyond, 'Track':self.track}
             self.str = 7
-            self.agl = 8
+            self.agl = 9
             self.end = 5
             self.mm = 2
             self.msl = 0
@@ -16075,7 +16080,7 @@ class Berserker(Summon):
         elif level == 2:
             self.actions = {'Move':self.move, 'Leap':self.leap, 'Slash':self.slash, 'Whirlwind':self.whirlwind, 'Howl From Beyond':self.howl_from_beyond, 'Track':self.track,  'Hurl':self.hurl, 'Rage':self.rage, 'Molten Claws':self.molten_claws, 'Bane Claws':self.bane_claws}
             self.str = 8
-            self.agl = 9
+            self.agl = 10
             self.end = 6
             self.mm = 3
             self.msl = 0
@@ -18404,6 +18409,7 @@ class Witch(Summon):
                 self.arcane_dict['Energize'] = Spell('Energize',self.energize, 2, 0, 0)
                 self.arcane_dict['Psi_Blades'] = Spell('Psi_Blades',self.psi_blades, 1, 0, 0)
                 self.arcane_dict['Cosmic_Sight'] = Spell('Cosmic_Sight',self.cosmic_sight, 1, 0, 0)
+                self.arcane_dict['Astrological_Guidance'] = Spell('Astrological_Guidance',self.astrological_guidance, 2, 0, 0)
                 self.arcane_dict['Foul_Familiar'] = Spell('Foul_Familiar',self.foul_familiar, 3, 0, 0)
                 self.arcane_dict['Plague'] = Spell('Plague',self.plague, 5, 0, 0)
                 self.arcane_dict['Pestilence'] = Spell('Pestilence',self.pestilence, 11, 0, 0)
@@ -18425,11 +18431,13 @@ class Witch(Summon):
                 self.arcane_dict['Blind'] = Spell('Blind',self.blind, 6, 0, 0)
                 self.arcane_dict['Enmeshing_Coils'] = Spell('Enmeshing_Coils',self.enmeshing_coils, 6, 0, 0)
                 self.arcane_dict['Mirror_Armor'] = Spell('Mirror_Armor',self.mirror_armor, 5, 0, 0)
+                self.arcane_dict['Forcefield'] = Spell('Forcefield',self.forcefield, 5, 0, 0)
                 self.arcane_dict['Vengeance'] = Spell('Vengeance',self.vengeance, 8, 0, 0)
                 self.arcane_dict['Pain'] = Spell('Pain',self.pain, 5, 0, 0)
                 self.arcane_dict['Torment'] = Spell('Torment',self.torment, 11, 0, 0)
                 self.arcane_dict['Hatred'] = Spell('Hatred',self.hatred, 7, 0, 0)
                 self.arcane_dict['Mass_Hysteria'] = Spell('Mass_Hysteria',self.mass_hysteria, 7, 0, 0)
+                self.arcane_dict['Reaping_of_Saturnus'] = Spell('Reaping_of_Saturnus',self.reaping_of_saturnus, 7, 0, 0)
                 self.arcane_dict['Genjutsushi'] = Spell('Genjutsushi',self.genjutsushi, 3, 0, 0)
                 self.arcane_dict['Summon_Lesser_Demon'] = Spell('Summon_Lesser_Demon',self.summon_lesser_demon, 15, 0, 0)
                 self.arcane_dict['Summon_Cenobite'] = Spell('Summon_Cenobite',self.summon_cenobite, 15, 0, 0)
@@ -18553,9 +18561,11 @@ class Witch(Summon):
                 self.arcane_dict['Blind'] = Spell('Blind',self.blind, 6, 0, 0)
                 self.arcane_dict['Enmeshing_Coils'] = Spell('Enmeshing_Coils',self.enmeshing_coils, 6, 0, 0)
                 self.arcane_dict['Mirror_Armor'] = Spell('Mirror_Armor',self.mirror_armor, 5, 0, 0)
+                self.arcane_dict['Forcefield'] = Spell('Forcefield',self.forcefield, 5, 0, 0)
                 self.arcane_dict['Vengeance'] = Spell('Vengeance',self.vengeance, 8, 0, 0)
                 self.arcane_dict['Pain'] = Spell('Pain',self.pain, 5, 0, 0)
                 self.arcane_dict['Torment'] = Spell('Torment',self.torment, 11, 0, 0)
+                self.arcane_dict['Reaping_of_Saturnus'] = Spell('Reaping_of_Saturnus',self.reaping_of_saturnus, 7, 0, 0)
                 self.arcane_dict['Hatred'] = Spell('Hatred',self.hatred, 7, 0, 0)
                 self.arcane_dict['Genjutsushi'] = Spell('Genjutsushi',self.genjutsushi, 3, 0, 0)
                 self.arcane_dict['Summon_Lesser_Demon'] = Spell('Summon_Lesser_Demon',self.summon_lesser_demon, 15, 0, 0)
@@ -20841,6 +20851,81 @@ class Witch(Summon):
         ent.effects_dict[n] = Effect(name = 'Mirror_Armor', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
         root.after(2666, lambda  name = 'Mirror_Armor' : self.cleanup_spell(name = name))
         
+    def forcefield(self, event = None):
+        app.depop_context(event = None)
+        root.bind('<q>', self.cleanup_spell)
+        sqrs = [s for s in app.coords if 1 <= dist(self.loc, s) <= self.get_abl('rsn')]
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_mirror_armor(event = e, sqr = s, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Choose Target For Forcefield', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_forcefield(e, s, sqrs = sqrs))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
+        
+    def do_forcefield(self, event, sqr, sqrs):
+        if sqr not in sqrs:
+            return
+        id = app.grid[sqr[0]][sqr[1]]
+        if id not in app.spell_target_ents().keys():
+            return
+        ent = app.ent_dict[id]
+        if 'Forcefield' in [v.name for k,v in ent.effects_dict.items()]:
+            return
+        self.magick -= self.arcane_dict['Forcefield'].cost
+        spell = self.arcane_dict['Forcefield']
+        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+#         effect1 = mixer.Sound('Sound_Effects/gravity.ogg')
+#         effect1.set_volume(.9)
+#         sound_effects.play(effect1, 0)
+#         self.init_cast_anims()
+        app.unbind_all()
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        app.vis_dict['Forcefield'] = Vis(name = 'Forcefield', loc = sqr[:])
+        app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+54-app.moved_down, text = 'Forcefield', justify = 'center', font = ('chalkduster', 16), fill = 'black', tags = 'text')
+        app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+55-app.moved_down, text = 'Forcefield', justify = 'center', font = ('chalkduster', 16), fill = 'cyan3', tags = 'text')
+        def mirror_effect(atkr, dfndr, amt, type, sn, st, lockname = None):
+            if st == 'ranged' and to_hit(atkr.get_abl('mm'),dfndr.get_abl('dodge') == False):
+                app.canvas.create_text(atkr.loc[0]*100+49-app.moved_right, atkr.loc[1]*100+24-app.moved_down, text = 'Forcefield reflect damage', justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
+                app.canvas.create_text(atkr.loc[0]*100+50-app.moved_right, atkr.loc[1]*100+25-app.moved_down, text = 'Forcefield reflect damage', justify = 'center', font = ('chalkduster', 14), fill = 'cyan3', tags = 'text')
+                ids = [k for k,v in app.all_ents().items() if 1 <= dist(v.loc,dfndr.loc)<=3]
+                if ids == []:
+                    root.after(1222, lambda t = 'text' : app.canvas.delete(t))
+                    root.after(1333, lambda ln = lockname : app.dethloks[ln].set(1))
+                    return (-1, type)
+                else:
+                    id = choice(ids)
+                    app.get_focus(id)
+                    ent = app.ent_dict[id]
+                    n = 'Mirror_Armor'+str(app.count)
+                    app.count += 1
+                    app.vis_dict[n] = Vis(name = 'Forcefield', loc = ent.loc[:])
+                    def clean_mir(n):
+                        del app.vis_dict[n]
+                        app.canvas.delete(n)
+                    root.after(1666, lambda n = n : clean_mir(n))
+                    lock(apply_damage, atkr, ent, amt, type, 'Forcefield Redirect', 'redirect')
+                    app.get_focus(dfndr.id)
+                    root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+                    return (-1, type)
+            else:
+                app.canvas.create_text(atkr.loc[0]*100+49-app.moved_right, atkr.loc[1]*100+24-app.moved_down, text = 'Pierce Forcefield', justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
+                app.canvas.create_text(atkr.loc[0]*100+50-app.moved_right, atkr.loc[1]*100+25-app.moved_down, text = 'Pierce Forcefield', justify = 'center', font = ('chalkduster', 14), fill = 'cyan3', tags = 'text')
+                root.after(1222, lambda t = 'text' : app.canvas.delete(t))
+                root.after(1333, lambda ln = lockname : app.dethloks[ln].set(1))
+                return(amt, type)
+        p = partial(mirror_effect)
+        ent.defense_effects.append(p)
+        def undo(ent, p, lockname = None):
+            ent.defense_effects.remove(p)
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+        u = partial(undo, ent, p)
+        n = 'Forcefield' + str(app.count)
+        ent.effects_dict[n] = Effect(name = 'Forcefield', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
+        root.after(2666, lambda  name = 'Forcefield' : self.cleanup_spell(name = name))
+        
         
     def genjutsushi(self, event = None):
         app.depop_context(event = None)
@@ -21327,6 +21412,69 @@ class Witch(Summon):
         root.after(2666, lambda  name = 'Demonic_Sight' : self.cleanup_spell(name = name))
         
         
+    def reaping_of_saturnus(self, event = None):
+        app.depop_context(event = None)
+        root.bind('<q>', self.cleanup_spell)
+        root.bind('<a>', self.do_mass_hysteria)
+        b = tk.Button(app.context_menu, text = 'Confirm Mass Hysteria', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None : self.do_mass_hysteria(e))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
+        
+    def do_mass_hysteria(self, event):
+#         self.init_cast_anims()
+#         effect1 = mixer.Sound('Sound_Effects/meditate.ogg')
+#         effect1.set_volume(1)
+#         sound_effects.play(effect1, 0)
+        self.magick -= self.arcane_dict['Mass_Hysteria'].cost
+        spell = self.arcane_dict['Mass_Hysteria']
+        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        app.unbind_all()
+        app.depop_context(event = None)
+        app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+84-app.moved_down, text = 'Mass Hysteria', justify = 'center', font = ('chalkduster', 16), fill = 'black', tags = 'text')
+        app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+85-app.moved_down, text = 'Mass Hysteria', justify = 'center', font = ('chalkduster', 16), fill = 'green3', tags = 'text')
+        def cleanup_hysteria(name):
+            del app.vis_dict[name]
+            app.canvas.delete(name)
+        def hysteria_loop(ids):
+            if ids == []:
+                self.cleanup_spell(name = 'Mass_Hysteria')
+            else:
+                id = ids[0]
+                ids = ids[1:]
+                ent = app.ent_dict[id]
+                app.get_focus(id)
+                name = 'Mass_Hysteria'+str(app.count)
+                app.count += 1
+                app.vis_dict[name] = Vis(name = 'Mass_Hysteria', loc = ent.loc[:])
+                if to_hit(self.get_abl('wis'),ent.get_abl('wis')):
+                    app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+34-app.moved_down, text = '-5 sanity', justify = 'center', font = ('chalkduster', 16), fill = 'black', tags = 'text')
+                    app.canvas.create_text(ent.loc[0]*100+50-app.moved_right, ent.loc[1]*100+35-app.moved_down, text = '-5 sanity', justify = 'center', font = ('chalkduster', 16), fill = 'green3', tags = 'text')
+                    def hys_ef(stat):
+                        return max(1,stat-5)
+                    p = partial(hys_ef)
+                    ent.san_effects.append(p)
+                    def undo(ent, p, lockname = None):
+                        ent.san_effects.remove(p)
+                        root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+                    u = partial(undo, ent, p)
+                    n = 'Mass_Hysteria' + str(app.count)
+                    ent.effects_dict[n] = Effect(name = 'Mass_Hysteria', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
+                    root.after(1777, lambda t = 'text' : app.canvas.delete(t))
+                    root.after(1888, lambda n = name : cleanup_hysteria(n))
+                    root.after(1999, lambda ids = ids : hysteria_loop(ids))
+                else:
+                    miss(ent.loc)
+                    root.after(1777, lambda t = 'text' : app.canvas.delete(t))
+                    root.after(1888, lambda n = name : cleanup_hysteria(n))
+                    root.after(1999, lambda ids = ids : hysteria_loop(ids))
+        ids = app.init_q[:5]
+        root.after(1333, lambda t = 'text' : app.canvas.delete(t))
+        root.after(1444, lambda ids = ids : hysteria_loop(ids))
+        
+        
     def mass_hysteria(self, event = None):
         app.depop_context(event = None)
         root.bind('<q>', self.cleanup_spell)
@@ -21443,6 +21591,82 @@ class Witch(Summon):
         app.canvas.create_text(loc[0]*100+49-app.moved_right, loc[1]*100+84-app.moved_down, text = '-3 ballistics, reason', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
         app.canvas.create_text(loc[0]*100+50-app.moved_right, loc[1]*100+85-app.moved_down, text = '-3 ballistics, reason', justify = 'center', font = ('chalkduster', 13), fill = 'olivedrab2', tags = 'text')
         root.after(2666, lambda  name = 'Blind' : self.cleanup_spell(name = name))
+        
+        
+    def astrological_guidance(self, event = None):
+        app.depop_context(event = None)
+        root.bind('<q>', self.cleanup_spell)
+        sqrs = [s for s in app.coords if 1 <= dist(self.loc, s) <= self.get_abl('rsn')]
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_astrological_guidance(event = e, sqr = s, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Choose Target For Astrological Guidance', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_astrological_guidance(e, s, sqrs = sqrs))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
+        
+    def do_astrological_guidance(self, event, sqr, sqrs):
+        if sqr not in sqrs:
+            return
+        id = app.grid[sqr[0]][sqr[1]]
+        if id not in app.spell_target_ents().keys():
+            return
+        ent = app.ent_dict[id]
+#         effect1 = mixer.Sound('Sound_Effects/gravity.ogg')
+#         effect1.set_volume(.9)
+#         sound_effects.play(effect1, 0)
+#         app.unbind_all()
+        app.unbind_nonarrows()
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        sqrs = ent.legal_moves()
+        if sqrs == []:
+            b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+            b2.pack(side = 'top')
+            app.context_buttons.append(b2)
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs, id = id : self.cont_astrological_guidance(event = e, sqr = s, sqrs = sqrs, id = id))
+        b = tk.Button(app.context_menu, text = 'Choose Location to Move', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs, id = id : self.cont_astrological_guidance(e, s, sqrs, id = id))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+        
+        
+    def cont_astrological_guidance(self, event = None, sqr = None, sqrs = None, id = None):
+        if sqr not in sqrs:
+            return
+        self.magick -= self.arcane_dict['Astrological_Guidance'].cost
+        spell = self.arcane_dict['Astrological_Guidance']
+        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        app.depop_context(event = None)
+        app.unbind_nonarrows()
+        app.cleanup_squares()
+        app.vis_dict['Astrological_Guidance'] = Vis(name = 'Astrological_Guidance', loc = sqr[:])
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Astrological_Guidance'].img, tags = 'Astrological_Guidance')
+        app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+84-app.moved_down, text = 'Astrological Guidance', justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
+        app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+85-app.moved_down, text = 'Astrological Guidance', justify = 'center', font = ('chalkduster', 14), fill = 'cyan', tags = 'text')
+        ent = app.ent_dict[id]
+        def astro_mvs(stat):
+            return stat-1
+        p = partial(astro_mvs)
+        ent.mvs_effects.append(p)
+        ent.mvs -= 1
+        def undo(ent, p, lockname = None):
+            ent.mvs_effects.remove(p)
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+        u = partial(undo, ent, p)
+        n = 'Astrological_Guidance' + str(app.count)
+        app.count += 1
+        ent.effects_dict[n] = Effect(name = 'Astrological_Guidance', undo_func = u, duration = 1, level = self.get_abl('wis'))
+        app.focus_square(sqr)
+        mt = ent.get_move_type()
+        if mt == 'normal' or mt == 'charge':
+            lock(Bot.ai_normal_move, ent, sqr)
+        elif mt == 'teleport':
+            lock(Bot.ai_teleport_move, ent, sqr)
+        else:
+            lock(Bot.ai_flying_move, ent, sqr)
+        root.after(666, lambda  name = 'Astrological_Guidance' : self.cleanup_spell(name = name))
         
         
     def gravity(self, event = None):
@@ -21669,9 +21893,6 @@ class Witch(Summon):
         app.depop_context(event = None)
         app.unbind_nonarrows()
         app.cleanup_squares()
-        self.magick -= self.arcane_dict['Legerdemain'].cost
-        spell = self.arcane_dict['Legerdemain']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
         root.bind('<q>', lambda name = 'Legerdemain' : self.cleanup_spell(name = name))
         sqrs = [s for s in app.coords if dist(self.loc, s) <= self.get_abl('rsn')]
         app.animate_squares(sqrs)
@@ -21688,6 +21909,9 @@ class Witch(Summon):
             return
         if id1 == id2:
             return
+        self.magick -= self.arcane_dict['Legerdemain'].cost
+        spell = self.arcane_dict['Legerdemain']
+        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
         app.depop_context(event = None)
         app.unbind_nonarrows()
         app.cleanup_squares()
