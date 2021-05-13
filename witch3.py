@@ -1,12 +1,41 @@
-# in reaping
+# during apply_damage, after any atk/def efct is called, need to check to see if atkr/dfndr exist
+'''
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/tkinter/__init__.py", line 1883, in __call__
+    return self.func(*args)
+  File "/Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/tkinter/__init__.py", line 804, in callit
+    func(*args)
+  File "witch3.py", line 24615, in handle_action
+    ent.do_round()
+  File "witch3.py", line 15146, in do_round
+    self.melee_attack(target)
+  File "witch3.py", line 15169, in melee_attack
+    self.finish_attack()
+  File "witch3.py", line 15180, in finish_attack
+    self.do_round()
+  File "witch3.py", line 15146, in do_round
+    self.melee_attack(target)
+  File "witch3.py", line 15169, in melee_attack
+    self.finish_attack()
+  File "witch3.py", line 15180, in finish_attack
+    self.do_round()
+  File "witch3.py", line 15148, in do_round
+    Ai_man.pursue(self, 'action', 'smart', self.get_move_type(), 1)
+  File "witch3.py", line 23153, in pursue
+    Ai_man.melee_pursue(ent, target_type)
+  File "witch3.py", line 23312, in melee_pursue
+    g = reduce(lambda a,b : a if dist(a,ent.loc)>dist(b,ent.loc) else b, intersect(path,mvs))
+TypeError: reduce() of empty sequence with no initial value
 
-# hindering mucilage with kobold cleric
+'''
 
-# single duel takes a long time to complete, no fast win strats
+# spells that dmg/affect based on stats like moves, move range, acts, san, init
+
+# spells that only affect tombs, raise psy...
+
+# hindering mucilage with kobold cleric? sometimes...
 
 # library, other lvls, way to remove psyshield/invis
-
-# less magick per tomb? curve out spells/costs
 
 # should only one unique hex affect a unit?
 
@@ -186,6 +215,14 @@ def round_100(x):
 def action_description(act):
     if act == 'Slash':
         return 'To-hit agility vs agility, strength vs endurance slashing melee damage, adjacent target as action.'
+    elif act == 'Fangs of Apophis':
+        return 'Spell target in range reason gets +1 str, agl and melee damage changed to acid.'
+    elif act == 'Wreathed in Flame':
+        return 'Spell target in range reason gets fire resistance and attackers doing melee damage to effect holder take 6 fire damage.'
+    elif act == 'Reaping of Saturnus':
+        return 'Destroy a randomly chosen summon you own to decrease your summon count by 1.'
+    elif act == 'Flying Move':
+        return 'Move without being impeded by obstacles.'
     elif act == 'Flying Move':
         return 'Move without being impeded by obstacles.'
     elif act == 'Pox':
@@ -669,6 +706,10 @@ def effect_description(ef):
         return '-1 psy,wis,rsn,san,init, 2 magick dmg eot, dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Pox':
         return 'Eot 3 poison dmg, dur = '+str(ef.duration)+', level = '+str(ef.level)
+    elif ef.name == 'Fangs_of_Apophis':
+        return '+1 str, agl, acid melee damage, dur = '+str(ef.duration)+', level = '+str(ef.level)
+    elif ef.name == 'Wreathed_in_Flame':
+        return 'Fire resistance and 6 fire damage to melee attackers on hit, dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Pestilence':
         return '3 poison dmg eot, dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Plague':
@@ -9818,23 +9859,13 @@ class Inquisitor(Summon):
         for b in app.context_buttons:
             if isinstance(b, tk.Button):
                 b.destroy()
-#         app.repop_help_buttons()
-
-#         app.depop_context(event = None)
-#         app.cntxt_info_bg = ImageTk.PhotoImage(Image.open('page.png'))
-#         bg = tk.Canvas(app.context_menu, width = 190, height = 363, bg = 'burlywood4', bd=0, relief='raised', highlightthickness=0)
-#         bg.pack(side = 'top')
-#         bg.create_image(0,0, image = app.cntxt_info_bg, anchor = 'nw')
-#         bg.create_text(15, 15, text= 'Choose Action...', width = 190, anchor = 'nw', font = ('chalkduster', 16), fill = 'indianred')
-#         app.context_buttons.append(bg)
-
         for i, key_ef in enumerate(actions[index:index+5]):
             i += 1
             key = key_ef[0]
             ef = key_ef[1]
             p = partial(self.abeyance_remove, id = id, func = ef, key = key)
-            root.bind(str(i), p)
-            b1 = tk.Button(app.context_menu, wraplength = 190, text = str(i) +' : '+ key.replace('_', ' '), font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = p)
+#             root.bind(str(i), p)
+            b1 = tk.Button(app.context_menu, wraplength = 190, text = key.replace('_', ' '), font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = p)
             b1.pack(side = 'top', pady = 2)
             app.context_buttons.append(b1)
             # below should become effect_description_popup, (there is no equivalent to more info popup, effect desc shown in more info
@@ -18402,41 +18433,56 @@ class Witch(Summon):
 #                 self.base_magick = 75
                 self.magick_regen = 2
             elif level == 2:
+                self.arcane_dict['Boiling_Blood'] = Spell('Boiling_Blood',self.boiling_blood, 2,0,0)
+                self.arcane_dict['Dark_Sun'] = Spell('Dark_Sun',self.dark_sun, 3,0,0)
+                self.arcane_dict['Meditate'] = Spell('Meditate',self.meditate, 2,0,0)
+                self.arcane_dict['Legerdemain'] = Spell('Legerdemain',self.legerdemain, 2,0,0)
+                self.arcane_dict['Grasp_of_the_Old_Ones'] = Spell('Grasp_of_the_Old_Ones',self.grasp_of_the_old_ones, 3,0,0)
+                self.arcane_dict['Horrid_Wilting'] = Spell('Horrid_Wilting',self.horrid_wilting, 7,0,0)
+                self.arcane_dict['Mind_Rot'] = Spell('Mind_Rot',self.mind_rot, 8,0,0)
+                self.arcane_dict['Dust_Devil'] = Spell('Dust_Devil',self.dust_devil, 5,0,0)
+                self.arcane_dict['Dispel'] = Spell('Dispel',self.dispel, 7,0,0)
+                self.arcane_dict['Disintegrate'] = Spell('Disintegrate',self.disintegrate, 5,0,0)
+                self.arcane_dict['Mummify'] = Spell('Mummify',self.mummify, 3,0,0)
+                self.arcane_dict['Immolate'] = Spell('Immolate',self.immolate, 8,0,0)
+                self.arcane_dict['Command_of_Osiris'] = Spell('Command_of_Osiris',self.command_of_osiris, 8,0,0)
                 self.arcane_dict['Psionic_Push'] = Spell('Psionic_Push',self.psionic_push, 2, 0, 0)
                 self.arcane_dict["Minerva's_Gift"] = Spell("Minerva's_Gift",self.minervas_gift, 1, 0, 0)
-                self.arcane_dict['Bewitch'] = Spell('Bewitch',self.bewitch, 1, 0, 0)
-                self.arcane_dict['Read_the_Stars'] = Spell('Read_the_Stars',self.read_the_stars, 1, 0, 0)
-                self.arcane_dict['Energize'] = Spell('Energize',self.energize, 2, 0, 0)
-                self.arcane_dict['Psi_Blades'] = Spell('Psi_Blades',self.psi_blades, 1, 0, 0)
-                self.arcane_dict['Cosmic_Sight'] = Spell('Cosmic_Sight',self.cosmic_sight, 1, 0, 0)
+                self.arcane_dict['Bewitch'] = Spell('Bewitch',self.bewitch, 3, 0, 0)
+                self.arcane_dict['Read_the_Stars'] = Spell('Read_the_Stars',self.read_the_stars, 2, 0, 0)
+                self.arcane_dict['Energize'] = Spell('Energize',self.energize, 3, 0, 0)
+                self.arcane_dict['Psi_Blades'] = Spell('Psi_Blades',self.psi_blades, 3, 0, 0)
+                self.arcane_dict['Cosmic_Sight'] = Spell('Cosmic_Sight',self.cosmic_sight, 2, 0, 0)
                 self.arcane_dict['Astrological_Guidance'] = Spell('Astrological_Guidance',self.astrological_guidance, 2, 0, 0)
                 self.arcane_dict['Foul_Familiar'] = Spell('Foul_Familiar',self.foul_familiar, 3, 0, 0)
                 self.arcane_dict['Plague'] = Spell('Plague',self.plague, 5, 0, 0)
                 self.arcane_dict['Pestilence'] = Spell('Pestilence',self.pestilence, 11, 0, 0)
-                self.arcane_dict['Curse_of_Oriax'] = Spell('Curse_of_Oriax',self.curse_of_oriax, 4, 0, 0)
+                self.arcane_dict['Curse_of_Oriax'] = Spell('Curse_of_Oriax',self.curse_of_oriax, 5, 0, 0)
                 self.arcane_dict['Demonic_Sight'] = Spell('Demonic_Sight',self.demonic_sight, 3, 0, 0)
-                self.arcane_dict['Molecular_Subversion'] = Spell('Molecular_Subversion',self.molecular_subversion, 6, 0, 0)
+                self.arcane_dict['Molecular_Subversion'] = Spell('Molecular_Subversion',self.molecular_subversion, 4, 0, 0)
                 self.arcane_dict['Plutonian_Cloak'] = Spell('Plutonian_Cloak',self.plutonian_cloak, 6, 0, 0)
                 self.arcane_dict['Hidden_From_the_Stars'] = Spell('Hidden_From_the_Stars',self.hidden_from_the_stars, 4, 0, 0)
                 self.arcane_dict['Strength_of_the_Void'] = Spell('Strength_of_the_Void',self.strength_of_the_void, 4, 0, 0)
                 self.arcane_dict['Iron_Spirit'] = Spell('Iron_Spirit',self.iron_spirit, 4, 0, 0)
                 self.arcane_dict["Mercury's_Blessing"] = Spell("Mercury's_Blessing",self.mercurys_blessing, 4, 0, 0)
                 self.arcane_dict['Gift_of_Mars'] = Spell('Gift_of_Mars',self.gift_of_mars, 4, 0, 0)
-                self.arcane_dict['Gravity'] = Spell('Gravity',self.gravity, 5, 0, 0)
+                self.arcane_dict['Gravity'] = Spell('Gravity',self.gravity, 6, 0, 0)
                 self.arcane_dict["Beleth's_Command"] = Spell("Beleth's_Command",self.beleths_command, 7, 0, 0)
                 self.arcane_dict['Lift'] = Spell('Lift',self.lift, 3, 0, 0)
                 self.arcane_dict['Cloister'] = Spell('Cloister',self.cloister, 3, 0, 0)
-                self.arcane_dict['Aura_of_Agony'] = Spell('Aura_of_Agony',self.aura_of_agony, 4, 0, 0)
-                self.arcane_dict['Dampening_Emanation'] = Spell('Dampening_Emanation',self.dampening_emanation, 5, 0, 0)
+                self.arcane_dict['Aura_of_Agony'] = Spell('Aura_of_Agony',self.aura_of_agony, 5, 0, 0)
+                self.arcane_dict['Dampening_Emanation'] = Spell('Dampening_Emanation',self.dampening_emanation, 7, 0, 0)
                 self.arcane_dict['Blind'] = Spell('Blind',self.blind, 6, 0, 0)
-                self.arcane_dict['Enmeshing_Coils'] = Spell('Enmeshing_Coils',self.enmeshing_coils, 6, 0, 0)
-                self.arcane_dict['Mirror_Armor'] = Spell('Mirror_Armor',self.mirror_armor, 5, 0, 0)
+                self.arcane_dict['Enmeshing_Coils'] = Spell('Enmeshing_Coils',self.enmeshing_coils, 7, 0, 0)
+                self.arcane_dict['Mirror_Armor'] = Spell('Mirror_Armor',self.mirror_armor, 6, 0, 0)
                 self.arcane_dict['Forcefield'] = Spell('Forcefield',self.forcefield, 5, 0, 0)
                 self.arcane_dict['Vengeance'] = Spell('Vengeance',self.vengeance, 8, 0, 0)
                 self.arcane_dict['Pain'] = Spell('Pain',self.pain, 5, 0, 0)
-                self.arcane_dict['Torment'] = Spell('Torment',self.torment, 11, 0, 0)
-                self.arcane_dict['Hatred'] = Spell('Hatred',self.hatred, 7, 0, 0)
-                self.arcane_dict['Mass_Hysteria'] = Spell('Mass_Hysteria',self.mass_hysteria, 7, 0, 0)
+                self.arcane_dict['Torment'] = Spell('Torment',self.torment, 9, 0, 0)
+                self.arcane_dict['Hatred'] = Spell('Hatred',self.hatred, 6, 0, 0)
+                self.arcane_dict['Fangs_of_Apophis'] = Spell('Fangs_of_Apophis',self.fangs_of_apophis, 4, 0, 0)
+                self.arcane_dict['Wreathed_in_Flame'] = Spell('Wreathed_in_Flame',self.wreathed_in_flame, 4, 0, 0)
+                self.arcane_dict['Mass_Hysteria'] = Spell('Mass_Hysteria',self.mass_hysteria, 5, 0, 0)
                 self.arcane_dict['Reaping_of_Saturnus'] = Spell('Reaping_of_Saturnus',self.reaping_of_saturnus, 7, 0, 0)
                 self.arcane_dict['Genjutsushi'] = Spell('Genjutsushi',self.genjutsushi, 3, 0, 0)
                 self.arcane_dict['Summon_Lesser_Demon'] = Spell('Summon_Lesser_Demon',self.summon_lesser_demon, 15, 0, 0)
@@ -18546,27 +18592,44 @@ class Witch(Summon):
                 self.arcane_dict['Mummify'] = Spell('Mummify',self.mummify, 3,0,0)
                 self.arcane_dict['Immolate'] = Spell('Immolate',self.immolate, 8,0,0)
                 self.arcane_dict['Command_of_Osiris'] = Spell('Command_of_Osiris',self.command_of_osiris, 8,0,0)
-                self.arcane_dict['Energize'] = Spell('Energize',self.energize, 2, 0, 0)
-                self.arcane_dict['Psi_Blades'] = Spell('Psi_Blades',self.psi_blades, 1, 0, 0)
-                self.arcane_dict['Cosmic_Sight'] = Spell('Cosmic_Sight',self.cosmic_sight, 1, 0, 0)
+                self.arcane_dict['Psionic_Push'] = Spell('Psionic_Push',self.psionic_push, 2, 0, 0)
+                self.arcane_dict["Minerva's_Gift"] = Spell("Minerva's_Gift",self.minervas_gift, 1, 0, 0)
+                self.arcane_dict['Bewitch'] = Spell('Bewitch',self.bewitch, 3, 0, 0)
+                self.arcane_dict['Read_the_Stars'] = Spell('Read_the_Stars',self.read_the_stars, 2, 0, 0)
+                self.arcane_dict['Energize'] = Spell('Energize',self.energize, 3, 0, 0)
+                self.arcane_dict['Psi_Blades'] = Spell('Psi_Blades',self.psi_blades, 3, 0, 0)
+                self.arcane_dict['Cosmic_Sight'] = Spell('Cosmic_Sight',self.cosmic_sight, 2, 0, 0)
+                self.arcane_dict['Astrological_Guidance'] = Spell('Astrological_Guidance',self.astrological_guidance, 2, 0, 0)
                 self.arcane_dict['Foul_Familiar'] = Spell('Foul_Familiar',self.foul_familiar, 3, 0, 0)
+                self.arcane_dict['Plague'] = Spell('Plague',self.plague, 5, 0, 0)
+                self.arcane_dict['Pestilence'] = Spell('Pestilence',self.pestilence, 11, 0, 0)
+                self.arcane_dict['Curse_of_Oriax'] = Spell('Curse_of_Oriax',self.curse_of_oriax, 5, 0, 0)
                 self.arcane_dict['Demonic_Sight'] = Spell('Demonic_Sight',self.demonic_sight, 3, 0, 0)
+                self.arcane_dict['Molecular_Subversion'] = Spell('Molecular_Subversion',self.molecular_subversion, 4, 0, 0)
+                self.arcane_dict['Plutonian_Cloak'] = Spell('Plutonian_Cloak',self.plutonian_cloak, 6, 0, 0)
                 self.arcane_dict['Hidden_From_the_Stars'] = Spell('Hidden_From_the_Stars',self.hidden_from_the_stars, 4, 0, 0)
                 self.arcane_dict['Strength_of_the_Void'] = Spell('Strength_of_the_Void',self.strength_of_the_void, 4, 0, 0)
                 self.arcane_dict['Iron_Spirit'] = Spell('Iron_Spirit',self.iron_spirit, 4, 0, 0)
                 self.arcane_dict["Mercury's_Blessing"] = Spell("Mercury's_Blessing",self.mercurys_blessing, 4, 0, 0)
                 self.arcane_dict['Gift_of_Mars'] = Spell('Gift_of_Mars',self.gift_of_mars, 4, 0, 0)
+                self.arcane_dict['Gravity'] = Spell('Gravity',self.gravity, 6, 0, 0)
+                self.arcane_dict["Beleth's_Command"] = Spell("Beleth's_Command",self.beleths_command, 7, 0, 0)
                 self.arcane_dict['Lift'] = Spell('Lift',self.lift, 3, 0, 0)
                 self.arcane_dict['Cloister'] = Spell('Cloister',self.cloister, 3, 0, 0)
+                self.arcane_dict['Aura_of_Agony'] = Spell('Aura_of_Agony',self.aura_of_agony, 5, 0, 0)
+                self.arcane_dict['Dampening_Emanation'] = Spell('Dampening_Emanation',self.dampening_emanation, 7, 0, 0)
                 self.arcane_dict['Blind'] = Spell('Blind',self.blind, 6, 0, 0)
-                self.arcane_dict['Enmeshing_Coils'] = Spell('Enmeshing_Coils',self.enmeshing_coils, 6, 0, 0)
-                self.arcane_dict['Mirror_Armor'] = Spell('Mirror_Armor',self.mirror_armor, 5, 0, 0)
+                self.arcane_dict['Enmeshing_Coils'] = Spell('Enmeshing_Coils',self.enmeshing_coils, 7, 0, 0)
+                self.arcane_dict['Mirror_Armor'] = Spell('Mirror_Armor',self.mirror_armor, 6, 0, 0)
                 self.arcane_dict['Forcefield'] = Spell('Forcefield',self.forcefield, 5, 0, 0)
                 self.arcane_dict['Vengeance'] = Spell('Vengeance',self.vengeance, 8, 0, 0)
                 self.arcane_dict['Pain'] = Spell('Pain',self.pain, 5, 0, 0)
-                self.arcane_dict['Torment'] = Spell('Torment',self.torment, 11, 0, 0)
+                self.arcane_dict['Torment'] = Spell('Torment',self.torment, 9, 0, 0)
+                self.arcane_dict['Hatred'] = Spell('Hatred',self.hatred, 6, 0, 0)
+                self.arcane_dict['Fangs_of_Apophis'] = Spell('Fangs_of_Apophis',self.fangs_of_apophis, 4, 0, 0)
+                self.arcane_dict['Wreathed_in_Flame'] = Spell('Wreathed_in_Flame',self.wreathed_in_flame, 4, 0, 0)
+                self.arcane_dict['Mass_Hysteria'] = Spell('Mass_Hysteria',self.mass_hysteria, 5, 0, 0)
                 self.arcane_dict['Reaping_of_Saturnus'] = Spell('Reaping_of_Saturnus',self.reaping_of_saturnus, 7, 0, 0)
-                self.arcane_dict['Hatred'] = Spell('Hatred',self.hatred, 7, 0, 0)
                 self.arcane_dict['Genjutsushi'] = Spell('Genjutsushi',self.genjutsushi, 3, 0, 0)
                 self.arcane_dict['Summon_Lesser_Demon'] = Spell('Summon_Lesser_Demon',self.summon_lesser_demon, 15, 0, 0)
                 self.arcane_dict['Summon_Cenobite'] = Spell('Summon_Cenobite',self.summon_cenobite, 15, 0, 0)
@@ -19149,7 +19212,7 @@ class Witch(Summon):
         ent = app.ent_dict[id]
         if 'Energize' in [v.name for k,v in ent.effects_dict.items()]:
             return
-        self.init_cast_anims()
+#         self.init_cast_anims()
         effect1 = mixer.Sound('Sound_Effects/energize.ogg')
         effect1.set_volume(1)
         sound_effects.play(effect1, 0)
@@ -19199,7 +19262,7 @@ class Witch(Summon):
             return
         if "Minerva's_Gift" in [v.name for k,v in app.ent_dict[id].effects_dict.items()]:
             return
-        self.init_cast_anims()
+#         self.init_cast_anims()
         effect1 = mixer.Sound('Sound_Effects/scrye.ogg')
         effect1.set_volume(1)
         sound_effects.play(effect1, 0)
@@ -19257,7 +19320,7 @@ class Witch(Summon):
             return
         if 'Bewitch' in [v.name for k,v in app.ent_dict[id].effects_dict.items()]:
             return
-        self.init_cast_anims()
+#         self.init_cast_anims()
 #         effect1 = mixer.Sound('Sound_Effects/scrye.ogg')
 #         effect1.set_volume(1)
 #         sound_effects.play(effect1, 0)
@@ -19310,7 +19373,7 @@ class Witch(Summon):
 #         effect1 = mixer.Sound('Sound_Effects/read_the_stars.ogg')
 #         effect1.set_volume(.9)
 #         sound_effects.play(effect1, 0)
-        self.init_cast_anims()
+#         self.init_cast_anims()
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -19367,7 +19430,7 @@ class Witch(Summon):
             return
         if 'Psi_Blades' in [v.name for k,v in app.ent_dict[id].effects_dict.items()]:
             return
-        self.init_cast_anims()
+#         self.init_cast_anims()
 #         effect1 = mixer.Sound('Sound_Effects/scrye.ogg')
 #         effect1.set_volume(1)
 #         sound_effects.play(effect1, 0)
@@ -19535,7 +19598,6 @@ class Witch(Summon):
         loc = app.grid[sqr[0]][sqr[1]]
         if loc != '':
             return
-        self.entomb_used = True
 #         self.init_cast_anims()
         effect1 = mixer.Sound('Sound_Effects/strength_through_wounding.ogg')
         effect1.set_volume(1)
@@ -19543,7 +19605,6 @@ class Witch(Summon):
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
-        self.acts -= 1
         spells = sorted(list(self.arcane_dict.values()),key=lambda s : s.cost)
         self.page_imprint(tup_list = spells, index = 0, sqr = sqr[:])
         
@@ -19572,9 +19633,14 @@ class Witch(Summon):
             b3.pack(side = 'top', pady = 2)
             root.bind('<e>', lambda e, t = tup_list, i = index+7, sqr = sqr : self.page_imprint(tup_list = t, index = i, sqr = sqr))
             app.context_buttons.append(b3)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = self.cleanup_spell)
+        b2.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b2)
         
     def continue_entomb(self, event = None, name = None, sqr = None):
         app.depop_context(event=None)
+        self.entomb_used = True
+        self.acts -= 1
         spell = self.arcane_dict[name]
         self.arcane_dict[name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint+1,spell.times_cast)
         app.vis_dict['Entomb'] = Vis(name = 'Entomb', loc = sqr[:])
@@ -19682,6 +19748,133 @@ class Witch(Summon):
         ent.effects_dict[n] = Effect(name = 'Vengeance', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
         root.after(2666, lambda  name = 'Vengeance' : self.cleanup_spell(name = name))
       
+      
+    def wreathed_in_flame(self, event = None):
+        app.depop_context(event = None)
+        root.bind('<q>', self.cleanup_spell)
+        sqrs = [s for s in app.coords if 1 <= dist(self.loc, s) <= self.get_abl('rsn')]
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_wreathed_in_flame(event = e, sqr = s, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Choose Target For Wreathed in Flame', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_wreathed_in_flame(e, s, sqrs = sqrs))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
+        
+    def do_wreathed_in_flame(self, event, sqr, sqrs):
+        if sqr not in sqrs:
+            return
+        id = app.grid[sqr[0]][sqr[1]]
+        if id not in app.spell_target_ents().keys():
+            return
+        effs = [v.name for k,v in app.ent_dict[id].effects_dict.items()]
+        if 'Wreathed_in_Flame' in effs:
+            return
+        self.magick -= self.arcane_dict['Wreathed_in_Flame'].cost
+        spell = self.arcane_dict['Wreathed_in_Flame']
+        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+#         effect1 = mixer.Sound('Sound_Effects/hatred.ogg')
+#         effect1.set_volume(.9)
+#         sound_effects.play(effect1, 0)
+#         self.init_cast_anims()
+        app.unbind_all()
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        app.vis_dict['Wreathed_in_Flame'] = Vis(name = 'Wreathed_in_Flame', loc = sqr[:])
+        app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+84-app.moved_down, text = 'Wreathed in Flame', justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
+        app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+85-app.moved_down, text = 'Wreathed in Flame', justify = 'center', font = ('chalkduster', 14), fill = 'firebrick', tags = 'text')
+        ent = app.ent_dict[id]
+        app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+14-app.moved_down, text = 'Resist Fire, 6 fire dmg attacker', justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
+        app.canvas.create_text(ent.loc[0]*100+50-app.moved_right, ent.loc[1]*100+15-app.moved_down, text = 'Resist Fire, 6 fire dmg attacker', justify = 'center', font = ('chalkduster', 14), fill = 'firebrick', tags = 'text')
+        def wreathed_resist(types):
+            return types+['fire']
+        p = partial(wreathed_resist)
+        ent.resist_effects.append(p)
+        def wreathed_def(atkr, dfndr, amt, type, sn, st, lockname = None):
+            if st == 'melee':
+                lock(apply_damage, dfndr, atkr, -6, 'fire', 'Flame Shield', 'spell')
+                root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+                return (amt, type)
+            else:
+                root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+                return (amt, type)
+        p2 = partial(wreathed_def)
+        ent.defense_effects.append(p2)
+        def undo(ent, p, p2, lockname = None):
+            ent.resist_effects.remove(p)
+            ent.defense_effects.remove(p2)
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+        u = partial(undo, ent, p, p2)
+        n = 'Wreathed_in_Flame' + str(app.count)
+        ent.effects_dict[n] = Effect(name = 'Wreathed_in_Flame', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
+        root.after(2666, lambda  name = 'Wreathed_in_Flame' : self.cleanup_spell(name = name))
+      
+      
+    def fangs_of_apophis(self, event = None):
+        app.depop_context(event = None)
+        root.bind('<q>', self.cleanup_spell)
+        sqrs = [s for s in app.coords if 1 <= dist(self.loc, s) <= self.get_abl('rsn')]
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_fangs_of_apophis(event = e, sqr = s, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Choose Target For Fangs of Apophis', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_fangs_of_apophis(e, s, sqrs = sqrs))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
+        
+    def do_fangs_of_apophis(self, event, sqr, sqrs):
+        if sqr not in sqrs:
+            return
+        id = app.grid[sqr[0]][sqr[1]]
+        if id not in app.spell_target_ents().keys():
+            return
+        effs = [v.name for k,v in app.ent_dict[id].effects_dict.items()]
+        if 'Fangs_of_Apophis' in effs:
+            return
+        self.magick -= self.arcane_dict['Fangs_of_Apophis'].cost
+        spell = self.arcane_dict['Fangs_of_Apophis']
+        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+#         effect1 = mixer.Sound('Sound_Effects/hatred.ogg')
+#         effect1.set_volume(.9)
+#         sound_effects.play(effect1, 0)
+#         self.init_cast_anims()
+        app.unbind_all()
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        app.vis_dict['Fangs_of_Apophis'] = Vis(name = 'Fangs_of_Apophis', loc = sqr[:])
+        app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+84-app.moved_down, text = 'Fangs of Apophis', justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
+        app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+85-app.moved_down, text = 'Fangs of Apophis', justify = 'center', font = ('chalkduster', 14), fill = 'green', tags = 'text')
+        ent = app.ent_dict[id]
+        def fangs_effect(stat):
+            return stat+1
+        p = partial(fangs_effect)
+        ent.str_effects.append(p)
+        ent.agl_effects.append(p)
+        app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+84-app.moved_down, text = '+1 str, agl, acid attack', justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
+        app.canvas.create_text(ent.loc[0]*100+50-app.moved_right, ent.loc[1]*100+85-app.moved_down, text = '+1 str, agl, acid attack', justify = 'center', font = ('chalkduster', 14), fill = 'green', tags = 'text')
+        def fangs_atk(atkr, dfndr, amt, type, sn, st, lockname = None):
+            if st == 'melee':
+                type = 'acid'
+                root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+                return (amt, type)
+            else:
+                root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+                return (amt, type)
+        p2 = partial(fangs_atk)
+        ent.attack_effects.append(p2)
+        def undo(ent, p, p2, lockname = None):
+            ent.str_effects.remove(p)
+            ent.agl_effects.remove(p)
+            ent.attack_effects.remove(p2)
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+        u = partial(undo, ent, p, p2)
+        n = 'Fangs_of_Apophis' + str(app.count)
+        ent.effects_dict[n] = Effect(name = 'Fangs_of_Apophis', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
+        root.after(2666, lambda  name = 'Fangs_of_Apophis' : self.cleanup_spell(name = name))
+      
+      
     def hatred(self, event = None):
         app.depop_context(event = None)
         root.bind('<q>', self.cleanup_spell)
@@ -19769,6 +19962,9 @@ class Witch(Summon):
             return
         id = app.grid[sqr[0]][sqr[1]]
         if id not in app.spell_target_ents().keys():
+            return
+        ent = app.ent_dict[id]
+        if isinstance(ent,Witch):
             return
 #         self.init_cast_anims()
         effect1 = mixer.Sound('Sound_Effects/torment.ogg')
@@ -19901,7 +20097,10 @@ class Witch(Summon):
         # PLAGUE CANNOT BE STACKED WITH OTHER PLAGUES
         if 'Plague' in app.ent_dict[id].effects_dict.keys():
             return
-        self.init_cast_anims()
+        ent = app.ent_dict[id]
+        if isinstance(ent, Witch):
+            return
+#         self.init_cast_anims()
         effect1 = mixer.Sound('Sound_Effects/plague.ogg')
         effect1.set_volume(2)
         sound_effects.play(effect1, 0)
@@ -20019,7 +20218,7 @@ class Witch(Summon):
     def do_enmeshing_coils(self, event, sqr, sqrs):
         if sqr not in sqrs:
             return
-        self.init_cast_anims()
+#         self.init_cast_anims()
 #         effect1 = mixer.Sound('Sound_Effects/plague.ogg')
 #         effect1.set_volume(1)
 #         sound_effects.play(effect1, 0)
@@ -20085,6 +20284,9 @@ class Witch(Summon):
         id = app.grid[sqr[0]][sqr[1]]
         if id not in app.spell_target_ents().keys():
             return
+        ent = app.ent_dict[id]
+        if isinstance(ent, Witch):
+            return
         # cannot target immovable
         if app.ent_dict[id].immovable == True:
             return
@@ -20132,7 +20334,7 @@ class Witch(Summon):
         global selected, selected_vis
         if sqr not in sqrs:
             return
-        self.init_cast_anims()
+#         self.init_cast_anims()
         effect1 = mixer.Sound('Sound_Effects/psionic_push.ogg')
         effect1.set_volume(1)
         sound_effects.play(effect1, 0)
@@ -20247,7 +20449,7 @@ class Witch(Summon):
         self.magick -= self.arcane_dict['Pestilence'].cost
         spell = self.arcane_dict['Pestilence']
         self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
-        self.init_cast_anims()
+#         self.init_cast_anims()
         app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+84-app.moved_down, text = 'Pestilence', justify ='center', font = ('chalkduster', 16), fill = 'black', tags = 'text')
         app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+85-app.moved_down, text = 'Pestilence', justify ='center', font = ('chalkduster', 16), fill = 'gray75', tags = 'text')
         # do all vis now, staggered
@@ -20378,7 +20580,7 @@ class Witch(Summon):
         effect1 = mixer.Sound('Sound_Effects/curse_of_oriax.ogg')
         effect1.set_volume(1.4)
         sound_effects.play(effect1, 0)
-        self.init_cast_anims()
+#         self.init_cast_anims()
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -20441,6 +20643,8 @@ class Witch(Summon):
         if id not in app.spell_target_ents().keys():
             return
         ent = app.ent_dict[id]
+        if isinstance(ent,Witch):
+            return
         if 'Dampening_Emanation' in [v.name for k,v in ent.effects_dict.items()]:
             return
         self.magick -= self.arcane_dict['Dampening_Emanation'].cost
@@ -20501,6 +20705,8 @@ class Witch(Summon):
         if id not in app.spell_target_ents().keys():
             return
         ent = app.ent_dict[id]
+        if isinstance(ent,Witch):
+            return
         if 'Aura_of_Agony' in [v.name for k,v in ent.effects_dict.items()]:
             return
         self.magick -= self.arcane_dict['Aura_of_Agony'].cost
@@ -20509,7 +20715,7 @@ class Witch(Summon):
 #         effect1 = mixer.Sound('Sound_Effects/gravity.ogg')
 #         effect1.set_volume(.9)
 #         sound_effects.play(effect1, 0)
-        self.init_cast_anims()
+#         self.init_cast_anims()
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -20569,7 +20775,7 @@ class Witch(Summon):
 #         effect1 = mixer.Sound('Sound_Effects/gravity.ogg')
 #         effect1.set_volume(.9)
 #         sound_effects.play(effect1, 0)
-        self.init_cast_anims()
+#         self.init_cast_anims()
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -20664,6 +20870,8 @@ class Witch(Summon):
         if id not in app.spell_target_ents().keys():
             return
         ent = app.ent_dict[id]
+        if isinstance(ent,Witch):
+            return
         self.magick -= self.arcane_dict['Cloister'].cost
         spell = self.arcane_dict['Cloister']
         self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
@@ -20712,7 +20920,7 @@ class Witch(Summon):
 #         effect1 = mixer.Sound('Sound_Effects/gravity.ogg')
 #         effect1.set_volume(.9)
 #         sound_effects.play(effect1, 0)
-        self.init_cast_anims()
+#         self.init_cast_anims()
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -20856,7 +21064,7 @@ class Witch(Summon):
         root.bind('<q>', self.cleanup_spell)
         sqrs = [s for s in app.coords if 1 <= dist(self.loc, s) <= self.get_abl('rsn')]
         app.animate_squares(sqrs)
-        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_mirror_armor(event = e, sqr = s, sqrs = sqrs))
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_forcefield(event = e, sqr = s, sqrs = sqrs))
         b = tk.Button(app.context_menu, text = 'Choose Target For Forcefield', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_forcefield(e, s, sqrs = sqrs))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
@@ -21294,7 +21502,7 @@ class Witch(Summon):
         app.context_buttons.append(b2)
         
     def do_cosmic_sight(self, event, sqr, sqrs):
-        self.init_cast_anims()
+#         self.init_cast_anims()
         effect1 = mixer.Sound('Sound_Effects/meditate.ogg')
         effect1.set_volume(1)
         sound_effects.play(effect1, 0)
@@ -21383,7 +21591,7 @@ class Witch(Summon):
 #         effect1 = mixer.Sound('Sound_Effects/gravity.ogg')
 #         effect1.set_volume(.9)
 #         sound_effects.play(effect1, 0)
-        self.init_cast_anims()
+#         self.init_cast_anims()
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -21415,64 +21623,39 @@ class Witch(Summon):
     def reaping_of_saturnus(self, event = None):
         app.depop_context(event = None)
         root.bind('<q>', self.cleanup_spell)
-        root.bind('<a>', self.do_mass_hysteria)
-        b = tk.Button(app.context_menu, text = 'Confirm Mass Hysteria', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None : self.do_mass_hysteria(e))
+        root.bind('<a>', self.do_reaping)
+        b = tk.Button(app.context_menu, text = 'Confirm Reaping of Saturnus', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None : self.do_mass_hysteria(e))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
         b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
         b2.pack(side = 'top')
         app.context_buttons.append(b2)
         
-    def do_mass_hysteria(self, event):
+    def do_reaping(self, event):
 #         self.init_cast_anims()
 #         effect1 = mixer.Sound('Sound_Effects/meditate.ogg')
 #         effect1.set_volume(1)
 #         sound_effects.play(effect1, 0)
-        self.magick -= self.arcane_dict['Mass_Hysteria'].cost
-        spell = self.arcane_dict['Mass_Hysteria']
+        smns = [v for k,v in app.all_ents().items() if v.owner == self.owner and isinstance(v, (Berserker,Illusionist,Umbrae_Wolf,Thaumaturge,Murrain_Wolf,Fiend,Wurdulak,Chirurgeon,Hexmage,Fell_Evolver,Drake,Inquisitor,Pixie,Chronomancer))]
+        if smns == []:
+            return
+        self.magick -= self.arcane_dict['Reaping_of_Saturnus'].cost
+        spell = self.arcane_dict['Reaping_of_Saturnus']
         self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
         app.unbind_all()
         app.depop_context(event = None)
-        app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+84-app.moved_down, text = 'Mass Hysteria', justify = 'center', font = ('chalkduster', 16), fill = 'black', tags = 'text')
-        app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+85-app.moved_down, text = 'Mass Hysteria', justify = 'center', font = ('chalkduster', 16), fill = 'green3', tags = 'text')
-        def cleanup_hysteria(name):
-            del app.vis_dict[name]
-            app.canvas.delete(name)
-        def hysteria_loop(ids):
-            if ids == []:
-                self.cleanup_spell(name = 'Mass_Hysteria')
-            else:
-                id = ids[0]
-                ids = ids[1:]
-                ent = app.ent_dict[id]
-                app.get_focus(id)
-                name = 'Mass_Hysteria'+str(app.count)
-                app.count += 1
-                app.vis_dict[name] = Vis(name = 'Mass_Hysteria', loc = ent.loc[:])
-                if to_hit(self.get_abl('wis'),ent.get_abl('wis')):
-                    app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+34-app.moved_down, text = '-5 sanity', justify = 'center', font = ('chalkduster', 16), fill = 'black', tags = 'text')
-                    app.canvas.create_text(ent.loc[0]*100+50-app.moved_right, ent.loc[1]*100+35-app.moved_down, text = '-5 sanity', justify = 'center', font = ('chalkduster', 16), fill = 'green3', tags = 'text')
-                    def hys_ef(stat):
-                        return max(1,stat-5)
-                    p = partial(hys_ef)
-                    ent.san_effects.append(p)
-                    def undo(ent, p, lockname = None):
-                        ent.san_effects.remove(p)
-                        root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
-                    u = partial(undo, ent, p)
-                    n = 'Mass_Hysteria' + str(app.count)
-                    ent.effects_dict[n] = Effect(name = 'Mass_Hysteria', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
-                    root.after(1777, lambda t = 'text' : app.canvas.delete(t))
-                    root.after(1888, lambda n = name : cleanup_hysteria(n))
-                    root.after(1999, lambda ids = ids : hysteria_loop(ids))
-                else:
-                    miss(ent.loc)
-                    root.after(1777, lambda t = 'text' : app.canvas.delete(t))
-                    root.after(1888, lambda n = name : cleanup_hysteria(n))
-                    root.after(1999, lambda ids = ids : hysteria_loop(ids))
-        ids = app.init_q[:5]
-        root.after(1333, lambda t = 'text' : app.canvas.delete(t))
-        root.after(1444, lambda ids = ids : hysteria_loop(ids))
+        app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+84-app.moved_down, text = 'Reaping of Saturnus', justify = 'center', font = ('chalkduster', 16), fill = 'black', tags = 'text')
+        app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+85-app.moved_down, text = 'Reaping of Saturnus', justify = 'center', font = ('chalkduster', 16), fill = 'firebrick', tags = 'text')        
+        smn = choice(smns)
+        app.get_focus(smn.id)
+        app.vis_dict['Reaping_of_Saturnus'] = Vis(name = 'Reaping_of_Saturnus', loc = smn.loc[:])
+        self.summon_count -= 1
+        name = 'dethlok'+str(app.death_count)
+        app.death_count += 1
+        app.dethloks[name] = tk.IntVar(0)
+        root.after(333, lambda id = smn.id, name = name : app.kill(id, name))
+        root.wait_variable(app.dethloks[name])
+        root.after(1666, lambda name = 'Reaping_of_Saturnus' : self.cleanup_spell(name = name))
         
         
     def mass_hysteria(self, event = None):
@@ -21558,6 +21741,8 @@ class Witch(Summon):
         if id not in app.spell_target_ents().keys():
             return
         ent = app.ent_dict[id]
+        if isinstance(ent,Witch):
+            return
         effs = [v.name for k,v in ent.effects_dict.items()]
         if 'Blind' in effs:
             return
@@ -21567,7 +21752,7 @@ class Witch(Summon):
         effect1 = mixer.Sound('Sound_Effects/dark_sun.ogg')
         effect1.set_volume(1)
         sound_effects.play(effect1, 0)
-        self.init_cast_anims()
+#         self.init_cast_anims()
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -21613,6 +21798,8 @@ class Witch(Summon):
         if id not in app.spell_target_ents().keys():
             return
         ent = app.ent_dict[id]
+        if isinstance(ent, Witch):
+            return
 #         effect1 = mixer.Sound('Sound_Effects/gravity.ogg')
 #         effect1.set_volume(.9)
 #         sound_effects.play(effect1, 0)
@@ -21689,6 +21876,8 @@ class Witch(Summon):
         if id not in app.spell_target_ents().keys():
             return
         ent = app.ent_dict[id]
+        if isinstance(ent,Witch):
+            return
         if 'Gravity' in [v.name for k,v in ent.effects_dict.items()]:
             return
         if ent.immovable == True:
@@ -21699,7 +21888,7 @@ class Witch(Summon):
         effect1 = mixer.Sound('Sound_Effects/gravity.ogg')
         effect1.set_volume(.9)
         sound_effects.play(effect1, 0)
-        self.init_cast_anims()
+#         self.init_cast_anims()
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -21755,13 +21944,16 @@ class Witch(Summon):
             return
         if id not in app.spell_target_ents().keys():
             return
+        ent = app.ent_dict[id]
+        if isinstance(ent,Witch):
+            return
         self.magick -= self.arcane_dict["Beleth's_Command"].cost
         spell = self.arcane_dict["Beleth's_Command"]
         self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
         effect1 = mixer.Sound('Sound_Effects/beleths_command.ogg')
         effect1.set_volume(.7)
         sound_effects.play(effect1, 0)
-        self.init_cast_anims()
+#         self.init_cast_anims()
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -21904,10 +22096,16 @@ class Witch(Summon):
     def cont_legerdemain(self, event, sqr, sqrs, id1):
         if sqr not in sqrs:
             return
+        if id1 not in app.spell_target_ents().keys():
+            return
         id2 = app.grid[sqr[0]][sqr[1]]
         if id2 not in app.spell_target_ents().keys():
             return
         if id1 == id2:
+            return
+        ent1 = app.ent_dict[id1]
+        ent2 = app.ent_dict[id2]
+        if isinstance(ent1, Witch) or isinstance(ent2, Witch):
             return
         self.magick -= self.arcane_dict['Legerdemain'].cost
         spell = self.arcane_dict['Legerdemain']
@@ -22315,6 +22513,9 @@ class Witch(Summon):
         effs = [v.name for k,v in app.ent_dict[id].effects_dict.items()]
         if 'Mummify' in effs:
             return
+        ent = app.ent_dict[id]
+        if isinstance(ent, Witch):
+            return
         effect1 = mixer.Sound('Sound_Effects/mummify.ogg')
         effect1.set_volume(1)
         sound_effects.play(effect1, 0)
@@ -22377,6 +22578,9 @@ class Witch(Summon):
         id = app.grid[sqr[0]][sqr[1]]
         if id not in app.spell_target_ents().keys():
             return
+        ent = app.ent_dict[id]
+        if isinstance(ent, Witch):
+            return
         self.magick -= self.arcane_dict['Dust_Devil'].cost
         spell = self.arcane_dict['Dust_Devil']
         self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
@@ -22389,7 +22593,6 @@ class Witch(Summon):
         app.cleanup_squares()
         app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+14-app.moved_down, text = 'Dust Devil', justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
         app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+15-app.moved_down, text = 'Dust Devil', justify = 'center', font = ('chalkduster', 14), fill = 'goldenrod', tags = 'text')
-        ent = app.ent_dict[id]
         my_wis = self.get_abl('wis')
         tar_wis = ent.get_abl('wis')
         n = 'Dust_Devil'+str(app.count)
@@ -22546,6 +22749,9 @@ class Witch(Summon):
             return
         effs = [v.name for k,v in app.ent_dict[id].effects_dict.items()]
         if 'Disintegrate' in effs:
+            return
+        ent = app.ent_dict[id]
+        if isinstance(ent, Witch):
             return
         self.magick -= self.arcane_dict['Disintegrate'].cost
         spell = self.arcane_dict['Disintegrate']
