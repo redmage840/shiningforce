@@ -1,41 +1,10 @@
-# during apply_damage, after any atk/def efct is called, need to check to see if atkr/dfndr exist
-'''
-Traceback (most recent call last):
-  File "/Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/tkinter/__init__.py", line 1883, in __call__
-    return self.func(*args)
-  File "/Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/tkinter/__init__.py", line 804, in callit
-    func(*args)
-  File "witch3.py", line 24615, in handle_action
-    ent.do_round()
-  File "witch3.py", line 15146, in do_round
-    self.melee_attack(target)
-  File "witch3.py", line 15169, in melee_attack
-    self.finish_attack()
-  File "witch3.py", line 15180, in finish_attack
-    self.do_round()
-  File "witch3.py", line 15146, in do_round
-    self.melee_attack(target)
-  File "witch3.py", line 15169, in melee_attack
-    self.finish_attack()
-  File "witch3.py", line 15180, in finish_attack
-    self.do_round()
-  File "witch3.py", line 15148, in do_round
-    Ai_man.pursue(self, 'action', 'smart', self.get_move_type(), 1)
-  File "witch3.py", line 23153, in pursue
-    Ai_man.melee_pursue(ent, target_type)
-  File "witch3.py", line 23312, in melee_pursue
-    g = reduce(lambda a,b : a if dist(a,ent.loc)>dist(b,ent.loc) else b, intersect(path,mvs))
-TypeError: reduce() of empty sequence with no initial value
-
-'''
+# grant actions to tombs other than vivify, prox efcts that can only target tombs
 
 # spells that dmg/affect based on stats like moves, move range, acts, san, init
 
 # spells that only affect tombs, raise psy...
 
 # hindering mucilage with kobold cleric? sometimes...
-
-# library, other lvls, way to remove psyshield/invis
 
 # should only one unique hex affect a unit?
 
@@ -221,6 +190,8 @@ def action_description(act):
         return 'Spell target in range reason gets fire resistance and attackers doing melee damage to effect holder take 6 fire damage.'
     elif act == 'Reaping of Saturnus':
         return 'Destroy a randomly chosen summon you own to decrease your summon count by 1.'
+    elif act == 'Snuffle':
+        return 'Target loses psyshield.'
     elif act == 'Flying Move':
         return 'Move without being impeded by obstacles.'
     elif act == 'Flying Move':
@@ -306,7 +277,7 @@ def action_description(act):
     elif act == 'Tracer Grenade':
         return 'A unit within range (ballistics<=ballistics+2), and all units within range 2 of that location, upon failing to-hit marksmanship vs dodge, get -4 dodge and effect that strips instances of previously held invisibility (later effects may grant invisibility while this effect still persists). Duration is missle. Level is ballistics.'
     elif act == 'Doubling Cube':
-        return 'Target unit and all friendly units within range 1 of target get double effect if they do not already have it. Effect causes any slashing, crushing, or pierced damage made against unit to force attacker to make a to-hit roll (psyche vs psyche) against defender. On fail, the attackers dmg is reduced to 1. Duration is reason, level is wisdom. Costs 3 magick. Only targets primary as spell.'
+        return 'Target unit and all friendly units within range 1 of target get double effect if they do not already have it. Effect causes any slashing, crushing, or piercing damage (from melee and ranged sources) made against unit to force attacker to make a to-hit roll (psyche vs psyche) against defender. On fail, the attackers dmg is reduced to 1. Duration is reason, level is wisdom. Costs 3 magick. Only targets primary as spell.'
     elif act == 'Unholy Chant':
         return 'All other friendly units within range 2 of caster get +1 to all stats (str, agl, end, mm, msl, bls, dod, psy, wis, rsn, san, init, moverange) for the remainder of the turn at level wisdom. Costs 1 magick.'
     elif act == 'Arrow of Diana':
@@ -370,7 +341,7 @@ def action_description(act):
     elif act == 'Mind Rot':
         return 'Spell target in range reason gets -2 wisdom, -1 reason, -3 sanity. Duration is reason. Level is wisdom.'
     elif act == 'Legerdemain':
-        return 'Exchange position of two spell target units.'
+        return 'Exchange position of two, non-Witch spell target units.'
     elif act == 'Grasp of the Old Ones':
         return 'Any unit within range reason, upon to-hit psyche vs psyche, gets an effect that strips invisibility and psyshield. Duration is reason. Level is wisdom. Does not target.'
     elif act == 'Dust Devil':
@@ -482,7 +453,7 @@ def action_description(act):
     elif act == 'Willowisp':
         return 'Spell target in range reason takes psyche vs endurance fire spell damage and gets a burn defense effect, if it does not already possess one. Burn causes melee, ranged, and spell damage received to be increased by 2 if the type is slashing, crushing, piercing, fire, or explosive. The target is then moved to a random location within distance 4, as long as an open path exists.'
     elif act == 'Wail':
-        return 'All enemy units within range reason of caster are moved to a location among those furthest from caster from the moves the unit could normally make.'
+        return 'All enemy units within range reason of caster are moved to a location among those furthest from caster from the moves the unit could normally make and lose psyshield and invisibility.'
     elif act == 'Iron Spirit':
         return 'An adjacent spell target summon gets +1 strength, endurance, and wisdom. Duration is reason. Level is wisdom.'
     elif act == 'Strength of the Void':
@@ -706,6 +677,8 @@ def effect_description(ef):
         return '-1 psy,wis,rsn,san,init, 2 magick dmg eot, dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Pox':
         return 'Eot 3 poison dmg, dur = '+str(ef.duration)+', level = '+str(ef.level)
+    elif ef.name == 'Wail':
+        return 'Lose psyshield and invisibility, dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Fangs_of_Apophis':
         return '+1 str, agl, acid melee damage, dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Wreathed_in_Flame':
@@ -749,7 +722,7 @@ def effect_description(ef):
     elif ef.name == 'Rage':
         return '+3 strength, endurance, +4 psyche. 3 magick damage on end. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Doubling_Cube':
-        return 'When receiving slashing, piercing, or crushing damage, attacker must hit (psyche vs psyche) or the damage is reduced to 1. dur = '+str(ef.duration)+', level = '+str(ef.level)
+        return 'When receiving slashing, piercing, or crushing damage (melee or ranged), attacker must hit (psyche vs psyche) or the damage is reduced to 1. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Tracer_Grenade':
         return '-4 dodge, lose invisibility. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Simulacrum':
@@ -986,6 +959,10 @@ def death_trigger_description(name):
         return 'Owner takes 4 magick damage.'
     elif name == 'Contagion':
         return 'Each adjacent unit without this effect gets -3 strength, agility, endurance, and dodge. Duration is reason. Level is wisdom.'
+    elif name == 'Pestilence':
+        return 'Each adjacent unit without this effect gets end-of-turn 3 poison damage effect and this death trigger.'
+    elif name == 'Scarab_Gestation':
+        return 'Create a Scarab under same control as effect owner.'
     else:
         return 'Some Description'
 
@@ -1077,26 +1054,44 @@ def damage(a1, a2):
 # takes 2 ent objects, a negative int amount, a string type 'melee', 'ranged', 'poison', or 'magick', and a lockname string to set
 # following effects MAY change amount applied (amount is always the only value returned, whether changed or not), OR do different non-damage things
 def apply_damage(attacker, defender, amount, type, sourcename, sourcetype, lockname):
-    atk_loop(attacker.attack_effects[:] + app.loc_dict[tuple(attacker.loc)].atk_effects, attacker, defender, amount, type, sourcename, sourcetype, lockname)
+    efcts = attacker.attack_effects[:] + app.loc_dict[tuple(attacker.loc)].atk_effects
+    efcts = efcts[::-1]
+    atk_loop(efcts, attacker, defender, amount, type, sourcename, sourcetype, lockname)
     
 def atk_loop(effects_list, attacker, defender, amount, type, sourcename, sourcetype, lockname):
     if effects_list == []:
-        defense_loop(defender.defense_effects[:] + app.loc_dict[tuple(defender.loc)].def_effects[:], attacker, defender, amount, type, sourcename, sourcetype, lockname)
+        efcts = defender.defense_effects[:] + app.loc_dict[tuple(defender.loc)].def_effects[:]
+        efcts = efcts[::-1]
+        defense_loop(efcts, attacker, defender, amount, type, sourcename, sourcetype, lockname)
     else:
         ef = effects_list[0]
         effects_list = effects_list[1:]
         amount, type = lock(ef, attacker, defender, amount, type, sourcename, sourcetype)
-        atk_loop(effects_list, attacker, defender, amount, type, sourcename, sourcetype, lockname)
+        if attacker.id not in app.all_ents():
+            root.after(333, lambda de = defender, am = amount, ty = type, sn = sourcename, st = sourcetype, ln = lockname : finish_apply_damage(de, am, ty, sn, st, ln))
+        elif attacker.id not in app.all_ents() and defender.id not in app.all_ents():
+            root.after(333, lambda ln = lockname : app.dethloks[ln].set(1))
+        else:
+            atk_loop(effects_list, attacker, defender, amount, type, sourcename, sourcetype, lockname)
+#         atk_loop(effects_list, attacker, defender, amount, type, sourcename, sourcetype, lockname)
+
         
 def defense_loop(effects_list, attacker, defender, amount, type, sourcename, sourcetype, lockname):
     if effects_list == []:
         # delay to wait for lockvar to be created
-        root.after(333, lambda at = attacker, de = defender, am = amount, ty = type, sn = sourcename, st = sourcetype, ln = lockname : finish_apply_damage(apply_damage, at, de, am, ty, sn, st, ln))
+        root.after(333, lambda de = defender, am = amount, ty = type, sn = sourcename, st = sourcetype, ln = lockname : finish_apply_damage(de, am, ty, sn, st, ln))
     else:
         ef = effects_list[0]
         effects_list = effects_list[1:]
         amount, type = lock(ef, attacker, defender, amount, type, sourcename, sourcetype)
-        defense_loop(effects_list, attacker, defender, amount, type, sourcename, sourcetype, lockname)
+        if attacker.id not in app.all_ents():
+            root.after(333, lambda de = defender, am = amount, ty = type, sn = sourcename, st = sourcetype, ln = lockname : finish_apply_damage(de, am, ty, sn, st, ln))
+        elif attacker.id not in app.all_ents() and defender.id not in app.all_ents():
+            root.after(333, lambda ln = lockname : app.dethloks[ln].set(1))
+        else:
+            defense_loop(effects_list, attacker, defender, amount, type, sourcename, sourcetype, lockname)
+#         defense_loop(effects_list, attacker, defender, amount, type, sourcename, sourcetype, lockname)
+
 
 # func that is called with 'lock' must accept lockname which it changes after executing to signal completion
 def lock(func, *args, **kwargs):
@@ -1108,7 +1103,7 @@ def lock(func, *args, **kwargs):
     return return_args
 
 #
-def finish_apply_damage(apply_damage, attacker, defender, amount, type, sourcename, sourcetype, lockname = None):
+def finish_apply_damage(defender, amount, type, sourcename, sourcetype, lockname = None):
     amount = abs(amount) # get amount as pos value to apply resist/wknss
     resist = defender.get_resist()
     if type in resist:
@@ -5897,7 +5892,8 @@ class Murrain_Wolf(Summon):
                     root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
                     return (amount,type)
             else:
-                return (amount,0)
+                root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+                return (amount,type)
         app.loc_dict[tuple(sqr)].def_effects.append(spore_def)
         def undo(s, un, p_ef, lockname = None):
             app.loc_dict[tuple(s)].dodge_effects.remove(p_ef)
@@ -7156,7 +7152,7 @@ class Fell_Evolver(Summon):
             self.rsn = 6
             self.san = 14
             self.init = 6
-            self.spirit = 36
+            self.spirit = 31
             self.magick = 0
             self.acts = 1
             self.mvs = 1
@@ -8924,7 +8920,7 @@ class Thaumaturge(Summon):
         bg.create_image(0,0, image = app.cntxt_info_bg, anchor = 'nw')
         bg.create_text(15, 15, text= 'Choose Ability...', width = 190, anchor = 'nw', font = ('chalkduster', 16), fill = 'indianred')
         app.context_buttons.append(bg)
-        abls = ['strength', 'aglility', 'endurance', 'marksmanship', 'missle', 'ballistics', 'dodge', 'psyche', 'wisdom', 'reason', 'sanity', 'initiative']
+        abls = ['strength', 'agility', 'endurance', 'marksmanship', 'missle', 'ballistics', 'dodge', 'psyche', 'wisdom', 'reason', 'sanity', 'initiative']
         for abl in abls:
             b = tk.Button(app.context_menu, text = abl, wraplength = 190, font = ('chalkduster', 16), fg = 'tan3', highlightbackground = 'tan3', command = lambda id = id, abl = abl : self.choose_mark(id, abl))
             b.pack(side = 'top')
@@ -10917,15 +10913,16 @@ class Drake(Summon):
         ent = app.ent_dict[id]
         app.vis_dict['Spit_Venom'] = Vis(name = 'Spit_Venom', loc = sqr[:])
         if to_hit(self.get_abl('mm'),app.ent_dict[id].get_abl('dodge')) == True:
-            def undo():
-                pass
+            def undo(lockname=None):
+                root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+            u = partial(undo)
             def take_2(tar, lockname = None):
                 app.get_focus(tar)
                 lock(apply_damage, self, app.ent_dict[tar], -2, 'poison', 'Drake Venom', 'eot')
                 root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
             eot = partial(take_2, id)
             n = 'Spit_Venom' + str(app.count)
-            app.ent_dict[id].effects_dict[n] = Effect(name = 'Spit_Venom', eot_func = eot, undo_func = undo, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
+            app.ent_dict[id].effects_dict[n] = Effect(name = 'Spit_Venom', eot_func = eot, undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
             d = damage(self.get_abl('msl'),app.ent_dict[id].get_abl('end'))
             root.after(1666, lambda e = None : self.cleanup_spit_venom(event = e))
             lock(apply_damage, self, app.ent_dict[id], -d, 'poison', 'Spit Venom', 'ranged')
@@ -11618,7 +11615,7 @@ class White_Dragon(Bot):
         
         
     def do_round(self):
-        if self.waiting == True:
+        if self.waiting == True or self.id not in app.all_ents().keys():
             app.handle_action()
         else:
             melee_atks = [k for k,v in app.action_target_ents().items() if dist(self.loc, v.loc) == 1 and v.owner != self.owner]
@@ -11866,7 +11863,7 @@ class Tortured_Soul(Bot):
         
         
     def do_round(self):
-        if self.waiting == True:
+        if self.waiting == True or self.id not in app.all_ents().keys():
             app.handle_action()
         else:
             if self.acts > 0 and self.magick >= 1 and [k for k,v in app.spell_target_ents().items() if dist(v.loc, self.loc) <= self.get_abl('rsn') and v.owner != self.owner and 'Agony' in self.actions.keys()]:
@@ -11967,7 +11964,7 @@ class Skeleton_Archer(Bot):
         
         
     def do_round(self):
-        if self.waiting == True:
+        if self.waiting == True or self.id not in app.all_ents().keys():
             app.handle_action()
         else:
             if self.acts > 0 and [k for k,v in app.action_target_ents().items() if dist(v.loc, self.loc) <= self.get_abl('bls') and v.owner != self.owner] and 'Barrage' in self.actions.keys():
@@ -12096,7 +12093,7 @@ class Ghost(Bot):
     # change to: cast fear, slow, or willowisp w/i range, then Wail(equake no dmg), then move randomly w/i 4
     # only act if ent w/i range of spells
     def do_round(self):
-        if self.waiting == True:
+        if self.waiting == True or self.id not in app.all_ents().keys():
             app.handle_action()
         else: # ATTEMPT ATTACK FROM STARTLOC
             action_ents = [k for k,v in app.action_target_ents().items() if v.owner != self.owner and dist(v.loc, self.loc) <= self.get_abl('rsn')]
@@ -12362,6 +12359,16 @@ class Ghost(Bot):
                 else:
                     sqr = reduce(lambda a,b : a if dist(a, self.loc) > dist(b, self.loc) else b, sqrs)
                     app.focus_square(sqr)
+                    def staff_ef(ts):
+                        return [t for t in ts if t != 'psyshield' and t != 'invisibility']
+                    p = partial(staff_ef)
+                    ent.type_effects.append(p)
+                    def undo(ent, p, lockname = None):
+                        ent.type_effects.remove(p)
+                        root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+                    u = partial(undo, ent, p)
+                    n = 'Wail' + str(app.count)
+                    ent.effects_dict[n] = Effect(name = 'Wail', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
                     mt = ent.get_move_type()
                     if mt == 'normal' or mt == 'charge':
                         lock(Bot.ai_normal_move, ent, sqr)
@@ -12410,7 +12417,7 @@ class Revenant(Bot):
         
         
     def do_round(self):
-        if self.waiting == True:
+        if self.waiting == True or self.id not in app.all_ents().keys():
             app.handle_action()
         else:
             app.get_focus(self.id)
@@ -12485,7 +12492,7 @@ class Kensai(Bot):
         super().__init__(name, img, loc, owner)
         
     def do_round(self):
-        if self.waiting == True:
+        if self.waiting == True or self.id not in app.all_ents().keys():
             app.handle_action()
         else:
             if [k for k,v in app.action_target_ents().items() if v.owner != self.owner] != [] and self.mvs > 0 and self.legal_moves() != [] and choice([0,1]):
@@ -12633,7 +12640,7 @@ class Kobold_Cleric(Bot):
         super().__init__(name, img, loc, owner)
         
     def do_round(self):
-        if self.waiting == True:
+        if self.waiting == True or self.id not in app.all_ents().keys():
             app.handle_action()
         else:
             if self.acts > 0 and self.magick >= 1 and [k for k,v in app.spell_target_ents().items() if dist(v.loc, self.loc) <= self.get_abl('rsn') and v != self and v.owner == self.owner and v.spirit <= v.base_spirit-self.get_abl('psyche')] != []:
@@ -12791,7 +12798,7 @@ class Kobold_Shaman(Bot):
         super().__init__(name, img, loc, owner)
         
     def do_round(self):
-        if self.waiting == True:
+        if self.waiting == True or self.id not in app.all_ents().keys():
             app.handle_action()
         else:
             if self.acts > 0 and self.magick >= 1 and [k for k,v in app.spell_target_ents().items() if dist(v.loc, self.loc) <= self.get_abl('rsn') and v.owner != self.owner and 'Firebolt' in self.actions.keys()]:
@@ -12977,7 +12984,7 @@ class Ghoul(Bot):
         super().__init__(name, img, loc, owner)
         
     def do_round(self):
-        if self.waiting == True:
+        if self.waiting == True or self.id not in app.all_ents().keys():
             app.handle_action()
         else:
             if self.acts > 0 and [k for k,v in app.action_target_ents().items() if dist(v.loc, self.loc) == 1 and v.owner != self.owner] and 'Claw Rake' in self.actions.keys():
@@ -13068,7 +13075,7 @@ class Skeleton(Bot):
         super().__init__(name, img, loc, owner)
         
     def do_round(self):
-        if self.waiting == True:
+        if self.waiting == True or self.id not in app.all_ents().keys():
             app.handle_action()
         else:
             if self.acts > 0 and [k for k,v in app.action_target_ents().items() if dist(v.loc, self.loc) == 1 and v.owner != self.owner] and 'Bone Strike' in self.get_actions().keys():
@@ -13133,7 +13140,7 @@ class Ghast(Bot):
         super().__init__(name, img, loc, owner)
         
     def do_round(self):
-        if self.waiting == True:
+        if self.waiting == True or self.id not in app.all_ents().keys():
             app.handle_action()
         else:
             if self.acts > 0 and [k for k,v in app.action_target_ents().items() if dist(v.loc, self.loc) == 1 and v.owner != self.owner] and 'Cut' in self.get_actions().keys():
@@ -13199,7 +13206,7 @@ class Undead_Knight(Bot):
         super().__init__(name, img, loc, owner)
         
     def do_round(self):
-        if self.waiting == True:
+        if self.waiting == True or self.id not in app.all_ents().keys():
             app.handle_action()
         else:
             if self. acts > 0 and [k for k,v in app.action_target_ents().items() if dist(v.loc, self.loc) == 1 and v.owner != self.owner] and 'Cleave' in self.get_actions().keys():
@@ -13277,11 +13284,11 @@ class Troll(Bot):
         
     def do_round(self):
         # TROLL REGEN (regen_this_round reset in app.end_turn)
-        if self.spirit < 35 and self.regen_this_round == False:
+        if self.waiting == True or self.id not in app.all_ents().keys():
+            app.handle_action()
+        elif self.spirit < 35 and self.regen_this_round == False:
             self.troll_regen()
             root.after(1666, self.do_round)
-        elif self.waiting == True:
-            app.handle_action()
         else:
             if self.acts > 0 and [k for k,v in app.action_target_ents().items() if dist(v.loc, self.loc) == 1 and v.owner != self.owner] and 'Pummel' in self.get_actions().keys():
                 target = choice([k for k,v in app.action_target_ents().items() if dist(v.loc, self.loc) == 1 and v.owner != self.owner])
@@ -13381,7 +13388,7 @@ class Warlock(Bot):
             return self.move_range
             
     def do_round(self):
-        if self.waiting == True:
+        if self.waiting == True or self.id not in app.all_ents().keys():
             app.handle_action()
         else:
             if self.summoned_undead == False:
@@ -13597,16 +13604,16 @@ class Warlock(Bot):
 class Air_Mage(Bot):
     def __init__(self, name, img, loc, owner, waiting = False):
         self.actions = {'Static Storm':self.static_storm, 'Cyclonic Rift':self.cyclonic_rift, 'Breath of Life':self.breath_of_life, 'Summon Air Elementals':self.summon_elementals}
-        self.str = 6
-        self.agl = 12
-        self.end = 7
+        self.str = 5
+        self.agl = 15
+        self.end = 5
         self.mm = 13
         self.msl = 9
         self.bls = 7
-        self.dodge = 17
-        self.psyche = 11
-        self.wis = 11
-        self.rsn = 6
+        self.dodge = 15
+        self.psyche = 8
+        self.wis = 9
+        self.rsn = 5
         self.init = 9
         self.spirit = 48
         self.magick = 366
@@ -13623,7 +13630,7 @@ class Air_Mage(Bot):
         
             
     def do_round(self):
-        if self.waiting == True:
+        if self.waiting == True or self.id not in app.all_ents().keys():
             app.handle_action()
         else:
             air_elems = [v for k,v in app.all_ents().items() if v.name == 'Air_Elemental']
@@ -13724,7 +13731,7 @@ class Air_Mage(Bot):
                         if spacer > 300:
                             continue
                         app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+spacer-app.moved_down, text = 'Dispel '+v.name.replace('_',' '), justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
-                        app.canvas.create_text(ent.loc[0]*100+50-app.moved_right, ent.loc[1]*100+spacer-app.moved_down, text = 'Dispel '+v.name.replace('_',' '), justify = 'center', font = ('chalkduster', 14), fill = 'darkorchid1', tags = 'text')
+                        app.canvas.create_text(ent.loc[0]*100+50-app.moved_right, ent.loc[1]*100+spacer-app.moved_down, text = 'Dispel '+v.name.replace('_',' '), justify = 'center', font = ('chalkduster', 14), fill = 'antiquewhite', tags = 'text')
                         spacer += 15
                 for k in to_remove:
                     del ent.effects_dict[k]
@@ -13876,7 +13883,7 @@ class Air_Elemental(Bot):
         super().__init__(name, img, loc, owner)
         
     def do_round(self):
-        if self.waiting == True:
+        if self.waiting == True or self.id not in app.all_ents().keys():
             app.handle_action()
         else:
             if self.acts > 0 and [k for k,v in app.action_target_ents().items() if dist(v.loc, self.loc) <= self.get_abl('bls') and v.owner != self.owner] and 'Gale' in self.actions.keys():
@@ -14008,7 +14015,7 @@ class Water_Mage(Bot):
         
             
     def do_round(self):
-        if self.waiting == True:
+        if self.waiting == True or self.id not in app.all_ents().keys():
             app.handle_action()
         else:
             purify_tars = [k for k,v in app.all_ents().items() if dist(v.loc,self.loc)<=self.get_abl('rsn') and len([i for i,j in v.effects_dict.items() if j.name != 'Dehydrate' and j.name != 'Fog'])>=2]
@@ -14250,7 +14257,7 @@ class Water_Elemental(Bot):
         
     # first try to attack, then try to move setting 'dissipating' to True if legal_moves() shorter than move_range (move obstructed)
     def do_round(self):
-        if self.waiting == True:
+        if self.waiting == True or self.id not in app.all_ents().keys():
             app.handle_action()
         else:
             # SURGE ATTACK
@@ -14411,14 +14418,14 @@ class Earth_Mage(Bot):
         self.mm = 1
         self.msl = 0
         self.bls = 0
-        self.dodge = 7
-        self.psyche = 7
-        self.wis = 7
-        self.rsn = 3
-        self.init = 5
+        self.dodge = 6
+        self.psyche = 6
+        self.wis = 6
+        self.rsn = 2
+        self.init = 4
         self.spirit = 58
         self.magick = 466
-        self.san = 28
+        self.san = 18
         self.acts = 1
         self.mvs = 1
         self.move_range = 4
@@ -14504,7 +14511,7 @@ class Earth_Mage(Bot):
     # summon elems once
     # use earthquake
     def do_round(self):
-        if self.waiting == True:
+        if self.waiting == True or self.id not in app.all_ents().keys():
             app.handle_action()
         else:
             if self.summoned_elementals == False:
@@ -14624,7 +14631,7 @@ class Earth_Mage(Bot):
 class Earth_Elemental(Bot):
     def __init__(self, name, img, loc, owner, waiting = False):
         self.actions = {'Rock Punch':self.rock_punch}
-        self.str = 16
+        self.str = 10
         self.agl = 7
         self.end = 13
         self.mm = 1
@@ -14635,7 +14642,7 @@ class Earth_Elemental(Bot):
         self.wis = 4
         self.rsn = 3
         self.init = 3
-        self.spirit = 23
+        self.spirit = 8
         self.magick = 0
         self.san = 23
         self.acts = 1
@@ -14643,12 +14650,12 @@ class Earth_Elemental(Bot):
         self.move_range = 7
         self.waiting = waiting
         self.move_type = 'charge'
-        self.resist = ['slashing', 'piercing', 'crushing', 'elec']
-        self.weak = ['cold', 'acid', 'fire', 'explosive']
+        self.resist = ['slashing', 'piercing', 'crushing', 'elec', 'poison']
+        self.weak = ['acid', 'explosive']
         super().__init__(name, img, loc, owner)
         
     def do_round(self):
-        if self.waiting == True:
+        if self.waiting == True or self.id not in app.all_ents().keys():
             app.handle_action()
         else:
             if self.acts > 0 and [k for k,v in app.action_target_ents().items() if dist(v.loc, self.loc) == 1 and v.owner != self.owner] and 'Rock Punch' in self.get_actions().keys():
@@ -14714,7 +14721,7 @@ class Fire_Mage(Bot):
         
             
     def do_round(self):
-        if self.waiting == True:
+        if self.waiting == True or self.id not in app.all_ents().keys():
             app.handle_action()
         else:
             if self.summoned_elementals == False:
@@ -14866,7 +14873,7 @@ class Sorceress(Bot):
         super().__init__(name, img, loc, owner)
         
     def do_round(self):
-        if self.waiting == True:
+        if self.waiting == True or self.id not in app.all_ents().keys():
             app.handle_action()
         else:
             # try free teleport other
@@ -15168,7 +15175,7 @@ class Orc_Axeman(Bot):
         super().__init__(name, img, loc, owner)
         
     def do_round(self):
-        if self.waiting == True:
+        if self.waiting == True or self.id not in app.all_ents().keys():
             app.handle_action()
         else:
             if self.acts > 0 and [k for k,v in app.action_target_ents().items() if dist(v.loc, self.loc) == 1 and v.owner != self.owner] and 'Chop' in self.get_actions().keys():
@@ -15238,7 +15245,7 @@ class Fire_Elemental(Bot):
         super().__init__(name, img, loc, owner)
         
     def do_round(self):
-        if self.waiting == True:
+        if self.waiting == True or self.id not in app.all_ents().keys():
             app.handle_action()
         else:
             if self.acts > 0 and [k for k,v in app.action_target_ents().items() if dist(v.loc, self.loc) <= self.get_abl('bls') and v.owner != self.owner] and 'Flare' in self.actions.keys():
@@ -15379,7 +15386,7 @@ class Barbarian(Bot):
         self.img = self.anim_dict[0]
         
     def do_round(self):
-        if self.waiting == True:
+        if self.waiting == True or self.id not in app.all_ents().keys():
             app.handle_action()
         else:
             # MOVE charge move towards goal
@@ -15512,16 +15519,21 @@ class Barbarian(Bot):
                 my_str = self.get_abl('str')
                 target_psy = ent.get_abl('psyche')
                 if to_hit(my_str, target_psy):
-                    app.canvas.create_text(ent.loc[0]*100-app.moved_right+49, ent.loc[1]*100-app.moved_down+84, text = '-2 sanity', justify = 'center', fill = 'black', font = ('chalkduster', 15), tags = 'text')
-                    app.canvas.create_text(ent.loc[0]*100-app.moved_right+50, ent.loc[1]*100-app.moved_down+85, text = '-2 sanity', justify = 'center', fill = 'indianred', font = ('chalkduster', 15), tags = 'text')
+                    app.canvas.create_text(ent.loc[0]*100-app.moved_right+49, ent.loc[1]*100-app.moved_down+84, text = '-2 sanity, lose invis', justify = 'center', fill = 'black', font = ('chalkduster', 15), tags = 'text')
+                    app.canvas.create_text(ent.loc[0]*100-app.moved_right+50, ent.loc[1]*100-app.moved_down+85, text = '-2 sanity, lose invis', justify = 'center', fill = 'indianred', font = ('chalkduster', 15), tags = 'text')
                     def shout_effect(stat):
                         return max(1,stat-2)
                     p = partial(shout_effect)
                     ent.san_effects.append(p)
-                    def undo(ent, p, lockname = None):
+                    def staff_ef(ts):
+                        return [t for t in ts if t != 'invisibility']
+                    p2 = partial(staff_ef)
+                    ent.type_effects.append(p2)
+                    def undo(ent, p, p2, lockname = None):
                         ent.san_effects.remove(p)
+                        ent.type_effects.remove(p2)
                         root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
-                    u = partial(undo, ent, p)
+                    u = partial(undo, ent, p, p2)
                     n = 'Shout' + str(app.count)
                     ent.effects_dict[n] = Effect(name = 'Shout', undo_func = u, duration = self.get_abl('str'), level = self.get_abl('str'))
                     root.after(1555, lambda un = un : cleanup_shout(un))
@@ -15832,8 +15844,8 @@ class Minotaur(Bot):
     #  Minotaur AI
     # if no other enemy is within atk range, will always attempt moving towards witch
     def do_round(self):
-        if self.waiting == True:
-            self.pass_priority(ents_list)
+        if self.waiting == True or self.id not in app.all_ents().keys():
+            app.handle_action()
         else:
             w = app.ent_dict[app.p1_witch]
             charge_ents = [k for k,v in app.all_ents().items() if self.get_abl('move_range') <= dist(v.loc, self.loc) <= self.get_abl('move_range')*2 and (v.loc[0] == self.loc[0] or v.loc[1] == self.loc[1]) and self.clear_path(self.loc[:], v.loc[:]) == True and v.owner != self.owner]
@@ -19793,7 +19805,7 @@ class Witch(Summon):
         ent.resist_effects.append(p)
         def wreathed_def(atkr, dfndr, amt, type, sn, st, lockname = None):
             if st == 'melee':
-                lock(apply_damage, dfndr, atkr, -6, 'fire', 'Flame Shield', 'spell')
+                lock(apply_damage, dfndr, atkr, -6, 'fire', 'Flame Shield', 'redirect')
                 root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
                 return (amt, type)
             else:
@@ -21624,7 +21636,7 @@ class Witch(Summon):
         app.depop_context(event = None)
         root.bind('<q>', self.cleanup_spell)
         root.bind('<a>', self.do_reaping)
-        b = tk.Button(app.context_menu, text = 'Confirm Reaping of Saturnus', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None : self.do_mass_hysteria(e))
+        b = tk.Button(app.context_menu, text = 'Confirm Reaping of Saturnus', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None : self.do_reaping(e))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
         b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
@@ -22092,6 +22104,9 @@ class Witch(Summon):
         b = tk.Button(app.context_menu, text = 'Choose Second Target', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs, id = id : self.cont_legerdemain(e, s, sqrs, id))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
         
     def cont_legerdemain(self, event, sqr, sqrs, id1):
         if sqr not in sqrs:
@@ -25544,6 +25559,7 @@ class App(tk.Frame):
             txt += 'Warlock is immune to all effects that alter abilities, including acts and moves.' + '\n'
         if isinstance(ent, Earth_Mage):
             txt += 'Earth Mage gets +1 to abls, besides acts and moves, for each Earth Elemental that exists.' + '\n'
+            txt += 'Earthquake can still be cast even if removed from actions.' + '\n'
         txt += 'Move type: ' + ent.get_move_type() + '\n'
         # actions/atks
         txt += 'Actions:'+'\n'
