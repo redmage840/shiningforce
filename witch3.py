@@ -1,23 +1,17 @@
+# flee ranged behavior does not account for map (possibly any) effects (like hindering mucilage), kobold shaman flee behavior
+# flee behavior should grab potential moves from ent.legal_moves(), should see hindering mucilage
+
+# page arcana min
+
+# build arcana library/deck
+
 # grant actions to tombs other than vivify, prox efcts that can only target tombs
 
-# spells that dmg/affect based on stats like moves, move range, acts, san, init
-
-# spells that only affect tombs, raise psy...
-
-# hindering mucilage with kobold cleric? sometimes...
+# hindering mucilage with kobold cleric? sometimes... seems to be with flee behavior
 
 # should only one unique hex affect a unit?
 
-# Morgan spells/arcane dict cost, times_cast
-
 # scarabs/swarm, to keep same effects, instead of creating new object, change old one
-
-# both sot and eot campaign effects, make sure not redundant
-
-# list comprehensions recalc all internal func calls?! not memoized...
-# speed up animate sqrs blinks, like wing buffet
-
-# make fell evolver image change with evolutions
 
 # fix/change/balance lesser demon, maybe cenobite
 
@@ -26,17 +20,9 @@
 
 # wraith, perm def efct reduce melee/ranged dmg to 1, perm psyshield
 
-# change mind rot, blind, torment,
-
 # make gorgon class / level
 
-# sounds: corrosive atk
-
 # music volume / sfx volume , and/or turn on/off
-
-# note in help, all defense effects are applied after all attack efcts have been applied...
-
-# mousehover popup spell/action desc?
 
 # r-click on minimap to jump screen position...show block sqrs
 
@@ -48,7 +34,24 @@
 
 # witches use for actions...
 
+# finish Morgan
+
 # types ==> undead
+
+# level with 'waypoints' end/start turn on waypoint to move between areas..., multiple screen/background level...
+
+# pathfinding (esp along long paths) should avoid moving entirely along one axis
+
+# save game during level?
+
+# get_focus/focus_square should 'center' screen on area...
+
+# main menu / back buttons in load
+
+# summon r-click desc
+
+# show costs of actions, without disrupting the names for action_descr lookups...
+# alt five is infi symbol
 
 '''
 Random names/ideas
@@ -63,12 +66,6 @@ redirect magick dmg to target
 
 armor of thorns
 sot/eot all adj take 1 piercing, add phys resist
-
-Force Field
-reduce phys def efct
-
-Astrological Guidance
-move tar up to its move_range wo applying move effects, cannot have moved, sets move_used to true
 
 trap in stone
 replace ent w less than 40 max spirit w inert ent or 'block'
@@ -103,12 +100,6 @@ get efct that incrs phys to gain resists to poison, magick, elemental
 Riddle of the Sphinx
 choose among resists that a tar has, tar loses that resist on psy save fail (-2)
 
-Fangs of Apophis
-Tar gains invis and atk efct that changes type to poison
-
-Wreathed in Flames
-remove fire wkns, add resist fire, elec, pierc, atk efct that changes phys to fire +1 dmg
-
 Third Eye
 all wi range rsn make psy save -2 or lose invis and psyshield
 
@@ -129,30 +120,6 @@ themes- 'woodland' summons: spells that create computer-controlled, player-owned
 
 source material - changelings, leprechaun, puca, banshee, loughleagh (lake of healing), black lamb, T'yeer-Na-N-Oge, Hy-Brasail (isle of the blessed), dullahan, far darrig, merrow, sluagh (horde,undead), fomorian (giants), bean nighe, barghest, beast of bodmin moor, black annis/anny, redcap, nuckelavee
 '''
-
-# level with 'waypoints' end/start turn on waypoint to move between areas...
-
-# pathfinding (esp along long paths) should avoid moving entirely along one axis
-
-# save game during level?
-
-# get_focus/focus_square should 'center' screen on area...
-
-# main menu / back buttons in load
-
-# summon r-click desc
-
-# change morgan stats, spells
-
-# make hawk target action targets?
-
-# visuals for eot/sot effects...
-
-# trolls that fail sanity check skip their regen..., anything with specific behavior in do_round() would... minotaur, dragon, etc...
-
-# show costs of actions, without disrupting the names for action_descr lookups...
-# alt five is infi symbol
-
 
 import tkinter as tk
 # from tkinter import ttk
@@ -1027,11 +994,13 @@ def bfs(start, goal, grid):
         last = path[-1]
         if last in goal:
             return path
-        adj = [c for c in app.coords if dist(c, last) == 1 and grid[c[0]][c[1]] == '']
-        for s in adj:
-            if s not in visited:
-                q.append(path + [s])
-                visited.append(s)
+        else:
+            adj = [c for c in app.coords if dist(c, last) == 1 and grid[c[0]][c[1]] == '']
+            shuffle(adj)
+            for s in adj:
+                if s not in visited:
+                    q.append(path + [s])
+                    visited.append(s)
     return None
 
 def to_hit(a1, a2):
@@ -5809,7 +5778,7 @@ class Murrain_Wolf(Summon):
         root.after(1666, lambda s = sqr : self.finish_scarab_swarm(s))
         root.after(2666, self.cleanup_scarab_swarm)
         
-    def finish_scarab_swarm(self, sqr, ef_dict):
+    def finish_scarab_swarm(self, sqr):
         img = ImageTk.PhotoImage(Image.open('summon_imgs/Scarab_Swarm.png'))
         if self.owner == 'p1':
             id = 'a'+str(app.ent_dict[app.p1_witch].summon_ids)
@@ -23330,6 +23299,7 @@ class Ai_man():
                 root.after(666, app.handle_action)
             
     # Purse while avoiding detrimental local effects (based on rand val compared to cumulative 'avoid' val of efcts at location)
+    # change to prefer paths that stagger axis moved
     def melee_pursue(ent, target_type):
         if ent.mvs < 1 or ent.legal_moves() == []:
             ent.do_round()
@@ -23699,10 +23669,10 @@ class App(tk.Frame):
             background_music.play(sound1, -1)
             sound1.set_volume(0.3)
             self.map_triggers = []
-            def ghost_kickoff():
-                app.ghost_dead = False
-                app.remove(ghost_kickoff)
-            self.map_triggers.append(ghost_kickoff)
+#             def ghost_kickoff():
+#                 app.ghost_dead = False
+#                 app.remove(ghost_kickoff)
+#             self.map_triggers.append(ghost_kickoff)
             self.revenant_rate = 0
             self.top2 = Image.open('1_player_map_fog/map21/2_top.png')
             self.bot2 = Image.open('1_player_map_fog/map21/2.png')
