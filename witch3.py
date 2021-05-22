@@ -1,12 +1,8 @@
-# white dragon anim dict changes (normal to flying/landing) causes 'blink', mostly noticed at end of landing transition to normal
-
 # minimap captures r-click ONLY to 'jump' (move_map()) to translated pixel location
 
 # better images for level begin/end background splash images
 
 # make 'strat' section -chiru/chrono 'battery', double chrono loop time warp, rend space max out, sanity max out, invis/psyshield abuse, elusive ranged drake/pixie/illus, atk tombs pixie/fiend, scarab/cadaver/tomb abuse with pain/etc..., 
-
-# white dragon, use magick on iceblast?
 
 # build arcana library/deck
 
@@ -11756,10 +11752,11 @@ class White_Dragon(Bot):
     def finish_descend(self):
         global selected
         self.init_normal_anims()
-        app.canvas.delete(self.id)
         self.type = 'large_bottom'
         self.tags = self.id
         selected = []
+        app.canvas.delete(self.id)
+        app.canvas.create_image(self.loc[0]*100-app.moved_right+50, self.loc[1]*100-app.moved_down+50, image = self.img, tags = self.tags)
         self.do_round()
     
     def iceblast(self, id):
