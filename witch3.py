@@ -1,19 +1,16 @@
-# flee ranged behavior does not account for map (possibly any) effects (like hindering mucilage), kobold shaman flee behavior
-# flee behavior should grab potential moves from ent.legal_moves(), should see hindering mucilage
+# white dragon anim dict changes (normal to flying/landing) causes 'blink', mostly noticed at end of landing transition to normal
 
-# page arcana min
+# minimap captures r-click ONLY to 'jump' (move_map()) to translated pixel location
+
+# better images for level begin/end background splash images
+
+# make 'strat' section -chiru/chrono 'battery', double chrono loop time warp, rend space max out, sanity max out, invis/psyshield abuse, elusive ranged drake/pixie/illus, atk tombs pixie/fiend, scarab/cadaver/tomb abuse with pain/etc..., 
+
+# white dragon, use magick on iceblast?
 
 # build arcana library/deck
 
 # grant actions to tombs other than vivify, prox efcts that can only target tombs
-
-# hindering mucilage with kobold cleric? sometimes... seems to be with flee behavior
-
-# should only one unique hex affect a unit?
-
-# scarabs/swarm, to keep same effects, instead of creating new object, change old one
-
-# fix/change/balance lesser demon, maybe cenobite
 
 # tombkiller...
 # ghast, crushing damage, prefers tomb targets if any exist...
@@ -39,8 +36,6 @@
 # types ==> undead
 
 # level with 'waypoints' end/start turn on waypoint to move between areas..., multiple screen/background level...
-
-# pathfinding (esp along long paths) should avoid moving entirely along one axis
 
 # save game during level?
 
@@ -192,7 +187,7 @@ def action_description(act):
     elif act == 'Psi Slash':
         return 'This is the action added from Psi Blades. Attack adjacent, aglity vs aglity to hit, psyche vs psyche electric melee damage.'
     elif act == 'Pyrotechnics':
-        return 'Range is ballistics. Marksmanship vs Dodge to hit. Missle vs Endurance explosive damage. Action target (ents without invis).'
+        return 'Range is ballistics. Marksmanship vs Dodge to hit. Missle vs Endurance fire ranged damage. Action target (ents without invis).'
     elif act == 'Molecular Subversion':
         return 'The very structure of a creature begins to dissolve... Target gains an effect that removes resistances to acid and explosive (resistances may be gained through effects cast after this spell). Also gives an effect that adds weakness to acid and explosive dmg. Duration is reason at level of caster wisdom. Spell target.'
     elif act == 'Plutonian Cloak':
@@ -446,7 +441,7 @@ def action_description(act):
     elif act == 'Rake':
         return 'An adjacent unit, on to-hit agility vs agility, takes strength vs endurance slashing melee damage.'
     elif act == 'Iceblast':
-        return 'A unit within range reason, and all other units within range 2, on to-hit wisdom vs wisdom, take psyche vs psyche cold spell damage.'
+        return 'A unit within range reason, and all other units within range 1, on to-hit wisdom vs wisdom, take psyche vs psyche cold spell damage.'
     elif act == 'Vivify':
         return 'Restore spirit and magick equal to caster psyche. Costs 1 magick.'
     elif act == 'Lift':
@@ -2335,7 +2330,7 @@ energy transfer- two spell tar ents in initq exchange places in initq
 class Chronomancer(Summon):
     def __init__(self, name, id, img, loc, owner, level):
         if level == 1:
-            self.actions = {'Move':self.move, 'Enervating_Blow':self.enervating_blow, 'Time Warp':self.time_warp, 'Slow Motion':self.slow_motion, 'Stasis':self.stasis}
+            self.actions = {'Move':self.move, 'Enervating Blow':self.enervating_blow, 'Time Warp':self.time_warp, 'Slow Motion':self.slow_motion, 'Stasis':self.stasis}
             self.str = 2
             self.agl = 7
             self.end = 4
@@ -2355,7 +2350,7 @@ class Chronomancer(Summon):
             self.move_range = 4
             self.level = level
         elif level == 2:
-            self.actions = {'Move':self.move, 'Enervating_Blow':self.enervating_blow, 'Time Warp':self.time_warp, 'Slow Motion':self.slow_motion, 'Stasis':self.stasis}
+            self.actions = {'Move':self.move, 'Enervating Blow':self.enervating_blow, 'Time Warp':self.time_warp, 'Slow Motion':self.slow_motion, 'Stasis':self.stasis}
             self.str = 3
             self.agl = 8
             self.end = 5
@@ -2421,6 +2416,7 @@ class Chronomancer(Summon):
             self.finish_stasis()
         else:
             id = ids[0]
+            app.get_focus(id)
             ids = ids[1:]
             ent = app.ent_dict[id]
             un = 'Stasis'+str(app.count)
@@ -3264,7 +3260,7 @@ class Illusionist(Summon):
         if to_hit(self.get_abl('mm'),app.ent_dict[id].get_abl('dodge')) == True:
             d = damage(self.get_abl('msl'),app.ent_dict[id].get_abl('end'))
             root.after(1666, lambda e = None : self.cleanup_pyrotechnics(event = e))
-            lock(apply_damage, self, app.ent_dict[id], -d, 'explosive', 'Pyrotechnics', 'ranged')
+            lock(apply_damage, self, app.ent_dict[id], -d, 'fire', 'Pyrotechnics', 'ranged')
         else:
             miss(app.ent_dict[id].loc)
             root.after(1666, lambda e = None : self.cleanup_pyrotechnics(event = e))
@@ -10821,7 +10817,7 @@ class Drake(Summon):
             if id != []:
                 id = id[0]
                 if app.ent_dict[id].get_move_type() == 'normal':
-                    return max(0,stat-3)
+                    return max(1,stat-3)
                 else:
                     return stat
             else:
@@ -11631,9 +11627,10 @@ class White_Dragon(Bot):
             # ATTEMPT ICEBLAST
             else:
                 ids = [k for k,v in app.all_ents().items() if dist(v.loc,self.loc) <= self.get_abl('rsn') and v.owner != self.owner]
-                if ids == []:
+                if ids == [] or self.magick < 4:
                     app.handle_action()
                 else:
+                    self.magick -= 4
                     id = choice(ids)
                     app.get_focus(id)
                     # EXIT TO HANDLEACTION through iceblast
@@ -11648,6 +11645,11 @@ class White_Dragon(Bot):
         effect1 = mixer.Sound('Sound_Effects/dragon_melee.ogg')
         effect1.set_volume(1)
         sound_effects.play(effect1, 0)
+        ent = app.ent_dict[id]
+        app.vis_dict['Rake'] = Vis(name = 'Rake', loc = ent.loc[:])
+        def cleanup_rake():
+            del app.vis_dict['Rake']
+        root.after(1777, cleanup_rake)
         my_agl = self.get_abl('agl')
         target_agl = ent.get_abl('agl')
         if to_hit(my_agl, target_agl):
@@ -11761,46 +11763,113 @@ class White_Dragon(Bot):
         self.do_round()
     
     def iceblast(self, id):
-        ent = app.ent_dict[id]
+        global selected_vis
+        app.get_focus(id)
+#         self.init_attack_anims()
         effect1 = mixer.Sound('Sound_Effects/iceblast.ogg')
         effect1.set_volume(1)
         sound_effects.play(effect1, 0)
-        ents = [k for k,v in app.all_ents().items() if dist(v.loc, ent.loc) <= 2 and v != self]
-        app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+84-app.moved_down, text = 'Iceblast', justify ='center', font = ('chalkduster', 16), fill = 'black', tags = 'text')
-        app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+85-app.moved_down, text = 'Iceblast', justify ='center', font = ('chalkduster', 16), fill = 'aquamarine', tags = 'text')
-        def iceblast_loop(ents):
-            if ents == []:
-                app.handle_action()
+        loc = app.ent_dict[id].loc[:]
+        app.vis_dict['Iceblast'] = Vis(name = 'Iceblast', loc = [self.loc[0],self.loc[1]-100])
+#         app.canvas.create_image(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+50-app.moved_down, image = app.vis_dict['Iceblast'].img, tags = 'Iceblast')
+        selected_vis = ['Iceblast']
+        def fireball_loop(startx, endx, starty, endy, xstep, ystep):
+            if starty > endy:
+                starty -= ystep
+                app.canvas.delete('Iceblast')
+                app.canvas.create_image(startx, starty, image = app.vis_dict['Iceblast'].img, tags = 'Iceblast')
+                app.canvas.tag_raise('Iceblast')
+            elif starty < endy:
+                starty += ystep
+                app.canvas.delete('Iceblast')
+                app.canvas.create_image(startx, starty, image = app.vis_dict['Iceblast'].img, tags = 'Iceblast')
+                app.canvas.tag_raise('Iceblast')
+            if startx > endx:
+                startx -= xstep
+                app.canvas.delete('Iceblast')
+                app.canvas.create_image(startx, starty, image = app.vis_dict['Iceblast'].img, tags = 'Iceblast')
+                app.canvas.tag_raise('Iceblast')
+            elif startx < endx:
+                startx += xstep
+                app.canvas.delete('Iceblast')
+                app.canvas.create_image(startx, starty, image = app.vis_dict['Iceblast'].img, tags = 'Iceblast')
+                app.canvas.tag_raise('Iceblast')
+                # debug here, if within certain range...
+            app.vis_dict['Iceblast'].rotate_image()
+            if abs(starty - endy) < 13 and abs(startx - endx) < 13:
+                root.after(111, lambda id = id : self.continue_ranged_attack(id))
             else:
-                id = ents[0]
-                ents = ents[1:]
-                ent = app.ent_dict[id]
+                root.after(20, lambda sx = startx, ex = endx, sy = starty, ey = endy, xs = xstep, ys = ystep  : fireball_loop(sx, ex, sy, ey, xs, ys))
+        startx = self.loc[0]*100+50-app.moved_right
+        starty = self.loc[1]*100-50-app.moved_down
+        endx = loc[0]*100+50-app.moved_right
+        endy = loc[1]*100+50-app.moved_down
+        if startx == endx:
+            xstep = 0
+            ystep = 10
+        elif starty == endy:
+            xstep = 10
+            ystep = 0
+        else:
+            slope = Fraction(abs(startx - endx), abs(starty - endy))
+            # needs to be moving at least 10 pixels, xstep + ystep >= 10
+            xstep = slope.numerator
+            ystep = slope.denominator
+            while xstep + ystep < 10:
+                xstep *= 2
+                ystep *= 2
+        fireball_loop(startx, endx, starty, endy, xstep, ystep)
+            
+    def continue_ranged_attack(self, id):
+        global selected_vis
+        selected_vis = []
+        del app.vis_dict['Iceblast']
+#         app.canvas.delete('Iceblast')
+        loc = app.ent_dict[id].loc[:]
+        # iceblast vis and loop
+        # do all vis now, staggered
+        def iceblast_vis_loop(index):
+            for sqr in [s for s in app.coords if dist(s, loc) == index]:
                 n = 'Iceblast' + str(app.count) # not an effect, just need unique int
                 app.count += 1 # that is why this is incr manually here, no Effect init
-                loc = ent.loc[:]
-                app.focus_square(loc)
-                app.vis_dict[n] = Vis(name = 'Iceblast', loc = loc[:])
+                app.vis_dict[n] = Vis(name = 'Iceblast', loc = sqr[:])
                 def cleanup_vis(name):
                     del app.vis_dict[name]
                     app.canvas.delete(name)
-                app.canvas.create_image(loc[0]*100+50-app.moved_right, loc[1]*100+50-app.moved_down, image = app.vis_dict[n].img, tags = n)
-    #         app.ent_dict[self.id+'top'].init_attack_anims()
-                my_wis = self.get_abl('wis')
-                tar_wis = ent.get_abl('wis')
-                if to_hit(my_wis, tar_wis):
-                    my_psy = self.get_abl('psyche')
-                    tar_psy = ent.get_abl('psyche')
-                    d = damage(my_psy, tar_psy)
-                    root.after(1999, lambda n = n : cleanup_vis(n))
+                app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict[n].img, tags = n)
+                root.after(1666, lambda n = n : cleanup_vis(n))
+            if index == 2:
+                ids = [k for k,v in app.all_ents().items() if dist(v.loc, loc) <= 2]
+                self.continue_iceblast(ids, loc)
+            else:
+                root.after(111, lambda j = index+1 : iceblast_vis_loop(j))
+        iceblast_vis_loop(0)
+        
+    # dmg ents based on dist from sqr (main target)
+    def continue_iceblast(self, ids, sqr):
+        def iceblast_loop(ids):
+            if ids == []:
+                app.handle_action()
+            else:
+                id = ids[0]
+                ids = ids[1:]
+                ent = app.ent_dict[id]
+                loc = app.ent_dict[id].loc[:]
+                app.focus_square(loc)
+                if to_hit(self.get_abl('wis'), ent.get_abl('wis')):
+                    d = damage(self.get_abl('psyche'), ent.get_abl('psyche'))
                     lock(apply_damage, self, ent, -d, 'cold', 'Iceblast', 'spell')
-                    iceblast_loop(ents)
+                    root.after(111, lambda t = 'text' : app.canvas.delete(t))
+                    root.after(222, lambda ids = ids : iceblast_loop(ids))
                 else:
                     miss(ent.loc)
-                    root.after(1888, lambda t = 'text' : app.canvas.delete(t))
-                    root.after(1888, lambda n = n : cleanup_vis(n))
-                    root.after(1999, lambda ents = ents : iceblast_loop(ents))
-        root.after(1555, lambda t = 'text' : app.canvas.delete(t))
-        root.after(1666, lambda ents = ents : iceblast_loop(ents))
+                    root.after(1555, lambda t = 'text' : app.canvas.delete(t))
+                    root.after(1666, lambda ids = ids : iceblast_loop(ids))
+        app.canvas.delete('text')
+        iceblast_loop(ids)
+        
+        
+        
         
         
         
@@ -19000,7 +19069,7 @@ class Witch(Summon):
 #         tup_list = list(self.arcane_dict.items())
 #         tup_list = sorted(tup_list, key=lambda t : t[1][1])
 #         self.page_spells(tup_list = tup_list, index = 0)
-        spells = sorted(list(self.arcane_dict.values()),key=lambda s : s.cost)
+        spells = sorted(filter(lambda s : s.times_imprint > 0, list(self.arcane_dict.values())),key=lambda s : s.cost)
         self.page_spells(tup_list = spells, index = 0)
 
 ###
@@ -25717,6 +25786,8 @@ class App(tk.Frame):
         root.unbind('<q>')
         root.unbind('<i>')
         root.unbind('<e>')
+        root.unbind('<w>')
+        root.unbind('<p>')
         app.canvas.unbind('<Button-2>')
 #         root.unbind('<,>')
 #         root.unbind('<.>')
