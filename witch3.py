@@ -1,3 +1,9 @@
+# desc in info for minotaur and dragon special rules (actions that cannot be removed from ent, ignore invis/psyshield, free move/charge/iceblast and conditions for)
+
+# minotaur, free charge on cond, 1 use of pound, 1 use of stomp, change move type to 'charge'?
+
+# volume controls for ALL effects/music
+
 # in center_focus()
 # minimap captures r-click ONLY to 'jump' (move_map()) to translated pixel location
 # center_map() func, equalize distance from cursor to both top and bottom of screen
@@ -19659,9 +19665,6 @@ class Witch(Summon):
         if loc != '':
             return
 #         self.init_cast_anims()
-        effect1 = mixer.Sound('Sound_Effects/strength_through_wounding.ogg')
-        effect1.set_volume(1)
-        sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -19699,6 +19702,9 @@ class Witch(Summon):
         
     def continue_entomb(self, event = None, name = None, sqr = None):
         app.depop_context(event=None)
+        effect1 = mixer.Sound('Sound_Effects/strength_through_wounding.ogg')
+        effect1.set_volume(1)
+        sound_effects.play(effect1, 0)
         self.entomb_used = True
         self.acts -= 1
         spell = self.arcane_dict[name]
@@ -23748,10 +23754,10 @@ class App(tk.Frame):
             background_music.play(sound1, -1)
             sound1.set_volume(0.3)
             self.map_triggers = []
-#             def ghost_kickoff():
-#                 app.ghost_dead = False
-#                 app.remove(ghost_kickoff)
-#             self.map_triggers.append(ghost_kickoff)
+            def ghost_kickoff():
+                app.ghost_dead = False
+                app.map_triggers.remove(ghost_kickoff)
+            self.map_triggers.append(ghost_kickoff)
             self.revenant_rate = 0
             self.top2 = Image.open('1_player_map_fog/map21/2_top.png')
             self.bot2 = Image.open('1_player_map_fog/map21/2.png')
