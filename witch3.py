@@ -15658,9 +15658,9 @@ class Minotaur_Top(Bot):
         self.spirit = 666
         self.magick = 0
         self.san = 19
-        self.acts = 2
+        self.acts = 1
         self.mvs = 2
-        self.move_range = 5
+        self.move_range = 4
         self.waiting = waiting
         self.resist = ['crushing', 'piercing', 'magick']
         self.weak = []
@@ -15690,20 +15690,20 @@ class Minotaur_Top(Bot):
 class Minotaur(Bot):
     def __init__(self, name, img, loc, owner, waiting = False):
         self.actions = {'Charge':self.charge, 'Stomp':self.stomp, 'Pound':self.pound}
-        self.str = 14
+        self.str = 12
         self.agl = 9
-        self.end = 11
+        self.end = 13
         self.mm = 1
         self.msl = 0
         self.bls = 0
-        self.dodge = 9
-        self.psyche = 8
-        self.wis = 8
+        self.dodge = 8
+        self.psyche = 9
+        self.wis = 9
         self.rsn = 5
         self.init = 8
         self.spirit = 666
         self.magick = 0
-        self.san = 19
+        self.san = 23
         self.acts = 2
         self.mvs = 2
         self.move_range = 5
@@ -21864,6 +21864,8 @@ class Witch(Summon):
         if id not in app.spell_target_ents().keys():
             return
         ent = app.ent_dict[id]
+        if ent.immovable == True:
+            return
         if isinstance(ent, Witch):
             return
 #         effect1 = mixer.Sound('Sound_Effects/gravity.ogg')
