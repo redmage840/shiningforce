@@ -1,4 +1,10 @@
+# in center_focus()
 # minimap captures r-click ONLY to 'jump' (move_map()) to translated pixel location
+# center_map() func, equalize distance from cursor to both top and bottom of screen
+# move cursor until target sqr is 'around' center of map...then move cursor to target sqr
+# center of map depend on screen size?
+# target sqr is edge of map? other edge cases?
+# 'around' = 
 
 # better images for level begin/end background splash images
 
@@ -213,7 +219,7 @@ def action_description(act):
     elif act == 'Dark Shroud':
         return 'All friendly units within range 3 of a location within range reason heal 2 spirit and receive +1 dodge if they do not already have the effect. Duration is reason, level is wisdom. Costs one magick, does not target.'
     elif act == 'Umbrae Strike':
-        return 'Action target. Range ballistic. Marksmanship versus dodge to-hit. Missle versus endurance electric ranged damage.'
+        return 'Action target. Range ballistic. Marksmanship versus dodge to-hit. Missle versus endurance cold ranged damage.'
     elif act == 'Stalk':
         return 'To-hit marksmanship vs dodge, unit gets an effect which causes either slashing, crushing, or piercing damage dealt to it to be increased by 2, if the type if melee or ranged. Duration is missle, level is ballistic. Targets as action.'
     elif act == 'Darkblast':
@@ -235,7 +241,7 @@ def action_description(act):
     elif act == 'Tracer Grenade':
         return 'A unit within range (ballistics<=ballistics+2), and all units within range 2 of that location, upon failing to-hit marksmanship vs dodge, get -4 dodge and effect that strips instances of previously held invisibility (later effects may grant invisibility while this effect still persists). Duration is missle. Level is ballistics.'
     elif act == 'Doubling Cube':
-        return 'Target unit and all friendly units within range 1 of target get double effect if they do not already have it. Effect causes any slashing, crushing, or piercing damage (from melee and ranged sources) made against unit to force attacker to make a to-hit roll (psyche vs psyche) against defender. On fail, the attackers dmg is reduced to 1. Duration is reason, level is wisdom. Costs 3 magick. Only targets primary as spell.'
+        return 'Spell target in range reason gets double effect if they do not already have it. Effect causes any slashing, crushing, or piercing damage (from melee and ranged sources) made against unit to force attacker to make a to-hit roll (psyche vs psyche) against defender. On fail, the attackers dmg is reduced to 1. Duration is reason, level is wisdom. Costs 3 magick.'
     elif act == 'Unholy Chant':
         return 'All other friendly units within range 2 of caster get +1 to all stats (str, agl, end, mm, msl, bls, dod, psy, wis, rsn, san, init, moverange) for the remainder of the turn at level wisdom. Costs 1 magick.'
     elif act == 'Arrow of Diana':
@@ -245,7 +251,7 @@ def action_description(act):
     elif act == 'Moonlight':
         return 'Target within range reason is healed equal to caster psyche up to its max spirit. Target as spell. Costs 2 magick.'
     elif act == 'Aura':
-        return 'Target within range reason and all friendly units within range 3 of target heal a random amount between 1 and caster psyche. Target primary as spell. Costs 2 magick.'
+        return 'All friendly units within range reason heal a random amount between 1 and caster psyche. Costs 4 magick.'
     elif act == 'Tranquility':
         return 'Dispel(wisdom) attempt all effects on a location.'
     elif act == 'Paralyze':
@@ -329,7 +335,7 @@ def action_description(act):
     elif act == 'Gaze':
         return 'Action target within range ballistics, which does not already have this effect, on to-hit marksmanship vs dodge, gets -2 psyche, strength, and move range. Duration is missle. Level is marksmanship.'
     elif act == 'Howl From Beyond':
-        return 'All enemy units within range reason without this effect, on to-hit strength vs strength, get -3 sanity and -2 reason. Duration is endurance. Level is strength.'
+        return 'All enemy units within range reason without this effect, on to-hit strength vs strength, get -2 sanity and -3 reason. Duration is endurance. Level is strength.'
     elif act == 'Track':
         return 'All enemy units within range reason, on to-hit agility vs agility, get an effect that removes invisibility. Duration is endurance. Level is strength.'
     elif act == 'Toxic Miasma':
@@ -353,7 +359,7 @@ def action_description(act):
     elif act == 'Nullify':
         return 'All units within range reason, that do not have either psyshield or invisibility, have each of their effects attempted to dispel using the caster wisdom. Costs 3 magick.'
     elif act == 'Roar':
-        return 'All units within range reason that do not have this effect, enemy units on strength vs psyche to-hit get -2 sanity, friendly units on wisdom save check get +2 sanity. Duration is endurance. Level is srength.'
+        return 'All enemy units within range reason that do not have this effect, on strength vs strength to-hit get -3 sanity. Duration is endurance. Level is srength.'
     elif act == "Devil's Mark":
         return 'A spell target unit gets +2 to any chosen ability. Costs 3 magick. Duration is reason. Level is wisdom.'
     elif act == 'Mesmerize':
@@ -361,9 +367,9 @@ def action_description(act):
     elif act == 'Torment':
         return 'A spell target within range reason gets an effect that gives -2 psyche, if it does not already have this effect. It then takes psyche vs endurance magick spell damage.'
     elif act == 'Entrance':
-        return 'A spell target in range reason, on to-hit psyche vs psyche, gets -4 sanity at duration reason and level wisdom. Costs 2 magick.'
+        return 'A spell target in range reason, on to-hit psyche vs psyche, gets -4 sanity at duration reason and level wisdom. Costs 4 magick.'
     elif act == 'Enthrall':
-        return 'A spell target within range reason without this effect, on to-hit psyche vs psyche, gets -2 strength, agility, marksmanship, dodge at duration reason and level wisdom. Costs 2 magick.'
+        return 'A spell target within range reason without this effect, on to-hit psyche vs psyche, gets -3 marksmanship and missle at duration reason and level wisdom. Costs 4 magick.'
     elif act == 'Chill Touch':
         return 'An adjacent action target, on to-hit agility vs agility, gets -1 wisdom at duration reason and level wisdom, then takes strength vs endurance cold melee damage.'
     elif act == 'Enervating Grasp':
@@ -371,7 +377,7 @@ def action_description(act):
     elif act == 'Vampiric Bite':
         return 'An adjacent action target, on to-hit agility vs agility, takes strength vs endurance piercing melee damage. Caster gets +3 psyche, if it does not have this effect, at duration reason and level wisdom.'
     elif act == 'Bat Form':
-        return 'Once per round, Wurdulak may shift form into either bat or wolf form, an Effect lasting 1 turn at level wisdom. Bat form gives +5 to move range, changes move type to flying, and -3 to strength, agility, endurance.'
+        return 'Once per round, Wurdulak may shift form into either bat or wolf form, an Effect lasting 1 turn at level wisdom. Bat form gives +5 to move range, +4 to dodge, and changes move type to flying, and -3 to strength, agility, endurance.'
     elif act == 'Wolf Form':
         return 'Once per round, Wurdulak may shift form into either bat or wolf form, an Effect lasting 1 turn at level wisdom. Wolf form gives +4 agility, +3 move range, and -3 to psyche, wisdom.'
     elif act == 'Hook Attack':
@@ -561,9 +567,9 @@ def action_description(act):
     elif act == 'Chain Lightning':
         return 'Action target within range ballistics, on to-hit marksmanship vs dodge, takes missle vs endurance electric ranged damage. If target is hit, chain lightning attempts to hit a random unit that has not yet been hit within range 3 and is not the caster. Chain lightning continues to pass as long as it successfully hits and there is a target in range. Costs 3 magick.'
     elif act == 'Overload':
-        return 'If caster strength and psyche are both at least 3 greater than their base values, caster gets effect granting +1 acts (acts are granted at begin of round) at duration reason and level wisdom.'
-    elif act == 'Hidden Strike':
-        return 'If caster is invisible, auto-hit an adjacent action target for strength vs endurance slashing melee damage.'
+        return 'If caster strength and psyche are both at least 2 greater than their base values, caster gets effect granting +1 acts (acts are granted at begin of round) at duration reason and level wisdom. Costs 4 magick.'
+    elif act == 'Hidden Haymaker':
+        return 'If caster is invisible, auto-hit an adjacent action target for strength vs endurance crushing melee damage.'
     elif act == 'Spit Venom':
         return 'Action target in range ballistics, on to-hit marksmanship vs dodge, takes missle vs dodge poison ranged damage and gets an effect causing 2 end-of-turn poison damage.'
     elif act == 'Hindering Mucilage':
@@ -748,7 +754,7 @@ def effect_description(ef):
     elif ef.name == 'Gaze':
         return '-2 strength, psyche, and move range. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Howl_From_Beyond':
-        return '-3 sanity, -2 reason. dur = '+str(ef.duration)+', level = '+str(ef.level)
+        return '-2 sanity, -3 reason. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Track':
         return 'Lose invisibility. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Miasma_Drain':
@@ -774,7 +780,7 @@ def effect_description(ef):
     elif ef.name == 'Roar_Friendly':
         return '+2 sanity. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Roar_Enemy':
-        return '-2 sanity. dur = '+str(ef.duration)+', level = '+str(ef.level)
+        return '-3 sanity. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Anoint':
         return '+1 wisdom. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == "Devil's_Mark":
@@ -786,15 +792,15 @@ def effect_description(ef):
     elif ef.name == 'Mesmerize':
         return 'At start-of-turn, on psyche save check fail (mod 0), unit takes crushing melee damage equal to its own strength vs endurance AND loses one action. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Entrance':
-        return '-3 sanity. dur = '+str(ef.duration)+', level = '+str(ef.level)
+        return '-4 sanity. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Enthrall':
-        return '-2 strength, agility, marksmanship, dodge. dur = '+str(ef.duration)+', level = '+str(ef.level)
+        return '-3 marksmanship and missle. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Chill_Touch':
         return '-1 wisdom. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Vampiric_Bite':
         return '+3 psyche. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Bat_Form':
-        return '+5 move range, flying move type, -3 strength, agility, endurance. dur = '+str(ef.duration)+', level = '+str(ef.level)
+        return '+5 move range, +4 to dodge, flying move type, -3 strength, agility, endurance. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Wolf_Form':
         return '+4 agility, +3 move range, -3 psyche and wisdom. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Hatred':
@@ -2574,11 +2580,13 @@ class Chronomancer(Summon):
                 del app.vis_dict[un]
                 app.canvas.delete('text')
             if self.save_check('wis') == 'Pass':
+                app.canvas.create_text(ent.loc[0]*100-app.moved_right+49, ent.loc[1]*100-app.moved_down+84, text = 'Time Warp', justify = 'center', fill = 'black', font = ('chalkduster', 16), tags = 'text')
+                app.canvas.create_text(ent.loc[0]*100-app.moved_right+50, ent.loc[1]*100-app.moved_down+85, text = 'Time Warp', justify = 'center', fill = 'lavender', font = ('chalkduster', 16), tags = 'text')
                 if ent.id in app.init_q:
                     app.init_q.remove(ent.id)
                 app.init_q = [ent.id]+app.init_q
                 root.after(1666, lambda un = un : cleanup_warp_vis(un))
-                root.after(1666, lambda ids = ids : self.time_warp_loop(ids))
+                root.after(1777, lambda ids = ids : self.time_warp_loop(ids))
             else:
                 miss(ent.loc)
                 root.after(1555, lambda un = un : cleanup_warp_vis(un))
@@ -2682,7 +2690,7 @@ class Illusionist(Summon):
             self.bls = 9
             self.dodge = 7
             self.psyche = 6
-            self.wis = 7
+            self.wis = 9
             self.rsn = 5
             self.san = 14
             self.init = 8
@@ -2847,6 +2855,11 @@ class Illusionist(Summon):
         if sqr not in sqrs:
             return
         id = app.grid[sqr[0]][sqr[1]]
+        if id not in app.spell_target_ents().keys():
+            return
+        ent = app.ent_dict[id]
+        if 'Doubling_Cube' in [v.name for k,v in ent.effects_dict.items()]:
+            return
         if self.magick < 3:
             return
         self.magick -= 3
@@ -2862,43 +2875,40 @@ class Illusionist(Summon):
         def cleanup_dubcube(n):
             del app.vis_dict[n]
             app.canvas.delete(n)
-        ents = [v for k,v in app.all_ents().items() if v.owner == self.owner and dist(v.loc,sqr) <= 1]
-        for ent in ents:
-            if 'Doubling_Cube' not in [v.name for k,v in ent.effects_dict.items()]:
-                s = ent.loc[:]
-                uniq = 'Doubling_Cube'+str(app.count)
-                app.count += 1
-                app.vis_dict[uniq] = Vis(name = 'Doubling_Cube', loc = s)
-                root.after(2555, lambda n = uniq : cleanup_dubcube(n))
-                app.canvas.create_image(s[0]*100+50-app.moved_right, s[1]*100+50-app.moved_down, image = app.vis_dict[uniq].img, tags = 'Doubling_Cube')
-                app.canvas.create_text(s[0]*100-app.moved_right+49, s[1]*100-app.moved_down+64, text = 'Doubled...', justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
-                app.canvas.create_text(s[0]*100-app.moved_right+50, s[1]*100-app.moved_down+65, text = 'Doubled...', justify = 'center', fill = 'goldenrod', font = ('chalkduster', 13), tags = 'text')
-                def doubled(atkr, dfndr, amt, type, sn, st, lockname = None):
-                    if st == 'melee' or st == 'ranged' and (type == 'slashing' or type == 'piercing' or type == 'crushing') and amt < 0:
-                        if to_hit(atkr.get_abl('psyche'),dfndr.get_abl('psyche')):
-                            app.canvas.create_text(dfndr.loc[0]*100-app.moved_right+49, dfndr.loc[1]*100-app.moved_down+74, text = 'Attacker psyche hit, avoids double...', justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
-                            app.canvas.create_text(dfndr.loc[0]*100-app.moved_right+50, dfndr.loc[1]*100-app.moved_down+75, text = 'Attacker psyche hit, avoids double...', justify = 'center', fill = 'goldenrod', font = ('chalkduster', 13), tags = 'text')
-                            root.after(1555, lambda t = 'text' : app.canvas.delete(t))
-                            root.after(1666, lambda ln = lockname : app.dethloks[ln].set(1))
-                            return (amt, type)
-                        else:
-                            app.canvas.create_text(dfndr.loc[0]*100-app.moved_right+49, dfndr.loc[1]*100-app.moved_down+74, text = 'Double Absorbs, dmg reduced to 1', justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
-                            app.canvas.create_text(dfndr.loc[0]*100-app.moved_right+50, dfndr.loc[1]*100-app.moved_down+75, text = 'Double Absorbs, dmg reduced to 1', justify = 'center', fill = 'goldenrod', font = ('chalkduster', 13), tags = 'text')
-                            root.after(1555, lambda t = 'text' : app.canvas.delete(t))
-                            root.after(1666, lambda ln = lockname : app.dethloks[ln].set(1))
-                            return (-1, type)
-                    else:
-                        root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
-                        return (amt, type)
-                p = partial(doubled)
-                ent.defense_effects.append(p)
-                def undo(ent, func, lockname = None):
-                    ent.defense_effects.remove(func)
-                    root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
-                u = partial(undo, ent, p)
-                n = 'Doubling_Cube'+str(app.count)
-                app.count += 1
-                ent.effects_dict[n] = Effect(name = 'Doubling_Cube', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
+        s = ent.loc[:]
+        uniq = 'Doubling_Cube'+str(app.count)
+        app.count += 1
+        app.vis_dict[uniq] = Vis(name = 'Doubling_Cube', loc = s)
+        root.after(2555, lambda n = uniq : cleanup_dubcube(n))
+        app.canvas.create_image(s[0]*100+50-app.moved_right, s[1]*100+50-app.moved_down, image = app.vis_dict[uniq].img, tags = 'Doubling_Cube')
+        app.canvas.create_text(s[0]*100-app.moved_right+49, s[1]*100-app.moved_down+64, text = 'Doubled...', justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
+        app.canvas.create_text(s[0]*100-app.moved_right+50, s[1]*100-app.moved_down+65, text = 'Doubled...', justify = 'center', fill = 'goldenrod', font = ('chalkduster', 13), tags = 'text')
+        def doubled(atkr, dfndr, amt, type, sn, st, lockname = None):
+            if st == 'melee' or st == 'ranged' and (type == 'slashing' or type == 'piercing' or type == 'crushing') and amt < 0:
+                if to_hit(atkr.get_abl('psyche'),dfndr.get_abl('psyche')):
+                    app.canvas.create_text(dfndr.loc[0]*100-app.moved_right+49, dfndr.loc[1]*100-app.moved_down+74, text = 'Attacker psyche hit, avoids double...', justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
+                    app.canvas.create_text(dfndr.loc[0]*100-app.moved_right+50, dfndr.loc[1]*100-app.moved_down+75, text = 'Attacker psyche hit, avoids double...', justify = 'center', fill = 'goldenrod', font = ('chalkduster', 13), tags = 'text')
+                    root.after(1555, lambda t = 'text' : app.canvas.delete(t))
+                    root.after(1666, lambda ln = lockname : app.dethloks[ln].set(1))
+                    return (amt, type)
+                else:
+                    app.canvas.create_text(dfndr.loc[0]*100-app.moved_right+49, dfndr.loc[1]*100-app.moved_down+74, text = 'Double Absorbs, dmg reduced to 1', justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
+                    app.canvas.create_text(dfndr.loc[0]*100-app.moved_right+50, dfndr.loc[1]*100-app.moved_down+75, text = 'Double Absorbs, dmg reduced to 1', justify = 'center', fill = 'goldenrod', font = ('chalkduster', 13), tags = 'text')
+                    root.after(1555, lambda t = 'text' : app.canvas.delete(t))
+                    root.after(1666, lambda ln = lockname : app.dethloks[ln].set(1))
+                    return (-1, type)
+            else:
+                root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+                return (amt, type)
+        p = partial(doubled)
+        ent.defense_effects.append(p)
+        def undo(ent, func, lockname = None):
+            ent.defense_effects.remove(func)
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+        u = partial(undo, ent, p)
+        n = 'Doubling_Cube'+str(app.count)
+        app.count += 1
+        ent.effects_dict[n] = Effect(name = 'Doubling_Cube', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
         root.after(2666, self.finish_doubling_cube)
         
         
@@ -3515,7 +3525,7 @@ class Umbrae_Wolf(Summon):
             self.end = 6
             self.mm = 7
             self.msl = 8
-            self.bls = 5
+            self.bls = 6
             self.dodge = 5
             self.psyche = 4
             self.wis = 4
@@ -4933,7 +4943,7 @@ class Umbrae_Wolf(Summon):
             target_end = app.ent_dict[id].get_abl('end')
             d = damage(my_msl, target_end)
             root.after(1999, cleanup_vis)
-            lock(apply_damage, self, app.ent_dict[id], -d, 'elec', 'Umbrae Strike', 'ranged')
+            lock(apply_damage, self, app.ent_dict[id], -d, 'cold', 'Umbrae Strike', 'ranged')
             self.finish_umbrae_strike()
 
         else:
@@ -4978,7 +4988,7 @@ class Wurdulak(Summon):
             self.actions = {'Move':self.move, 'Entrance':self.entrance, 'Enthrall':self.enthrall, 'Chill Touch':self.chill_touch, 'Enervating Grasp':self.enervating_grasp, 'Vampiric Bite':self.vampiric_bite, 'Bat Form':self.bat_form, 'Wolf Form':self.wolf_form}
             self.str = 8
             self.agl = 5
-            self.end = 7
+            self.end = 8
             self.mm = 1
             self.msl = 0
             self.bls = 0
@@ -4988,7 +4998,7 @@ class Wurdulak(Summon):
             self.rsn = 5
             self.san = 14
             self.init = 5
-            self.spirit = 25
+            self.spirit = 29
             self.magick = 23
             self.acts = 1
             self.mvs = 1
@@ -5024,9 +5034,9 @@ class Wurdulak(Summon):
         id = app.grid[sqr[0]][sqr[1]]
         if id not in app.spell_target_ents().keys():
             return
-        if self.magick < 2:
+        if self.magick < 4:
             return
-        self.magick -= 2
+        self.magick -= 4
         effect1 = mixer.Sound('Sound_Effects/traced.ogg')
         effect1.set_volume(1)
         sound_effects.play(effect1, 0)
@@ -5098,9 +5108,9 @@ class Wurdulak(Summon):
         ent = app.ent_dict[id]
         if 'Enthrall' in [v.name for k,v in ent.effects_dict.items()]:
             return
-        if self.magick < 2:
+        if self.magick < 4:
             return
-        self.magick -= 2
+        self.magick -= 4
         effect1 = mixer.Sound('Sound_Effects/muddle.ogg')
         effect1.set_volume(1)
         sound_effects.play(effect1, 0)
@@ -5112,29 +5122,23 @@ class Wurdulak(Summon):
         app.canvas.create_text(self.loc[0]*100-app.moved_right+50, self.loc[1]*100-app.moved_down+85, text = 'Enthrall', justify = 'center', fill = 'green2', font = ('chalkduster', 16), tags = 'text')
         app.vis_dict['Enthrall'] = Vis(name = 'Enthrall', loc = sqr[:])
         vis = app.vis_dict['Enthrall']
-        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = vis.img, tags = 'Enthrall')
         my_psy = self.get_abl('psyche')
-        ent = app.ent_dict[id]
         tar_psy = ent.get_abl('psyche')
         if to_hit(my_psy, tar_psy):
             def enthrall_effect(stat):
-                return max(1,stat-2)
+                return max(1,stat-3)
             p = partial(enthrall_effect)
-            ent.str_effects.append(p)
-            ent.agl_effects.append(p)
+            ent.msl_effects.append(p)
             ent.mm_effects.append(p)
-            ent.dodge_effects.append(p)
-            def undo(id, p, lockname = None):
-                app.ent_dict[id].str_effects.remove(p)
-                app.ent_dict[id].agl_effects.remove(p)
-                app.ent_dict[id].mm_effects.remove(p)
-                app.ent_dict[id].dodge_effects.remove(p)
+            def undo(ent, p, lockname = None):
+                ent.mm_effects.remove(p)
+                ent.msl_effects.remove(p)
                 root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
-            u = partial(undo, id, p)
+            u = partial(undo, ent, p)
             n = 'Enthrall' + str(app.count)
             ent.effects_dict[n] = Effect(name = 'Enthrall', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
-            app.canvas.create_text(sqr[0]*100-app.moved_right+49, sqr[1]*100-app.moved_down+84, text = '-2 str, agl, mm, dod', justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
-            app.canvas.create_text(sqr[0]*100-app.moved_right+50, sqr[1]*100-app.moved_down+85, text = '-2 str, agl, mm, dod', justify = 'center', fill = 'green2', font = ('chalkduster', 13), tags = 'text')
+            app.canvas.create_text(sqr[0]*100-app.moved_right+49, sqr[1]*100-app.moved_down+84, text = '-3 mm, msl', justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
+            app.canvas.create_text(sqr[0]*100-app.moved_right+50, sqr[1]*100-app.moved_down+85, text = '-3 mm, msl', justify = 'center', fill = 'green2', font = ('chalkduster', 13), tags = 'text')
             root.after(2333, self.finish_enthrall)
         else:
             miss(ent.loc)
@@ -5324,6 +5328,10 @@ class Wurdulak(Summon):
         self.str_effects.append(p)
         self.agl_effects.append(p)
         self.end_effects.append(p)
+        def bat_dodge(stat):
+            return stat+4
+        p3 = partial(bat_dodge)
+        ent.dodge_effects.append(p3)
         def bat_move(stat):
             return stat+5
         p2 = partial(bat_move)
@@ -5338,10 +5346,11 @@ class Wurdulak(Summon):
             return move_list
         l_mvs = partial(legal_moves, self)
         self.legal_moves = l_mvs
-        def undo(ent, p, p2, lockname = None):
+        def undo(ent, p, p2, p3, lockname = None):
             ent.str_effects.remove(p)
             ent.agl_effects.remove(p)
             ent.end_effects.remove(p)
+            ent.dodge_effects.remove(p3)
             ent.move_range_effects.remove(p2)
             ent.move_type = 'normal'
             def legal_moves(obj):
@@ -8979,16 +8988,16 @@ class Thaumaturge(Summon):
         app.context_buttons.append(b2)
         
     def do_aura(self, event = None, sqr = None, sqrs = None):
-        if sqr not in sqrs:
+#         if sqr not in sqrs:
+#             return
+#         id = app.grid[sqr[0]][sqr[1]]
+#         if id == '' or id == 'block':
+#             return
+#         if id not in app.spell_target_ents().keys():
+#             return
+        if self.magick < 4:
             return
-        id = app.grid[sqr[0]][sqr[1]]
-        if id == '' or id == 'block':
-            return
-        if id not in app.spell_target_ents().keys():
-            return
-        if self.magick < 2:
-            return
-        self.magick -= 2
+        self.magick -= 4
         self.acts -= 1
 #         self.init_attack_anims()
 #         effect1 = mixer.Sound('Sound_Effects/aura.ogg')
@@ -8997,7 +9006,8 @@ class Thaumaturge(Summon):
         app.depop_context(event = None)
         app.cleanup_squares()
         app.unbind_all()
-        ents = [k for k,v in app.all_ents().items() if dist(v.loc, sqr) <= 3 and v.owner == self.owner]
+        rng = self.get_abl('rsn')
+        ents = [k for k,v in app.all_ents().items() if 1 <= dist(v.loc, self.loc) <= rng and v.owner == self.owner]
         app.get_focus(choice(ents))
         app.canvas.create_text(self.loc[0]*100-app.moved_right+49, self.loc[1]*100-app.moved_down+84, text = 'Aura', justify = 'center', fill = 'black', font = ('chalkduster', 16), tags = 'text')
         app.canvas.create_text(self.loc[0]*100-app.moved_right+50, self.loc[1]*100-app.moved_down+85, text = 'Aura', justify = 'center', fill = 'ivory', font = ('chalkduster', 16), tags = 'text')
@@ -10907,7 +10917,7 @@ class Drake(Summon):
 class Fiend(Summon):
     def __init__(self, name, id, img, loc, owner, level):
         if level == 1:
-            self.actions = {'Move':self.move, 'Suplex':self.suplex, 'Pounce' : self.pounce, 'Chain Lightning':self.chain_lightning, 'Hidden Strike':self.hidden_strike, 'Overload':self.overload, 'Roar' : self.roar}
+            self.actions = {'Move':self.move, 'Suplex':self.suplex, 'Chain Lightning':self.chain_lightning, 'Hidden Haymaker':self.hidden_haymaker, 'Overload':self.overload, 'Roar' : self.roar}
             self.str = 6
             self.agl = 6
             self.end = 6
@@ -10927,7 +10937,7 @@ class Fiend(Summon):
             self.move_range = 3
             self.level = level
         elif level == 2:
-            self.actions = {'Move':self.move, 'Suplex':self.suplex, 'Pounce' : self.pounce, 'Chain Lightning':self.chain_lightning, 'Hidden Strike':self.hidden_strike, 'Overload':self.overload, 'Roar' : self.roar}
+            self.actions = {'Move':self.move, 'Suplex':self.suplex, 'Chain Lightning':self.chain_lightning, 'Hidden Haymaker':self.hidden_haymaker, 'Overload':self.overload, 'Roar' : self.roar}
             self.str = 7
             self.agl = 7
             self.end = 7
@@ -10985,6 +10995,9 @@ class Fiend(Summon):
             return
         if sqr not in sqrs:
             return
+        if self.magick < 4:
+            return
+        self.magick -= 4
 #         effect1 = mixer.Sound('Sound_Effects/rage.ogg')
 #         effect1.set_volume(.5)
 #         sound_effects.play(effect1, 0)
@@ -11020,7 +11033,7 @@ class Fiend(Summon):
         app.rebind_all()
         
         
-    def hidden_strike(self, event = None):
+    def hidden_haymaker(self, event = None):
         if self.acts < 1:
             return
         app.unbind_nonarrows()
@@ -11029,7 +11042,7 @@ class Fiend(Summon):
         app.animate_squares(sqrs)
         app.depop_context(event = None)
         root.bind('<a>', lambda e, sqrs = sqrs, sqr = grid_pos : self.do_hidden_strike(event = e, sqrs = sqrs, sqr = sqr)) 
-        b = tk.Button(app.context_menu, text = 'Confirm Attack', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqrs = sqrs, sqr = grid_pos : self.do_hidden_strike(event = e, sqrs = sqrs, sqr = sqr))
+        b = tk.Button(app.context_menu, text = 'Choose target for Hidden Haymaker', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqrs = sqrs, sqr = grid_pos : self.do_hidden_strike(event = e, sqrs = sqrs, sqr = sqr))
         b.pack(side = 'top')
         app.context_buttons.append(b)
         b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
@@ -11059,7 +11072,7 @@ class Fiend(Summon):
             del app.vis_dict['Hidden_Strike']
             app.canvas.delete('Hidden_Strike')
         root.after(1666, cleanup_slash)
-        lock(apply_damage, self, app.ent_dict[id], -d, 'slashing', 'Hidden Strike', 'melee')
+        lock(apply_damage, self, app.ent_dict[id], -d, 'crushing', 'Hidden Strike', 'melee')
         root.after(111, self.cancel_hidden_strike)
         
     def cancel_hidden_strike(self, event = None):
@@ -11296,7 +11309,7 @@ class Fiend(Summon):
         s = self.loc[:]
         app.canvas.create_text(s[0]*100+49-app.moved_right, s[1]*100+84-app.moved_down, text = 'Roar', font = ('chalkduster', 13), fill = 'black', tags = 'text')
         app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+85-app.moved_down, text = 'Roar', font = ('chalkduster', 13), fill = 'ghostwhite', tags = 'text')
-        ents = [k for k,v in app.all_ents().items() if v.loc in sqrs]
+        ents = [k for k,v in app.all_ents().items() if v.loc in sqrs and v.owner != self.owner]
         def cleanup_roar(n):
             del app.vis_dict[n]
             app.canvas.delete(n)
@@ -11316,12 +11329,12 @@ class Fiend(Summon):
                     app.canvas.create_image(s[0]*100+50-app.moved_right, s[1]*100+50-app.moved_down, image = app.vis_dict[u].img, tags = u)
                     root.after(1555, lambda u = u : cleanup_roar(u))
                     my_str = self.get_abl('str')
-                    tar_psy = ent.get_abl('psyche')
-                    if to_hit(my_str, tar_psy):
-                        app.canvas.create_text(s[0]*100+49-app.moved_right, s[1]*100+84-app.moved_down, text = '-2 san', font = ('chalkduster', 13), fill = 'black', tags = 'text')
-                        app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+85-app.moved_down, text = '-2 san', font = ('chalkduster', 13), fill = 'ghostwhite', tags = 'text')
+                    tar_str = ent.get_abl('str')
+                    if to_hit(my_str, tar_str):
+                        app.canvas.create_text(s[0]*100+49-app.moved_right, s[1]*100+84-app.moved_down, text = '-3 san', font = ('chalkduster', 13), fill = 'black', tags = 'text')
+                        app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+85-app.moved_down, text = '-3 san', font = ('chalkduster', 13), fill = 'ghostwhite', tags = 'text')
                         def roar_effect(stat):
-                            return max(1,stat-2)
+                            return max(1,stat-3)
                         p = partial(roar_effect)
                         ent.san_effects.append(p)
                         n = 'Roar' + str(app.count)
@@ -16157,13 +16170,13 @@ class Berserker(Summon):
             self.level = level
         elif level == 2:
             self.actions = {'Move':self.move, 'Leap':self.leap, 'Slash':self.slash, 'Whirlwind':self.whirlwind, 'Howl From Beyond':self.howl_from_beyond, 'Track':self.track,  'Hurl':self.hurl, 'Rage':self.rage, 'Molten Claws':self.molten_claws, 'Bane Claws':self.bane_claws}
-            self.str = 8
+            self.str = 7
             self.agl = 10
             self.end = 6
             self.mm = 3
             self.msl = 0
             self.bls = 0
-            self.dodge = 6
+            self.dodge = 8
             self.psyche = 4
             self.wis = 4
             self.rsn = 4
@@ -16318,20 +16331,20 @@ class Berserker(Summon):
                 my_str = self.get_abl('str')
                 tar_str = ent.get_abl('str')
                 if to_hit(my_str, tar_str):
-                    app.canvas.create_text(s[0]*100+49-app.moved_right, s[1]*100+84-app.moved_down, text = '-3 san, -2 rsn', font = ('chalkduster', 13), fill = 'gray33', tags = 'text')
-                    app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+85-app.moved_down, text = '-3 san, -2 rsn', font = ('chalkduster', 13), fill = 'gray88', tags = 'text')
+                    app.canvas.create_text(s[0]*100+49-app.moved_right, s[1]*100+84-app.moved_down, text = '-3 rsn, -2 san', font = ('chalkduster', 13), fill = 'gray33', tags = 'text')
+                    app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+85-app.moved_down, text = '-3 rsn, -2 san', font = ('chalkduster', 13), fill = 'gray88', tags = 'text')
                     def howl_effect(stat):
                         return max(1,stat-3)
                     def howl_rsn_effect(stat):
                         return max(1, stat-2)
                     p = partial(howl_effect)
                     p2 = partial(howl_rsn_effect)
-                    ent.san_effects.append(p)
-                    ent.rsn_effects.append(p2)
+                    ent.san_effects.append(p2)
+                    ent.rsn_effects.append(p)
                     n = 'Howl_From_Beyond' + str(app.count)
                     def un(i, p, p2, lockname = None):
-                        app.ent_dict[i].san_effects.remove(p)
-                        app.ent_dict[i].rsn_effects.remove(p2)
+                        app.ent_dict[i].san_effects.remove(p2)
+                        app.ent_dict[i].rsn_effects.remove(p)
                         root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
                     u = partial(un, id, p, p2)
                     ent.effects_dict[n] = Effect(name = 'Howl_From_Beyond', undo_func = u, duration = self.get_abl('end'), level = self.get_abl('str'))
@@ -24897,6 +24910,15 @@ class App(tk.Frame):
         # END TURN SEQUENCE
                     
                     
+    def center_focus(self, sqr):
+        # find 'center'
+        # center is around 4,4 4,5 5,5 5,4 UNLESS towards edges of map
+        # make best effort to move_curs until sqr is equal to grid_pos AND curs_pos is as close as possible to 4,4...
+        # not true... curs_pos must move 'past' the sqr in most cases
+        # OPTION 2
+        # first, focus_square() as normal, then 'adjust' (move cursor 
+        pass
+                    
     def get_focus(self, id):
         while grid_pos[0] < self.ent_dict[id].loc[0]:
             self.move_curs(dir = 'Right')
@@ -26032,10 +26054,13 @@ class App(tk.Frame):
         app.rebind_all()
         
     def debugger(self, event):
-        for child in root.winfo_children():
-            print(child)
-        print(self.canvas.winfo_width())
-        print(self.canvas.winfo_height())
+#         global grid_pos, curs_pos, map_pos
+        print('grid_pos ',grid_pos)
+        print('curs_pos ',curs_pos)
+        print('map_pos ',map_pos)
+    # doesnt work since curs_pos is tied to grid_pos/map_pos
+    # movement of cursor keeps all in sync
+#         app.move_map('Left')
 
 root = tk.Tk()
 app = App(master=root)
@@ -26053,7 +26078,7 @@ root.bind('<.>', app.cycle_enemy_units)
 app.unbind_all()
 # root.bind('<Escape>', app.exit_fullscreen)
 #### DEBUG ####
-# root.bind('<d>', app.debugger)
+root.bind('<d>', app.debugger)
 
 
 root.configure(background = 'black')
