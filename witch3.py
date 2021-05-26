@@ -154,6 +154,8 @@ def round_100(x):
 def action_description(act):
     if act == 'Slash':
         return 'To-hit agility vs agility, strength vs endurance slashing melee damage, adjacent target as action.'
+    elif act == 'Screech':
+        return 'Action target in range ballistics, on to-hit marksmanship vs dodge, gets -3 sanity and -1 move range at level and duration strength.'
     elif act == 'Fangs of Apophis':
         return 'Spell target in range reason gets +1 str, agl and melee damage changed to acid.'
     elif act == 'Wreathed in Flame':
@@ -263,13 +265,13 @@ def action_description(act):
     elif act == 'Paralyze':
         return 'An adjacent spell target, upon failing wisdom vs wisdom to-hit, gets an effect which reduces move range by 3 to a minimum of 1, and reduces its number of actions by 1. Duration is reason. Level is wisdom. Costs 2.'
     elif act == 'Scarab Gestation':
-        return 'Spell target, range reason (non-scarab/scarab swarm/familiar). Upon to hit psyche vs strength, gives a death trigger that summons a scarab under your control. Costs 2 magick. Duration is 13 turns. Level is psyche.'
+        return 'Spell target, range reason (non-scarab/scarab swarm/familiar). Upon to hit wisdom vs wisdom, gives a death trigger that summons a scarab under your control. Costs 2 magick. Duration is 13 turns. Level is psyche.'
     elif act == 'Bite':
         return 'Scarab bites an adjacent unit. To-hit: agl vs agl, damage: str vs end, acid melee.'
     elif act == 'Scarab Swarm':
         return 'Transform a scarab into a flying scarab swarm.'
     elif act == 'Spore Cloud':
-        return 'Target location in range 2 gets effect: +2 dodge, -2 damage if type is slashing, piercing, or fire. Duration is reason. Level is wisdom.'
+        return 'Target location in range 2 gets effect: +4 dodge, -2 damage if type is slashing, piercing, or fire and melee or ranged or spell. Duration is reason. Level is wisdom.'
     elif act == 'Claw Rake':
         return 'adjacent action target, agl vs agl, str vs end slashing dmg. If unit does not have effect, gets Ghoul Venom -1 str, end and end-of-turn 2 poison dmg at duration of reason and level of wisdom (of ghoul).'
     elif act == 'Bone Strike':
@@ -345,7 +347,7 @@ def action_description(act):
     elif act == 'Track':
         return 'All enemy units within range reason, on to-hit agility vs agility, get an effect that removes invisibility. Duration is endurance. Level is strength.'
     elif act == 'Toxic Miasma':
-        return 'All enemy units, which are not Murrain Wolves, within range reason, on to-hit psyche vs endurance, get an effect that removes invisibility. Another to-hit psyche vs endurance gives -1 wisdom and reason. Duration is reason. Level is wisdom.'
+        return 'All enemy units, which are not Murrain Wolves, within range reason, on to-hit wisdom vs wisdom, get an effect that removes invisibility. Another to-hit wisdom vs wisdom gives -1 sanity and reason. Duration is reason. Level is wisdom.'
     elif act == 'Leprous Bite':
         return 'An adjacent action target unit, on to-hit agility vs agility, gets -1 str, end, agl, mm, psy, wis, rsn, san, init and takes strength vs endurance slashing melee damage.'
     elif act == 'Concerted Volley':
@@ -581,7 +583,7 @@ def action_description(act):
     elif act == 'Hindering Mucilage':
         return 'A location within range ballistics gets a map effect causing units with normal move type to get -3 agility, dodge, and move range when occupying the location.'
     elif act == 'Wing Buffet':
-        return 'An action target in range strength, on to-hit strength vs strength, is relocated to a random location among those furthest from the caster and within range caster strength from target.'
+        return 'An action target in range ballistics, on to-hit marksmanship vs dodge, is relocated to a random location among those furthest from the caster and within range caster strength from target and takes missle vs endurance explosive ranged damage.'
     elif act == 'Chameleon Camouflage':
         return 'Caster gains invisibility effect. Cannot be used if caster already has this effect or Shimmering Scales.'
     elif act == 'Shimmering Scales':
@@ -625,11 +627,11 @@ def action_description(act):
 
 def loc_effect_description(ef):
     if ef.name == 'Spore_Cloud':
-        return '+2 dodge, reduces piercing, slashing, fire damage by 2 (min 1).'+' Duration = '+str(ef.duration)+', level = '+str(ef.level)
+        return '+4 dodge, reduces piercing, slashing, fire damage by 2 (min 1) if it is melee or ranged or spell.'+' Duration = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Warpfire':
         return 'Start-of-turn relocate all within range 3 among random locations closest to warpfire.'+' Duration = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Darkness':
-        return '-2 move range from this location.'+' Duration = '+str(ef.duration)+', level = '+str(ef.level)
+        return '-2 move range from this location for normal and flying move type.'+' Duration = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Smoke_Bomb':
         return 'Grants invisibility.'+' Duration = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Fuse_Trap':
@@ -645,6 +647,8 @@ def loc_effect_description(ef):
 def effect_description(ef):
     if ef.name == 'Curse_of_Oriax':
         return '-1 psy,wis,rsn,san,init, 2 magick dmg eot, dur = '+str(ef.duration)+', level = '+str(ef.level)
+    elif ef.name == 'Screech':
+        return '-3 sanity, -1 move range, dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Pox':
         return 'Eot 3 poison dmg, dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Wail':
@@ -764,7 +768,7 @@ def effect_description(ef):
     elif ef.name == 'Track':
         return 'Lose invisibility. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Miasma_Drain':
-        return '-1 wisdom and reason. dur = '+str(ef.duration)+', level = '+str(ef.level)
+        return '-1 sanity and reason. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Miasma_Invis':
         return 'Lose invisibility. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Leprous Bite':
@@ -2696,9 +2700,9 @@ class Illusionist(Summon):
             self.bls = 9
             self.dodge = 7
             self.psyche = 6
-            self.wis = 9
+            self.wis = 7
             self.rsn = 5
-            self.san = 14
+            self.san = 13
             self.init = 8
             self.spirit = 21
             self.magick = 17
@@ -3532,11 +3536,11 @@ class Umbrae_Wolf(Summon):
             self.mm = 7
             self.msl = 8
             self.bls = 6
-            self.dodge = 5
+            self.dodge = 8
             self.psyche = 4
             self.wis = 4
             self.rsn = 4
-            self.san = 13
+            self.san = 12
             self.init = 8
             self.spirit = 22
             self.magick = 13
@@ -3644,8 +3648,8 @@ class Umbrae_Wolf(Summon):
                 self.mm = 3
                 self.msl = 3
                 self.bls = 6
-                self.dodge = 7
-                self.psyche = 8
+                self.dodge = 6
+                self.psyche = 9
                 self.wis = 8
                 self.rsn = 7
                 self.san = 16
@@ -3728,12 +3732,12 @@ class Umbrae_Wolf(Summon):
                 self.end = 6
                 self.mm = 7
                 self.msl = 8
-                self.bls = 5
-                self.dodge = 5
+                self.bls = 6
+                self.dodge = 8
                 self.psyche = 4
                 self.wis = 4
-                self.rsn = 3
-                self.san = 13
+                self.rsn = 4
+                self.san = 12
                 self.init = 8
                 self.move_range = 4
                 old_base = self.base_spirit
@@ -5580,17 +5584,17 @@ class Murrain_Wolf(Summon):
             self.level = level
         elif level == 2:
             self.actions = {'Move':self.move, 'Pox':self.pox, 'Paralyze':self.paralyze, 'Scarab Gestation':self.scarab_gestation, 'Leprous Bite':self.leprous_bite, 'Toxic Miasma':self.toxic_miasma, 'Spore Cloud':self.spore_cloud, 'Scarab Swarm':self.scarab_swarm}
-            self.str = 7
+            self.str = 5
             self.agl = 6
-            self.end = 7
+            self.end = 6
             self.mm = 2
             self.msl = 0
             self.bls = 0
             self.dodge = 3
             self.psyche = 7
-            self.wis = 8
+            self.wis = 7
             self.rsn = 5
-            self.san = 14
+            self.san = 11
             self.init = 4
             self.spirit = 31
             self.magick = 35
@@ -5852,11 +5856,11 @@ class Murrain_Wolf(Summon):
         app.vis_dict[un] = Vis(name = 'Spore_Cloud', loc = sqr[:])
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict[un].img, tags = un)
         def spore_effect(stat):
-            return stat+2
+            return stat+4
         p = partial(spore_effect)
         app.loc_dict[tuple(sqr)].dodge_effects.append(p)
         def spore_def(attacker, defender, amount, type, source, sn, lockname = None):
-            if amount < 0 and (type == 'slashing' or type == 'piercing' or type == 'fire') and sn != 'eot' and sn != 'sot':
+            if amount < 0 and (type == 'slashing' or type == 'piercing' or type == 'fire') and (sn == 'melee' or sn == 'ranged' or sn == 'spell'):
                 app.canvas.create_text(defender.loc[0]*100+49-app.moved_right, defender.loc[1]*100+54-app.moved_down, text = '-2 (min1) spirit spore cloud', justify ='center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
                 app.canvas.create_text(defender.loc[0]*100+50-app.moved_right, defender.loc[1]*100+55-app.moved_down, text = '-2 (min1) spirit spore cloud', justify ='center', font = ('chalkduster', 13), fill = 'olivedrab2', tags = 'text')
                 root.after(1555, lambda t = 'text' : app.canvas.delete(t))
@@ -5931,7 +5935,7 @@ class Murrain_Wolf(Summon):
         app.vis_dict['Scarab_Gestation'] = Vis(name = 'Scarab_Gestation', loc = sqr[:])
         vis = app.vis_dict['Scarab_Gestation']
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = vis.img, tags = 'Scarab_Gestation')
-        if to_hit(self.get_abl('psyche'),app.ent_dict[id].get_abl('str')) == True: # HIT
+        if to_hit(self.get_abl('wis'),app.ent_dict[id].get_abl('wis')) == True: # HIT
             app.canvas.create_text(ent.loc[0]*100-app.moved_right+49, ent.loc[1]*100-app.moved_down+74, text = 'Scarab...', justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
             app.canvas.create_text(ent.loc[0]*100-app.moved_right+50, ent.loc[1]*100-app.moved_down+75, text = 'Scarab...', justify = 'center', fill = 'white', font = ('chalkduster', 13), tags = 'text')
             # SCARAB DEATH TRIGGER
@@ -6165,9 +6169,7 @@ class Murrain_Wolf(Summon):
                 ents = ents[1:]
                 ent = app.ent_dict[id]
                 misscount = 0
-                my_psy = self.get_abl('psyche')
-                tar_end = ent.get_abl('end')
-                if to_hit(my_psy,tar_end):
+                if to_hit(self.get_abl('wis'), ent.get_abl('wis')):
                     def miasma_invis(types):
                         return [t for t in types if t != 'invisibility']
                     p = partial(miasma_invis)
@@ -6181,21 +6183,21 @@ class Murrain_Wolf(Summon):
                     app.canvas.create_text(ent.loc[0]*100-app.moved_right+49, ent.loc[1]*100-app.moved_down+24, text = 'Lose invisibility', justify = 'center', fill = 'black', font = ('chalkduster', 14), tags = 'text')
                     app.canvas.create_text(ent.loc[0]*100-app.moved_right+50, ent.loc[1]*100-app.moved_down+25, text = 'Lose invisibility', justify = 'center', fill = 'orchid1', font = ('chalkduster', 14), tags = 'text')
                     misscount += 1
-                if to_hit(my_psy,tar_end):
+                if to_hit(self.get_abl('wis'), ent.get_abl('wis')):
                     def miasma_abls(stat):
                         return max(1,stat-1)
                     p2 = partial(miasma_abls)
-                    ent.wis_effects.append(p2)
+                    ent.san_effects.append(p2)
                     ent.rsn_effects.append(p2)
                     def undo(id, f, lockname = None):
-                        app.ent_dict[id].wis_effects.remove(f)
+                        app.ent_dict[id].san_effects.remove(f)
                         app.ent_dict[id].rsn_effects.remove(f)
                         root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
                     u2 = partial(undo, id, p2)
                     n = 'Toxic_Miasma'+str(app.count)
                     ent.effects_dict[n] = Effect(name = 'Miasma_Drain', undo_func = u2, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
-                    app.canvas.create_text(ent.loc[0]*100-app.moved_right+49, ent.loc[1]*100-app.moved_down+44, text = '-1 wis, rsn', justify = 'center', fill = 'black', font = ('chalkduster', 14), tags = 'text')
-                    app.canvas.create_text(ent.loc[0]*100-app.moved_right+50, ent.loc[1]*100-app.moved_down+45, text = '-1 wis, rsn', justify = 'center', fill = 'orchid1', font = ('chalkduster', 14), tags = 'text')
+                    app.canvas.create_text(ent.loc[0]*100-app.moved_right+49, ent.loc[1]*100-app.moved_down+44, text = '-1 san, rsn', justify = 'center', fill = 'black', font = ('chalkduster', 14), tags = 'text')
+                    app.canvas.create_text(ent.loc[0]*100-app.moved_right+50, ent.loc[1]*100-app.moved_down+45, text = '-1 san, rsn', justify = 'center', fill = 'orchid1', font = ('chalkduster', 14), tags = 'text')
                     misscount += 1
                 if misscount == 0:
                     miss(ent.loc)
@@ -7126,7 +7128,7 @@ class Fell_Evolver(Summon):
             self.psyche = 6
             self.wis = 6
             self.rsn = 6
-            self.san = 14
+            self.san = 12
             self.init = 6
             self.spirit = 31
             self.magick = 0
@@ -8040,10 +8042,10 @@ class Hexmage(Summon):
             self.msl = 0
             self.bls = 0
             self.dodge = 6
-            self.psyche = 8
-            self.wis = 8
+            self.psyche = 7
+            self.wis = 7
             self.rsn = 5
-            self.san = 16
+            self.san = 15
             self.init = 6
             self.spirit = 27
             self.magick = 29
@@ -8834,9 +8836,9 @@ class Thaumaturge(Summon):
             self.mm = 8
             self.msl = 6
             self.bls = 9
-            self.dodge = 5
-            self.psyche = 5
-            self.wis = 7
+            self.dodge = 9
+            self.psyche = 6
+            self.wis = 8
             self.rsn = 5
             self.san = 13
             self.init = 8
@@ -9542,7 +9544,7 @@ class Inquisitor(Summon):
             self.psyche = 7
             self.wis = 8
             self.rsn = 6
-            self.san = 16
+            self.san = 13
             self.init = 8
             self.spirit = 26
             self.magick = 26
@@ -10114,7 +10116,7 @@ class Pixie(Summon):
             self.move_range = 5
             self.level = level
         elif level == 2:
-            self.actions = {'Move':self.move, 'Elemental Langour':self.elemental_langour, 'Asthenia':self.asthenia, 'Detox':self.detox, 'Geomantic Clutch':self.geomantic_clutch, 'Biotranspose':self.biotranspose, 'Glammering':self.glammering}
+            self.actions = {'Move':self.move, 'Elemental Langour':self.elemental_langour, 'Asthenia':self.asthenia, 'Detox':self.detox, 'Geomantic Clutch':self.geomantic_clutch, 'Needle Storm':self.needle_storm, 'Biotranspose':self.biotranspose, 'Glammering':self.glammering}
             self.str = 4
             self.agl = 9
             self.end = 4
@@ -10122,10 +10124,10 @@ class Pixie(Summon):
             self.msl = 0
             self.bls = 0
             self.dodge = 9
-            self.psyche = 8
+            self.psyche = 6
             self.wis = 8
             self.rsn = 7
-            self.san = 16
+            self.san = 14
             self.init = 10
             self.spirit = 21
             self.magick = 35
@@ -10346,6 +10348,75 @@ class Pixie(Summon):
         app.cleanup_squares()
         app.unbind_all()
         app.rebind_all()
+        
+        
+    def needle_storm(self, event = None):
+        if self.acts < 1:
+            return
+        app.unbind_nonarrows()
+        root.bind('<q>', self.finish_needle_storm)
+        sqrs = [c for c in app.coords if 1 <= dist(self.loc, c) <= self.get_abl('rsn')]
+        app.animate_squares(sqrs)
+        app.depop_context(event = None)
+        root.bind('<a>', lambda e, sqr = grid_pos, sqrs = sqrs : self.do_needle_storm(event = e, sqr = sqr, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Confirm Needle Storm Target', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_needle_storm(event = e, sqr = sqr, sqrs = sqrs))
+        b.pack(side = 'top')
+        app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
+        
+    def do_needle_storm(self, event, sqr, sqrs):
+        if sqr not in sqrs:
+            return
+        id = app.grid[sqr[0]][sqr[1]]
+        if id not in app.spell_target_ents().keys():
+            return
+        if self.magick < 2:
+            return
+        ent = app.ent_dict[id]
+        self.magick -= 2
+#         effect1 = mixer.Sound('Sound_Effects/geomantic_clutch.ogg')
+#         effect1.set_volume(1)
+#         sound_effects.play(effect1, 0)
+        app.unbind_all()
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        self.acts -= 1
+        app.vis_dict['Needle_Storm'] = Vis(name = 'Needle_Storm', loc = sqr[:])
+        my_wis = self.get_abl('wis')
+        tar_wis = ent.get_abl('wis')
+        if to_hit(my_wis, tar_wis) == True:
+            my_psy = self.get_abl('psyche')
+            tar_psy = ent.get_abl('psyche')
+            d = damage(my_psy, tar_psy)
+            def needle_dodge(stat):
+                return max(1,stat-1)
+            p = partial(needle_dodge)
+            ent.dodge_effects.append(p)
+            def undo(ent, p, lockname = None):
+                ent.dodge_effects.remove(p)
+                root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+            u = partial(undo, ent, p)
+            un = 'Needle_Storm'+str(app.count)
+            app.count += 1
+            ent.effects_dict[un] = Effect(name = 'Needle_Storm', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
+            lock(apply_damage, self, ent, -d, 'piercing', 'Needle Storm', 'spell')
+            root.after(111, self.finish_needle_storm)
+        else:
+            miss(app.ent_dict[id].loc)
+            root.after(1666, self.finish_needle_storm)
+        
+    def finish_needle_storm(self, event = None):
+        try: 
+            del app.vis_dict['Needle_Storm']
+            app.canvas.delete('Needle_Storm')
+        except: pass
+        app.depop_context(event = None)
+        app.canvas.delete('text')
+        app.cleanup_squares()
+        app.rebind_all()
+        app.exists_check(app.active_ent)
         
         
     def geomantic_clutch(self, event = None):
@@ -10594,10 +10665,10 @@ class Drake(Summon):
             self.move_range = 4
             self.level = level
         elif level == 2:
-            self.actions = {'Move':self.move, 'Spit Venom':self.spit_venom, 'Hindering Mucilage':self.hindering_mucilage, 'Wing Buffet':self.wing_buffet, 'Chameleon Camouflage':self.chameleon_camouflage, 'Shimmering Scales':self.shimmering_scales}
+            self.actions = {'Move':self.move, 'Spit Venom':self.spit_venom, 'Hindering Mucilage':self.hindering_mucilage, 'Wing Buffet':self.wing_buffet, 'Screech':self.screech, 'Chameleon Camouflage':self.chameleon_camouflage, 'Shimmering Scales':self.shimmering_scales}
             self.str = 7
             self.agl = 8
-            self.end = 7
+            self.end = 8
             self.mm = 9
             self.msl = 6
             self.bls = 5
@@ -10624,7 +10695,7 @@ class Drake(Summon):
         app.unbind_nonarrows()
         app.depop_context(event = None)
         root.bind('<q>', self.cleanup_wing_buffet)
-        max = self.get_abl('str')
+        max = self.get_abl('bls')
         sqrs = [s for s in app.coords if 1 <= dist(self.loc, s) <= max]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_wing_buffet(event = e, sqr = s, sqrs = sqrs))
@@ -10650,14 +10721,14 @@ class Drake(Summon):
         self.acts -= 1
         ent = app.ent_dict[id]
         app.vis_dict['Wing_Buffet'] = Vis(name = 'Wing_Buffet', loc = sqr[:])
-        if to_hit(self.get_abl('str'),ent.get_abl('str')) == True:
+        if to_hit(self.get_abl('mm'),ent.get_abl('dodge')) == True:
             locs = [c for c in app.coords if dist(c,ent.loc) <= self.get_abl('str') and app.grid[c[0]][c[1]] == '']
             if locs != []:
                 newloc = reduce(lambda a,b : a if dist(a,self.loc)>dist(b,self.loc) else b, locs)
                 lock(ent.throw_move, newloc)
                 app.canvas.delete('text')
                 app.get_focus(id)
-            d = damage(self.get_abl('str'),ent.get_abl('end'))
+            d = damage(self.get_abl('msl'),ent.get_abl('end'))
             root.after(1666, self.cleanup_wing_buffet)
             lock(apply_damage, self, ent, -d, 'explosive', 'Wing Buffet', 'ranged')
         else:
@@ -10856,6 +10927,73 @@ class Drake(Summon):
         app.depop_context(event = None)
         try: app.canvas.delete('text')
         except: pass
+        
+        
+    def screech(self, event = None):
+        if self.acts < 1:
+            return
+        app.unbind_nonarrows()
+        app.depop_context(event = None)
+        root.bind('<q>', self.cleanup_screech)
+        sqrs = [s for s in app.coords if 1 <= dist(self.loc, s) <= self.get_abl('bls')]
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_screech(event = e, sqr = s, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Choose Target For Screech', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_screech(e, s, sqrs))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
+        
+    def do_screech(self, event, sqr, sqrs):
+        if sqr not in sqrs:
+            return
+        id = app.grid[sqr[0]][sqr[1]]
+        if id not in app.action_target_ents().keys():
+            return
+        app.unbind_all()
+#         effect1 = mixer.Sound('Sound_Effects/pyrotechnics.ogg')
+#         effect1.set_volume(1)
+#         sound_effects.play(effect1, 0)
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        self.acts -= 1
+        ent = app.ent_dict[id]
+        app.vis_dict['Screech'] = Vis(name = 'Screech', loc = sqr[:])
+        if to_hit(self.get_abl('mm'),ent.get_abl('dodge')) == True:
+            app.canvas.create_text(ent.loc[0]*100-app.moved_right+49, ent.loc[1]*100-app.moved_down+14, text = '-3 san, -1 mv rng', justify = 'center', fill = 'black', font = ('chalkduster', 16), tags = 'text')
+            app.canvas.create_text(ent.loc[0]*100-app.moved_right+50, ent.loc[1]*100-app.moved_down+15, text = '-3 san, -1 mv rng', justify = 'center', fill = 'green2', font = ('chalkduster', 16), tags = 'text')
+            def screech_san(stat):
+                return max(1,stat-3)
+            p = partial(screech_san)
+            ent.san_effects.append(p)
+            def screech_mvrng(stat):
+                return max(0,stat-1)
+            p2 = partial(screech_mvrng)
+            ent.move_range_effects.append(p2)
+            def undo(ent, p, p2, lockname=None):
+                ent.san_effects.remove(p)
+                ent.move_range_effects.remove(p2)
+                root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+            u = partial(undo, ent, p, p2)
+            n = 'Screech' + str(app.count)
+            app.ent_dict[id].effects_dict[n] = Effect(name = 'Screech', undo_func = u, duration = self.get_abl('str'), level = self.get_abl('str'))
+            root.after(1666, lambda e = None : self.cleanup_screech(event = e))
+        else:
+            miss(ent.loc)
+            root.after(1666, lambda e = None : self.cleanup_screech(event = e))
+        
+    def cleanup_screech(self, event = None):
+        try: 
+            del app.vis_dict['Screech']
+            app.canvas.delete('Screech')
+        except: pass
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        app.canvas.delete('text')
+        app.unbind_all()
+        app.rebind_all()
+        app.exists_check(app.active_ent)
         
         
     def spit_venom(self, event = None):
@@ -16186,7 +16324,7 @@ class Berserker(Summon):
             self.psyche = 4
             self.wis = 4
             self.rsn = 4
-            self.san = 13
+            self.san = 12
             self.init = 9
             self.spirit = 35
             self.magick = 0
@@ -23594,6 +23732,9 @@ class App(tk.Frame):
         self.game_title.create_image(0,0, image =self.title_screen, anchor = 'nw')
         self.game_title.pack(side = 'top')
         
+        self.grim_edit = tk.Button(root, text = 'Grimoire Editor', fg = 'tan3', highlightbackground = 'tan3', font = ('chalkduster', 22), command = self.grimoire_editor)
+        self.game_title.create_window(root.winfo_screenwidth()/2, root.winfo_screenheight()-170, anchor='s', window = self.grim_edit)
+        
         self.one_player = tk.Button(root, text = 'Campaign', fg = 'tan3', highlightbackground = 'tan3', font = ('chalkduster', 22), command = lambda num = 1 : self.num_chose(num))
         self.game_title.create_window(root.winfo_screenwidth()/2, root.winfo_screenheight()-120, anchor='s', window = self.one_player)
         
@@ -23602,6 +23743,43 @@ class App(tk.Frame):
         
         self.load_button = tk.Button(root, text = 'Load Campaign', fg = 'tan3', highlightbackground = 'tan3', font = ('chalkduster', 22), command = self.try_load)
         self.game_title.create_window(root.winfo_screenwidth()/2, root.winfo_screenheight()-20, anchor='s', window = self.load_button)
+        
+        
+    # should destroy old windows/buttons, open new window that, in addition to editor/builder, allows actions:
+    # save grimoire, load grimoire, and back to title screen
+    # grimoire is chosen from saved after choosing either campaign or duel
+    def grimoire_editor(self):
+        # cleanup title screen stuff
+        self.game_title.destroy()
+        self.grim_edit.destroy()
+        self.one_player.destroy()
+        self.two_player.destroy()
+        del self.title_screen
+        del self.game_title
+        del self.grim_edit
+        del self.one_player
+        del self.two_player
+        # end cleanup title screen stuff
+#         filename = 'intro_scene_texts/intro_scene_text'+str(map_number)+'.txt'
+#         with open(filename) as f:
+#             text = f.read()
+        self.intro_scene = ImageTk.PhotoImage(Image.open('grimoire_editor_bg.png').resize((root.winfo_screenwidth(),root.winfo_screenheight())))
+        self.intro_canvas = tk.Canvas(root, width = root.winfo_screenwidth(), bg = 'black', highlightthickness = 0, height = root.winfo_screenheight())
+        self.intro_canvas.create_image(0,0, image =self.intro_scene, anchor = 'nw')
+        self.intro_canvas.pack(side = 'top')
+        self.bd_img = ImageTk.PhotoImage(Image.open('border.png').resize((root.winfo_screenwidth()-180, root.winfo_screenheight()//3-11)))
+        self.intro_canvas.create_image(root.winfo_screenwidth()//2, root.winfo_screenheight()-192, anchor='s', image =self.bd_img)
+        self.frame = tk.Frame(root)
+        self.sb = tk.Scrollbar(self.frame)
+#         self.intro_text = tk.Text(self.frame, height = 7, width = 118, wrap = 'word', bg = 'black', relief = 'raised', highlightthickness = 0, borderwidth = 0, fg = 'indianred', font = ('kokonor', 16))
+#         self.intro_text.insert('end', text)
+#         self.intro_text.configure(state = 'disabled')
+        self.intro_canvas.create_window(root.winfo_screenwidth()//2, root.winfo_screenheight()-320, window = self.frame)
+#         self.intro_text.pack(side = 'left')
+        self.sb.pack(side = 'right', fill = 'y')
+#         self.intro_text.configure(yscrollcommand = self.sb.set)
+#         self.sb.config(command = self.intro_text.yview)
+        
         
     def try_load(self):
         saves = [s for r,d,s in walk('save_games/')][0]
@@ -23685,10 +23863,12 @@ class App(tk.Frame):
     def num_chose(self, num):
         self.num_players = num
         self.game_title.destroy()
+        self.grim_edit.destroy()
         self.one_player.destroy()
         self.two_player.destroy()
         del self.title_screen
         del self.game_title
+        del self.grim_edit
         del self.one_player
         del self.two_player
         if self.num_players == 2:
