@@ -307,9 +307,9 @@ def action_description(act):
     elif act == 'Poison Sting':
         return 'Range ballistics, marksmanship vs dodge to-hit, missle vs endurance poison damage. Hit also causes effect, -1 strength and 1 poison damage end-of-turn, stackable. Duration is missle. Level is ballistics.'
     elif act == 'Dire Charm':
-        return 'All units within range reason, upon to-hit psyche vs psyche, damage themselves using their own strength vs endurance, crushing melee. Costs 3 magick. Does not target.'
+        return 'All units within range reason, upon to-hit wisdom vs wisdom, damage themselves using their own strength vs endurance, crushing melee. Costs 6 magick. Does not target.'
     elif act == 'Baleful Stare':
-        return 'Spell target within range reason, upon to-hit wisdom vs strength, that does not have this effect gets -1 psyche and end-of-turn 2 acid damage. Duration is reason. Level is wisdom.'
+        return 'Spell target within range reason, upon to-hit wisdom vs wisdom, that does not have this effect gets -2 endurance and end-of-turn 2 acid damage. Duration is reason. Level is wisdom.'
     elif act == 'Mind Rot':
         return 'Spell target in range reason gets -2 wisdom, -1 reason, -3 sanity. Duration is reason. Level is wisdom.'
     elif act == 'Legerdemain':
@@ -321,13 +321,13 @@ def action_description(act):
     elif act == 'Dispel':
         return 'An action target within range reason, upon failing to-hit wisdom vs wisdom, has all effects attempted to dispel using caster wisdom. Upon another to-hit using wisdom vs wisdom, the unit gets an effect that strips psyshield. Duration is reason. Level is wisdom.'
     elif act == 'Brambles':
-        return 'Spell target within range reason, and all units within distance 2, get -1 move range if they have normal type movement and, on to-hit wisdom vs agility, take psyche vs endurance slashing spell damage. Costs 3.'
+        return 'Spell target within range reason, and all enemy units within distance 2, get -1 move range if they have normal type movement and, on to-hit wisdom vs wisdom, take psyche vs psyche slashing spell damage. Costs 3.'
     elif act == 'Flesh Hooks':
-        return 'An adjacent friendly action target, without this ability, is granted Hook Attack action. This action targets a unit within range reason that, on to-hit wisdom vs dodge, does psyche vs endurance piercing ranged damage. Action is granted for duration reason at level wisdom.'
+        return 'An adjacent friendly action target, without this ability, is granted Hook Attack action. This action targets a unit within range reason that, on to-hit wisdom vs dodge, does psyche vs endurance piercing ranged damage. Action is granted for duration reason at level wisdom. Costs 4 magick.'
     elif act == 'Hellfire':
-        return 'Spell target within range half of reason (rounded down, min 1), on to-hit wis vs wis, does psyche vs psyche fire spell damage. If that unit fails an endurance save(-5), it gets burn effect which causes slashing, crushing, piercing, fire, and explosive damage to be increased by 2. Duration is reason. Level is wisdom.'
+        return 'Spell target within range reason, on to-hit wis vs wis, does psyche vs psyche fire spell damage. If that unit fails an endurance save(-5), it gets burn effect which causes slashing, crushing, piercing, fire, and explosive damage to be increased by 2. Duration is reason. Level is wisdom. Costs 3 magick.'
     elif act == 'Stregth Through Wounding':
-        return 'All units within range 3 take 2 piercing damage. Friendly units get +1 psyche and endurance. Duration is reason. Level is wisdom.'
+        return 'All units within range 3 take 2 piercing ranged damage. Friendly units get +1 psyche and endurance. Duration is reason. Level is wisdom.'
     elif act == 'Analyze':
         return 'Spell target in range reason, on to-hit wisdom vs wisdom, gets an effect that removes resistances to slashing, piercing, crushing, and explosive damage. Duration is reason. Level is wisdom. Costs 1.'
     elif act == 'Smoke Bomb':
@@ -17399,17 +17399,17 @@ class Lesser_Demon(Summon):
             self.level = level
         elif level == 2:
             self.actions = {'Move': self.move, 'Dire Charm':self.dire_charm, 'Baleful Stare':self.baleful_stare, 'Brambles':self.brambles}
-            self.str = 5
-            self.agl = 5
+            self.str = 6
+            self.agl = 6
             self.end = 6
             self.mm = 1
             self.msl = 0
             self.bls = 0
-            self.dodge = 5
+            self.dodge = 6
             self.psyche = 6
             self.wis = 6
             self.rsn = 5
-            self.san = 14
+            self.san = 13
             self.init = 9
             self.magick = 27
             self.spirit = 19
@@ -17418,7 +17418,7 @@ class Lesser_Demon(Summon):
             self.move_range = 4
             self.level = level
         self.move_type = 'normal'
-        self.weak = ['acid']
+        self.weak = []
         self.resist = ['magick']
         super().__init__(name, id, img, loc, owner)
         
@@ -17458,7 +17458,7 @@ class Lesser_Demon(Summon):
         app.cleanup_squares()
         app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+14-app.moved_down, text = 'Brambles', justify ='center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
         app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+15-app.moved_down, text = 'Brambles', justify ='center', font = ('chalkduster', 13), fill = 'white', tags = 'text')
-        ents = [k for k,v in app.all_ents().items() if dist(v.loc,sqr) <= 2]
+        ents = [k for k,v in app.all_ents().items() if dist(v.loc,sqr) <= 2 and v.owner != self.owner]
         def cleanup_brambles(name):
             app.canvas.delete(name)
             del app.vis_dict[name]
@@ -17475,9 +17475,8 @@ class Lesser_Demon(Summon):
                 u = 'Brambles' + str(app.count)
                 app.count += 1
                 app.vis_dict[u] = Vis(name = 'Brambles', loc = s)
-                app.canvas.create_image(s[0]*100+50-app.moved_right, s[1]*100+50-app.moved_down, image = app.vis_dict[u].img, tags = 'Brambles')
                 # ADD brambles effects
-                if app.ent_dict[id].get_move_type() == 'normal':
+                if ent.get_move_type() == 'normal':
                     app.canvas.create_text(s[0]*100+49-app.moved_right, s[1]*100+14-app.moved_down, text = '-1 move range', justify ='center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
                     app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+15-app.moved_down, text = '-1 move range', justify ='center', font = ('chalkduster', 13), fill = 'white', tags = 'text')
                     def brambles_move(move_range):
@@ -17489,11 +17488,9 @@ class Lesser_Demon(Summon):
                         root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
                     uf = partial(un, id, p)
                     n = 'Brambles' + str(app.count)
-                    app.ent_dict[id].effects_dict[n] = Effect(name = 'Brambles', undo_func = uf, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
-                if to_hit(self.get_abl('wis'),ent.get_abl('agl')):
-                    my_psyche = self.get_abl('psyche')
-                    tar_end = app.ent_dict[id].get_abl('end')
-                    d = damage(my_psyche, tar_end)
+                    ent.effects_dict[n] = Effect(name = 'Brambles', undo_func = uf, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
+                if to_hit(self.get_abl('wis'),ent.get_abl('wis')):
+                    d = damage(self.get_abl('psyche'), ent.get_abl('psyche'))
                     lock(apply_damage, self, app.ent_dict[id], -d, 'slashing', 'Brambles', 'spell')
                     root.after(111, lambda name = u : cleanup_brambles(name))
                     root.after(222, lambda ents = ents : brambles_loop(ents))
@@ -17502,7 +17499,6 @@ class Lesser_Demon(Summon):
                     root.after(1666, lambda ents = ents : brambles_loop(ents))
         root.after(666, lambda ents = ents : brambles_loop(ents))
             
-
             
     def finish_brambles(self, event = None):
         app.cleanup_squares()
@@ -17543,33 +17539,27 @@ class Lesser_Demon(Summon):
 #         effect1 = mixer.Sound('Sound_Effects/baleful_stare.ogg')
 #         effect1.set_volume(1)
 #         sound_effects.play(effect1, 0)
+        ent = app.ent_dict[id]
         app.depop_context(event = None)
         app.unbind_all()
         app.cleanup_squares()
         self.acts -= 1
-        visloc = app.ent_dict[id].loc[:]
+        visloc = ent.loc[:]
         app.vis_dict['Baleful_Stare'] = Vis(name = 'Baleful_Stare', loc = visloc)
-        app.canvas.create_image(visloc[0]*100+50-app.moved_right, visloc[1]*100+50-app.moved_down, image = app.vis_dict['Baleful_Stare'].img, tags = 'Baleful_Stare')
         app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+84-app.moved_down, text = 'Baleful Stare', justify ='center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
         app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+85-app.moved_down, text = 'Baleful Stare', justify ='center', font = ('chalkduster', 13), fill = 'antiquewhite', tags = 'text')
-        my_wis = self.get_abl('wis')
-        target_str = app.ent_dict[id].get_abl('str')
-        if to_hit(my_wis, target_str) == True:
+        if to_hit(self.get_abl('wis'), ent.get_abl('wis')) == True:
             app.canvas.create_text(app.ent_dict[id].loc[0]*100+49-app.moved_right, app.ent_dict[id].loc[1]*100+74-app.moved_down, text = '-1 psyche, eot 2 acid dmg', justify ='center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
             app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+75-app.moved_down, text = '-1 psyche, eot 2 acid dmg', justify ='center', font = ('chalkduster', 13), fill = 'white', tags = 'text')
             # baleful effect
             def baleful_stare_effect(stat):
-                stat -= 1
-                if stat < 1:
-                    return 1
-                else:
-                    return stat
-            f = baleful_stare_effect
-            app.ent_dict[id].psyche_effects.append(f)
-            def un(i, lockname = None):
-                app.ent_dict[i].psyche_effects.remove(baleful_stare_effect)
+                return max(1,stat-2)
+            p = partial(baleful_stare_effect)
+            ent.end_effects.append(p)
+            def un(ent, p, lockname = None):
+                ent.end_effects.remove(p)
                 root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
-            p = partial(un, id)
+            u = partial(un, ent, p)
             # EOT FUNC
             def take_2(tar, lockname = None):
                 app.get_focus(tar)
@@ -17577,9 +17567,9 @@ class Lesser_Demon(Summon):
                 root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
             n = 'Baleful_Stare' + str(app.count)
             eot = partial(take_2, id)
-            app.ent_dict[id].effects_dict[n] = Effect(name = 'Baleful_Stare', eot_func = eot, undo_func = p, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
+            ent.effects_dict[n] = Effect(name = 'Baleful_Stare', eot_func = eot, undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
         else:
-            miss(app.ent_dict[id].loc)
+            miss(ent.loc)
         root.after(2666, lambda e = None : self.finish_baleful_stare(event = e))
         
     def finish_baleful_stare(self, event = None):
@@ -17610,9 +17600,9 @@ class Lesser_Demon(Summon):
         app.context_buttons.append(b2)
         
     def do_dire_charm(self, event = None, sqrs = None):
-        if self.magick < 3:
+        if self.magick < 6:
             return
-        self.magick -= 3
+        self.magick -= 6
         self.acts -= 1
 #         effect1 = mixer.Sound('Sound_Effects/dire_charm.ogg')
 #         effect1.set_volume(1)
@@ -17622,7 +17612,6 @@ class Lesser_Demon(Summon):
         app.unbind_all()
         ents = [k for k,v in app.all_ents().items() if v.loc in sqrs and v.owner != self.owner]
         app.vis_dict['Dire_Charm'] = Vis(name = 'Dire_Charm', loc = self.loc[:])
-        app.canvas.create_image(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+50-app.moved_down, image = app.vis_dict['Dire_Charm'].img, tags = 'Dire_Charm')
         def cleanup_charm(n):
             del app.vis_dict[n]
             app.canvas.delete(n)
@@ -17640,7 +17629,7 @@ class Lesser_Demon(Summon):
                 app.count += 1
                 app.vis_dict[uniq] = Vis(name = 'Dire_Charmed', loc = s)
                 app.canvas.create_image(s[0]*100+50-app.moved_right, s[1]*100+50-app.moved_down, image = app.vis_dict[uniq].img, tags = 'Dire_Charm')
-                if to_hit(self.get_abl('psyche'),ent.get_abl('psyche')):
+                if to_hit(self.get_abl('wis'),ent.get_abl('wis')):
                     d = damage(ent.get_abl('str'), ent.get_abl('end'))
                     root.after(1555, lambda n = uniq : cleanup_charm(n))
                     lock(apply_damage, ent, ent, -d, 'crushing', 'Dire Charmed', 'melee')
@@ -17816,6 +17805,9 @@ class Cenobite(Summon):
             return
         if 'Hook Attack' in app.ent_dict[id].get_actions().keys():
             return
+        if self.magick < 4:
+            return
+        self.magick -= 4
         self.acts -= 1
 #         self.init_attack_anims()
         effect1 = mixer.Sound('Sound_Effects/flesh_hooks.ogg')
@@ -17923,7 +17915,7 @@ class Cenobite(Summon):
             return
         app.unbind_nonarrows()
         root.bind('<q>', self.cancel_hellfire)
-        sqrs = [c for c in app.coords if 1 <= dist(self.loc,c) <= max(1,self.get_abl('rsn')//2)]
+        sqrs = [c for c in app.coords if 1 <= dist(self.loc,c) <= 1,self.get_abl('rsn')]
         app.animate_squares(sqrs)
         app.depop_context(event = None)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_hellfire(event = e, sqr = s, sqrs = sqrs)) 
