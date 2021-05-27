@@ -1,3 +1,5 @@
+# build arcana library/deck
+
 # desc in info for minotaur and dragon special rules (actions that cannot be removed from ent, ignore invis/psyshield, free move/charge/iceblast and conditions for)
 
 # minotaur, free charge on cond, 1 use of pound, 1 use of stomp, change move type to 'charge'?
@@ -16,8 +18,6 @@
 
 # make 'strat' section -chiru/chrono 'battery', double chrono loop time warp, rend space max out, sanity max out, invis/psyshield abuse, elusive ranged drake/pixie/illus, atk tombs pixie/fiend, scarab/cadaver/tomb abuse with pain/etc..., 
 
-# build arcana library/deck
-
 # grant actions to tombs other than vivify, prox efcts that can only target tombs
 
 # tombkiller...
@@ -26,8 +26,6 @@
 # wraith, perm def efct reduce melee/ranged dmg to 1, perm psyshield
 
 # make gorgon class / level
-
-# music volume / sfx volume , and/or turn on/off
 
 # r-click on minimap to jump screen position...show block sqrs
 
@@ -46,10 +44,6 @@
 # level with 'waypoints' end/start turn on waypoint to move between areas..., multiple screen/background level...
 
 # save game during level?
-
-# get_focus/focus_square should 'center' screen on area...
-
-# main menu / back buttons in load
 
 # summon r-click desc
 
@@ -73,17 +67,11 @@ sot/eot all adj take 1 piercing, add phys resist
 trap in stone
 replace ent w less than 40 max spirit w inert ent or 'block'
 
-astral projection
-choose a location and another spell, cast the spell as if you were located at the chosen location
-
 illusory eclipse
 transform all shadows (friendly and enemy), tar shadow gains invis
 
 lament of the void
 bard gets way to dispel invis psyshield chance
-
-reaping of saturnus
-destroy a summon to reduce summon count by 1
 
 guardian of the chthonic gate
 summon cerberus, slashing and fire atk, lasts only this turn
@@ -17915,7 +17903,7 @@ class Cenobite(Summon):
             return
         app.unbind_nonarrows()
         root.bind('<q>', self.cancel_hellfire)
-        sqrs = [c for c in app.coords if 1 <= dist(self.loc,c) <= 1,self.get_abl('rsn')]
+        sqrs = [c for c in app.coords if 1 <= dist(self.loc,c) <= self.get_abl('rsn')]
         app.animate_squares(sqrs)
         app.depop_context(event = None)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_hellfire(event = e, sqr = s, sqrs = sqrs)) 
