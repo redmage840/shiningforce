@@ -1,5 +1,11 @@
 # build arcana library/deck
 
+# make warlock target non-tomb... warlock secondary action way to affect/kill tombs tombquake...
+
+# magick gen outpaces need/use
+
+# mirror armor/forcefield half damage?
+
 # desc in info for minotaur and dragon special rules (actions that cannot be removed from ent, ignore invis/psyshield, free move/charge/iceblast and conditions for)
 
 # minotaur, free charge on cond, 1 use of pound, 1 use of stomp, change move type to 'charge'?
@@ -23743,22 +23749,32 @@ class App(tk.Frame):
 #         filename = 'intro_scene_texts/intro_scene_text'+str(map_number)+'.txt'
 #         with open(filename) as f:
 #             text = f.read()
-        self.intro_scene = ImageTk.PhotoImage(Image.open('grimoire_editor_bg.png').resize((root.winfo_screenwidth(),root.winfo_screenheight())))
-        self.intro_canvas = tk.Canvas(root, width = root.winfo_screenwidth(), bg = 'black', highlightthickness = 0, height = root.winfo_screenheight())
-        self.intro_canvas.create_image(0,0, image =self.intro_scene, anchor = 'nw')
-        self.intro_canvas.pack(side = 'top')
+        self.bg_img = ImageTk.PhotoImage(Image.open('grimoire_editor_bg.png').resize((root.winfo_screenwidth(),root.winfo_screenheight())))
+        self.bg_canvas = tk.Canvas(root, width = root.winfo_screenwidth(), bg = 'black', highlightthickness = 0, height = root.winfo_screenheight())
+        self.bg_canvas.create_image(0,0, image =self.bg_img, anchor = 'nw')
+        self.bg_canvas.pack(side = 'top')
         self.bd_img = ImageTk.PhotoImage(Image.open('border.png').resize((root.winfo_screenwidth()-180, root.winfo_screenheight()//3-11)))
-        self.intro_canvas.create_image(root.winfo_screenwidth()//2, root.winfo_screenheight()-192, anchor='s', image =self.bd_img)
-        self.frame = tk.Frame(root)
+        self.bg_canvas.create_image(root.winfo_screenwidth()//2, root.winfo_screenheight()-192, anchor='s', image =self.bd_img)
+        
+        self.frame = tk.Frame(root, width = root.winfo_screenwidth()-180, height = root.winfo_screenheight()//3-11)
         self.sb = tk.Scrollbar(self.frame)
-#         self.intro_text = tk.Text(self.frame, height = 7, width = 118, wrap = 'word', bg = 'black', relief = 'raised', highlightthickness = 0, borderwidth = 0, fg = 'indianred', font = ('kokonor', 16))
-#         self.intro_text.insert('end', text)
-#         self.intro_text.configure(state = 'disabled')
-        self.intro_canvas.create_window(root.winfo_screenwidth()//2, root.winfo_screenheight()-320, window = self.frame)
-#         self.intro_text.pack(side = 'left')
-        self.sb.pack(side = 'right', fill = 'y')
-#         self.intro_text.configure(yscrollcommand = self.sb.set)
-#         self.sb.config(command = self.intro_text.yview)
+        # prev should 'page back' spells populated in the frame
+        def page_back(index): #index will be that of leftmost element of populated spells
+            # decrement index and repopulate frame with slice of spells starting from index
+            pass
+        prev = partial(page_back) 
+        self.l_arrow = tk.Button(self.frame, text = '<', width = 2, fg = 'indianred', highlightbackground = 'black', font = ('chalkduster', 38), relief = 'raised', command = prev)
+        # next moves spells in frame 'forward'
+        def page_forward(index): #index will be that of leftmost element of populated spells
+            # increment index and repopulate frame with slice of spells starting from index
+            pass
+        next = partial(page_forward) 
+        self.r_arrow = tk.Button(self.frame, text = '>', width = 2, fg = 'indianred', highlightbackground = 'black', font = ('chalkduster', 38), relief = 'raised', command = prev)
+        self.l_arrow.pack(side = 'left', fill = 'y', expand = 1)
+        self.r_arrow.pack(side = 'left', fill = 'y', expand = 1)
+        self.sb.pack(side = 'right', fill = 'y', expand = 1)
+        self.bg_canvas.create_window(root.winfo_screenwidth()//2, root.winfo_screenheight()-320, window = self.frame)
+
         
         
     def try_load(self):
