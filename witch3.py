@@ -23612,6 +23612,7 @@ class App(tk.Frame):
         self.ent_dict = {}
         self.sqr_dict = {}
         self.vis_dict = {}
+        self.arcane_dict = {}
         self.image_holder = []
         self.global_effects_dict = {}
         self.init_q = []
@@ -23635,6 +23636,61 @@ class App(tk.Frame):
         self.enemy_color_img = ImageTk.PhotoImage(Image.open('animations/Enemy_Color_Img/0.png'))
         self.bot_minimap_img = ImageTk.PhotoImage(Image.open('animations/Bot_Minimap_Img/0.png').resize((10,10)))
         self.block_minimap_img = ImageTk.PhotoImage(Image.open('minimap_block.png').resize((10,10)))
+        
+        self.arcane_dict['Boiling_Blood'] = Spell('Boiling_Blood',Witch.boiling_blood, 2,0,0)
+        self.arcane_dict['Dark_Sun'] = Spell('Dark_Sun',Witch.dark_sun, 3,0,0)
+        self.arcane_dict['Meditate'] = Spell('Meditate',Witch.meditate, 2,0,0)
+        self.arcane_dict['Legerdemain'] = Spell('Legerdemain',Witch.legerdemain, 2,0,0)
+        self.arcane_dict['Grasp_of_the_Old_Ones'] = Spell('Grasp_of_the_Old_Ones',Witch.grasp_of_the_old_ones, 3,0,0)
+        self.arcane_dict['Horrid_Wilting'] = Spell('Horrid_Wilting',Witch.horrid_wilting, 7,0,0)
+        self.arcane_dict['Mind_Rot'] = Spell('Mind_Rot',Witch.mind_rot, 8,0,0)
+        self.arcane_dict['Dust_Devil'] = Spell('Dust_Devil',Witch.dust_devil, 5,0,0)
+        self.arcane_dict['Dispel'] = Spell('Dispel',Witch.dispel, 7,0,0)
+        self.arcane_dict['Disintegrate'] = Spell('Disintegrate',Witch.disintegrate, 5,0,0)
+        self.arcane_dict['Mummify'] = Spell('Mummify',Witch.mummify, 3,0,0)
+        self.arcane_dict['Immolate'] = Spell('Immolate',Witch.immolate, 8,0,0)
+        self.arcane_dict['Command_of_Osiris'] = Spell('Command_of_Osiris',Witch.command_of_osiris, 8,0,0)
+        self.arcane_dict['Psionic_Push'] = Spell('Psionic_Push',Witch.psionic_push, 2, 0, 0)
+        self.arcane_dict["Minerva's_Gift"] = Spell("Minerva's_Gift",Witch.minervas_gift, 1, 0, 0)
+        self.arcane_dict['Bewitch'] = Spell('Bewitch',Witch.bewitch, 3, 0, 0)
+        self.arcane_dict['Read_the_Stars'] = Spell('Read_the_Stars',Witch.read_the_stars, 2, 0, 0)
+        self.arcane_dict['Energize'] = Spell('Energize',Witch.energize, 3, 0, 0)
+        self.arcane_dict['Psi_Blades'] = Spell('Psi_Blades',Witch.psi_blades, 3, 0, 0)
+        self.arcane_dict['Cosmic_Sight'] = Spell('Cosmic_Sight',Witch.cosmic_sight, 2, 0, 0)
+        self.arcane_dict['Astrological_Guidance'] = Spell('Astrological_Guidance',Witch.astrological_guidance, 2, 0, 0)
+        self.arcane_dict['Foul_Familiar'] = Spell('Foul_Familiar',Witch.foul_familiar, 3, 0, 0)
+        self.arcane_dict['Plague'] = Spell('Plague',Witch.plague, 5, 0, 0)
+        self.arcane_dict['Pestilence'] = Spell('Pestilence',Witch.pestilence, 11, 0, 0)
+        self.arcane_dict['Curse_of_Oriax'] = Spell('Curse_of_Oriax',Witch.curse_of_oriax, 5, 0, 0)
+        self.arcane_dict['Demonic_Sight'] = Spell('Demonic_Sight',Witch.demonic_sight, 3, 0, 0)
+        self.arcane_dict['Molecular_Subversion'] = Spell('Molecular_Subversion',Witch.molecular_subversion, 4, 0, 0)
+        self.arcane_dict['Plutonian_Cloak'] = Spell('Plutonian_Cloak',Witch.plutonian_cloak, 6, 0, 0)
+        self.arcane_dict['Hidden_From_the_Stars'] = Spell('Hidden_From_the_Stars',Witch.hidden_from_the_stars, 4, 0, 0)
+        self.arcane_dict['Strength_of_the_Void'] = Spell('Strength_of_the_Void',Witch.strength_of_the_void, 4, 0, 0)
+        self.arcane_dict['Iron_Spirit'] = Spell('Iron_Spirit',Witch.iron_spirit, 4, 0, 0)
+        self.arcane_dict["Mercury's_Blessing"] = Spell("Mercury's_Blessing",Witch.mercurys_blessing, 4, 0, 0)
+        self.arcane_dict['Gift_of_Mars'] = Spell('Gift_of_Mars',Witch.gift_of_mars, 4, 0, 0)
+        self.arcane_dict['Gravity'] = Spell('Gravity',Witch.gravity, 6, 0, 0)
+        self.arcane_dict["Beleth's_Command"] = Spell("Beleth's_Command",Witch.beleths_command, 7, 0, 0)
+        self.arcane_dict['Lift'] = Spell('Lift',Witch.lift, 3, 0, 0)
+        self.arcane_dict['Cloister'] = Spell('Cloister',Witch.cloister, 3, 0, 0)
+        self.arcane_dict['Aura_of_Agony'] = Spell('Aura_of_Agony',Witch.aura_of_agony, 5, 0, 0)
+        self.arcane_dict['Dampening_Emanation'] = Spell('Dampening_Emanation',Witch.dampening_emanation, 7, 0, 0)
+        self.arcane_dict['Blind'] = Spell('Blind',Witch.blind, 6, 0, 0)
+        self.arcane_dict['Enmeshing_Coils'] = Spell('Enmeshing_Coils',Witch.enmeshing_coils, 7, 0, 0)
+        self.arcane_dict['Mirror_Armor'] = Spell('Mirror_Armor',Witch.mirror_armor, 6, 0, 0)
+        self.arcane_dict['Forcefield'] = Spell('Forcefield',Witch.forcefield, 5, 0, 0)
+        self.arcane_dict['Vengeance'] = Spell('Vengeance',Witch.vengeance, 8, 0, 0)
+        self.arcane_dict['Pain'] = Spell('Pain',Witch.pain, 5, 0, 0)
+        self.arcane_dict['Torment'] = Spell('Torment',Witch.torment, 9, 0, 0)
+        self.arcane_dict['Hatred'] = Spell('Hatred',Witch.hatred, 6, 0, 0)
+        self.arcane_dict['Fangs_of_Apophis'] = Spell('Fangs_of_Apophis',Witch.fangs_of_apophis, 4, 0, 0)
+        self.arcane_dict['Wreathed_in_Flame'] = Spell('Wreathed_in_Flame',Witch.wreathed_in_flame, 4, 0, 0)
+        self.arcane_dict['Mass_Hysteria'] = Spell('Mass_Hysteria',Witch.mass_hysteria, 5, 0, 0)
+        self.arcane_dict['Reaping_of_Saturnus'] = Spell('Reaping_of_Saturnus',Witch.reaping_of_saturnus, 7, 0, 0)
+        self.arcane_dict['Genjutsushi'] = Spell('Genjutsushi',Witch.genjutsushi, 3, 0, 0)
+        self.arcane_dict['Summon_Lesser_Demon'] = Spell('Summon_Lesser_Demon',Witch.summon_lesser_demon, 15, 0, 0)
+        self.arcane_dict['Summon_Cenobite'] = Spell('Summon_Cenobite',Witch.summon_cenobite, 15, 0, 0)
 
         # the following few anim dicts are for testing 'load images on game start, instead of as needed'
         # results in faster response for image loading in game, longer load time (as would be expected)
@@ -23745,37 +23801,105 @@ class App(tk.Frame):
         del self.grim_edit
         del self.one_player
         del self.two_player
-        # end cleanup title screen stuff
-#         filename = 'intro_scene_texts/intro_scene_text'+str(map_number)+'.txt'
-#         with open(filename) as f:
-#             text = f.read()
+
         self.bg_img = ImageTk.PhotoImage(Image.open('grimoire_editor_bg.png').resize((root.winfo_screenwidth(),root.winfo_screenheight())))
         self.bg_canvas = tk.Canvas(root, width = root.winfo_screenwidth(), bg = 'black', highlightthickness = 0, height = root.winfo_screenheight())
         self.bg_canvas.create_image(0,0, image =self.bg_img, anchor = 'nw')
         self.bg_canvas.pack(side = 'top')
-        self.bd_img = ImageTk.PhotoImage(Image.open('border.png').resize((root.winfo_screenwidth()-180, root.winfo_screenheight()//3-11)))
-        self.bg_canvas.create_image(root.winfo_screenwidth()//2, root.winfo_screenheight()-192, anchor='s', image =self.bd_img)
+        self.bd_img = ImageTk.PhotoImage(Image.open('border.png').resize((root.winfo_screenwidth()-180, root.winfo_screenheight()//3-46)))
+        self.bg_canvas.create_image(root.winfo_screenwidth()//2, 200, image =self.bd_img)
         
-        self.frame = tk.Frame(root, width = root.winfo_screenwidth()-180, height = root.winfo_screenheight()//3-11)
-        self.sb = tk.Scrollbar(self.frame)
+        self.frame = tk.Frame(root, width = root.winfo_screenwidth()-180, height = root.winfo_screenheight()//3)
         # prev should 'page back' spells populated in the frame
         def page_back(index): #index will be that of leftmost element of populated spells
             # decrement index and repopulate frame with slice of spells starting from index
             pass
         prev = partial(page_back) 
-        self.l_arrow = tk.Button(self.frame, text = '<', width = 2, fg = 'indianred', highlightbackground = 'black', font = ('chalkduster', 38), relief = 'raised', command = prev)
+        self.l_arrow = tk.Button(self.frame, text = '<', width = 1, fg = 'indianred', highlightbackground = 'black', font = ('chalkduster', 38), relief = 'raised', command = prev)
         # next moves spells in frame 'forward'
         def page_forward(index): #index will be that of leftmost element of populated spells
             # increment index and repopulate frame with slice of spells starting from index
             pass
         next = partial(page_forward) 
-        self.r_arrow = tk.Button(self.frame, text = '>', width = 2, fg = 'indianred', highlightbackground = 'black', font = ('chalkduster', 38), relief = 'raised', command = prev)
+        self.r_arrow = tk.Button(self.frame, text = '>', height = 4, width = 1, fg = 'indianred', highlightbackground = 'black', font = ('chalkduster', 38), relief = 'raised', command = prev)
         self.l_arrow.pack(side = 'left', fill = 'y', expand = 1)
         self.r_arrow.pack(side = 'left', fill = 'y', expand = 1)
-        self.sb.pack(side = 'right', fill = 'y', expand = 1)
-        self.bg_canvas.create_window(root.winfo_screenwidth()//2, root.winfo_screenheight()-320, window = self.frame)
+        # SELECTED BTN LOCK
+        self.selected_btn = []
+        # grab 5 spell buttons and smush them into the avail space
+        spells = [v for v in app.arcane_dict.values()]
+        for spell in spells[:6]:
+            def depress(event = None, btn = None):
+                if app.selected_btn == []:
+                    btn.config(fg = 'black')
+                    app.selected_btn.append(btn)
+                elif app.selected_btn[0] == btn:
+                    btn.config(fg = 'indianred')
+                    app.selected_btn = []
+                else:
+                    pass
+            func = partial(depress)
+            b1 = tk.Button(self.frame, text = spell.name.replace('_',' ') + ' •'+str(spell.cost), wraplength = 190, font = ('chalkduster', 17), fg='indianred', highlightbackground = 'tan3')
+            b1.config(command = lambda btn = b1 : func(btn=btn))
+            b1.pack(side = 'left', fill = 'y')
+        # ADD REMOVE BUTTONS
+        def add():
+            pass
+        adder = partial(add) 
+        self.add_button = tk.Button(self.frame, text = '+', width = 1, fg = 'indianred', highlightbackground = 'black', font = ('chalkduster', 38), relief = 'raised', command = adder)
+        # REMOVE
+        def remove():
+            pass
+        rmv = partial(remove) 
+        self.rmv_button = tk.Button(self.frame, text = '-', height = 4, width = 1, fg = 'indianred', highlightbackground = 'black', font = ('chalkduster', 38), relief = 'raised', command = rmv)
+        self.add_button.pack(side = 'right', fill = 'y', expand = 1)
+        self.rmv_button.pack(side = 'right', fill = 'y', expand = 1)
+        self.bg_canvas.create_window(root.winfo_screenwidth()//2, 200, window = self.frame)
+        # SECOND BD IMG
+        self.bd_img2 = ImageTk.PhotoImage(Image.open('border.png').resize((root.winfo_screenwidth()-180, root.winfo_screenheight()//3+100)))
+        self.bg_canvas.create_image(root.winfo_screenwidth()//2, root.winfo_screenheight()//3+300, image =self.bd_img2)
+        # SECOND FRAME
+        self.frame2 = tk.Frame(root)
+        # LB SCROLLBAR
+        self.sb = tk.Scrollbar(self.frame2)
+        # LISTBOX
+        self.grim_lbox = tk.Listbox(self.frame2, height = 20, width = 115, yscrollcommand = self.sb.set, selectmode = 'single')
+        self.sb.config(command = self.grim_lbox.yview)
+        self.grim_lbox.pack(side = 'left', fill = 'y', expand = 1)
+        self.sb.pack(side = 'right', fill = 'y')
+        self.bg_canvas.create_window(root.winfo_screenwidth()//2, root.winfo_screenheight()//3+300, window = self.frame2)
 
-        
+
+
+
+    def page_grimoire_spells(self, event = None, tup_list = None, index = None):
+        app.depop_context(event = None)
+        for i,spell in enumerate(tup_list[index:index+7]):
+            name = spell.name.replace('_', ' ')
+            func = spell.func
+            cost = spell.cost
+            i += 1
+            b1 = tk.Button(app.context_menu, wraplength = 190, text = str(i) +' : '+ name + ' •'+str(cost), font = ('chalkduster', 18), fg='tan3', highlightbackground = 'tan3', command = func)
+            b1.pack(side = 'top', pady = 2)
+            if cost > self.magick or spell.times_cast >= spell.times_imprint:
+                b1.config(state = 'disabled')
+            else:
+                root.bind(str(i), func)
+            app.context_buttons.append(b1)
+            b1.bind('<Button-2>', lambda event, b = b1, n = name : app.action_info(event, name = n, button = b))
+        if index > 0:
+            b4 = tk.Button(app.context_menu, text = 'W : Prev', font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = lambda t = tup_list, i = index-7 : self.page_spells(tup_list = t, index = i))
+            b4.pack(side = 'top', pady = 2)
+            root.bind('<w>', lambda e, t = tup_list, i = index-7 : self.page_spells(tup_list = t, index = i))
+            app.context_buttons.append(b4)
+        if len(tup_list) > len(tup_list[:index+7]):
+            b3 = tk.Button(app.context_menu, text = 'E : Next', font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = lambda t = tup_list, i = index+7 : self.page_spells(tup_list = t, index = i))
+            b3.pack(side = 'top', pady = 2)
+            root.bind('<e>', lambda e, t = tup_list, i = index+7 : self.page_spells(tup_list = t, index = i))
+            app.context_buttons.append(b3)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = self.cleanup_spell)
+        b2.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b2)
         
     def try_load(self):
         saves = [s for r,d,s in walk('save_games/')][0]
