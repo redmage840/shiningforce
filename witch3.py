@@ -1,3 +1,6 @@
+# barrow wight seeks random sqr unless wi range of tomb, change to seek tombs
+# in barrow wight eot
+
 # plaguelord/censerbearer insanity grenade
 
 # make generic ranged attack vis func
@@ -18423,6 +18426,157 @@ class Familiar_Imp(Summon):
         app.cleanup_squares()
         app.exists_check(app.active_ent)
 
+
+class Barrow_Wight(Summon):
+    def __init__(self, name, id, img, loc, owner, level):
+        self.actions = {}
+        self.level = level
+        self.str = 6
+        self.agl = 8
+        self.end = 8
+        self.mm = 1
+        self.msl = 0
+        self.bls = 0
+        self.dodge = 5
+        self.psyche = 8
+        self.wis = 8
+        self.rsn = 5
+        self.san = 12
+        self.init = 9
+        self.spirit = 13
+        self.magick = 0
+        self.acts = 1
+        self.mvs = 1
+        self.move_range = 4
+        self.move_type = 'normal'
+        self.attack_range = 1 # this attr is for player-owned, computer-controlled summons
+        self.resist = ['magick']
+        self.weak = ['fire']
+        super().__init__(name, id, img, loc, owner)
+#         self.id = id
+#         self.tags = id
+        def eot(lockname = None):
+            self.effects_dict['control'].duration += 1 # permanent effect, each call increases duration
+            tombs = [v for k,v in app.action_target_ents().items() if v.owner != self.owner and isinstance(v, Tomb)]
+            goals = unique([c for c in app.coords for t in tombs if dist(c,t.loc)==1 and app.grid[c[0]][c[1]]==''])
+            moves = self.legal_moves()
+            adj = [v for v in tombs if dist(v.loc,self.loc)==1]
+            if adj == []:
+                if moves == []:# CANNOT MOVE, NONE ADJ
+                    root.after(666, lambda ln = lockname : app.dethloks[ln].set(1))
+                else:
+                    goal = reduce(lambda a,b : a if dist(a,self.loc) < dist(b,self.loc) else b,goals)
+                    move = reduce(lambda a,b : a if dist(a,goal) < dist(b,goal) else b,moves)
+                    app.focus_square(move)
+                    root.after(666, lambda m = move, ln = lockname : self.hawk_move(m, ln))
+            else:#ATK ADJ
+                id = choice(adj)
+                app.get_focus(id)
+                root.after(666, lambda id = id, ln = lockname : self.hawk_attack(id, ln))
+        e = partial(eot)
+        def undo(lockname = None):
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+        u = partial(undo)
+        self.effects_dict['control'] = Effect(name = self.owner+"'s Wight", eot_func = e, undo_func = u, duration = 666, level = 666)
+                
+    def hawk_attack(self, id, lockname):
+        ent = app.ent_dict[id]
+        app.vis_dict['Hawk_Attack'] = Vis(name = 'Hawk_Attack', loc = ent.loc[:])
+        app.canvas.create_image(ent.loc[0]*100+50-app.moved_right, ent.loc[1]*100+50-app.moved_down, image = app.vis_dict['Hawk_Attack'].img, tags = 'Hawk_Attack')
+        def cleanup_hawk_attack():
+            app.canvas.delete('Hawk_Attack')
+            del app.vis_dict['Hawk_Attack']
+        root.after(1666, cleanup_hawk_attack)
+        my_agl = self.get_abl('agl')
+        tar_agl = app.ent_dict[id].get_abl('agl')
+        if to_hit(my_agl, tar_agl) == True:
+            my_str = self.get_abl('str')
+            tar_end = app.ent_dict[id].get_abl('end')
+            d = damage(my_str, tar_end)
+            lock(apply_damage, self, app.ent_dict[id], -d, 'piercing', 'Hawk Attack', 'melee')
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+        else: # miss
+            miss(app.ent_dict[id].loc)
+            root.after(1555, lambda t = 'text' : app.canvas.delete(t))
+            root.after(1666, lambda ln = lockname : app.dethloks[ln].set(1))
+
+    def hawk_move(self, sqr, lockname):
+        global selected
+        selected = [self.id]
+        x = self.loc[0]*100+50-app.moved_right
+        y = self.loc[1]*100+50-app.moved_down
+        endx = sqr[0]*100+50-app.moved_right
+        endy = sqr[1]*100+50-app.moved_down
+        start_sqr = self.loc[:]
+        end_sqr = sqr[:]
+        total_distance = abs(x - endx) + abs(y - endy)
+        # tic doesnt matter for circular image loop, would need to make flying_anims and switch to
+        tic = 30 #total_distance/9 # Magic Number debug, number of images for vis
+        if x == endx:
+            xstep = 0
+            ystep = 10
+        elif y == endy:
+            xstep = 10
+            ystep = 0
+        else:
+            slope = Fraction(abs(x - endx), abs(y - endy))
+            # needs to be moving at least 10 pixels, xstep + ystep >= 10
+            xstep = slope.numerator
+            ystep = slope.denominator
+            while xstep + ystep < 10:
+                xstep *= 2
+                ystep *= 2
+        def flying_arc(x, y, endx, endy, start_sqr, end_sqr, acm, tic, xstep, ystep):
+            if acm >= tic:
+                acm = 0
+                self.rotate_image()
+                app.canvas.delete(self.tags)
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+            if x > endx:
+                acm += xstep
+                x -= xstep
+                self.rotate_image()
+                app.canvas.delete(self.tags)
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+            elif x < endx:
+                acm += xstep
+                x += xstep
+                self.rotate_image()
+                app.canvas.delete(self.tags)
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+            if y > endy:
+                acm += ystep
+                y -= ystep
+                self.rotate_image()
+                app.canvas.delete(self.tags)
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+            elif y < endy:
+                acm += ystep
+                y += ystep
+                self.rotate_image()
+                app.canvas.delete(self.tags)
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+            if abs(x - endx) < 13 and abs(y - endy) < 13:
+                self.finish_move( end_sqr, start_sqr, lockname)
+            else: # CONTINUE LOOP
+                root.after(66, lambda x = x, y = y, e = endx, e2 = endy, s = start_sqr, s2 = end_sqr, acm = acm, tic = tic, xs = xstep, ys = ystep : flying_arc(x, y, e, e2, s, s2, acm, tic, xs, ys))
+        flying_arc(x, y, endx, endy, start_sqr, end_sqr, tic+1, tic, xstep, ystep)
+
+    def finish_move(self, end, start, lockname):
+#         sound_effects.stop()
+        global selected
+        selected = []
+        self.loc = end[:]
+        app.grid[start[0]][start[1]] = ''
+        app.grid[end[0]][end[1]] = self.id
+        self.mvs -= 1
+        # if enemy w/i range: atk else done
+        ents = [k for k,v in app.action_target_ents().items() if 1 <= dist(v.loc,self.loc) <= self.attack_range and v.owner != self.owner and isinstance(v,Tomb)]
+        if ents == []:
+            root.after(1999, lambda ln = lockname : app.dethloks[ln].set(1))
+        else:
+            id = choice(ents)
+            root.after(666, lambda id = id, ln = lockname : self.hawk_attack(id, ln))
                     
                     
 class Hunting_Hawk(Summon):
@@ -18457,15 +18611,15 @@ class Hunting_Hawk(Summon):
             self.effects_dict['control'].duration += 1 # permanent effect
             # move hawk to sqr w/i moverange that is w/i attackrange(5) and maximally distant from all enemies and then atk
             # if no enemies w/i attack range, move to a random sqr w/i move range
-            els = [v.loc for k,v in app.all_ents().items() if v.owner != self.owner]
-            sqrs = [s for s in app.coords for el in els if dist(s,el) <= self.attack_range]
+            els = [v.loc for k,v in app.action_target_ents().items() if v.owner != self.owner]
+            sqrs = [s for s in app.coords for el in els if 1 <= dist(s,el) <= self.attack_range]
             moves = self.legal_moves()
             gs = intersect(sqrs, moves)
             if gs == []:
                 # move to rand sqr in moves
                 if moves == []:
                     # cannot move at all, attempt attack wo moving
-                    ents = [k for k,v in app.all_ents().items() if dist(v.loc,self.loc) <= self.attack_range and v.owner != self.owner]
+                    ents = [k for k,v in app.action_target_ents().items() if dist(v.loc,self.loc) <= self.attack_range and v.owner != self.owner]
                     if ents == []:
                         root.after(666, lambda ln = lockname : app.dethloks[ln].set(1))
                     else:
@@ -18488,7 +18642,7 @@ class Hunting_Hawk(Summon):
                 
     def hawk_attack(self, id, lockname):
         ent = app.ent_dict[id]
-        app.vis_dict['Hawk_Attack'] = Vis(name = 'Hawk_Attack', loc = ent.id )
+        app.vis_dict['Hawk_Attack'] = Vis(name = 'Hawk_Attack', loc = ent.loc[:])
         app.canvas.create_image(ent.loc[0]*100+50-app.moved_right, ent.loc[1]*100+50-app.moved_down, image = app.vis_dict['Hawk_Attack'].img, tags = 'Hawk_Attack')
         def cleanup_hawk_attack():
             app.canvas.delete('Hawk_Attack')
@@ -18898,6 +19052,8 @@ class Witch(Summon):
                 self.arcane_dict['Summon_Lesser_Demon'] = Spell('Summon_Lesser_Demon',self.summon_lesser_demon, 15, 0, 0)
                 self.arcane_dict['Summon_Cenobite'] = Spell('Summon_Cenobite',self.summon_cenobite, 15, 0, 0)
                 self.arcane_dict['Animate_Tomb'] = Spell('Animate_Tomb',self.animate_tomb, 4, 0, 0)
+                self.arcane_dict['Hunting_Hawk'] = Spell('Hunting_Hawk',self.hunting_hawk, 3, 0, 0)
+                self.arcane_dict['Barrow_Wight'] = Spell('Barrow_Wight',self.barrow_wight, 6, 0, 0)
                 self.base_smns = 1
                 self.smns = 1
                 self.base_acts = 1
@@ -23556,6 +23712,52 @@ class Witch(Summon):
         root.after(1555, lambda t = 'text' : app.canvas.delete(t))
         ents = [k for k,v in app.ent_dict.items() if v.owner == self.owner and isinstance(v, (Thaumaturge, Illusionist, Umbrae_Wolf, Berserker, Murrain_Wolf))]
         root.after(1666, lambda ents = ents : fop_loop(ents))
+                    
+                    
+    def barrow_wight(self, event = None):
+        app.depop_context(event = None)
+        root.bind('<q>', self.cleanup_spell)
+        sqrs = [s for s in app.coords if s == self.loc]
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e : self.do_barrow_wight(event = e))
+        b = tk.Button(app.context_menu, text = 'Confirm Barrow Wight', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None : self.do_barrow_wight(e))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
+    
+    def do_barrow_wight(self, event = None):
+        if 'Barrow_Wight' in [v.name for k,v in app.ent_dict.items() if v.owner == self.owner]:
+            return
+#         self.init_cast_anims()
+#         effect1 = mixer.Sound('Sound_Effects/hunting_hawk.ogg')
+#         effect1.set_volume(1)
+#         sound_effects.play(effect1, 0)
+        app.unbind_all()
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        sqrs = [s for s in app.coords if app.grid[s[0]][s[1]] == '']
+        sqr = choice(sqrs)
+        app.focus_square(sqr)
+        app.vis_dict['Summon'] = Vis(name = 'Summon', loc = sqr[:])
+        def clean_summon():
+            app.canvas.delete('Summon')
+            del app.vis_dict['Summon']
+        root.after(1555, clean_summon)
+        app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+84-app.moved_down, text = 'Barrow Wight', justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
+        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+85-app.moved_down, text = 'Barrow Wight', justify = 'center', font = ('chalkduster', 14), fill = 'white', tags = 'text')
+        num = self.summon_ids
+        self.summon_ids += 1
+        if self.owner == 'p1':
+            prefix = 'a'
+        else:
+            prefix = 'b'
+        id = prefix + str(num)
+        img = ImageTk.PhotoImage(Image.open('summon_imgs/Barrow_Wight.png'))
+        app.ent_dict[id] = Barrow_Wight(name = 'Barrow_Wight', id = id, img = img, loc = sqr[:], owner = self.owner, level = self.level)
+        app.grid[sqr[0]][sqr[1]] = id
+        root.after(1666, lambda  name = 'Barrow_Wight' : self.cleanup_spell(name = name))
                     
                     
     def hunting_hawk(self, event = None):
