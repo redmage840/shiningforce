@@ -1,14 +1,117 @@
-# grim_edit() add spells to grim_lbox
+# save and load in grim edit, need to use cross platform file dialog interface, save to file in main menu
+
+# when updating listbox, must cache all current values? and rewrite them?
+
+# Listbox with multiple columns
+'''
+from Tkinter import *
+
+class MultiListbox(Frame):
+    def _ _init_ _(self, master, lists):
+        Frame._ _init_ _(self, master)
+        self.lists = []
+        for l,w in lists:
+            frame = Frame(self); frame.pack(side=LEFT, expand=YES, fill=BOTH)
+            Label(frame, text=l, borderwidth=1, relief=RAISED).pack(fill=X)
+            lb = Listbox(frame, width=w, borderwidth=0, selectborderwidth=0,
+                         relief=FLAT, exportselection=FALSE)
+            lb.pack(expand=YES, fill=BOTH)
+            self.lists.append(lb)
+            lb.bind('<B1-Motion>', lambda e, s=self: s._select(e.y))
+            lb.bind('<Button-1>', lambda e, s=self: s._select(e.y))
+            lb.bind('<Leave>', lambda e: 'break')
+            lb.bind('<B2-Motion>', lambda e, s=self: s._b2motion(e.x, e.y))
+            lb.bind('<Button-2>', lambda e, s=self: s._button2(e.x, e.y))
+        frame = Frame(self); frame.pack(side=LEFT, fill=Y)
+        Label(frame, borderwidth=1, relief=RAISED).pack(fill=X)
+        sb = Scrollbar(frame, orient=VERTICAL, command=self._scroll)
+        sb.pack(expand=YES, fill=Y)
+        self.lists[0]['yscrollcommand']=sb.set
+
+    def _select(self, y):
+        row = self.lists[0].nearest(y)
+        self.selection_clear(0, END)
+        self.selection_set(row)
+        return 'break'
+
+    def _button2(self, x, y):
+        for l in self.lists: l.scan_mark(x, y)
+        return 'break'
+
+    def _b2motion(self, x, y):
+        for l in self.lists: l.scan_dragto(x, y)
+        return 'break'
+
+    def _scroll(self, *args):
+        for l in self.lists:
+            apply(l.yview, args)
+
+    def curselection(self):
+        return self.lists[0].curselection(  )
+
+    def delete(self, first, last=None):
+        for l in self.lists:
+            l.delete(first, last)
+
+    def get(self, first, last=None):
+        result = []
+        for l in self.lists:
+            result.append(l.get(first,last))
+        if last: return apply(map, [None] + result)
+        return result
+
+    def index(self, index):
+        self.lists[0].index(index)
+
+    def insert(self, index, *elements):
+        for e in elements:
+            i = 0
+            for l in self.lists:
+                l.insert(index, e[i])
+                i = i + 1
+
+    def size(self):
+        return self.lists[0].size(  )
+
+    def see(self, index):
+        for l in self.lists:
+            l.see(index)
+
+    def selection_anchor(self, index):
+        for l in self.lists:
+            l.selection_anchor(index)
+
+    def selection_clear(self, first, last=None):
+        for l in self.lists:
+            l.selection_clear(first, last)
+
+    def selection_includes(self, index):
+        return self.lists[0].selection_includes(index)
+
+    def selection_set(self, first, last=None):
+        for l in self.lists:
+            l.selection_set(first, last)
+
+if _ _name_ _ == '_ _main_ _':
+    tk = Tk(  )
+    Label(tk, text='MultiListbox').pack(  )
+    mlb = MultiListbox(tk, (('Subject', 40), ('Sender', 20), ('Date', 10)))
+    for i in range(1000):
+      mlb.insert(END, 
+          ('Important Message: %d' % i, 'John Doe', '10/10/%04d' % (1900+i)))
+    mlb.pack(expand=YES,fill=BOTH)
+    tk.mainloop(  )
+'''
+
+# grim edit, layout, quick removal from lower interface
+
+# hawk attack vis, move hawk back and forth
+
+# levels where you must encroach on groups of mostly stationary enemies, to progress through some terrain/walls/rooms
+
+# need to add second column in grimoire editor listbox? someway to increment the count and still be able to use the same name/access
 
 # way to incr chronomncr acts
-
-# in game_options 
-
-# volume control
-# app.volume_all = 1 for now
-# set volume scale to app var? OR save on close of popup
-
-# grim edit, button lock when scroll past buttons, layout, quick removal from lower interface
 
 # Living Death - smn cadaver for each less than smn cap OR dstry all smns rest smn cap smn cadavers?
 
@@ -18,26 +121,15 @@
 
 # plaguelord/censerbearer insanity grenade
 
-# generic ranged attack vis func
-# lock(Entity.ranged_attack, self, id, visid)
-
-# astro guidance cost? target? too good against boss/sub-boss with only one move
-
 # for rage, just disable all action buttons except ..?
 
-# build arcana library/deck
-
 # make warlock target non-tomb... warlock secondary action way to affect/kill tombs tombquake...
-
-# magick gen outpaces need/use
 
 # mirror armor/forcefield half damage?
 
 # desc in info for minotaur and dragon special rules (actions that cannot be removed from ent, ignore invis/psyshield, free move/charge/iceblast and conditions for)
 
 # minotaur, free charge on cond, 1 use of pound, 1 use of stomp, change move type to 'charge'?
-
-# volume controls for ALL effects/music
 
 # in center_focus()
 # minimap captures r-click ONLY to 'jump' (move_map()) to translated pixel location
@@ -50,11 +142,6 @@
 # better images for level begin/end background splash images
 
 # make 'strat' section -chiru/chrono 'battery', double chrono loop time warp, rend space max out, sanity max out, invis/psyshield abuse, elusive ranged drake/pixie/illus, atk tombs pixie/fiend, scarab/cadaver/tomb abuse with pain/etc..., 
-
-# grant actions to tombs other than vivify, prox efcts that can only target tombs
-
-# tombkiller...
-# ghast, crushing damage, prefers tomb targets if any exist...
 
 # wraith, perm def efct reduce melee/ranged dmg to 1, perm psyshield
 
@@ -177,6 +264,10 @@ def action_description(act):
         return 'To-hit agility vs agility, strength vs endurance slashing melee damage, adjacent target as action.'
     elif act == 'Tomb Bash':
         return 'To-hit agility vs agility, strength vs endurance crushing melee damage.'
+    elif act == 'Summon Lesser Demon':
+        return 'Transform a Foul Familiar you own into a Lesser Demon.'
+    elif act == 'Summon Cenobite':
+        return 'Summon a Cenobite at an empty location.'
     elif act == 'Barrow Wight':
         return 'Summon a Barrow Wight under caster control at a random location. The Barrow Wight has no actions or moves, but does so during end of turn phase. It will seek out and attack ONLY enemy tombs.'
     elif act == 'Haunted Cairn':
@@ -1449,7 +1540,7 @@ class Entity():
         app.get_focus(id)
 #         self.init_attack_anims()
         effect1 = mixer.Sound('Sound_Effects/'+visid+'.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         loc = app.ent_dict[id].loc[:]
         app.vis_dict[visid] = Vis(name = visid, loc = self.loc[:])
@@ -1756,7 +1847,7 @@ class Entity():
     def leger_move(self, end):
         oldloc = self.loc[:]
         effect1 = mixer.Sound('Sound_Effects/teleport_move.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         un ='Teleport'+str(app.count)
         app.count += 1
@@ -1772,7 +1863,7 @@ class Entity():
 #         app.grid[endloc[0]][endloc[1]] = self.id
         app.canvas.delete(un)
         effect1 = mixer.Sound('Sound_Effects/teleport_move.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         del app.vis_dict[un]
         app.vis_dict[un] = Vis(name = 'Legerdemain', loc = endloc[:])
@@ -1896,15 +1987,15 @@ class Bot(Entity):
         global selected
         if isinstance(self, Skeleton):
             effect1 = mixer.Sound('Sound_Effects/undead_move.ogg')
-            effect1.set_volume(2)
+            effect1.set_volume(app.effects_volume.get())
             sound_effects.play(effect1, -1)
         elif isinstance(self, Undead_Knight):
             effect1 = mixer.Sound('Sound_Effects/undead_knight_move.ogg')
-            effect1.set_volume(.5)
+            effect1.set_volume(app.effects_volume.get())
             sound_effects.play(effect1, -1)
         else:
             effect1 = mixer.Sound('Sound_Effects/footsteps.ogg')
-            effect1.set_volume(app.volume_all.get())
+            effect1.set_volume(app.effects_volume.get())
             sound_effects.play(effect1, -1)
         selected = [self.id]
         id = self.id
@@ -1959,7 +2050,7 @@ class Bot(Entity):
         app.focus_square(sqr)
         if isinstance(self, Revenant):
             effect1 = mixer.Sound('Sound_Effects/revenant_move.ogg')
-            effect1.set_volume(app.volume_all.get())
+            effect1.set_volume(app.effects_volume.get())
             sound_effects.play(effect1, 0)
         x = self.loc[0]*100+50-app.moved_right
         y = self.loc[1]*100+50-app.moved_down
@@ -2026,7 +2117,7 @@ class Bot(Entity):
         global selected
         oldloc = self.loc[:]
         effect1 = mixer.Sound('Sound_Effects/gate.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.vis_dict['Teleport'] = Vis(name = 'Teleport', loc = oldloc[:])
         vis = app.vis_dict['Teleport']
@@ -2122,7 +2213,7 @@ class Summon(Entity):
         ln = lockname
         global selected
         effect1 = mixer.Sound('Sound_Effects/footsteps.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, -1)
         # start ANIM here
         id = self.id
@@ -2192,7 +2283,7 @@ class Summon(Entity):
         ln = lockname
         if isinstance(self, Familiar_Imp):
             effect1 = mixer.Sound('Sound_Effects/familiar_imp_move.ogg')
-            effect1.set_volume(.5)
+            effect1.set_volume(app.effects_volume.get())
             sound_effects.play(effect1, -1)
         x = self.loc[0]*100+50-app.moved_right
         y = self.loc[1]*100+50-app.moved_down
@@ -2258,13 +2349,13 @@ class Summon(Entity):
         oldloc = self.loc[:]
         if isinstance(self, Umbrae_Wolf):
             effect1 = mixer.Sound('Sound_Effects/shadow_move.ogg')
-            effect1.set_volume(.3)
+            effect1.set_volume(app.effects_volume.get())
             sound_effects.play(effect1, 0)
             app.vis_dict['Mist_Move'] = Vis(name = 'Mist_Move', loc = oldloc[:])
             vis = app.vis_dict['Mist_Move']
         else:
             effect1 = mixer.Sound('Sound_Effects/teleport_move.ogg')
-            effect1.set_volume(app.volume_all.get())
+            effect1.set_volume(app.effects_volume.get())
             sound_effects.play(effect1, 0)
             app.vis_dict['Teleport'] = Vis(name = 'Teleport', loc = oldloc[:])
             vis = app.vis_dict['Teleport']
@@ -2283,7 +2374,7 @@ class Summon(Entity):
             vis = app.vis_dict['Mist_Move']
         else:
             effect1 = mixer.Sound('Sound_Effects/teleport_move.ogg')
-            effect1.set_volume(app.volume_all.get())
+            effect1.set_volume(app.effects_volume.get())
             sound_effects.play(effect1, 0)
             del app.vis_dict['Teleport']
             app.vis_dict['Teleport'] = Vis(name = 'Teleport', loc = endloc[:])
@@ -2389,7 +2480,7 @@ class Tomb(Summon):
         self.magick -= 1
         self.acts -= 1
         effect1 = mixer.Sound('Sound_Effects/vivify.ogg')
-        effect1.set_volume(.6)
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
@@ -2548,7 +2639,7 @@ class Chronomancer(Summon):
     
     def do_recall(self, event = None, ids = None):
         effect1 = mixer.Sound('Sound_Effects/gate.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         closest_sqrs = sorted([c for c in app.coords if app.grid[c[0]][c[1]] == ''], key = lambda x : dist(x,self.loc))
         for id in ids:
@@ -2589,7 +2680,7 @@ class Chronomancer(Summon):
             return
         self.magick -= 4
 #         effect1 = mixer.Sound('Sound_Effects/whirlwind.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         self.acts -= 1
         app.cleanup_squares()
@@ -2678,7 +2769,7 @@ class Chronomancer(Summon):
         self.magick -= 2
 #         self.init_attack_anims()
 #         effect1 = mixer.Sound('Sound_Effects/baleful_stare.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.unbind_all()
@@ -2742,7 +2833,7 @@ class Chronomancer(Summon):
             return
         self.magick -= 4
 #         effect1 = mixer.Sound('Sound_Effects/whirlwind.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         self.acts -= 1
         app.cleanup_squares()
@@ -2818,7 +2909,7 @@ class Chronomancer(Summon):
         ent = app.ent_dict[id]
         app.unbind_all()
 #         effect1 = mixer.Sound('Sound_Effects/pyrotechnics.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -2995,7 +3086,7 @@ class Illusionist(Summon):
         app.depop_context(event = None)
         app.cleanup_squares()
 #         effect1 = mixer.Sound('Sound_Effects/spore_cloud.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         self.acts -= 1
         app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+84-app.moved_down, text = 'Smoke Bomb', font = ('chalkduster', 14), fill = 'black', tags = 'text')
@@ -3056,7 +3147,7 @@ class Illusionist(Summon):
         self.magick -= 3
         self.acts -= 1
         effect1 = mixer.Sound('Sound_Effects/simulacrum.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -3133,7 +3224,7 @@ class Illusionist(Summon):
         if sqr not in sqrs:
             return
         effect1 = mixer.Sound('Sound_Effects/mortar.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
@@ -3209,7 +3300,7 @@ class Illusionist(Summon):
         app.canvas.delete('Tracer_Grenade')
         selected_vis = []
         effect1 = mixer.Sound('Sound_Effects/fuse_explosion.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.vis_dict['Tracer_Exploded'] = Vis(name = 'Tracer_Exploded', loc = sqr)
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Tracer_Exploded'].img, tags = 'Tracer_Exploded')
@@ -3224,7 +3315,7 @@ class Illusionist(Summon):
                 self.cleanup_mortar()
             else:
                 effect1 = mixer.Sound('Sound_Effects/traced.ogg')
-                effect1.set_volume(app.volume_all.get())
+                effect1.set_volume(app.effects_volume.get())
                 sound_effects.play(effect1, 0)
                 id = ents[0]
                 ents = ents[1:]
@@ -3297,7 +3388,7 @@ class Illusionist(Summon):
         if sqr not in sqrs:
             return
         effect1 = mixer.Sound('Sound_Effects/mortar.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
@@ -3373,7 +3464,7 @@ class Illusionist(Summon):
         app.canvas.delete('Mortar')
         selected_vis = []
         effect1 = mixer.Sound('Sound_Effects/fuse_explosion.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.vis_dict['Mortar_Exploded'] = Vis(name = 'Mortar_Exploded', loc = sqr)
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Mortar_Exploded'].img, tags = 'Mortar_Exploded')
@@ -3388,7 +3479,7 @@ class Illusionist(Summon):
                 self.cleanup_mortar()
             else:
                 effect1 = mixer.Sound('Sound_Effects/fuse_explosion.ogg')
-                effect1.set_volume(app.volume_all.get())
+                effect1.set_volume(app.effects_volume.get())
                 sound_effects.play(effect1, 0)
                 id = ents[0]
                 ents = ents[1:]
@@ -3447,7 +3538,7 @@ class Illusionist(Summon):
             return
         app.unbind_all()
         effect1 = mixer.Sound('Sound_Effects/pyrotechnics.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -3504,7 +3595,7 @@ class Illusionist(Summon):
             return
         app.unbind_all()
         effect1 = mixer.Sound('Sound_Effects/simulacrum.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -3636,7 +3727,7 @@ class Illusionist(Summon):
         app.depop_context(event = None)
         app.cleanup_squares()
         effect1 = mixer.Sound('Sound_Effects/gate.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         oldloc = app.ent_dict[id].loc[:]
         newloc = sqr[:]
@@ -3771,7 +3862,7 @@ class Umbrae_Wolf(Summon):
         global selected
         selected = [self.tags]
         effect1 = mixer.Sound('Sound_Effects/phase_shift.ogg')
-        effect1.set_volume(0.5)
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -4001,7 +4092,7 @@ class Umbrae_Wolf(Summon):
             return
 #         self.init_attack_anims()
 #         effect1 = mixer.Sound('Sound_Effects/baleful_stare.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.unbind_all()
@@ -4070,7 +4161,7 @@ class Umbrae_Wolf(Summon):
             return
         app.unbind_all()
 #         effect1 = mixer.Sound('Sound_Effects/haste.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -4198,7 +4289,7 @@ class Umbrae_Wolf(Summon):
             return
         app.unbind_all()
         effect1 = mixer.Sound('Sound_Effects/simulacrum.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -4443,7 +4534,7 @@ class Umbrae_Wolf(Summon):
         self.magick -= 2
 #         self.init_attack_anims()
 #         effect1 = mixer.Sound('Sound_Effects/tendrils_of_chaos.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.unbind_all()
@@ -4547,7 +4638,7 @@ class Umbrae_Wolf(Summon):
         app.depop_context(event = None)
         app.cleanup_squares()
 #         effect1 = mixer.Sound('Sound_Effects/warpfire.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         self.acts -= 1
         app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+84-app.moved_down, text = 'Warpfire', font = ('chalkduster', 14), fill = 'black', tags = 'text')
@@ -4876,7 +4967,7 @@ class Umbrae_Wolf(Summon):
         self.magick -= 2
         self.acts -= 1
         effect1 = mixer.Sound('Sound_Effects/dark_shroud.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -4968,7 +5059,7 @@ class Umbrae_Wolf(Summon):
             return
         self.magick -= 3
         effect1 = mixer.Sound('Sound_Effects/drain_life.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
@@ -5040,7 +5131,7 @@ class Umbrae_Wolf(Summon):
         self.magick -= 2
         self.acts -= 1
         effect1 = mixer.Sound('Sound_Effects/muddle.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -5109,7 +5200,7 @@ class Umbrae_Wolf(Summon):
             return
         self.acts -= 1
         effect1 = mixer.Sound('Sound_Effects/umbrae_strike.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -5225,7 +5316,7 @@ class Wurdulak(Summon):
             return
         self.magick -= 4
 #         effect1 = mixer.Sound('Sound_Effects/traced.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
@@ -5297,7 +5388,7 @@ class Wurdulak(Summon):
             return
         self.magick -= 4
 #         effect1 = mixer.Sound('Sound_Effects/muddle.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
@@ -5495,7 +5586,7 @@ class Wurdulak(Summon):
         
     def do_bat_form(self, event = None):
         effect1 = mixer.Sound('Sound_Effects/phase_shift.ogg')
-        effect1.set_volume(0.5)
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -5604,7 +5695,7 @@ class Wurdulak(Summon):
         
     def do_wolf_form(self, event = None):
         effect1 = mixer.Sound('Sound_Effects/phase_shift.ogg')
-        effect1.set_volume(0.5)
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -5684,7 +5775,7 @@ class Wurdulak(Summon):
         if id not in app.action_target_ents().keys():
             return
         effect1 = mixer.Sound('Sound_Effects/slash.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
@@ -5783,7 +5874,7 @@ class Murrain_Wolf(Summon):
         # ADD CONTAGION DEATH TRIGGER
         def contagion_trigger(lockname = None):
             effect1 = mixer.Sound('Sound_Effects/contagion.ogg')
-            effect1.set_volume(app.volume_all.get())
+            effect1.set_volume(app.effects_volume.get())
             sound_effects.play(effect1, 0)
             app.focus_square(self.loc)
             sqrs = [c for c in app.coords if dist(self.loc, c) == 1]
@@ -5857,7 +5948,7 @@ class Murrain_Wolf(Summon):
         if id not in app.action_target_ents().keys():
             return
         effect1 = mixer.Sound('Sound_Effects/slash.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
@@ -5949,7 +6040,7 @@ class Murrain_Wolf(Summon):
         self.magick -= 1
 #         self.init_cast_anims()
 #         effect1 = mixer.Sound('Sound_Effects/scarab_swarm.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
@@ -6020,7 +6111,7 @@ class Murrain_Wolf(Summon):
         app.depop_context(event = None)
         app.cleanup_squares()
 #         effect1 = mixer.Sound('Sound_Effects/spore_cloud.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         self.acts -= 1
         app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+84-app.moved_down, text = 'Spore Cloud', font = ('chalkduster', 14), fill = 'black', tags = 'text')
@@ -6184,7 +6275,7 @@ class Murrain_Wolf(Summon):
             return
         self.magick -= 2
         effect1 = mixer.Sound('Sound_Effects/paralyze.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
@@ -6252,7 +6343,7 @@ class Murrain_Wolf(Summon):
         
     def do_pox(self, event = None, sqrs = None):
         effect1 = mixer.Sound('Sound_Effects/pox.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         self.acts -= 1
 #         self.init_attack_anims()
@@ -6322,7 +6413,7 @@ class Murrain_Wolf(Summon):
     def do_toxic_miasma(self, event = None, sqrs = None):
         self.acts -= 1
 #         effect1 = mixer.Sound('Sound_Effects/toxic_miasma.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -6627,7 +6718,7 @@ class Ghast(Summon):
             self.effects_dict['control'].duration += 1 # permanent effect, each call increases duration
             app.get_focus(self.id)
             ents = [v for k,v in app.action_target_ents().items() if v.owner != self.owner]
-            if ents == []:# no tombs
+            if ents == []:# no ents
                 root.after(666, lambda ln = lockname : app.dethloks[ln].set(1))
             else:
                 goals = unique([c for c in app.coords for t in ents if dist(c,t.loc)==1 and app.grid[c[0]][c[1]]==''])
@@ -6637,8 +6728,12 @@ class Ghast(Summon):
                     if moves == []:# CANNOT MOVE, NONE ADJ
                         root.after(666, lambda ln = lockname : app.dethloks[ln].set(1))
                     else:
-                        goal = reduce(lambda a,b : a if dist(a,self.loc) < dist(b,self.loc) else b,goals)
-                        move = reduce(lambda a,b : a if dist(a,goal) < dist(b,goal) else b,moves)
+                        if goals == []:#there are ents, but no current goal sqrs
+                            tar_ent = reduce(lambda a,b : a if dist(a.loc,self.loc) < dist(b.loc,self.loc) else b, ents)
+                            move = reduce(lambda a,b : a if dist(a,tar_ent.loc)<dist(b,tar_ent.loc) else b, moves)
+                        else:
+                            goal = reduce(lambda a,b : a if dist(a,self.loc) < dist(b,self.loc) else b,goals)
+                            move = reduce(lambda a,b : a if dist(a,goal) < dist(b,goal) else b,moves)
                         app.focus_square(move)
                         mt = self.get_move_type()
                         if mt == 'normal' or mt == 'charge':
@@ -6930,7 +7025,7 @@ class Chirurgeon(Summon):
         self.magick -= 4
         app.unbind_all()
 #         effect1 = mixer.Sound('Sound_Effects/farsight.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -7010,7 +7105,7 @@ class Chirurgeon(Summon):
         self.magick -= 4
         app.unbind_all()
 #         effect1 = mixer.Sound('Sound_Effects/alacrity.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -7090,7 +7185,7 @@ class Chirurgeon(Summon):
         self.acts -= 1
 #         self.init_attack_anims()
 #         effect1 = mixer.Sound('Sound_Effects/bone_pincers.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -7162,7 +7257,7 @@ class Chirurgeon(Summon):
         self.acts -= 1
 #         self.init_attack_anims()
 #         effect1 = mixer.Sound('Sound_Effects/corrosive_glands.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -7201,7 +7296,7 @@ class Chirurgeon(Summon):
                 obj.acts -= 1
 #                 obj.init_attack_anims()
 #                 effect1 = mixer.Sound('Sound_Effects/corrosive_attack.ogg')
-#                 effect1.set_volume(app.volume_all.get())
+#                 effect1.set_volume(app.effects_volume.get())
 #                 sound_effects.play(effect1, 0)
                 app.depop_context(event = None)
                 app.unbind_all()
@@ -7293,7 +7388,7 @@ class Chirurgeon(Summon):
         self.acts -= 1
 #         self.init_attack_anims()
 #         effect1 = mixer.Sound('Sound_Effects/bone_pincers.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -7332,7 +7427,7 @@ class Chirurgeon(Summon):
                 obj.acts -= 1
 #                 obj.init_attack_anims()
 #                 effect1 = mixer.Sound('Sound_Effects/pincer_attack.ogg')
-#                 effect1.set_volume(app.volume_all.get())
+#                 effect1.set_volume(app.effects_volume.get())
 #                 sound_effects.play(effect1, 0)
                 app.depop_context(event = None)
                 app.unbind_all()
@@ -7720,7 +7815,7 @@ class Fell_Evolver(Summon):
         self.acts -= 1
 #         self.init_attack_anims()
         effect1 = mixer.Sound('Sound_Effects/assail.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.unbind_all()
@@ -8091,7 +8186,7 @@ class Fell_Evolver(Summon):
                 obj.acts -= 1
 #                 obj.init_attack_anims()
                 effect1 = mixer.Sound('Sound_Effects/flare.ogg')
-                effect1.set_volume(app.volume_all.get())
+                effect1.set_volume(app.effects_volume.get())
                 sound_effects.play(effect1, 0)
                 app.depop_context(event = None)
                 app.unbind_all()
@@ -8208,6 +8303,7 @@ class Fell_Evolver(Summon):
                 if ids == []:
                     root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
                 elif 'Moldering_Effluvium_Plague' in [v.name for v in app.ent_dict[ids[0]].effects_dict.values()] or isinstance(app.ent_dict[ids[0]], (Tomb,Witch)):
+                    ids = ids[1:]
                     mold_plag_loop(ids)
                 else:
                     id = ids[0]
@@ -8440,7 +8536,7 @@ class Hexmage(Summon):
         self.acts -= 1
 #         self.init_attack_anims()
 #         effect1 = mixer.Sound('Sound_Effects/aura.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -8501,7 +8597,7 @@ class Hexmage(Summon):
         self.acts -= 1
 #         self.init_attack_anims()
 #         effect1 = mixer.Sound('Sound_Effects/lacerate.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.unbind_all()
@@ -8590,7 +8686,7 @@ class Hexmage(Summon):
         self.acts -= 1
 #         self.init_attack_anims()
 #         effect1 = mixer.Sound('Sound_Effects/aura.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -8671,7 +8767,7 @@ class Hexmage(Summon):
         self.acts -= 1
 #         self.init_attack_anims()
 #         effect1 = mixer.Sound('Sound_Effects/aura.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -8741,7 +8837,7 @@ class Hexmage(Summon):
         self.acts -= 1
 #         self.init_attack_anims()
 #         effect1 = mixer.Sound('Sound_Effects/lacerate.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.unbind_all()
@@ -8830,7 +8926,7 @@ class Hexmage(Summon):
         self.acts -= 1
 #         self.init_attack_anims()
 #         effect1 = mixer.Sound('Sound_Effects/aura.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -8911,7 +9007,7 @@ class Hexmage(Summon):
         self.acts -= 1
 #         self.init_attack_anims()
 #         effect1 = mixer.Sound('Sound_Effects/aura.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -8993,7 +9089,7 @@ class Hexmage(Summon):
         self.acts -= 1
 #         self.init_attack_anims()
 #         effect1 = mixer.Sound('Sound_Effects/aura.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -9045,7 +9141,7 @@ class Hexmage(Summon):
         app.animate_squares(sqrs)
         app.depop_context(event = None)
         root.bind('<a>', lambda e, sqr = grid_pos, sqrs = sqrs : self.do_halo_of_encumberance(event = e, sqr = sqr, sqrs = sqrs)) 
-        b = tk.Button(app.context_menu, text = 'Confirm Nimbus of Oppression', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_halo_of_encumberance(event = e, sqr = sqr, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Confirm Halo of Encumberance', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_halo_of_encumberance(event = e, sqr = sqr, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
         b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
@@ -9073,7 +9169,7 @@ class Hexmage(Summon):
         self.acts -= 1
 #         self.init_attack_anims()
 #         effect1 = mixer.Sound('Sound_Effects/aura.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -9140,7 +9236,7 @@ class Hexmage(Summon):
             return
         ent = app.ent_dict[id]
         effect1 = mixer.Sound('Sound_Effects/energize.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
@@ -9368,7 +9464,7 @@ class Thaumaturge(Summon):
         self.acts -= 1
 #         self.init_attack_anims()
 #         effect1 = mixer.Sound('Sound_Effects/aura.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -9484,7 +9580,7 @@ class Thaumaturge(Summon):
             return
         self.magick -= 2
         effect1 = mixer.Sound('Sound_Effects/esuna.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
@@ -9549,7 +9645,7 @@ class Thaumaturge(Summon):
         self.magick -= 2
         self.acts -= 1
         effect1 = mixer.Sound('Sound_Effects/moonlight.ogg')
-        effect1.set_volume(.2)
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
@@ -9620,7 +9716,7 @@ class Thaumaturge(Summon):
         self.acts -= 1
 #         self.init_attack_anims()
         effect1 = mixer.Sound('Sound_Effects/unholy_chant.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -9708,7 +9804,7 @@ class Thaumaturge(Summon):
         self.acts -= 1
 #         self.init_attack_anims()
 #         effect1 = mixer.Sound('Sound_Effects/unholy_chant.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -9954,7 +10050,7 @@ class Inquisitor(Summon):
                 self.finish_persecute()
             else:
                 effect1 = mixer.Sound('Sound_Effects/gravity.ogg')
-                effect1.set_volume(app.volume_all.get())
+                effect1.set_volume(app.effects_volume.get())
                 sound_effects.play(effect1, 0)
                 id = ids[0]
                 app.get_focus(id)
@@ -10025,7 +10121,7 @@ class Inquisitor(Summon):
                 self.finish_cleanse_with_fire()
             else:
                 effect1 = mixer.Sound('Sound_Effects/immolate.ogg')
-                effect1.set_volume(app.volume_all.get())
+                effect1.set_volume(app.effects_volume.get())
                 sound_effects.play(effect1, 0)
                 id = ids[0]
                 app.get_focus(id)
@@ -10080,7 +10176,7 @@ class Inquisitor(Summon):
         self.magick -= 3
         self.acts -= 1
 #         effect1 = mixer.Sound('Sound_Effects/nullify.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -10272,7 +10368,7 @@ class Inquisitor(Summon):
             return
         app.unbind_all()
         effect1 = mixer.Sound('Sound_Effects/simulacrum.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -10338,7 +10434,7 @@ class Inquisitor(Summon):
             return
         app.unbind_all()
         effect1 = mixer.Sound('Sound_Effects/simulacrum.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -10527,7 +10623,7 @@ class Pixie(Summon):
         self.magick -= 2
 #         self.init_attack_anims()
 #         effect1 = mixer.Sound('Sound_Effects/baleful_stare.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.unbind_all()
@@ -10591,7 +10687,7 @@ class Pixie(Summon):
         self.magick -= 2
 #         self.init_attack_anims()
 #         effect1 = mixer.Sound('Sound_Effects/baleful_stare.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.unbind_all()
@@ -10663,7 +10759,7 @@ class Pixie(Summon):
             return
         self.magick -= 3
         effect1 = mixer.Sound('Sound_Effects/biotranspose.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
@@ -10735,7 +10831,7 @@ class Pixie(Summon):
             return
         self.magick -= 2
         effect1 = mixer.Sound('Sound_Effects/esuna.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
@@ -10799,7 +10895,7 @@ class Pixie(Summon):
         ent = app.ent_dict[id]
         self.magick -= 2
 #         effect1 = mixer.Sound('Sound_Effects/geomantic_clutch.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
@@ -10868,7 +10964,7 @@ class Pixie(Summon):
         ent = app.ent_dict[id]
         self.magick -= 4
         effect1 = mixer.Sound('Sound_Effects/geomantic_clutch.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
@@ -10954,7 +11050,7 @@ class Pixie(Summon):
             return
         self.magick -= 3
         effect1 = mixer.Sound('Sound_Effects/discord.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
@@ -11024,7 +11120,7 @@ class Pixie(Summon):
             return
         self.magick -= 3
         effect1 = mixer.Sound('Sound_Effects/drain_life.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
@@ -11136,7 +11232,7 @@ class Drake(Summon):
             return
         app.unbind_all()
         effect1 = mixer.Sound('Sound_Effects/psionic_push.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -11193,7 +11289,7 @@ class Drake(Summon):
         if 'Shimmering_Scales' in [v.name for v in self.effects_dict.values()]:
             return
         effect1 = mixer.Sound('Sound_Effects/discord.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
@@ -11250,7 +11346,7 @@ class Drake(Summon):
         if 'Shimmering_Scales' in [v.name for v in self.effects_dict.values()]:
             return
         effect1 = mixer.Sound('Sound_Effects/biotranspose.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
@@ -11308,7 +11404,7 @@ class Drake(Summon):
         app.depop_context(event = None)
         app.cleanup_squares()
 #         effect1 = mixer.Sound('Sound_Effects/spore_cloud.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         self.acts -= 1
         app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+84-app.moved_down, text = 'Hindering Mucilage', font = ('chalkduster', 14), fill = 'black', tags = 'text')
@@ -11375,7 +11471,7 @@ class Drake(Summon):
             return
         app.unbind_all()
 #         effect1 = mixer.Sound('Sound_Effects/pyrotechnics.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -11442,7 +11538,7 @@ class Drake(Summon):
             return
         app.unbind_all()
 #         effect1 = mixer.Sound('Sound_Effects/pyrotechnics.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -11625,7 +11721,7 @@ class Fiend(Summon):
             return
         self.acts -= 1
         effect1 = mixer.Sound('Sound_Effects/slash.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.unbind_all()
@@ -11689,7 +11785,7 @@ class Fiend(Summon):
                 hit.append(id)
                 ent = app.ent_dict[id]
                 effect1 = mixer.Sound('Sound_Effects/energize.ogg')
-                effect1.set_volume(app.volume_all.get())
+                effect1.set_volume(app.effects_volume.get())
                 sound_effects.play(effect1, 0)
                 n = 'Chain_Lightning'+str(app.count)
                 app.count += 1
@@ -11743,7 +11839,7 @@ class Fiend(Summon):
         self.acts -= 1
         self.init_pounce_anims()
 #         effect1 = mixer.Sound('Sound_Effects/pounce.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.unbind_all()
@@ -11867,7 +11963,7 @@ class Fiend(Summon):
     def do_roar(self, event = None, sqrs = None):
         self.acts -= 1
 #         effect1 = mixer.Sound('Sound_Effects/roar.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -12218,7 +12314,7 @@ class White_Dragon(Bot):
         ent = app.ent_dict[id]
 #         self.start_melee_anims()
         effect1 = mixer.Sound('Sound_Effects/dragon_melee.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         ent = app.ent_dict[id]
         app.vis_dict['Rake'] = Vis(name = 'Rake', loc = ent.loc[:])
@@ -12250,7 +12346,7 @@ class White_Dragon(Bot):
         self.type = 'large'
         self.tags = (self.id, 'large')
         effect1 = mixer.Sound('Sound_Effects/dragon_flight.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, -1)
         def ascend_loop(timer):
             if timer == 0:
@@ -12343,7 +12439,7 @@ class White_Dragon(Bot):
         app.get_focus(id)
 #         self.init_attack_anims()
         effect1 = mixer.Sound('Sound_Effects/iceblast.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         loc = app.ent_dict[id].loc[:]
         app.vis_dict['Iceblast'] = Vis(name = 'Iceblast', loc = [self.loc[0],self.loc[1]-100])
@@ -12595,7 +12691,7 @@ class Skeleton_Archer(Bot):
         app.get_focus(id)
 #         self.init_attack_anims()
 #         effect1 = mixer.Sound('Sound_Effects/flare.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         loc = app.ent_dict[id].loc[:]
         app.vis_dict['Barrage'] = Vis(name = 'Barrage', loc = self.loc[:])
@@ -13440,7 +13536,7 @@ class Kobold_Shaman(Bot):
         app.get_focus(id)
 #         self.init_attack_anims()
 #         effect1 = mixer.Sound('Sound_Effects/staff_of_vecna.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         ent = app.ent_dict[id]
         def cleanup_snuffle():
@@ -13491,7 +13587,7 @@ class Kobold_Shaman(Bot):
         app.get_focus(id)
 #         self.init_attack_anims()
         effect1 = mixer.Sound('Sound_Effects/flare.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         loc = app.ent_dict[id].loc[:]
         app.vis_dict['Flare'] = Vis(name = 'Flare', loc = self.loc[:])
@@ -14037,7 +14133,7 @@ class Warlock(Bot):
             
     def summon_undead(self):
         effect1 = mixer.Sound('Sound_Effects/warlock_summon.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.count += 3 # skip existing ent ids
         uniq_num = app.count
@@ -14094,7 +14190,7 @@ class Warlock(Bot):
         app.get_focus(id)
 #         self.init_attack_anims()
         effect1 = mixer.Sound('Sound_Effects/warlock_duress.ogg')
-        effect1.set_volume(.7)
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         ent = app.ent_dict[id]
         def cleanup_duress():
@@ -14143,7 +14239,7 @@ class Warlock(Bot):
         app.get_focus(id)
 #         self.init_attack_anims()
 #         effect1 = mixer.Sound('Sound_Effects/tourachs_hymn.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         ent = app.ent_dict[id]
         def cleanup_hymn():
@@ -14188,7 +14284,7 @@ class Warlock(Bot):
         app.get_focus(id)
 #         self.init_attack_anims()
 #         effect1 = mixer.Sound('Sound_Effects/staff_of_vecna.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         ent = app.ent_dict[id]
         def cleanup_staff():
@@ -14292,7 +14388,7 @@ class Air_Mage(Bot):
                     locs = locs[1:]
                     app.focus_square(loc)
                     effect1 = mixer.Sound('Sound_Effects/summon_cenobite.ogg')
-                    effect1.set_volume(app.volume_all.get())
+                    effect1.set_volume(app.effects_volume.get())
                     sound_effects.play(effect1, 0)
                     app.vis_dict['Summon_Skeleton'] = Vis(name = 'Summon_Skeleton', loc = loc[:])
                     app.canvas.create_image(loc[0]*100+50-app.moved_right, loc[1]*100+50-app.moved_down, image = app.vis_dict['Summon_Skeleton'].img, tags = 'Summon_Skeleton')
@@ -14318,7 +14414,7 @@ class Air_Mage(Bot):
     
     def static_storm(self):
         effect1 = mixer.Sound('Sound_Effects/teleport_move.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+84-app.moved_down, text = 'Static Storm', font = ('chalkduster', 15), fill = 'black', tags = 'text')
         app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+85-app.moved_down, text = 'Static Storm', font = ('chalkduster', 15), fill = 'gray', tags = 'text')
@@ -14360,7 +14456,7 @@ class Air_Mage(Bot):
     # dmg and teleport one target
     def cyclonic_rift(self, id):
 #         effect1 = mixer.Sound('Sound_Effects/cyclone.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         loc = app.ent_dict[id].loc[:]
         ent = app.ent_dict[id]
@@ -14422,7 +14518,7 @@ class Air_Mage(Bot):
     # only called when summons exist, heal whatever summons remain for some amount, give them stat boost effect
     def breath_of_life(self):
         effect1 = mixer.Sound('Sound_Effects/moonlight.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+84-app.moved_down, text = 'Breath of Life', justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
         app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+85-app.moved_down, text = 'Breath of Life', justify = 'center', font = ('chalkduster', 14), fill = 'white', tags = 'text')
@@ -14518,7 +14614,7 @@ class Air_Elemental(Bot):
         app.get_focus(id)
 #         self.init_attack_anims()
         effect1 = mixer.Sound('Sound_Effects/gale.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         loc = app.ent_dict[id].loc[:]
         app.vis_dict['Gale'] = Vis(name = 'Gale', loc = self.loc[:])
@@ -14704,7 +14800,7 @@ class Water_Mage(Bot):
                 
     def dehydrate(self, id):
 #         effect1 = mixer.Sound('Sound_Effects/dehydrate.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         ent = app.ent_dict[id]
         app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+84-app.moved_down, text = 'Dehydrate', font = ('chalkduster', 16), fill = 'black', tags = 'text')
@@ -14763,7 +14859,7 @@ class Water_Mage(Bot):
     def fog(self, id):
         ent = app.ent_dict[id]
 #         effect1 = mixer.Sound('Sound_Effects/fog.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+84-app.moved_down, text = 'Fog', font = ('chalkduster', 16), fill = 'black', tags = 'text')
         app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+85-app.moved_down, text = 'Fog', font = ('chalkduster', 16), fill = 'cyan', tags = 'text')
@@ -14814,7 +14910,7 @@ class Water_Mage(Bot):
     def purify(self, id):
         ent = app.ent_dict[id]
 #         effect1 = mixer.Sound('Sound_Effects/purify.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+84-app.moved_down, text = 'Purify', font = ('chalkduster', 16), fill = 'black', tags = 'text')
         app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+85-app.moved_down, text = 'Purify', font = ('chalkduster', 16), fill = 'cyan', tags = 'text')
@@ -14902,7 +14998,7 @@ class Water_Elemental(Bot):
         app.get_focus(id)
 #         self.init_attack_anims()
 #         effect1 = mixer.Sound('Sound_Effects/surge.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         loc = app.ent_dict[id].loc[:]
         app.vis_dict['Surge'] = Vis(name = 'Surge', loc = self.loc[:])
@@ -15202,7 +15298,7 @@ class Earth_Mage(Bot):
     def earthquake(self):
 #         self.init_attack_anims()
         effect1 = mixer.Sound('Sound_Effects/earthquake.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         sqrs = [c for c in app.coords if dist(c,self.loc)<=self.get_abl('rsn')]
         app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+84-app.moved_down, text = 'Earthquake', font = ('chalkduster', 16), fill = 'black', tags = 'text')
@@ -15413,7 +15509,7 @@ class Fire_Mage(Bot):
     def firewall(self):
 #         self.init_attack_anims()
         effect1 = mixer.Sound('Sound_Effects/firewall.ogg')
-        effect1.set_volume(.7)
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         sqrs = []
         for c in app.coords:
@@ -15537,7 +15633,7 @@ class Sorceress(Bot):
         app.get_focus(id)
 #         self.init_attack_anims()
 #         effect1 = mixer.Sound('Sound_Effects/staff_of_vecna.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         ent = app.ent_dict[id]
         def cleanup_staff():
@@ -15569,7 +15665,7 @@ class Sorceress(Bot):
         app.get_focus(id)
 #         self.init_attack_anims()
         effect1 = mixer.Sound('Sound_Effects/immolate.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         loc = app.ent_dict[id].loc[:]
         app.vis_dict['Fireblast'] = Vis(name = 'Fireblast', loc = self.loc[:])
@@ -15680,7 +15776,7 @@ class Sorceress(Bot):
         app.get_focus(id)
 #         self.init_attack_anims()
         effect1 = mixer.Sound('Sound_Effects/energize.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         loc = app.ent_dict[id].loc[:]
         app.vis_dict['Charged_Bolt'] = Vis(name = 'Charged_Bolt', loc = self.loc[:])
@@ -15879,7 +15975,7 @@ class Fire_Elemental(Bot):
         app.get_focus(id)
 #         self.init_attack_anims()
         effect1 = mixer.Sound('Sound_Effects/flare.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         loc = app.ent_dict[id].loc[:]
         app.vis_dict['Flare'] = Vis(name = 'Flare', loc = self.loc[:])
@@ -16351,7 +16447,7 @@ class Minotaur(Bot):
         global selected
         ent = app.ent_dict[id]
         effect1 = mixer.Sound('Sound_Effects/minotaur_charge_attack.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, -1)
         self.init_move_anims()
         app.ent_dict[self.id+'top'].init_move_anims()
@@ -16433,7 +16529,7 @@ class Minotaur(Bot):
     def charge_hit(self, id):
         ent = app.ent_dict[id]
         effect1 = mixer.Sound('Sound_Effects/minotaur_attack.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.get_focus(id)
         app.ent_dict[self.id+'top'].init_attack_anims()
@@ -16516,7 +16612,7 @@ class Minotaur(Bot):
     def minotaur_move(self, endloc):
         global selected
         effect1 = mixer.Sound('Sound_Effects/minotaur_move.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, -1)
         self.init_move_anims()
         app.ent_dict[self.id+'top'].init_move_anims()
@@ -16594,7 +16690,7 @@ class Minotaur(Bot):
     def pound(self, id):
         ent = app.ent_dict[id]
         effect1 = mixer.Sound('Sound_Effects/minotaur_attack.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.get_focus(id)
         app.ent_dict[self.id+'top'].init_attack_anims()
@@ -16627,7 +16723,7 @@ class Minotaur(Bot):
         app.focus_square(self.loc)
         def stomp_sound():
             effect1 = mixer.Sound('Sound_Effects/minotaur_stomp.ogg')
-            effect1.set_volume(app.volume_all.get())
+            effect1.set_volume(app.effects_volume.get())
             sound_effects.play(effect1, 0)
         # insert start_stomp_anims() here
         self.init_stomp_anims()
@@ -16792,7 +16888,7 @@ class Berserker(Summon):
             return
         self.acts -= 1
 #         effect1 = mixer.Sound('Sound_Effects/howl.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -16870,7 +16966,7 @@ class Berserker(Summon):
             return
         self.acts -= 1
         effect1 = mixer.Sound('Sound_Effects/howl_from_beyond.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -16950,7 +17046,7 @@ class Berserker(Summon):
         
     def do_whirlwind(self, event = None, sqrs = None):
 #         effect1 = mixer.Sound('Sound_Effects/whirlwind.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         self.acts -= 1
         self.init_attack_anims()
@@ -17329,7 +17425,7 @@ class Berserker(Summon):
 #             return
 #         self.attack_used = True
 #         effect1 = mixer.Sound('Sound_Effects/guard.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
 #         app.depop_context(event = None)
 #         app.unbind_all()
@@ -17419,7 +17515,7 @@ class Berserker(Summon):
         self.leap_used = True
         self.init_leap_anims()
 #         effect1 = mixer.Sound('Sound_Effects/leap.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.unbind_all()
@@ -17528,7 +17624,7 @@ class Berserker(Summon):
         self.acts -= 1
         self.init_attack_anims()
         effect1 = mixer.Sound('Sound_Effects/slash.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.unbind_all()
@@ -17656,7 +17752,7 @@ class Familiar_Homunculus(Summon):
         if 'Fuse_Trap' in visuals:
             return
         effect1 = mixer.Sound('Sound_Effects/fuse_trap.ogg')
-        effect1.set_volume(.07)
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         self.acts -= 1
         app.unbind_all()
@@ -17673,7 +17769,7 @@ class Familiar_Homunculus(Summon):
                 app.canvas.delete(name)
                 app.focus_square(sqr)
                 effect1 = mixer.Sound('Sound_Effects/fuse_explosion.ogg')
-                effect1.set_volume(app.volume_all.get())
+                effect1.set_volume(app.effects_volume.get())
                 sound_effects.play(effect1, 0)
                 ents = [k for k,v in app.all_ents().items() if dist(v.loc, sqr) <= 3]
                 def clean_explosion(n):
@@ -17738,7 +17834,7 @@ class Familiar_Homunculus(Summon):
             return
         self.magick -= 1
         effect1 = mixer.Sound('Sound_Effects/mesmerize.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
@@ -17874,7 +17970,7 @@ class Lesser_Demon(Summon):
         self.acts -= 1
 #         self.init_attack_anims()
 #         effect1 = mixer.Sound('Sound_Effects/brambles.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.unbind_all()
@@ -17960,7 +18056,7 @@ class Lesser_Demon(Summon):
             return
 #         self.init_attack_anims()
 #         effect1 = mixer.Sound('Sound_Effects/baleful_stare.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         ent = app.ent_dict[id]
         app.depop_context(event = None)
@@ -18028,7 +18124,7 @@ class Lesser_Demon(Summon):
         self.magick -= 6
         self.acts -= 1
 #         effect1 = mixer.Sound('Sound_Effects/dire_charm.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -18145,7 +18241,7 @@ class Cenobite(Summon):
     def do_strength_through_wounding(self, event = None, sqrs = None):
         self.acts -= 1
         effect1 = mixer.Sound('Sound_Effects/strength_through_wounding.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -18234,7 +18330,7 @@ class Cenobite(Summon):
         self.acts -= 1
 #         self.init_attack_anims()
         effect1 = mixer.Sound('Sound_Effects/flesh_hooks.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -18272,7 +18368,7 @@ class Cenobite(Summon):
                 obj.acts -= 1
 #                 obj.init_attack_anims()
                 effect1 = mixer.Sound('Sound_Effects/hook_attack.ogg')
-                effect1.set_volume(app.volume_all.get())
+                effect1.set_volume(app.effects_volume.get())
                 sound_effects.play(effect1, 0)
                 app.depop_context(event = None)
                 app.unbind_all()
@@ -18361,7 +18457,7 @@ class Cenobite(Summon):
         self.acts -= 1
 #         self.init_attack_anims()
         effect1 = mixer.Sound('Sound_Effects/beleths_command.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.unbind_all()
@@ -18516,7 +18612,7 @@ class Familiar_Imp(Summon):
         app.depop_context(event = None)
         app.cleanup_squares()
         effect1 = mixer.Sound('Sound_Effects/darkness.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+14-app.moved_down, text = 'Darkness', font = ('chalkduster', 14), fill = 'black', tags = 'text')
         app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+15-app.moved_down, text = 'Darkness', font = ('chalkduster', 14), fill = 'white', tags = 'text')
@@ -18583,7 +18679,7 @@ class Familiar_Imp(Summon):
         self.acts -= 1
 #         self.init_attack_anims()
         effect1 = mixer.Sound('Sound_Effects/poison_sting.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.unbind_all()
@@ -19205,6 +19301,7 @@ class Witch(Summon):
 #                 self.base_magick = 75
                 self.magick_regen = 2
             elif level == 2:
+#                 self.arcane_dict = deepcopy(app.arcane_dict)
                 self.arcane_dict['Boiling_Blood'] = Spell('Boiling_Blood',self.boiling_blood, 2,0,0)
                 self.arcane_dict['Dark_Sun'] = Spell('Dark_Sun',self.dark_sun, 3,0,0)
                 self.arcane_dict['Meditate'] = Spell('Meditate',self.meditate, 2,0,0)
@@ -19225,7 +19322,7 @@ class Witch(Summon):
                 self.arcane_dict['Energize'] = Spell('Energize',self.energize, 3, 0, 0)
                 self.arcane_dict['Psi_Blades'] = Spell('Psi_Blades',self.psi_blades, 3, 0, 0)
                 self.arcane_dict['Cosmic_Sight'] = Spell('Cosmic_Sight',self.cosmic_sight, 2, 0, 0)
-                self.arcane_dict['Astrological_Guidance'] = Spell('Astrological_Guidance',self.astrological_guidance, 2, 0, 0)
+                self.arcane_dict['Astrological_Guidance'] = Spell('Astrological_Guidance',self.astrological_guidance, 4, 0, 0)
                 self.arcane_dict['Foul_Familiar'] = Spell('Foul_Familiar',self.foul_familiar, 3, 0, 0)
                 self.arcane_dict['Plague'] = Spell('Plague',self.plague, 5, 0, 0)
                 self.arcane_dict['Pestilence'] = Spell('Pestilence',self.pestilence, 11, 0, 0)
@@ -19253,7 +19350,7 @@ class Witch(Summon):
                 self.arcane_dict['Torment'] = Spell('Torment',self.torment, 9, 0, 0)
                 self.arcane_dict['Hatred'] = Spell('Hatred',self.hatred, 6, 0, 0)
                 self.arcane_dict['Fangs_of_Apophis'] = Spell('Fangs_of_Apophis',self.fangs_of_apophis, 4, 0, 0)
-                self.arcane_dict['Wreathed_in_Flame'] = Spell('Wreathed_in_Flame',self.wreathed_in_flame, 4, 0, 0)
+                self.arcane_dict['Wreathed_in_Flame'] = Spell('Wreathed_in_Flame',self.wreathed_in_flame, 5, 0, 0)
                 self.arcane_dict['Mass_Hysteria'] = Spell('Mass_Hysteria',self.mass_hysteria, 5, 0, 0)
                 self.arcane_dict['Reaping_of_Saturnus'] = Spell('Reaping_of_Saturnus',self.reaping_of_saturnus, 7, 0, 0)
                 self.arcane_dict['Genjutsushi'] = Spell('Genjutsushi',self.genjutsushi, 3, 0, 0)
@@ -19375,7 +19472,7 @@ class Witch(Summon):
                 self.arcane_dict['Energize'] = Spell('Energize',self.energize, 3, 0, 0)
                 self.arcane_dict['Psi_Blades'] = Spell('Psi_Blades',self.psi_blades, 3, 0, 0)
                 self.arcane_dict['Cosmic_Sight'] = Spell('Cosmic_Sight',self.cosmic_sight, 2, 0, 0)
-                self.arcane_dict['Astrological_Guidance'] = Spell('Astrological_Guidance',self.astrological_guidance, 2, 0, 0)
+                self.arcane_dict['Astrological_Guidance'] = Spell('Astrological_Guidance',self.astrological_guidance, 4, 0, 0)
                 self.arcane_dict['Foul_Familiar'] = Spell('Foul_Familiar',self.foul_familiar, 3, 0, 0)
                 self.arcane_dict['Plague'] = Spell('Plague',self.plague, 5, 0, 0)
                 self.arcane_dict['Pestilence'] = Spell('Pestilence',self.pestilence, 11, 0, 0)
@@ -19403,7 +19500,7 @@ class Witch(Summon):
                 self.arcane_dict['Torment'] = Spell('Torment',self.torment, 9, 0, 0)
                 self.arcane_dict['Hatred'] = Spell('Hatred',self.hatred, 6, 0, 0)
                 self.arcane_dict['Fangs_of_Apophis'] = Spell('Fangs_of_Apophis',self.fangs_of_apophis, 4, 0, 0)
-                self.arcane_dict['Wreathed_in_Flame'] = Spell('Wreathed_in_Flame',self.wreathed_in_flame, 4, 0, 0)
+                self.arcane_dict['Wreathed_in_Flame'] = Spell('Wreathed_in_Flame',self.wreathed_in_flame, 5, 0, 0)
                 self.arcane_dict['Mass_Hysteria'] = Spell('Mass_Hysteria',self.mass_hysteria, 5, 0, 0)
                 self.arcane_dict['Reaping_of_Saturnus'] = Spell('Reaping_of_Saturnus',self.reaping_of_saturnus, 7, 0, 0)
                 self.arcane_dict['Genjutsushi'] = Spell('Genjutsushi',self.genjutsushi, 3, 0, 0)
@@ -19412,6 +19509,7 @@ class Witch(Summon):
                 self.arcane_dict['Animate_Tomb'] = Spell('Animate_Tomb',self.animate_tomb, 4, 0, 0)
                 self.arcane_dict['Hunting_Hawk'] = Spell('Hunting_Hawk',self.hunting_hawk, 3, 0, 0)
                 self.arcane_dict['Barrow_Wight'] = Spell('Barrow_Wight',self.barrow_wight, 6, 0, 0)
+                self.arcane_dict['Haunted_Cairn'] = Spell('Haunted_Cairn',self.haunted_cairn, 12, 0, 0)
                 self.base_smns = 1
                 self.smns = 1
                 self.base_acts = 1
@@ -19690,7 +19788,7 @@ class Witch(Summon):
         root.bind('<a>', app.populate_context)
         # SOUND
         effect1 = mixer.Sound('Sound_Effects/summon.ogg')
-        effect1.set_volume(.7)
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         # place visual summon
         app.vis_dict['Summon'] = Vis(name = 'Summon', loc = sqr[:])
@@ -19882,7 +19980,7 @@ class Witch(Summon):
         id = app.grid[sqr[0]][sqr[1]]
 #         self.init_cast_anims()
         effect1 = mixer.Sound('Sound_Effects/summon_lesser_demon.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
@@ -19937,7 +20035,7 @@ class Witch(Summon):
             return
 #         self.init_cast_anims()
         effect1 = mixer.Sound('Sound_Effects/summon_cenobite.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
@@ -19989,7 +20087,7 @@ class Witch(Summon):
             return
 #         self.init_cast_anims()
         effect1 = mixer.Sound('Sound_Effects/summon_cenobite.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
@@ -20045,7 +20143,7 @@ class Witch(Summon):
             return
 #         self.init_cast_anims()
         effect1 = mixer.Sound('Sound_Effects/energize.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
@@ -20095,7 +20193,7 @@ class Witch(Summon):
             return
 #         self.init_cast_anims()
         effect1 = mixer.Sound('Sound_Effects/scrye.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
@@ -20153,7 +20251,7 @@ class Witch(Summon):
             return
 #         self.init_cast_anims()
 #         effect1 = mixer.Sound('Sound_Effects/scrye.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
@@ -20263,7 +20361,7 @@ class Witch(Summon):
             return
 #         self.init_cast_anims()
 #         effect1 = mixer.Sound('Sound_Effects/scrye.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
@@ -20301,7 +20399,7 @@ class Witch(Summon):
                 obj.acts -= 1
 #                 obj.init_attack_anims()
 #                 effect1 = mixer.Sound('Sound_Effects/psi_slash.ogg')
-#                 effect1.set_volume(app.volume_all.get())
+#                 effect1.set_volume(app.effects_volume.get())
 #                 sound_effects.play(effect1, 0)
                 app.depop_context(event = None)
                 app.unbind_all()
@@ -20376,7 +20474,7 @@ class Witch(Summon):
         loc = sqr[:]
 #         self.init_cast_anims()
         effect1 = mixer.Sound('Sound_Effects/foul_familiar.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
@@ -20468,7 +20566,7 @@ class Witch(Summon):
     def continue_entomb(self, event = None, name = None, sqr = None):
         app.depop_context(event=None)
         effect1 = mixer.Sound('Sound_Effects/strength_through_wounding.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         self.entomb_used = True
         self.acts -= 1
@@ -20526,7 +20624,7 @@ class Witch(Summon):
             return
 #         self.init_cast_anims()
         effect1 = mixer.Sound('Sound_Effects/vengeance.ogg')
-        effect1.set_volume(.08)
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         self.magick -= self.arcane_dict['Vengeance'].cost
         spell = self.arcane_dict['Vengeance']
@@ -20732,7 +20830,7 @@ class Witch(Summon):
         spell = self.arcane_dict['Hatred']
         self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
         effect1 = mixer.Sound('Sound_Effects/hatred.ogg')
-        effect1.set_volume(.9)
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
 #         self.init_cast_anims()
         app.unbind_all()
@@ -20799,7 +20897,7 @@ class Witch(Summon):
             return
 #         self.init_cast_anims()
         effect1 = mixer.Sound('Sound_Effects/torment.ogg')
-        effect1.set_volume(.07)
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         self.magick -= self.arcane_dict['Torment'].cost
         spell = self.arcane_dict['Torment']
@@ -20855,7 +20953,7 @@ class Witch(Summon):
         if app.ent_dict[id].owner != self.owner or not isinstance(app.ent_dict[id], Summon):
             return
         effect1 = mixer.Sound('Sound_Effects/pain.ogg')
-        effect1.set_volume(.07)
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         self.magick -= self.arcane_dict['Pain'].cost
         spell = self.arcane_dict['Pain']
@@ -20933,7 +21031,7 @@ class Witch(Summon):
             return
 #         self.init_cast_anims()
         effect1 = mixer.Sound('Sound_Effects/plague.ogg')
-        effect1.set_volume(2)
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         self.magick -= self.arcane_dict['Plague'].cost
         spell = self.arcane_dict['Plague']
@@ -21051,7 +21149,7 @@ class Witch(Summon):
             return
 #         self.init_cast_anims()
 #         effect1 = mixer.Sound('Sound_Effects/plague.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         self.magick -= self.arcane_dict['Enmeshing_Coils'].cost
         spell = self.arcane_dict['Enmeshing_Coils']
@@ -21064,6 +21162,12 @@ class Witch(Summon):
         def cleanup_enmesh(name):
             del app.vis_dict[name]
             app.canvas.delete(name)
+        locs = [c for c in app.coords if dist(c,sqr) <= 1]
+        for s in locs:
+            name = 'Enmeshing_Coils'+str(app.count)
+            app.count += 1
+            app.vis_dict[name] = Vis(name = 'Enmeshing_Coils', loc = s[:])
+            root.after(1777, lambda n = name : cleanup_enmesh(n))
         def enmesh_loop(ids):
             if ids == []:
                 self.cleanup_spell(name = 'Enmeshing_Coils')
@@ -21072,9 +21176,6 @@ class Witch(Summon):
                 ids = ids[1:]
                 app.get_focus(id)
                 ent = app.ent_dict[id]
-                name = 'Enmeshing_Coils'+str(app.count)
-                app.count += 1
-                app.vis_dict[name] = Vis(name = 'Enmeshing_Coils', loc = ent.loc)
                 def enmesh_efct(stat):
                     return max(1,stat-3)
                 p = partial(enmesh_efct)
@@ -21087,11 +21188,9 @@ class Witch(Summon):
                 u = partial(un, ent, p)
                 n = 'Enmeshing_Coils' + str(app.count)
                 ent.effects_dict[n] = Effect(name = 'Enmeshing_Coils', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
-                root.after(1999, lambda n = name : cleanup_enmesh(n))
-                root.after(1555, lambda t = 'text' : app.canvas.delete(t))
-                root.after(1666, lambda ids = ids : enmesh_loop(ids))
-        locs = [c for c in app.coords if dist(c,sqr) <= 1]
-        ids = [k for k,v in app.all_ents().items() if v.loc in locs and 'Enmeshing_Coils' not in [j.name for i,j in v.effects_dict.items()] and v.owner != self.owner]
+                root.after(1333, lambda t = 'text' : app.canvas.delete(t))
+                root.after(1444, lambda ids = ids : enmesh_loop(ids))
+        ids = [k for k,v in app.all_ents().items() if v.loc in locs and 'Enmeshing_Coils' not in [j.name for i,j in v.effects_dict.items()]]
         enmesh_loop(ids)
 
             
@@ -21167,7 +21266,7 @@ class Witch(Summon):
             return
 #         self.init_cast_anims()
         effect1 = mixer.Sound('Sound_Effects/psionic_push.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.unbind_all()
         app.cleanup_squares()
@@ -21275,7 +21374,7 @@ class Witch(Summon):
         app.unbind_all()
         app.cleanup_squares()
         effect1 = mixer.Sound('Sound_Effects/pestilence.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         self.magick -= self.arcane_dict['Pestilence'].cost
         spell = self.arcane_dict['Pestilence']
@@ -21409,7 +21508,7 @@ class Witch(Summon):
         spell = self.arcane_dict['Curse_of_Oriax']
         self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
         effect1 = mixer.Sound('Sound_Effects/curse_of_oriax.ogg')
-        effect1.set_volume(1.4)
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
 #         self.init_cast_anims()
         app.unbind_all()
@@ -21657,7 +21756,7 @@ class Witch(Summon):
         spell = self.arcane_dict['Lift']
         self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
         effect1 = mixer.Sound('Sound_Effects/meditate.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
 #         self.init_cast_anims()
         app.unbind_all()
@@ -22289,7 +22388,7 @@ class Witch(Summon):
         spell = self.arcane_dict['Hidden_From_the_Stars']
         self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
         effect1 = mixer.Sound('Sound_Effects/hidden_from_the_stars.ogg')
-        effect1.set_volume(.9)
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
 #         self.init_cast_anims()
         app.unbind_all()
@@ -22398,7 +22497,7 @@ class Witch(Summon):
                 obj.acts -= 1
 #                 obj.init_attack_anims()
 #                 effect1 = mixer.Sound('Sound_Effects/psi_slash.ogg')
-#                 effect1.set_volume(app.volume_all.get())
+#                 effect1.set_volume(app.effects_volume.get())
 #                 sound_effects.play(effect1, 0)
                 app.depop_context(event = None)
                 app.unbind_all()
@@ -22478,7 +22577,7 @@ class Witch(Summon):
     def do_cosmic_sight(self, event, sqr, sqrs):
 #         self.init_cast_anims()
         effect1 = mixer.Sound('Sound_Effects/meditate.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.unbind_all()
         app.cleanup_squares()
@@ -22608,7 +22707,7 @@ class Witch(Summon):
     def do_reaping(self, event):
 #         self.init_cast_anims()
 #         effect1 = mixer.Sound('Sound_Effects/meditate.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         smns = [v for k,v in app.all_ents().items() if v.owner == self.owner and isinstance(v, (Berserker,Illusionist,Umbrae_Wolf,Thaumaturge,Murrain_Wolf,Fiend,Wurdulak,Chirurgeon,Hexmage,Fell_Evolver,Drake,Inquisitor,Pixie,Chronomancer))]
         if smns == []:
@@ -22646,7 +22745,7 @@ class Witch(Summon):
     def do_mass_hysteria(self, event):
 #         self.init_cast_anims()
 #         effect1 = mixer.Sound('Sound_Effects/meditate.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         self.magick -= self.arcane_dict['Mass_Hysteria'].cost
         spell = self.arcane_dict['Mass_Hysteria']
@@ -22724,7 +22823,7 @@ class Witch(Summon):
         spell = self.arcane_dict['Blind']
         self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
         effect1 = mixer.Sound('Sound_Effects/dark_sun.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
 #         self.init_cast_anims()
         app.unbind_all()
@@ -22862,7 +22961,7 @@ class Witch(Summon):
         spell = self.arcane_dict['Gravity']
         self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
         effect1 = mixer.Sound('Sound_Effects/gravity.ogg')
-        effect1.set_volume(.9)
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
 #         self.init_cast_anims()
         app.unbind_all()
@@ -22927,7 +23026,7 @@ class Witch(Summon):
         spell = self.arcane_dict["Beleth's_Command"]
         self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
         effect1 = mixer.Sound('Sound_Effects/beleths_command.ogg')
-        effect1.set_volume(.7)
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
 #         self.init_cast_anims()
         app.unbind_all()
@@ -23121,7 +23220,7 @@ class Witch(Summon):
     def do_meditate(self, event):
 #         self.init_cast_anims()
         effect1 = mixer.Sound('Sound_Effects/meditate.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
@@ -23182,7 +23281,7 @@ class Witch(Summon):
         spell = self.arcane_dict['Mind_Rot']
         self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
         effect1 = mixer.Sound('Sound_Effects/disintegrate.ogg')
-        effect1.set_volume(.9)
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
 #         self.init_cast_anims()
         app.unbind_all()
@@ -23234,7 +23333,7 @@ class Witch(Summon):
         if sqr not in sqrs:
             return
         effect1 = mixer.Sound('Sound_Effects/horrid_wilting.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.unbind_all()
@@ -23298,7 +23397,7 @@ class Witch(Summon):
         if id not in app.all_ents().keys():
             return
 #         effect1 = mixer.Sound('Sound_Effects/grasp_of_the_old_ones.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.unbind_all()
@@ -23361,7 +23460,7 @@ class Witch(Summon):
         if 'Boiling_Blood' in effs:
             return
         effect1 = mixer.Sound('Sound_Effects/boiling_blood.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.unbind_all()
@@ -23421,7 +23520,7 @@ class Witch(Summon):
         if 'Dark_Sun' in [v.name for k,v in app.ent_dict[id].effects_dict.items()]:
             return
         effect1 = mixer.Sound('Sound_Effects/dark_sun.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.depop_context(event = None)
         app.unbind_all()
@@ -23496,7 +23595,7 @@ class Witch(Summon):
         if isinstance(ent, Witch):
             return
         effect1 = mixer.Sound('Sound_Effects/mummify.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         self.magick -= self.arcane_dict['Mummify'].cost
         spell = self.arcane_dict['Mummify']
@@ -23506,35 +23605,36 @@ class Witch(Summon):
         app.depop_context(event = None)
         app.cleanup_squares()
         app.vis_dict['Mummify'] = Vis(name = 'Mummify', loc = sqr[:])
-        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Mummify'].img, tags = 'Mummify')
         app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+14-app.moved_down, text = 'Mummify', justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
         app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+15-app.moved_down, text = 'Mummify', justify = 'center', font = ('chalkduster', 14), fill = 'darkgoldenrod', tags = 'text')
         # DO Mummify EFFECTS
+        app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+14-app.moved_down, text = '+4 end, move reduced to 1', justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
+        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+15-app.moved_down, text = '+4 end, move reduced to 1', justify = 'center', font = ('chalkduster', 14), fill = 'darkgoldenrod', tags = 'text')
         def mummify_effect(stat):
             stat += 4
             return stat
         f = mummify_effect
-        app.ent_dict[id].end_effects.append(f)
+        ent.end_effects.append(f)
         def mummy_moves(move_range):
             if move_range < 2:
                 return move_range
             else:
                 return 1
-        app.ent_dict[id].move_range_effects.append(mummy_moves)
-        if isinstance(app.ent_dict[id], Berserker):
-            app.ent_dict[id].leap_used = True
-        def sot(id, lockname = None):
-            if isinstance(app.ent_dict[id], Berserker):
-                app.ent_dict[id].leap_used = True
+        ent.move_range_effects.append(mummy_moves)
+        if isinstance(ent, Berserker):
+            ent.leap_used = True
+        def sot(ent, lockname = None):
+            if isinstance(ent, Berserker):
+                ent.leap_used = True
             root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
-        p_sot = partial(sot, id)
-        def un(i, lockname = None):
-            app.ent_dict[i].end_effects.remove(mummify_effect)
-            app.ent_dict[i].move_range_effects.remove(mummy_moves)
+        p_sot = partial(sot, ent)
+        def un(ent, lockname = None):
+            ent.end_effects.remove(mummify_effect)
+            ent.move_range_effects.remove(mummy_moves)
             root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
-        u = partial(un, id)
+        u = partial(un, ent)
         n = 'Mummify' + str(app.count)
-        app.ent_dict[id].effects_dict[n] = Effect(name = 'Mummify', undo_func = u, sot_func = p_sot, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
+        ent.effects_dict[n] = Effect(name = 'Mummify', undo_func = u, sot_func = p_sot, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
         root.after(2666, lambda  name = 'Mummify' : self.cleanup_spell(name = name))
         
         
@@ -23565,7 +23665,7 @@ class Witch(Summon):
         self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
 #         self.init_cast_anims()
 #         effect1 = mixer.Sound('Sound_Effects/immolate.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
@@ -23621,7 +23721,7 @@ class Witch(Summon):
         spell = self.arcane_dict['Dispel']
         self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
 #         effect1 = mixer.Sound('Sound_Effects/dispel.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
 #         self.init_cast_anims()
         app.unbind_all()
@@ -23691,7 +23791,7 @@ class Witch(Summon):
         self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
 #         self.init_cast_anims()
         effect1 = mixer.Sound('Sound_Effects/immolate.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
@@ -23736,7 +23836,7 @@ class Witch(Summon):
         spell = self.arcane_dict['Disintegrate']
         self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
         effect1 = mixer.Sound('Sound_Effects/disintegrate.ogg')
-        effect1.set_volume(app.volume_all.get())
+        effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
 #         self.init_cast_anims()
         app.unbind_all()
@@ -23935,7 +24035,7 @@ class Witch(Summon):
     def do_fleet_of_paw(self, event):
 #         self.init_cast_anims()
 #         effect1 = mixer.Sound('Sound_Effects/meditate.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
@@ -23995,7 +24095,7 @@ class Witch(Summon):
             return
 #         self.init_cast_anims()
 #         effect1 = mixer.Sound('Sound_Effects/hunting_hawk.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         self.magick -= self.arcane_dict['Barrow_Wight'].cost
         spell = self.arcane_dict['Barrow_Wight']
@@ -24044,7 +24144,7 @@ class Witch(Summon):
             return
 #         self.init_cast_anims()
 #         effect1 = mixer.Sound('Sound_Effects/hunting_hawk.ogg')
-#         effect1.set_volume(app.volume_all.get())
+#         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
         self.magick -= self.arcane_dict['Hunting_Hawk'].cost
         spell = self.arcane_dict['Hunting_Hawk']
@@ -24445,8 +24545,10 @@ class App(tk.Frame):
         super().__init__(master)
         self.master = master
         self.pack()
-        self.volume_all = tk.DoubleVar()
-        self.volume_all.set(.5)
+        self.music_volume = tk.DoubleVar()
+        self.music_volume.set(1)
+        self.effects_volume = tk.DoubleVar()
+        self.effects_volume.set(1)
         self.ent_dict = {}
         self.sqr_dict = {}
         self.vis_dict = {}
@@ -24474,7 +24576,6 @@ class App(tk.Frame):
         self.enemy_color_img = ImageTk.PhotoImage(Image.open('animations/Enemy_Color_Img/0.png'))
         self.bot_minimap_img = ImageTk.PhotoImage(Image.open('animations/Bot_Minimap_Img/0.png').resize((10,10)))
         self.block_minimap_img = ImageTk.PhotoImage(Image.open('minimap_block.png').resize((10,10)))
-        
         self.arcane_dict['Boiling_Blood'] = Spell('Boiling_Blood',Witch.boiling_blood, 2,0,0)
         self.arcane_dict['Dark_Sun'] = Spell('Dark_Sun',Witch.dark_sun, 3,0,0)
         self.arcane_dict['Meditate'] = Spell('Meditate',Witch.meditate, 2,0,0)
@@ -24495,7 +24596,7 @@ class App(tk.Frame):
         self.arcane_dict['Energize'] = Spell('Energize',Witch.energize, 3, 0, 0)
         self.arcane_dict['Psi_Blades'] = Spell('Psi_Blades',Witch.psi_blades, 3, 0, 0)
         self.arcane_dict['Cosmic_Sight'] = Spell('Cosmic_Sight',Witch.cosmic_sight, 2, 0, 0)
-        self.arcane_dict['Astrological_Guidance'] = Spell('Astrological_Guidance',Witch.astrological_guidance, 2, 0, 0)
+        self.arcane_dict['Astrological_Guidance'] = Spell('Astrological_Guidance',Witch.astrological_guidance, 4, 0, 0)
         self.arcane_dict['Foul_Familiar'] = Spell('Foul_Familiar',Witch.foul_familiar, 3, 0, 0)
         self.arcane_dict['Plague'] = Spell('Plague',Witch.plague, 5, 0, 0)
         self.arcane_dict['Pestilence'] = Spell('Pestilence',Witch.pestilence, 11, 0, 0)
@@ -24523,13 +24624,16 @@ class App(tk.Frame):
         self.arcane_dict['Torment'] = Spell('Torment',Witch.torment, 9, 0, 0)
         self.arcane_dict['Hatred'] = Spell('Hatred',Witch.hatred, 6, 0, 0)
         self.arcane_dict['Fangs_of_Apophis'] = Spell('Fangs_of_Apophis',Witch.fangs_of_apophis, 4, 0, 0)
-        self.arcane_dict['Wreathed_in_Flame'] = Spell('Wreathed_in_Flame',Witch.wreathed_in_flame, 4, 0, 0)
+        self.arcane_dict['Wreathed_in_Flame'] = Spell('Wreathed_in_Flame',Witch.wreathed_in_flame, 5, 0, 0)
         self.arcane_dict['Mass_Hysteria'] = Spell('Mass_Hysteria',Witch.mass_hysteria, 5, 0, 0)
         self.arcane_dict['Reaping_of_Saturnus'] = Spell('Reaping_of_Saturnus',Witch.reaping_of_saturnus, 7, 0, 0)
         self.arcane_dict['Genjutsushi'] = Spell('Genjutsushi',Witch.genjutsushi, 3, 0, 0)
         self.arcane_dict['Summon_Lesser_Demon'] = Spell('Summon_Lesser_Demon',Witch.summon_lesser_demon, 15, 0, 0)
         self.arcane_dict['Summon_Cenobite'] = Spell('Summon_Cenobite',Witch.summon_cenobite, 15, 0, 0)
-
+        self.arcane_dict['Animate_Tomb'] = Spell('Animate_Tomb',Witch.animate_tomb, 4, 0, 0)
+        self.arcane_dict['Hunting_Hawk'] = Spell('Hunting_Hawk',Witch.hunting_hawk, 3, 0, 0)
+        self.arcane_dict['Barrow_Wight'] = Spell('Barrow_Wight',Witch.barrow_wight, 6, 0, 0)
+        self.arcane_dict['Haunted_Cairn'] = Spell('Haunted_Cairn',Witch.haunted_cairn, 12, 0, 0)
         # the following few anim dicts are for testing 'load images on game start, instead of as needed'
         # results in faster response for image loading in game, longer load time (as would be expected)
         self.sqr_anims = {}
@@ -24606,7 +24710,7 @@ class App(tk.Frame):
 #         background_music.music.load('Ove Melaa - Dead, Buried and Cold.ogg')
         sound1 = mixer.Sound('Music/Ove Melaa - Dead, Buried and Cold.ogg')
         background_music.play(sound1, -1)
-        sound1.set_volume(0.6)
+        sound1.set_volume(self.music_volume.get())
         self.title_screen = ImageTk.PhotoImage(Image.open('titleScreen999.png').resize((root.winfo_screenwidth(),root.winfo_screenheight())))
         self.game_title = tk.Canvas(root, width = root.winfo_screenwidth(), bg = 'black', highlightthickness = 0, height = root.winfo_screenheight())
         self.game_title.create_image(0,0, image =self.title_screen, anchor = 'nw')
@@ -24682,6 +24786,7 @@ class App(tk.Frame):
                 b1 = tk.Button(self.spell_frame, text = spell.name.replace('_',' ') + ' •'+str(spell.cost), wraplength = 190, font = ('chalkduster', 17), fg='indianred', highlightbackground = 'tan3')
                 b1.config(command = lambda btn = b1 : func(btn=btn))
                 b1.pack(side = 'left', fill = 'both', expand = True)
+                b1.bind('<Button-2>', lambda event, b = b1, n = spell.name.replace('_',' ') : app.action_info(event, name = n, button = b))
                 self.spell_buttons.append(b1)
         prev = partial(page_back)
         # next moves spells in frame 'forward'
@@ -24696,8 +24801,7 @@ class App(tk.Frame):
                 b1 = tk.Button(self.spell_frame, text = spell.name.replace('_',' ') + ' •'+str(spell.cost), wraplength = 190, font = ('chalkduster', 17), fg='indianred', highlightbackground = 'tan3')
                 b1.config(command = lambda btn = b1 : func(btn=btn))
                 b1.pack(side = 'left', fill = 'both', expand = True)
-#                 b1.grid(row=0, col=col, sticky = 'ew', expand = 1)
-#                 col += 1
+                b1.bind('<Button-2>', lambda event, b = b1, n = spell.name.replace('_',' ') : app.action_info(event, name = n, button = b))
                 self.spell_buttons.append(b1)
         next = partial(page_forward)
         # LEFT ARROW
@@ -24718,8 +24822,9 @@ class App(tk.Frame):
                 name = btn.cget('text').replace(' ','_')
                 if name in self.grimoire.keys():
                     # find line in listbox, incr count
-                    ix = self.grim_lbox.get(0, "end").index(name)
-                    print(ix)
+                    name_tup = self.grim_lbox.get(0, "end")
+                    print(name_tup)
+                    #('Boiling Blood •2', 'Dark Sun •3') for 2 elements added to listbox
                 else:
                     # add key to grimoire and set count to 1
                     self.grimoire[name] = 1
@@ -24743,9 +24848,29 @@ class App(tk.Frame):
             b1 = tk.Button(self.spell_frame, text = spell.name.replace('_',' ') + ' •'+str(spell.cost), wraplength = 190, font = ('chalkduster', 17), fg='indianred', highlightbackground = 'tan3')
             b1.config(command = lambda btn = b1 : func(btn=btn))
             b1.pack(side = 'left', fill = 'both', expand = True)
+            b1.bind('<Button-2>', lambda event, b = b1, n = spell.name.replace('_',' ') : app.action_info(event, name = n, button = b))
             self.spell_buttons.append(b1)
 #         WINDOW FOR FRAME 3 SPELL BUTTONS
         self.bg_canvas.create_window(root.winfo_screenwidth()//2, 200, window = self.spell_frame)
+        # SAVE / LOAD / MAIN MENU BUTTONS between frames
+        def save_grim():
+            pass
+        self.save_btn = tk.Button(self.bg_canvas, text = 'SAVE', wraplength = 190, font = ('chalkduster', 22), fg='indianred', highlightbackground = 'tan3', command=save_grim)
+        self.bg_canvas.create_window(root.winfo_screenwidth()//3-200, 350, window = self.save_btn)
+        def load_grim():
+            pass
+        self.load_btn = tk.Button(self.bg_canvas, text = 'LOAD', wraplength = 190, font = ('chalkduster', 22), fg='indianred', highlightbackground = 'tan3', command=load_grim)
+        self.bg_canvas.create_window(int(root.winfo_screenwidth()*0.666)-200, 350, window = self.load_btn)
+        def back_main():
+            for b in self.spell_buttons:
+                b.destroy()
+            for child in root.winfo_children():
+                if child._name != '!app':
+                    child.destroy()
+            self.selected_btn = []
+            self.choose_num_players()
+        self.main_menu_btn = tk.Button(self.bg_canvas, text = 'MAIN MENU', wraplength = 190, font = ('chalkduster', 22), fg='indianred', highlightbackground = 'tan3', command=back_main)
+        self.bg_canvas.create_window(int(root.winfo_screenwidth()*0.999)-200, 350, window = self.main_menu_btn)
         # SECOND BD IMG BOTTOM SCREEN
         self.bd_img2 = ImageTk.PhotoImage(Image.open('border.png').resize((root.winfo_screenwidth()-130, root.winfo_screenheight()//3+104)))
         self.bg_canvas.create_image(root.winfo_screenwidth()//2, root.winfo_screenheight()//3+300, image =self.bd_img2)
@@ -24759,12 +24884,7 @@ class App(tk.Frame):
         self.grim_lbox.pack(side = 'left', fill = 'y', expand = 1)
         self.sb.pack(side = 'right', fill = 'y')
         self.bg_canvas.create_window(root.winfo_screenwidth()//2, root.winfo_screenheight()//3+300, window = self.frame2)
-        self.grim_lbox.insert('end','LINE 1')
-        self.grim_lbox.insert('end','LINE 2')
-
-
-
-
+        
     def page_grimoire_spells(self, event = None, tup_list = None, index = None):
         app.depop_context(event = None)
         for i,spell in enumerate(tup_list[index:index+7]):
@@ -24905,7 +25025,7 @@ class App(tk.Frame):
             self.p1_witch = witch
             sound1 = mixer.Sound('Music/heroic_demise.ogg')
             background_music.play(sound1, -1)
-            sound1.set_volume(.3)
+            sound1.set_volume(app.music_volume.get())
             if protaganist_object:
                 self.load_intro_scene(map_number, protaganist_object = protaganist_object)
             else:
@@ -24915,14 +25035,14 @@ class App(tk.Frame):
             self.map_triggers = []
             sound1 = mixer.Sound('Music/Caves of sorrow.ogg')
             background_music.play(sound1, -1)
-            sound1.set_volume(1.0)
+            sound1.set_volume(app.music_volume.get())
             self.load_intro_scene(map_number, protaganist_object = protaganist_object)
     # THRID LEVEL 
         elif map_number == 2:
             self.map_triggers = []
             sound1 = mixer.Sound('Music/arabesque.ogg')
             background_music.play(sound1, -1)
-            sound1.set_volume(0.3)
+            sound1.set_volume(app.music_volume.get())
             # tag both knights as 'stairway' or 'doorway'
             def tag_knights():
                 knights = [v for k,v in app.all_ents().items() if v.name == 'Undead_Knight']
@@ -24941,13 +25061,13 @@ class App(tk.Frame):
             self.map_triggers = []
             sound1 = mixer.Sound('Music/field_of_dreams.ogg')
             background_music.play(sound1, -1)
-            sound1.set_volume(1)
+            sound1.set_volume(app.music_volume.get())
             self.load_intro_scene(map_number, protaganist_object = protaganist_object)
         # LABYRINTH 
         elif map_number == 21:
             sound1 = mixer.Sound('Music/Blackmoor_Colossus.ogg')
             background_music.play(sound1, -1)
-            sound1.set_volume(0.3)
+            sound1.set_volume(app.music_volume.get())
             self.map_triggers = []
             def ghost_kickoff():
                 app.ghost_dead = False
@@ -25325,28 +25445,28 @@ class App(tk.Frame):
         elif map_number == 22:
             sound1 = mixer.Sound('Music/Dark_Amulet.ogg')
             background_music.play(sound1, -1)
-            sound1.set_volume(0.4)
+            sound1.set_volume(app.music_volume.get())
             self.map_triggers = []
             self.load_intro_scene(map_number, protaganist_object = protaganist_object)
     # WARLOCK
         elif map_number == 122:
             sound1 = mixer.Sound('Music/Dark_Descent.ogg')
             background_music.play(sound1, -1)
-            sound1.set_volume(0.3)
+            sound1.set_volume(app.music_volume.get())
             self.map_triggers = []
             self.load_intro_scene(map_number, protaganist_object = protaganist_object)
     # LEVEL 3 SANCTUM ENTRYWAY
         elif map_number == 3:
             sound1 = mixer.Sound('Music/radakan - old crypt.ogg')
             background_music.play(sound1, -1)
-            sound1.set_volume(0.8)
+            sound1.set_volume(app.music_volume.get())
             self.map_triggers = []
             self.load_intro_scene(map_number, protaganist_object = protaganist_object)
     # RITUAL CIRCLE
         elif map_number == 4:
             sound1 = mixer.Sound('Music/The Peculiar Habits of the Cave Hermits.ogg')
             background_music.play(sound1, -1)
-            sound1.set_volume(1)
+            sound1.set_volume(app.music_volume.get())
             self.map_triggers = []
             app.mages_placed = False
             self.load_intro_scene(map_number, protaganist_object = protaganist_object)
@@ -25614,39 +25734,39 @@ class App(tk.Frame):
             if self.map_number == 0:
                 sound1 = mixer.Sound('Music/heroic_demise.ogg')
                 background_music.play(sound1, -1)
-                sound1.set_volume(.3)
+                sound1.set_volume(app.music_volume.get())
             elif self.map_number == 1:
                 sound1 = mixer.Sound('Music/Caves of sorrow.ogg')
                 background_music.play(sound1, -1)
-                sound1.set_volume(1.6)
+                sound1.set_volume(app.music_volume.get())
             elif self.map_number == 2:
                 sound1 = mixer.Sound('Music/arabesque.ogg')
                 background_music.play(sound1, -1)
-                sound1.set_volume(0.3)
+                sound1.set_volume(app.music_volume.get())
             elif self.map_number == 121:
                 sound1 = mixer.Sound('Music/field_of_dreams.ogg')
                 background_music.play(sound1, -1)
-                sound1.set_volume(1)
+                sound1.set_volume(app.music_volume.get())
             elif self.map_number == 21:
                 sound1 = mixer.Sound('Music/Blackmoor_Colossus.ogg')
                 background_music.play(sound1, -1)
-                sound1.set_volume(0.3)
+                sound1.set_volume(app.music_volume.get())
             elif self.map_number == 22:
                 sound1 = mixer.Sound('Music/Dark_Amulet.ogg')
                 background_music.play(sound1, -1)
-                sound1.set_volume(0.4)
+                sound1.set_volume(app.music_volume.get())
             elif self.map_number == 122:
                 sound1 = mixer.Sound('Music/Dark_Descent.ogg')
                 background_music.play(sound1, -1)
-                sound1.set_volume(0.3)
+                sound1.set_volume(app.music_volume.get())
             elif self.map_number == 3:
                 sound1 = mixer.Sound('Music/radakan - old crypt.ogg')
                 background_music.play(sound1, -1)
-                sound1.set_volume(0.8)
+                sound1.set_volume(app.music_volume.get())
             elif self.map_number == 4:
                 sound1 = mixer.Sound('Music/The Peculiar Habits of the Cave Hermits.ogg')
                 background_music.play(sound1, -1)
-                sound1.set_volume(0.8)
+                sound1.set_volume(app.music_volume.get())
             self.animate()
             self.start_level_popup()
             # change below to use 2-player map triggers (if necessary), will need at least some kind of trigger to detect player death
@@ -26656,11 +26776,15 @@ class App(tk.Frame):
         def on_close():
             pass
         self.options_popup.protocol('WM_DELETE_WINDOW', on_close)
-        def update_volume(event = None):
-            background_music.set_volume(app.volume_all.get())
-        p = partial(update_volume)
-        self.volume_scale = tk.Scale(self.options_popup, command=p, tickinterval=0.1, resolution=0.1, from_=0.0, to=2.0, bg='black', relief='sunken', borderwidth=3, variable=app.volume_all, label='Volume', fg='indianred', font=('kokonor',13), orient='horizontal')
+        def update_music_volume(event = None):
+            background_music.set_volume(app.music_volume.get())
+        p = partial(update_music_volume)
+        # BGROUND MUSIC VOLUME
+        self.volume_scale = tk.Scale(self.options_popup, command=p, tickinterval=0.1, resolution=0.1, from_=0.0, to=2.0, bg='black', relief='sunken', borderwidth=3, variable=app.music_volume, label='Music Volume', fg='indianred', font=('kokonor',13), orient='horizontal')
         self.volume_scale.pack(side='top', fill='x', expand='y')
+        # EFFECTS VOLUME
+        self.effects_scale = tk.Scale(self.options_popup, tickinterval=0.1, resolution=0.1, from_=0.0, to=2.0, bg='black', relief='sunken', borderwidth=3, variable=app.effects_volume, label='Effects Volume', fg='indianred', font=('kokonor',13), orient='horizontal')
+        self.effects_scale.pack(side='top', fill='x', expand='y')
         self.close = tk.Button(self.options_popup, text = 'Close', font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda win = self.options_popup : self.destroy_release(win))
         self.close.pack()
         # on change of variable need to change curently running music
