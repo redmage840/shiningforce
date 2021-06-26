@@ -24796,6 +24796,25 @@ class App(tk.Frame):
         def load_grim():
             # create toplevel popup, load saved grimoire names, load/cancel btns
             pass
+            
+#             saves = [s for r,d,s in walk('Grimoires/')][0]
+#             saves = [s for s in saves[:] if s[0] != '.']
+#             self.scroll_frame = VerticalScrolledFrame(root)
+#             self.bg_canvas.create_window(root.winfo_screenwidth()/2 + root.winfo_screenwidth()/8, root.winfo_screenheight()-220, anchor = 'nw', window = self.scroll_frame)
+#             self.grimoire_save_btns = []
+#             for s in saves:
+#                 # expand filename into readable
+#                 with open('Grimoires/'+s, 'r') as f:
+#                     cmd = lambda obj = obj : self.load_grimoire(obj)
+#                     b = tk.Button(self.scroll_frame.interior, text = s, width = 13, wraplength = 190, fg = 'indianred', highlightbackground = 'black', font = ('chalkduster', 22), relief = 'raised', command = cmd)
+#                     b.pack() 
+#                     self.game_title.saves_buttons.append(b)
+#             cancel_b = tk.Button(self.scroll_frame.interior, text = 'Cancel', bg = 'black', fg = 'black', width = 13, highlightbackground = 'black', font = ('chalkduster', 22), relief = 'raised', command = self.scroll_frame.destroy)
+#             cancel_b.pack(side = 'bottom')
+#             self.game_title.saves_buttons.append(cancel_b)
+            
+            
+            
         self.load_btn = tk.Button(self.bg_canvas, text = 'LOAD', wraplength = 190, font = ('chalkduster', 22), fg='indianred', highlightbackground = 'tan3', command=load_grim)
         self.bg_canvas.create_window(int(root.winfo_screenwidth()*0.666)-200, 350, window = self.load_btn)
         def back_main():
