@@ -1,107 +1,4 @@
-# save and load in grim edit, need to use cross platform file dialog interface, save to file in main menu
-
-# when updating listbox, must cache all current values? and rewrite them?
-
-# Listbox with multiple columns
-'''
-from Tkinter import *
-
-class MultiListbox(Frame):
-    def _ _init_ _(self, master, lists):
-        Frame._ _init_ _(self, master)
-        self.lists = []
-        for l,w in lists:
-            frame = Frame(self); frame.pack(side=LEFT, expand=YES, fill=BOTH)
-            Label(frame, text=l, borderwidth=1, relief=RAISED).pack(fill=X)
-            lb = Listbox(frame, width=w, borderwidth=0, selectborderwidth=0,
-                         relief=FLAT, exportselection=FALSE)
-            lb.pack(expand=YES, fill=BOTH)
-            self.lists.append(lb)
-            lb.bind('<B1-Motion>', lambda e, s=self: s._select(e.y))
-            lb.bind('<Button-1>', lambda e, s=self: s._select(e.y))
-            lb.bind('<Leave>', lambda e: 'break')
-            lb.bind('<B2-Motion>', lambda e, s=self: s._b2motion(e.x, e.y))
-            lb.bind('<Button-2>', lambda e, s=self: s._button2(e.x, e.y))
-        frame = Frame(self); frame.pack(side=LEFT, fill=Y)
-        Label(frame, borderwidth=1, relief=RAISED).pack(fill=X)
-        sb = Scrollbar(frame, orient=VERTICAL, command=self._scroll)
-        sb.pack(expand=YES, fill=Y)
-        self.lists[0]['yscrollcommand']=sb.set
-
-    def _select(self, y):
-        row = self.lists[0].nearest(y)
-        self.selection_clear(0, END)
-        self.selection_set(row)
-        return 'break'
-
-    def _button2(self, x, y):
-        for l in self.lists: l.scan_mark(x, y)
-        return 'break'
-
-    def _b2motion(self, x, y):
-        for l in self.lists: l.scan_dragto(x, y)
-        return 'break'
-
-    def _scroll(self, *args):
-        for l in self.lists:
-            apply(l.yview, args)
-
-    def curselection(self):
-        return self.lists[0].curselection(  )
-
-    def delete(self, first, last=None):
-        for l in self.lists:
-            l.delete(first, last)
-
-    def get(self, first, last=None):
-        result = []
-        for l in self.lists:
-            result.append(l.get(first,last))
-        if last: return apply(map, [None] + result)
-        return result
-
-    def index(self, index):
-        self.lists[0].index(index)
-
-    def insert(self, index, *elements):
-        for e in elements:
-            i = 0
-            for l in self.lists:
-                l.insert(index, e[i])
-                i = i + 1
-
-    def size(self):
-        return self.lists[0].size(  )
-
-    def see(self, index):
-        for l in self.lists:
-            l.see(index)
-
-    def selection_anchor(self, index):
-        for l in self.lists:
-            l.selection_anchor(index)
-
-    def selection_clear(self, first, last=None):
-        for l in self.lists:
-            l.selection_clear(first, last)
-
-    def selection_includes(self, index):
-        return self.lists[0].selection_includes(index)
-
-    def selection_set(self, first, last=None):
-        for l in self.lists:
-            l.selection_set(first, last)
-
-if _ _name_ _ == '_ _main_ _':
-    tk = Tk(  )
-    Label(tk, text='MultiListbox').pack(  )
-    mlb = MultiListbox(tk, (('Subject', 40), ('Sender', 20), ('Date', 10)))
-    for i in range(1000):
-      mlb.insert(END, 
-          ('Important Message: %d' % i, 'John Doe', '10/10/%04d' % (1900+i)))
-    mlb.pack(expand=YES,fill=BOTH)
-    tk.mainloop(  )
-'''
+# save, load grim edit
 
 # grim edit, layout, quick removal from lower interface
 
@@ -24814,26 +24711,51 @@ class App(tk.Frame):
         self.bg_canvas.create_window(200, 200, window = self.lr_frame)
         # ADD REMOVE SPELL BUTTONS
         def add():
-            # put selected btn in btm scrn data struct...
             if self.selected_btn == []:
                 return
             else:
                 btn = self.selected_btn[0]
-                name = btn.cget('text').replace(' ','_')
-                if name in self.grimoire.keys():
-                    # find line in listbox, incr count
-                    name_tup = self.grim_lbox.get(0, "end")
-                    print(name_tup)
-                    #('Boiling Blood •2', 'Dark Sun •3') for 2 elements added to listbox
-                else:
-                    # add key to grimoire and set count to 1
+                name = btn.cget('text').replace('_',' ')
+                ix = name.find('•')
+                name = name[:ix]
+                if name in self.grimoire.keys():# INCR COUNT
+                    count = self.grimoire[name]
+                    all = self.grim_lbox.get(0,'end')
+                    ix = all.index(name+' '+str(count))
+                    self.grim_lbox.delete(ix)
+                    self.grimoire[name] += 1
+                    count = self.grimoire[name]
+                    self.grim_lbox.insert(ix, name+' '+str(count))
+                else:# ADD TO GRIMOIRE
                     self.grimoire[name] = 1
-                    self.grim_lbox.insert('end',name.replace('_',' '))
+                    self.grim_lbox.insert('end',name.replace('_',' ')+' '+'1')
         adder = partial(add)
         self.add_button = tk.Button(self.addremove_frame, text = '+', height = 4, width = 1, fg = 'indianred', highlightbackground = 'black', font = ('chalkduster', 38), relief = 'raised', command = adder)
         # REMOVE
         def remove():
-            pass
+            if self.selected_btn == []:
+                return
+            else:
+                btn = self.selected_btn[0]
+                name = btn.cget('text').replace('_',' ')
+                ix = name.find('•')
+                name = name[:ix]
+                if name in self.grimoire.keys():
+                    count = self.grimoire[name]
+                    if count == 1:#REMOVE FROM struct and lbox
+                        all = self.grim_lbox.get(0,'end')
+                        ix = all.index(name+' '+str(count))
+                        self.grim_lbox.delete(ix)
+                        del self.grimoire[name]
+                    else:# DECR COUNT
+                        all = self.grim_lbox.get(0,'end')
+                        ix = all.index(name+' '+str(count))
+                        self.grim_lbox.delete(ix)
+                        self.grimoire[name] -= 1
+                        count = self.grimoire[name]
+                        self.grim_lbox.insert(ix, name+' '+str(count))
+                else:
+                    pass
         rmv = partial(remove) 
         self.rmv_button = tk.Button(self.addremove_frame, text = '-', height = 4, width = 1, fg = 'indianred', highlightbackground = 'black', font = ('chalkduster', 38), relief = 'raised', command = rmv)
         self.add_button.pack(side = 'left', fill = 'y', expand = 1)
@@ -24854,10 +24776,25 @@ class App(tk.Frame):
         self.bg_canvas.create_window(root.winfo_screenwidth()//2, 200, window = self.spell_frame)
         # SAVE / LOAD / MAIN MENU BUTTONS between frames
         def save_grim():
-            pass
+            fname = self.save_grim_var.get()
+            saves = [s for r,d,s in walk('./Grimoires')][0]
+            saves = [s for s in saves[:] if s[0] != '.']
+            if fname in saves:
+                self.save_grim_var.set('filename already exists')
+                return
+            with open('Grimoires/'+fname, 'w+') as f:
+                self.save_grim_var.set('Grimoire Saved...')
+                f.write(str(self.grimoire))
+        # SAVE BTN ENTRY
         self.save_btn = tk.Button(self.bg_canvas, text = 'SAVE', wraplength = 190, font = ('chalkduster', 22), fg='indianred', highlightbackground = 'tan3', command=save_grim)
         self.bg_canvas.create_window(root.winfo_screenwidth()//3-200, 350, window = self.save_btn)
+        self.save_grim_var = tk.StringVar()
+        self.save_grim_var.set('name')
+        self.entry = tk.Entry(self.bg_canvas, textvariable = self.save_grim_var, font = ('chalkduster', 15), highlightbackground = 'black')
+        self.bg_canvas.create_window(root.winfo_screenwidth()//3-40, 365, anchor='s', window = self.entry)
+        # LOAD
         def load_grim():
+            # create toplevel popup, load saved grimoire names, load/cancel btns
             pass
         self.load_btn = tk.Button(self.bg_canvas, text = 'LOAD', wraplength = 190, font = ('chalkduster', 22), fg='indianred', highlightbackground = 'tan3', command=load_grim)
         self.bg_canvas.create_window(int(root.winfo_screenwidth()*0.666)-200, 350, window = self.load_btn)
