@@ -1,6 +1,5 @@
-# save, load grim edit
-
-# grim edit, layout, quick removal from lower interface
+# grim edit, quick removal from lower interface
+# rclick to remove, lclick to add? bind clicks in Listbox
 
 # hawk attack vis, move hawk back and forth
 
@@ -24794,27 +24793,30 @@ class App(tk.Frame):
         self.bg_canvas.create_window(root.winfo_screenwidth()//3-40, 365, anchor='s', window = self.entry)
         # LOAD
         def load_grim():
-            # create toplevel popup, load saved grimoire names, load/cancel btns
-            pass
-            
-#             saves = [s for r,d,s in walk('Grimoires/')][0]
-#             saves = [s for s in saves[:] if s[0] != '.']
-#             self.scroll_frame = VerticalScrolledFrame(root)
-#             self.bg_canvas.create_window(root.winfo_screenwidth()/2 + root.winfo_screenwidth()/8, root.winfo_screenheight()-220, anchor = 'nw', window = self.scroll_frame)
-#             self.grimoire_save_btns = []
-#             for s in saves:
-#                 # expand filename into readable
-#                 with open('Grimoires/'+s, 'r') as f:
-#                     cmd = lambda obj = obj : self.load_grimoire(obj)
-#                     b = tk.Button(self.scroll_frame.interior, text = s, width = 13, wraplength = 190, fg = 'indianred', highlightbackground = 'black', font = ('chalkduster', 22), relief = 'raised', command = cmd)
-#                     b.pack() 
-#                     self.game_title.saves_buttons.append(b)
-#             cancel_b = tk.Button(self.scroll_frame.interior, text = 'Cancel', bg = 'black', fg = 'black', width = 13, highlightbackground = 'black', font = ('chalkduster', 22), relief = 'raised', command = self.scroll_frame.destroy)
-#             cancel_b.pack(side = 'bottom')
-#             self.game_title.saves_buttons.append(cancel_b)
-            
-            
-            
+            grims = [s for r,d,s in walk('Grimoires/')][0]
+            grims = [s for s in grims[:] if s[0] != '.']
+            self.scroll_frame = VerticalScrolledFrame(root)
+            self.bg_canvas.create_window(root.winfo_screenwidth()/2 + root.winfo_screenwidth()/8, root.winfo_screenheight()-220, anchor = 'nw', window = self.scroll_frame)
+            self.grimoire_save_btns = []
+            def load_grimoire(grim_dict):
+                # clear grimoire struct and lbox, populate both with clicked grimoire
+                self.grimoire = grim_dict
+                self.grim_lbox.delete(0,'end')
+                i = 0
+                for k,v in self.grimoire.items():
+                    self.grim_lbox.insert(i,k+' '+str(v))
+                    i += 1
+            for g in grims:
+                # expand filename into readable
+                with open('Grimoires/'+g, 'r') as f:
+                    grim_dict = eval(f.readline().strip('\n'))
+                    cmd = partial(load_grimoire, grim_dict)
+                    b = tk.Button(self.scroll_frame.interior, text = g, width = 13, wraplength = 190, fg = 'indianred', highlightbackground = 'black', font = ('chalkduster', 22), relief = 'raised', command = cmd)
+                    b.pack() 
+                    self.grimoire_save_btns.append(b)
+            cancel_b = tk.Button(self.scroll_frame.interior, text = 'Cancel', bg = 'black', fg = 'black', width = 13, highlightbackground = 'black', font = ('chalkduster', 22), relief = 'raised', command = self.scroll_frame.destroy)
+            cancel_b.pack(side = 'bottom')
+            self.grimoire_save_btns.append(cancel_b)
         self.load_btn = tk.Button(self.bg_canvas, text = 'LOAD', wraplength = 190, font = ('chalkduster', 22), fg='indianred', highlightbackground = 'tan3', command=load_grim)
         self.bg_canvas.create_window(int(root.winfo_screenwidth()*0.666)-200, 350, window = self.load_btn)
         def back_main():
@@ -24836,10 +24838,32 @@ class App(tk.Frame):
         self.sb = tk.Scrollbar(self.frame2)
         # LISTBOX
         self.grim_lbox = tk.Listbox(self.frame2, height = 12, width = 158, yscrollcommand = self.sb.set, selectmode = 'single', font = 'kokonor',bg = 'black', fg = 'indianred', relief = 'sunken', borderwidth = 6)
+        
+        
+        
+        def clickEvent(event):
+            print('lbox click')
+            print(event)
+            #<VirtualEvent event x=0 y=0>
+            '''
+            self.listBox.bind("<Button-3>", self.rightClick)
+             def rightClick(self,event):
+     self.listBox.selection_clear(0,tk.END)
+     self.listBox.selection_set(self.listBox.nearest(event.y))
+     self.listBox.activate(self.listBox.nearest(event.y))
+            '''
+        self.grim_lbox.bind('<<ListboxSelect>>', clickEvent)
+        
+        
+        
         self.sb.config(command = self.grim_lbox.yview)
         self.grim_lbox.pack(side = 'left', fill = 'y', expand = 1)
         self.sb.pack(side = 'right', fill = 'y')
         self.bg_canvas.create_window(root.winfo_screenwidth()//2, root.winfo_screenheight()//3+300, window = self.frame2)
+        
+        
+        
+        
         
     def page_grimoire_spells(self, event = None, tup_list = None, index = None):
         app.depop_context(event = None)
