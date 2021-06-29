@@ -9,9 +9,6 @@
 # when to select grimoire, attach grimoire object for 2 player duel
 # make sure grimoire object is saved and passed properly with protag_obj through level progression
 
-# line 25701
-# Load/choose grimoire on duel or new campaign, protag_obj should have grimoire obj attached
-
 # white dragon free fly away seeks locations that are outside of its current range (if reason is less than base)
 # dragon makes redundant move when out of acts, seeking melee targets, before free fly move
 # dragon iceblast can hit self
@@ -19116,7 +19113,7 @@ class Cadaver(Summon):
                     
                     
 class Witch(Summon):
-    def __init__(self, name, img, loc, owner, level, grimoire):
+    def __init__(self, name, img, loc, owner, level, grimoire_count_tups):
         p = partial(self.page_summons, index = 0)
         self.actions = {'Move':self.move, 'Entomb':self.entomb, 'Arcana':self.arcana, 'Summon':p}
         self.level = level
@@ -19126,10 +19123,20 @@ class Witch(Summon):
 #         self.summon_level = 1
         self.summon_count = 0
         self.arcane_dict = {}
+        self.grimoire_count_tups = grimoire_count_tups
         # populate ARCANE dict
-        for spl in grimoire:
+        for spl_count in grimoire_count_tups:
+            spl = spl_count[0]
             func = partial(spl.func, self)
             self.arcane_dict[spl.name] = Spell(spl.name, func, spl.cost, spl.times_imprint, spl.times_cast)
+        # POPULATE ENTOMB 'DECK'
+        # this is the thing that gets shuffled/reset/drawn from to determine access to which spells for ENTOMB
+        self.entomb_deck = [] # list of strings, to hold order of spells, each string is key in arcane_dict
+        for spl_count in grimoire_count_tups:
+            n = spl_count[0].name
+            c = spl_count[1]
+            for x in range(c):
+                self.entomb_deck.append(n)
         self.summon_ids = 0
         self.str_effects = []
         self.agl_effects = []
@@ -19216,6 +19223,7 @@ class Witch(Summon):
 #                 self.base_magick = 75
                 self.magick_regen = 2
             elif level == 2:
+                print('in level 2')
 #                 self.arcane_dict = deepcopy(app.arcane_dict)
 #                 self.arcane_dict['Boiling_Blood'] = Spell('Boiling_Blood',self.boiling_blood, 2,0,0)
 #                 self.arcane_dict['Dark_Sun'] = Spell('Dark_Sun',self.dark_sun, 3,0,0)
@@ -20447,7 +20455,9 @@ class Witch(Summon):
         app.cleanup_squares()
         # debug working
         # handle limited window ('drawn'/available spells) here
-        spells = sorted(list(self.arcane_dict.values()),key=lambda s : s.cost)
+        spells_for_turn = self.entomb_deck[:7]
+        spls = [self.arcane_dict[k] for k in spells_for_turn]
+        spells = sorted(list(spls),key=lambda s : s.cost)
         self.page_imprint(tup_list = spells, index = 0, sqr = sqr[:])
         
     def page_imprint(self, event = None, tup_list = None, index = None, sqr = None):
@@ -25575,7 +25585,7 @@ class App(tk.Frame):
         for child in root.winfo_children():
             if child._name != '!app':
                 child.destroy()
-        # if protag obj is None, create grimoire editor/selector screen here then cont...
+        # SELECT GRIMOIRE FOR START CAMPAIGN, translate grimoire editor object to Witch usable obj (with count, as 'cards')
         if protaganist_object == None:
             # use wait_var to pause exec
             name = 'dethlok'+str(app.death_count)
@@ -25583,13 +25593,13 @@ class App(tk.Frame):
             app.dethloks[name] = tk.IntVar(0)
             self.grimoire_editor(mode = 'select', lockname = name)
             app.wait_variable(app.dethloks[name])
-            grimoire = []
+            grimoire_count_tups = []
             tmp = {}
             for k,v in self.grimoire.items():
                 tmp[k.rstrip(' ')] = v
             for spl in self.spell_list:
                 if spl.name.replace('_',' ') in tmp.keys():
-                    grimoire.append(spl)
+                    grimoire_count_tups.append((spl,v))
             for child in root.winfo_children():
                 if child._name != '!app':
                     child.destroy()
@@ -25671,7 +25681,7 @@ class App(tk.Frame):
             self.load_witch(witch = protaganist_object.name, player_num = 1, protaganist_object = protaganist_object)
         else:# LOADING FIRST LEVEL, NOT SAVE GAME
             # load/select grimoire here, that func should exit to load_witch
-            self.load_witch(witch = self.p1_witch, player_num = 1, protaganist_object = None, grimoire = grimoire[:])
+            self.load_witch(witch = self.p1_witch, player_num = 1, protaganist_object = None, grimoire_count_tups = grimoire_count_tups)
 #             self.choose_witch()
         
     # Called twice for 2player mode, first call defaults to first player choice, second call passes player_num = 2
@@ -25734,7 +25744,7 @@ class App(tk.Frame):
             self.avatar_popup.witch_widgets.append(b2)
             self.avatar_popup.witch_widgets.append(b)
         
-    def load_witch(self, witch = None, player_num = None, protaganist_object = None, grimoire = None):
+    def load_witch(self, witch = None, player_num = None, protaganist_object = None, grimoire_count_tups = None):
         if player_num == 1:
             self.p1_witch = witch
             if self.num_players == 2:
@@ -25755,7 +25765,8 @@ class App(tk.Frame):
             self.ent_dict[witch] = protaganist_object
         else:# NEED TO ATTACH CHOOSE GRIMOIRE HERE
             witch_img = ImageTk.PhotoImage(Image.open('avatars/' + witch +'.png'))
-            self.ent_dict[witch] = Witch(name = witch, img = witch_img, loc = loc, owner = 'p' + str(player_num), level = 2, grimoire = grimoire[:])
+            print(grimoire_count_tups)
+            self.ent_dict[witch] = Witch(name = witch, img = witch_img, loc = loc, owner = 'p' + str(player_num), level = 2, grimoire_count_tups = grimoire_count_tups)
         self.canvas.create_image(self.ent_dict[witch].loc[0]*100+50-self.moved_right, self.ent_dict[witch].loc[1]*100+50-self.moved_down, image = self.ent_dict[witch].img, tags = self.ent_dict[witch].tags)
         self.grid[self.ent_dict[witch].loc[0]][self.ent_dict[witch].loc[1]] = witch
         # EXIT FOR 1 PLAYER
