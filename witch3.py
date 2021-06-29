@@ -1,3 +1,5 @@
+# should use of entomb remove from entomb_deck for turn/round?
+
 # in select mode of grimoire editor, after choosing campaign mode, check to see that additional keypress/buttonpresses are not accepted while the 'SELECT' btn is pressed and setting the wait_var
 
 # grimoires now have minimum size 60 and can contain MULTIPLES of the same spell
@@ -19113,7 +19115,7 @@ class Cadaver(Summon):
                     
                     
 class Witch(Summon):
-    def __init__(self, name, img, loc, owner, level, grimoire_count_tups):
+    def __init__(self, name, img, loc, owner, level, entomb_deck):
         p = partial(self.page_summons, index = 0)
         self.actions = {'Move':self.move, 'Entomb':self.entomb, 'Arcana':self.arcana, 'Summon':p}
         self.level = level
@@ -19123,20 +19125,12 @@ class Witch(Summon):
 #         self.summon_level = 1
         self.summon_count = 0
         self.arcane_dict = {}
-        self.grimoire_count_tups = grimoire_count_tups
+        self.entomb_deck = entomb_deck
         # populate ARCANE dict
-        for spl_count in grimoire_count_tups:
-            spl = spl_count[0]
+        for k in entomb_deck:
+            spl = app.arcane_dict[k]
             func = partial(spl.func, self)
             self.arcane_dict[spl.name] = Spell(spl.name, func, spl.cost, spl.times_imprint, spl.times_cast)
-        # POPULATE ENTOMB 'DECK'
-        # this is the thing that gets shuffled/reset/drawn from to determine access to which spells for ENTOMB
-        self.entomb_deck = [] # list of strings, to hold order of spells, each string is key in arcane_dict
-        for spl_count in grimoire_count_tups:
-            n = spl_count[0].name
-            c = spl_count[1]
-            for x in range(c):
-                self.entomb_deck.append(n)
         self.summon_ids = 0
         self.str_effects = []
         self.agl_effects = []
@@ -24972,13 +24966,6 @@ class App(tk.Frame):
 #                 obj = load(f)
                 name = f.readline().strip('\n')
                 level = f.readline().strip('\n')
-                if name == 'Agnes_Sampson':
-                    img = ImageTk.PhotoImage(Image.open('avatars/Agnes_Sampson.png'))
-                    obj = Witch(name = 'Agnes_Sampson', img = img, loc = [0,0], owner = 'p1', level = int(level))
-                elif name == 'Fakir_Ali':
-                    img = ImageTk.PhotoImage(Image.open('avatars/Fakir_Ali.png'))
-                    obj = Witch(name = 'Fakir_Ali', img = img, loc = [0,0], owner = 'p1', level = int(level))
-#                 cantrips = eval(f.readline().strip('\n'))
                 arcane = eval(f.readline().strip('\n'))
                 sum_cap = int(f.readline().strip('\n'))
                 str = int(f.readline().strip('\n'))
@@ -24996,11 +24983,16 @@ class App(tk.Frame):
                 b_acts = int(f.readline().strip('\n'))
                 b_mvs = int(f.readline().strip('\n'))
                 b_smns = int(f.readline().strip('\n'))
-#                 b_can = int(f.readline().strip('\n'))
                 b_spirit = int(f.readline().strip('\n'))
-#                 b_magick = int(f.readline().strip('\n'))
                 move_range = int(f.readline().strip('\n'))
                 area = int(f.readline().strip('\n'))
+                entomb_deck = eval(f.readline().strip('\n'))
+                if name == 'Agnes_Sampson':
+                    img = ImageTk.PhotoImage(Image.open('avatars/Agnes_Sampson.png'))
+                    obj = Witch(name = 'Agnes_Sampson', img = img, loc = [0,0], owner = 'p1', level = int(level), entomb_deck = entomb_deck)
+                elif name == 'Fakir_Ali':
+                    img = ImageTk.PhotoImage(Image.open('avatars/Fakir_Ali.png'))
+                    obj = Witch(name = 'Fakir_Ali', img = img, loc = [0,0], owner = 'p1', level = int(level), entomb_deck = entomb_deck)
                 obj.summon_cap = sum_cap
                 obj.str = str
                 obj.agl = agl
@@ -25018,11 +25010,8 @@ class App(tk.Frame):
                 obj.base_mvs = b_mvs
                 obj.base_smns = b_smns
                 obj.smns = b_smns
-#                 obj.base_cantrips = b_can
-#                 obj.cantrips = b_can
                 obj.base_spirit = b_spirit
                 obj.spirit = b_spirit
-#                 obj.base_magick = b_magick
                 obj.magick = 0
                 obj.current_area = area
                 obj.move_range = move_range
@@ -25593,13 +25582,10 @@ class App(tk.Frame):
             app.dethloks[name] = tk.IntVar(0)
             self.grimoire_editor(mode = 'select', lockname = name)
             app.wait_variable(app.dethloks[name])
-            grimoire_count_tups = []
-            tmp = {}
+            entomb_deck = []
             for k,v in self.grimoire.items():
-                tmp[k.rstrip(' ')] = v
-            for spl in self.spell_list:
-                if spl.name.replace('_',' ') in tmp.keys():
-                    grimoire_count_tups.append((spl,v))
+                for x in range(v):
+                    entomb_deck.append(k.replace(' ','_'))
             for child in root.winfo_children():
                 if child._name != '!app':
                     child.destroy()
@@ -25681,7 +25667,7 @@ class App(tk.Frame):
             self.load_witch(witch = protaganist_object.name, player_num = 1, protaganist_object = protaganist_object)
         else:# LOADING FIRST LEVEL, NOT SAVE GAME
             # load/select grimoire here, that func should exit to load_witch
-            self.load_witch(witch = self.p1_witch, player_num = 1, protaganist_object = None, grimoire_count_tups = grimoire_count_tups)
+            self.load_witch(witch = self.p1_witch, player_num = 1, protaganist_object = None, entomb_deck = entomb_deck[:])
 #             self.choose_witch()
         
     # Called twice for 2player mode, first call defaults to first player choice, second call passes player_num = 2
@@ -25744,7 +25730,7 @@ class App(tk.Frame):
             self.avatar_popup.witch_widgets.append(b2)
             self.avatar_popup.witch_widgets.append(b)
         
-    def load_witch(self, witch = None, player_num = None, protaganist_object = None, grimoire_count_tups = None):
+    def load_witch(self, witch = None, player_num = None, protaganist_object = None, entomb_deck = None):
         if player_num == 1:
             self.p1_witch = witch
             if self.num_players == 2:
@@ -25761,12 +25747,10 @@ class App(tk.Frame):
             protaganist_object.loc = loc[:]
             witch_img = ImageTk.PhotoImage(Image.open('avatars/' + witch +'.png'))
             protaganist_object.img = witch_img
-#             protaganist_object.init_normal_anims()
             self.ent_dict[witch] = protaganist_object
         else:# NEED TO ATTACH CHOOSE GRIMOIRE HERE
             witch_img = ImageTk.PhotoImage(Image.open('avatars/' + witch +'.png'))
-            print(grimoire_count_tups)
-            self.ent_dict[witch] = Witch(name = witch, img = witch_img, loc = loc, owner = 'p' + str(player_num), level = 2, grimoire_count_tups = grimoire_count_tups)
+            self.ent_dict[witch] = Witch(name = witch, img = witch_img, loc = loc, owner = 'p' + str(player_num), level = 2, entomb_deck = entomb_deck[:])
         self.canvas.create_image(self.ent_dict[witch].loc[0]*100+50-self.moved_right, self.ent_dict[witch].loc[1]*100+50-self.moved_down, image = self.ent_dict[witch].img, tags = self.ent_dict[witch].tags)
         self.grid[self.ent_dict[witch].loc[0]][self.ent_dict[witch].loc[1]] = witch
         # EXIT FOR 1 PLAYER
@@ -26024,7 +26008,8 @@ class App(tk.Frame):
         self.init_q = q[:]
         self.generate_witch_magick()
         
-        
+    
+    # ALSO SHUFFLE self.entomb_deck
     def generate_witch_magick(self):
         # p1
         witch = app.ent_dict[app.p1_witch]
@@ -26039,6 +26024,7 @@ class App(tk.Frame):
             if app.turn_counter == 0:
                 witch.magick += 5
             witch.magick += (tombs*2)
+        shuffle(witch.entomb_deck)
         self.handle_sot_effects()
         
     # Resolve start-of-turn effects on each entity AND loc_effects(on map)
@@ -26590,11 +26576,9 @@ class App(tk.Frame):
             return
         with open('save_games/'+fname, 'w+') as f:
             text_var.set('game saved')
-            ####********
             # strip attrs, write all spell names to file
             f.write(str(protag_obj.name)+'\n')
             f.write(str(protag_obj.level)+'\n')
-#             f.write(str(list(protag_obj.cantrip_dict.keys()))+'\n')
             f.write(str(list(protag_obj.arcane_dict.keys()))+'\n')
             f.write(str(protag_obj.summon_cap)+'\n')
             f.write(str(protag_obj.str)+'\n')
@@ -26612,20 +26596,10 @@ class App(tk.Frame):
             f.write(str(protag_obj.base_acts)+'\n')
             f.write(str(protag_obj.base_mvs)+'\n')
             f.write(str(protag_obj.base_smns)+'\n')
-#             f.write(str(protag_obj.base_cantrips)+'\n')
             f.write(str(protag_obj.base_spirit)+'\n')
-#             f.write(str(protag_obj.base_magick)+'\n')
             f.write(str(protag_obj.move_range)+'\n')
             f.write(str(protag_obj.current_area)+'\n')
-#             f.write(str(protag_obj.summon_level)+'\n')
-            ####********
-#             have to strip tkinter objects from protag obj
-#             protag_obj.img = None
-#             protag_obj.anim_dict = {}
-            # below, get all needed attributes of protag_obj, do a rudimentary 'encoding' to disguise
-            # on load, ensure values are 'legal'
-            # 
-#             dump(protag_obj, f)
+            f.write(str(protag_obj.entomb_deck)+'\n')
     
     
     def populate_context(self, event):
