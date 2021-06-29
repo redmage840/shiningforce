@@ -1,4 +1,13 @@
-# when to select grimoire, attach grimoire object
+# in select mode of grimoire editor, after choosing campaign mode, check to see that additional keypress/buttonpresses are not accepted while the 'SELECT' btn is pressed and setting the wait_var
+
+# grimoires now have minimum size 60 and can contain MULTIPLES of the same spell
+# need to randomize/select the spells available through ENTOMB
+# 1 solution: Add another turn phase, or during start of turn, handle window into avialable entomb spells
+# 2 during the same phase that replenishes the protag_obj magick, handle selection of available Entomb spells for that turn
+# ENTOMB should only 'see' this 'window'
+
+# when to select grimoire, attach grimoire object for 2 player duel
+# make sure grimoire object is saved and passed properly with protag_obj through level progression
 
 # line 25701
 # Load/choose grimoire on duel or new campaign, protag_obj should have grimoire obj attached
@@ -19117,8 +19126,10 @@ class Witch(Summon):
 #         self.summon_level = 1
         self.summon_count = 0
         self.arcane_dict = {}
+        # populate ARCANE dict
         for spl in grimoire:
-            self.arcane_dict[spl.name] = spl
+            func = partial(spl.func, self)
+            self.arcane_dict[spl.name] = Spell(spl.name, func, spl.cost, spl.times_imprint, spl.times_cast)
         self.summon_ids = 0
         self.str_effects = []
         self.agl_effects = []
@@ -20434,6 +20445,8 @@ class Witch(Summon):
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
+        # debug working
+        # handle limited window ('drawn'/available spells) here
         spells = sorted(list(self.arcane_dict.values()),key=lambda s : s.cost)
         self.page_imprint(tup_list = spells, index = 0, sqr = sqr[:])
         
@@ -24729,6 +24742,7 @@ class App(tk.Frame):
                 name = btn.cget('text').replace('_',' ')
                 ix = name.find('•')
                 name = name[:ix]
+                name = name.rstrip(' ')
                 if name in self.grimoire.keys():# INCR COUNT
                     count = self.grimoire[name]
                     all = self.grim_lbox.get(0,'end')
@@ -24753,6 +24767,7 @@ class App(tk.Frame):
                 name = btn.cget('text').replace('_',' ')
                 ix = name.find('•')
                 name = name[:ix]
+                name = name.rstrip(' ')
                 if name in self.grimoire.keys():
                     j = self.spell_total.get()
                     self.spell_total.set(j-1)
@@ -24857,6 +24872,7 @@ class App(tk.Frame):
         if mode == 'select':
             def select():
                 if self.spell_total.get() >= 60:
+                    # sets lockvar called from create_map_curs_context
                     app.dethloks[lockname].set(1)
             self.select_btn = tk.Button(self.bg_canvas, text = 'SELECT', wraplength = 190, font = ('chalkduster', 22), fg='indianred', highlightbackground = 'tan3', command=select)
             self.bg_canvas.create_window(int(root.winfo_screenwidth()*0.999)-380, 350, window = self.select_btn)
@@ -25567,7 +25583,13 @@ class App(tk.Frame):
             app.dethloks[name] = tk.IntVar(0)
             self.grimoire_editor(mode = 'select', lockname = name)
             app.wait_variable(app.dethloks[name])
-            grimoire = self.spell_list[:]
+            grimoire = []
+            tmp = {}
+            for k,v in self.grimoire.items():
+                tmp[k.rstrip(' ')] = v
+            for spl in self.spell_list:
+                if spl.name.replace('_',' ') in tmp.keys():
+                    grimoire.append(spl)
             for child in root.winfo_children():
                 if child._name != '!app':
                     child.destroy()
