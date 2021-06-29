@@ -1,5 +1,8 @@
-# grim edit, quick removal from lower interface
-# rclick to remove, lclick to add? bind clicks in Listbox
+# Load/choose grimoire on duel or new campaign, protag_obj should have grimoire obj attached
+
+# white dragon free fly away seeks locations that are outside of its current range (if reason is less than base)
+# dragon makes redundant move when out of acts, seeking melee targets, before free fly move
+# dragon iceblast can hit self
 
 # hawk attack vis, move hawk back and forth
 
@@ -24651,7 +24654,6 @@ class App(tk.Frame):
         self.addremove_frame = tk.Frame(root, width = 100, height = 100)
         self.spell_frame = tk.Frame(root, width = 800, height = 100)
         self.spell_frame.pack_propagate(False)
-#         self.frame.rowconfigure(0, minsize = 40)
         # SPELL BUTTONS, keep refs to only spell buttons
         self.spell_buttons = []
         # STRUCT THAT HOLDS SPELLS ADDED TO GRIMOIRE, in bottom listbox
@@ -24728,6 +24730,8 @@ class App(tk.Frame):
                 else:# ADD TO GRIMOIRE
                     self.grimoire[name] = 1
                     self.grim_lbox.insert('end',name.replace('_',' ')+' '+'1')
+                j = self.spell_total.get()
+                self.spell_total.set(j+1)
         adder = partial(add)
         self.add_button = tk.Button(self.addremove_frame, text = '+', height = 4, width = 1, fg = 'indianred', highlightbackground = 'black', font = ('chalkduster', 38), relief = 'raised', command = adder)
         # REMOVE
@@ -24740,6 +24744,8 @@ class App(tk.Frame):
                 ix = name.find('•')
                 name = name[:ix]
                 if name in self.grimoire.keys():
+                    j = self.spell_total.get()
+                    self.spell_total.set(j-1)
                     count = self.grimoire[name]
                     if count == 1:#REMOVE FROM struct and lbox
                         all = self.grim_lbox.get(0,'end')
@@ -24775,6 +24781,10 @@ class App(tk.Frame):
         self.bg_canvas.create_window(root.winfo_screenwidth()//2, 200, window = self.spell_frame)
         # SAVE / LOAD / MAIN MENU BUTTONS between frames
         def save_grim():
+            # constrain save size
+            if self.spell_count.get() < 60:
+                self.save_grim_var.set('grimoire minimum 60 spells')
+                return
             fname = self.save_grim_var.get()
             saves = [s for r,d,s in walk('./Grimoires')][0]
             saves = [s for s in saves[:] if s[0] != '.']
@@ -24819,6 +24829,7 @@ class App(tk.Frame):
             self.grimoire_save_btns.append(cancel_b)
         self.load_btn = tk.Button(self.bg_canvas, text = 'LOAD', wraplength = 190, font = ('chalkduster', 22), fg='indianred', highlightbackground = 'tan3', command=load_grim)
         self.bg_canvas.create_window(int(root.winfo_screenwidth()*0.666)-200, 350, window = self.load_btn)
+        # MAIN MENU
         def back_main():
             for b in self.spell_buttons:
                 b.destroy()
@@ -24829,6 +24840,11 @@ class App(tk.Frame):
             self.choose_num_players()
         self.main_menu_btn = tk.Button(self.bg_canvas, text = 'MAIN MENU', wraplength = 190, font = ('chalkduster', 22), fg='indianred', highlightbackground = 'tan3', command=back_main)
         self.bg_canvas.create_window(int(root.winfo_screenwidth()*0.999)-200, 350, window = self.main_menu_btn)
+        # SPELL COUNT TOTAL LABEL
+        self.spell_total = tk.IntVar()
+        self.spell_total.set(0)
+        self.spell_total_label = tk.Label(self.bg_canvas, textvariable = self.spell_total, bg = 'black', fg = 'indianred')
+        self.bg_canvas.create_window(int(root.winfo_screenwidth()*0.999)-300, 350, window = self.spell_total_label)
         # SECOND BD IMG BOTTOM SCREEN
         self.bd_img2 = ImageTk.PhotoImage(Image.open('border.png').resize((root.winfo_screenwidth()-130, root.winfo_screenheight()//3+104)))
         self.bg_canvas.create_image(root.winfo_screenwidth()//2, root.winfo_screenheight()//3+300, image =self.bd_img2)
@@ -24838,31 +24854,34 @@ class App(tk.Frame):
         self.sb = tk.Scrollbar(self.frame2)
         # LISTBOX
         self.grim_lbox = tk.Listbox(self.frame2, height = 12, width = 158, yscrollcommand = self.sb.set, selectmode = 'single', font = 'kokonor',bg = 'black', fg = 'indianred', relief = 'sunken', borderwidth = 6)
-        
-        
-        
+        # CLICK ON LISTBOX JUMP TO SPELL
         def clickEvent(event):
-            print('lbox click')
-            print(event)
-            #<VirtualEvent event x=0 y=0>
-            '''
-            self.listBox.bind("<Button-3>", self.rightClick)
-             def rightClick(self,event):
-     self.listBox.selection_clear(0,tk.END)
-     self.listBox.selection_set(self.listBox.nearest(event.y))
-     self.listBox.activate(self.listBox.nearest(event.y))
-            '''
+            selection = event.widget.curselection()
+            if selection:
+                index = selection[0]
+                row = event.widget.get(index)
+                ix = row.find('•')
+                name = row[:ix].rstrip(' ')
+                ix2 = 0
+                for i,s in enumerate(self.spell_list[:]):
+                    if s.name.replace('_',' ') == name:
+                        ix2 = i
+                app.selected_btn = []
+                for btn in self.spell_buttons:
+                    btn.destroy()
+                self.spell_list = list(self.spell_list[ix2:])+list(self.spell_list[:ix2])
+                for spell in self.spell_list[0:5]:
+                    func = partial(depress)
+                    b1 = tk.Button(self.spell_frame, text = spell.name.replace('_',' ') + ' •'+str(spell.cost), wraplength = 190, font = ('chalkduster', 17), fg='indianred', highlightbackground = 'tan3')
+                    b1.config(command = lambda btn = b1 : func(btn=btn))
+                    b1.pack(side = 'left', fill = 'both', expand = True)
+                    b1.bind('<Button-2>', lambda event, b = b1, n = spell.name.replace('_',' ') : app.action_info(event, name = n, button = b))
+                    self.spell_buttons.append(b1)
         self.grim_lbox.bind('<<ListboxSelect>>', clickEvent)
-        
-        
-        
         self.sb.config(command = self.grim_lbox.yview)
         self.grim_lbox.pack(side = 'left', fill = 'y', expand = 1)
         self.sb.pack(side = 'right', fill = 'y')
         self.bg_canvas.create_window(root.winfo_screenwidth()//2, root.winfo_screenheight()//3+300, window = self.frame2)
-        
-        
-        
         
         
     def page_grimoire_spells(self, event = None, tup_list = None, index = None):
