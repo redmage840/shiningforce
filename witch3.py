@@ -8,11 +8,7 @@
 # dragon makes redundant move when out of acts, seeking melee targets, before free fly move
 # dragon iceblast can hit self
 
-# hawk attack vis, move hawk back and forth
-
 # levels where you must encroach on groups of mostly stationary enemies, to progress through some terrain/walls/rooms
-
-# need to add second column in grimoire editor listbox? someway to increment the count and still be able to use the same name/access
 
 # way to incr chronomncr acts
 
@@ -18856,12 +18852,19 @@ class Hunting_Hawk(Summon):
                 
     def hawk_attack(self, id, lockname):
         ent = app.ent_dict[id]
-        app.vis_dict['Hawk_Attack'] = Vis(name = 'Hawk_Attack', loc = ent.loc[:])
-        app.canvas.create_image(ent.loc[0]*100+50-app.moved_right, ent.loc[1]*100+50-app.moved_down, image = app.vis_dict['Hawk_Attack'].img, tags = 'Hawk_Attack')
-        def cleanup_hawk_attack():
-            app.canvas.delete('Hawk_Attack')
-            del app.vis_dict['Hawk_Attack']
-        root.after(1666, cleanup_hawk_attack)
+        old_loc = ent.loc[:]
+        origin = self.loc[:]
+        lock(Bot.ai_flying_move, self, ent.loc[:])
+        lock(Bot.ai_flying_move, self, origin)
+        ent.loc = old_loc
+        app.grid[old_loc[0]][old_loc[1]] = ent.id
+#         ent = app.ent_dict[id]
+#         app.vis_dict['Hawk_Attack'] = Vis(name = 'Hawk_Attack', loc = ent.loc[:])
+#         app.canvas.create_image(ent.loc[0]*100+50-app.moved_right, ent.loc[1]*100+50-app.moved_down, image = app.vis_dict['Hawk_Attack'].img, tags = 'Hawk_Attack')
+#         def cleanup_hawk_attack():
+#             app.canvas.delete('Hawk_Attack')
+#             del app.vis_dict['Hawk_Attack']
+#         root.after(1666, cleanup_hawk_attack)
         my_agl = self.get_abl('agl')
         tar_agl = app.ent_dict[id].get_abl('agl')
         if to_hit(my_agl, tar_agl) == True:
