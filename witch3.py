@@ -1,12 +1,12 @@
+# put labels showing grimoire name next to 'select' btn in grimoire_editor()
+
+# grimoire_editor(), on add spell to grim_lbox, jump-to/highlight that row
+
+# instead of start level popup, victory popup, just put big text object, disable all input, create_window of button on main canvas (confirm/ok)
+
 # should use of entomb remove from entomb_deck for turn/round?
 
 # in select mode of grimoire editor, after choosing campaign mode, check to see that additional keypress/buttonpresses are not accepted while the 'SELECT' btn is pressed and setting the wait_var
-
-# grimoires now have minimum size 60 and can contain MULTIPLES of the same spell
-# need to randomize/select the spells available through ENTOMB
-# 1 solution: Add another turn phase, or during start of turn, handle window into avialable entomb spells
-# 2 during the same phase that replenishes the protag_obj magick, handle selection of available Entomb spells for that turn
-# ENTOMB should only 'see' this 'window'
 
 # when to select grimoire, attach grimoire object for 2 player duel
 # make sure grimoire object is saved and passed properly with protag_obj through level progression
@@ -1329,6 +1329,14 @@ class Vis():
             self.anim_dict = {}
             self.anim_counter = 0
             for k,v in app.toxic_miasma_anims.items():
+                self.anim_dict[k] = v
+        elif name == 'Cleanse_with_Fire':
+            self.name = name
+            self.img = app.cleanse_with_fire_anims[0]
+            self.loc = loc
+            self.anim_dict = {}
+            self.anim_counter = 0
+            for k,v in app.cleanse_with_fire_anims.items():
                 self.anim_dict[k] = v
         else:
             self.name = name
@@ -10026,6 +10034,11 @@ class Inquisitor(Summon):
         def cleanup_cleanse(n):
             del app.vis_dict[n]
             app.canvas.delete(n)
+        for s in sqrs:
+            n = 'Cleanse' + str(app.count)
+            app.count += 1
+            app.vis_dict[n] = Vis(name = 'Cleanse_with_Fire', loc = s[:])
+            root.after(1999, lambda n = n : cleanup_cleanse(n))
         def cleanse_loop(ids):
             if ids == []:
                 self.finish_cleanse_with_fire()
@@ -10037,19 +10050,13 @@ class Inquisitor(Summon):
                 app.get_focus(id)
                 ids = ids[1:]
                 ent = app.ent_dict[id]
-                s = ent.loc[:]
-                n = 'Cleanse' + str(app.count) # not an effect, just need unique int
-                app.count += 1 # that is why this is incr manually here, no Effect init
-                app.vis_dict[n] = Vis(name = 'Cleanse_with_Fire', loc = s)
                 if to_hit(self.get_abl('wis'), ent.get_abl('wis')):
                     d = damage(self.get_abl('psyche'), ent.get_abl('psyche'))
-                    root.after(1555, lambda n = n : cleanup_cleanse(n))
                     lock(apply_damage, self, ent, -d, 'fire', 'Cleanse with Fire', 'ranged')
                     cleanse_loop(ids)
                 else:
                     miss(ent.loc)
                     root.after(1555, lambda t = 'text' : app.canvas.delete(t))
-                    root.after(1555, lambda n = n : cleanup_cleanse(n))
                     root.after(1666, lambda ids = ids : cleanse_loop(ids))
         cleanse_loop(ids)
         
@@ -11490,7 +11497,7 @@ class Fiend(Summon):
     def __init__(self, name, id, img, loc, owner, level):
         if level == 1:
             self.actions = {'Move':self.move, 'Suplex':self.suplex, 'Chain Lightning':self.chain_lightning, 'Hidden Haymaker':self.hidden_haymaker, 'Overload':self.overload, 'Roar' : self.roar}
-            self.str = 6
+            self.str = 8
             self.agl = 6
             self.end = 6
             self.mm = 6
@@ -11510,7 +11517,7 @@ class Fiend(Summon):
             self.level = level
         elif level == 2:
             self.actions = {'Move':self.move, 'Suplex':self.suplex, 'Chain Lightning':self.chain_lightning, 'Hidden Haymaker':self.hidden_haymaker, 'Overload':self.overload, 'Roar' : self.roar}
-            self.str = 7
+            self.str = 9
             self.agl = 7
             self.end = 7
             self.mm = 7
@@ -19164,31 +19171,6 @@ class Witch(Summon):
         self.entomb_used = False
         if name == 'Agnes_Sampson':
             if level == 1:
-                # Spell is subclass of Set,namedtuple
-                # can access by key.func, key.cost, key.times_imprint, key.times_cast
-                self.arcane_dict['Psionic_Push'] = Spell('Psionic_Push',self.psionic_push, 2, 0, 0)
-                self.arcane_dict["Minerva's_Gift"] = Spell("Minerva's_Gift",self.minervas_gift, 1, 0, 0)
-                self.arcane_dict['Bewitch'] = Spell('Bewitch',self.bewitch, 1, 0, 0)
-                self.arcane_dict['Read_the_Stars'] = Spell('Read_the_Stars',self.read_the_stars, 1, 0, 0)
-                self.arcane_dict['Energize'] = Spell('Energize',self.energize, 2, 0, 0)
-                self.arcane_dict['Psi_Blades'] = Spell('Psi_Blades',self.psi_blades, 1, 0, 0)
-                self.arcane_dict['Cosmic_Sight'] = Spell('Cosmic_Sight',self.cosmic_sight, 1, 0, 0)
-                self.arcane_dict['Foul_Familiar'] = Spell('Foul_Familiar',self.foul_familiar, 3, 0, 0)
-                self.arcane_dict['Plague'] = Spell('Plague',self.plague, 5, 0, 0)
-                self.arcane_dict['Pestilence'] = Spell('Pestilence',self.pestilence, 11, 0, 0)
-                self.arcane_dict['Curse_of_Oriax'] = Spell('Curse_of_Oriax',self.curse_of_oriax, 4, 0, 0)
-                self.arcane_dict['Demonic_Sight'] = Spell('Demonic_Sight',self.demonic_sight, 3, 0, 0)
-                self.arcane_dict['Molecular_Subversion'] = Spell('Molecular_Subversion',self.molecular_subversion, 6, 0, 0)
-                self.arcane_dict['Plutonian_Cloak'] = Spell('Plutonian_Cloak',self.plutonian_cloak, 6, 0, 0)
-                self.arcane_dict['Hidden_From_the_Stars'] = Spell('Hidden_From_the_Stars',self.hidden_from_the_stars, 4, 0, 0)
-                self.arcane_dict['Strength_of_the_Void'] = Spell('Strength_of_the_Void',self.strength_of_the_void, 4, 0, 0)
-                self.arcane_dict['Iron_Spirit'] = Spell('Iron_Spirit',self.iron_spirit, 4, 0, 0)
-                self.arcane_dict["Mercury's_Blessing"] = Spell("Mercury's_Blessing",self.mercurys_blessing, 4, 0, 0)
-                self.arcane_dict['Gift_of_Mars'] = Spell('Gift_of_Mars',self.gift_of_mars, 4, 0, 0)
-                self.arcane_dict['Gravity'] = Spell('Gravity',self.gravity, 5, 0, 0)
-                self.arcane_dict["Beleth's_Command"] = Spell("Beleth's_Command",self.beleths_command, 7, 0, 0)
-                self.arcane_dict['Lift'] = Spell('Lift',self.lift, 3, 0, 0)
-                self.arcane_dict['Cloister'] = Spell('Cloister',self.cloister, 3, 0, 0)
                 self.base_smns = 1
                 self.smns = 1
                 self.base_acts = 1
@@ -19217,66 +19199,6 @@ class Witch(Summon):
 #                 self.base_magick = 75
                 self.magick_regen = 2
             elif level == 2:
-                print('in level 2')
-#                 self.arcane_dict = deepcopy(app.arcane_dict)
-#                 self.arcane_dict['Boiling_Blood'] = Spell('Boiling_Blood',self.boiling_blood, 2,0,0)
-#                 self.arcane_dict['Dark_Sun'] = Spell('Dark_Sun',self.dark_sun, 3,0,0)
-#                 self.arcane_dict['Meditate'] = Spell('Meditate',self.meditate, 2,0,0)
-#                 self.arcane_dict['Legerdemain'] = Spell('Legerdemain',self.legerdemain, 2,0,0)
-#                 self.arcane_dict['Grasp_of_the_Old_Ones'] = Spell('Grasp_of_the_Old_Ones',self.grasp_of_the_old_ones, 3,0,0)
-#                 self.arcane_dict['Horrid_Wilting'] = Spell('Horrid_Wilting',self.horrid_wilting, 7,0,0)
-#                 self.arcane_dict['Mind_Rot'] = Spell('Mind_Rot',self.mind_rot, 8,0,0)
-#                 self.arcane_dict['Dust_Devil'] = Spell('Dust_Devil',self.dust_devil, 5,0,0)
-#                 self.arcane_dict['Dispel'] = Spell('Dispel',self.dispel, 7,0,0)
-#                 self.arcane_dict['Disintegrate'] = Spell('Disintegrate',self.disintegrate, 5,0,0)
-#                 self.arcane_dict['Mummify'] = Spell('Mummify',self.mummify, 3,0,0)
-#                 self.arcane_dict['Immolate'] = Spell('Immolate',self.immolate, 8,0,0)
-#                 self.arcane_dict['Command_of_Osiris'] = Spell('Command_of_Osiris',self.command_of_osiris, 8,0,0)
-#                 self.arcane_dict['Psionic_Push'] = Spell('Psionic_Push',self.psionic_push, 2, 0, 0)
-#                 self.arcane_dict["Minerva's_Gift"] = Spell("Minerva's_Gift",self.minervas_gift, 1, 0, 0)
-#                 self.arcane_dict['Bewitch'] = Spell('Bewitch',self.bewitch, 3, 0, 0)
-#                 self.arcane_dict['Read_the_Stars'] = Spell('Read_the_Stars',self.read_the_stars, 2, 0, 0)
-#                 self.arcane_dict['Energize'] = Spell('Energize',self.energize, 3, 0, 0)
-#                 self.arcane_dict['Psi_Blades'] = Spell('Psi_Blades',self.psi_blades, 3, 0, 0)
-#                 self.arcane_dict['Cosmic_Sight'] = Spell('Cosmic_Sight',self.cosmic_sight, 2, 0, 0)
-#                 self.arcane_dict['Astrological_Guidance'] = Spell('Astrological_Guidance',self.astrological_guidance, 4, 0, 0)
-#                 self.arcane_dict['Foul_Familiar'] = Spell('Foul_Familiar',self.foul_familiar, 3, 0, 0)
-#                 self.arcane_dict['Plague'] = Spell('Plague',self.plague, 5, 0, 0)
-#                 self.arcane_dict['Pestilence'] = Spell('Pestilence',self.pestilence, 11, 0, 0)
-#                 self.arcane_dict['Curse_of_Oriax'] = Spell('Curse_of_Oriax',self.curse_of_oriax, 5, 0, 0)
-#                 self.arcane_dict['Demonic_Sight'] = Spell('Demonic_Sight',self.demonic_sight, 3, 0, 0)
-#                 self.arcane_dict['Molecular_Subversion'] = Spell('Molecular_Subversion',self.molecular_subversion, 4, 0, 0)
-#                 self.arcane_dict['Plutonian_Cloak'] = Spell('Plutonian_Cloak',self.plutonian_cloak, 6, 0, 0)
-#                 self.arcane_dict['Hidden_From_the_Stars'] = Spell('Hidden_From_the_Stars',self.hidden_from_the_stars, 4, 0, 0)
-#                 self.arcane_dict['Strength_of_the_Void'] = Spell('Strength_of_the_Void',self.strength_of_the_void, 4, 0, 0)
-#                 self.arcane_dict['Iron_Spirit'] = Spell('Iron_Spirit',self.iron_spirit, 4, 0, 0)
-#                 self.arcane_dict["Mercury's_Blessing"] = Spell("Mercury's_Blessing",self.mercurys_blessing, 4, 0, 0)
-#                 self.arcane_dict['Gift_of_Mars'] = Spell('Gift_of_Mars',self.gift_of_mars, 4, 0, 0)
-#                 self.arcane_dict['Gravity'] = Spell('Gravity',self.gravity, 6, 0, 0)
-#                 self.arcane_dict["Beleth's_Command"] = Spell("Beleth's_Command",self.beleths_command, 7, 0, 0)
-#                 self.arcane_dict['Lift'] = Spell('Lift',self.lift, 3, 0, 0)
-#                 self.arcane_dict['Cloister'] = Spell('Cloister',self.cloister, 3, 0, 0)
-#                 self.arcane_dict['Aura_of_Agony'] = Spell('Aura_of_Agony',self.aura_of_agony, 5, 0, 0)
-#                 self.arcane_dict['Dampening_Emanation'] = Spell('Dampening_Emanation',self.dampening_emanation, 7, 0, 0)
-#                 self.arcane_dict['Blind'] = Spell('Blind',self.blind, 6, 0, 0)
-#                 self.arcane_dict['Enmeshing_Coils'] = Spell('Enmeshing_Coils',self.enmeshing_coils, 7, 0, 0)
-#                 self.arcane_dict['Mirror_Armor'] = Spell('Mirror_Armor',self.mirror_armor, 6, 0, 0)
-#                 self.arcane_dict['Forcefield'] = Spell('Forcefield',self.forcefield, 5, 0, 0)
-#                 self.arcane_dict['Vengeance'] = Spell('Vengeance',self.vengeance, 8, 0, 0)
-#                 self.arcane_dict['Pain'] = Spell('Pain',self.pain, 5, 0, 0)
-#                 self.arcane_dict['Torment'] = Spell('Torment',self.torment, 9, 0, 0)
-#                 self.arcane_dict['Hatred'] = Spell('Hatred',self.hatred, 6, 0, 0)
-#                 self.arcane_dict['Fangs_of_Apophis'] = Spell('Fangs_of_Apophis',self.fangs_of_apophis, 4, 0, 0)
-#                 self.arcane_dict['Wreathed_in_Flame'] = Spell('Wreathed_in_Flame',self.wreathed_in_flame, 5, 0, 0)
-#                 self.arcane_dict['Mass_Hysteria'] = Spell('Mass_Hysteria',self.mass_hysteria, 5, 0, 0)
-#                 self.arcane_dict['Reaping_of_Saturnus'] = Spell('Reaping_of_Saturnus',self.reaping_of_saturnus, 7, 0, 0)
-#                 self.arcane_dict['Genjutsushi'] = Spell('Genjutsushi',self.genjutsushi, 3, 0, 0)
-#                 self.arcane_dict['Summon_Lesser_Demon'] = Spell('Summon_Lesser_Demon',self.summon_lesser_demon, 15, 0, 0)
-#                 self.arcane_dict['Summon_Cenobite'] = Spell('Summon_Cenobite',self.summon_cenobite, 15, 0, 0)
-#                 self.arcane_dict['Animate_Tomb'] = Spell('Animate_Tomb',self.animate_tomb, 4, 0, 0)
-#                 self.arcane_dict['Hunting_Hawk'] = Spell('Hunting_Hawk',self.hunting_hawk, 3, 0, 0)
-#                 self.arcane_dict['Barrow_Wight'] = Spell('Barrow_Wight',self.barrow_wight, 6, 0, 0)
-#                 self.arcane_dict['Haunted_Cairn'] = Spell('Haunted_Cairn',self.haunted_cairn, 12, 0, 0)
                 self.base_smns = 1
                 self.smns = 1
                 self.base_acts = 1
@@ -24466,6 +24388,9 @@ class App(tk.Frame):
         super().__init__(master)
         self.master = master
         self.pack()
+        self.grimoire_name_tmp = tk.StringVar()
+        self.grimoire_p1 = {}
+        self.grimoire_p2 = {}
         self.music_volume = tk.DoubleVar()
         self.music_volume.set(1)
         self.effects_volume = tk.DoubleVar()
@@ -24612,6 +24537,13 @@ class App(tk.Frame):
         for i, anim in enumerate(anims):
             a = ImageTk.PhotoImage(Image.open('animations/Pounce/' + anim))
             self.pounce_anims[i] = a
+            
+        self.cleanse_with_fire_anims = {}
+        anims = [a for r,d,a in walk('animations/Cleanse_with_Fire/')][0]
+        anims = [a for a in anims[:] if a[0] != '.']
+        for i, anim in enumerate(anims):
+            a = ImageTk.PhotoImage(Image.open('animations/Cleanse_with_Fire/' + anim))
+            self.cleanse_with_fire_anims[i] = a
             
         self.choose_num_players()
         
@@ -24837,7 +24769,8 @@ class App(tk.Frame):
             self.scroll_frame = VerticalScrolledFrame(root)
             self.bg_canvas.create_window(root.winfo_screenwidth()/2 + root.winfo_screenwidth()/8, root.winfo_screenheight()-220, anchor = 'nw', window = self.scroll_frame)
             self.grimoire_save_btns = []
-            def load_grimoire(grim_dict):
+            def load_grimoire(grim_dict, filename):
+                app.grimoire_name_tmp.set(filename)
                 # clear grimoire struct and lbox, populate both with clicked grimoire
                 self.grimoire = grim_dict
                 self.grim_lbox.delete(0,'end')
@@ -24852,7 +24785,7 @@ class App(tk.Frame):
                 # expand filename into readable
                 with open('Grimoires/'+g, 'r') as f:
                     grim_dict = eval(f.readline().strip('\n'))
-                    cmd = partial(load_grimoire, grim_dict)
+                    cmd = partial(load_grimoire, grim_dict, g)
                     b = tk.Button(self.scroll_frame.interior, text = g, width = 13, wraplength = 190, fg = 'indianred', highlightbackground = 'black', font = ('chalkduster', 22), relief = 'raised', command = cmd)
                     b.pack() 
                     self.grimoire_save_btns.append(b)
@@ -24872,19 +24805,40 @@ class App(tk.Frame):
             self.choose_num_players()
         self.main_menu_btn = tk.Button(self.bg_canvas, text = 'MAIN MENU', wraplength = 190, font = ('chalkduster', 22), fg='indianred', highlightbackground = 'tan3', command=back_main)
         self.bg_canvas.create_window(int(root.winfo_screenwidth()*0.999)-200, 350, window = self.main_menu_btn)
-        # SELECT BUTTON
+        # SELECT FUNC
         if mode == 'select':
             def select():
                 if self.spell_total.get() >= 60:
+                    app.grimoire_p1 = deepcopy(app.grimoire)
+                    self.name_label1.config(fg='indianred')
                     # sets lockvar called from create_map_curs_context
-                    app.dethloks[lockname].set(1)
-            self.select_btn = tk.Button(self.bg_canvas, text = 'SELECT', wraplength = 190, font = ('chalkduster', 22), fg='indianred', highlightbackground = 'tan3', command=select)
-            self.bg_canvas.create_window(int(root.winfo_screenwidth()*0.999)-380, 350, window = self.select_btn)
+                    if app.num_players == 1:
+                        app.dethloks[lockname].set(1)
+            def select2():
+                if self.spell_total.get() >= 60:
+                    app.grimoire_p2 = deepcopy(app.grimoire)
+                    self.name_label2.config(fg='indianred')
+                    # sets lockvar called from create_map_curs_context
+                    if app.grimoire_p1 != {}:
+                        app.dethloks[lockname].set(1)
+            # GRIMOIRE LABEL NAME P1
+            self.name_label1 = tk.Label(self.bg_canvas, text = 'P1 grimoire', bg='black')
+            self.bg_canvas.create_window(int(root.winfo_screenwidth()*0.999)-490, 365, window = self.name_label1)
+            # SELECT BUTTON PLAYER 1
+            self.select_btn = tk.Button(self.bg_canvas, text = 'SELECT P1', wraplength = 190, font = ('chalkduster', 22), fg='indianred', highlightbackground = 'tan3', command=select)
+            self.bg_canvas.create_window(int(root.winfo_screenwidth()*0.999)-380, 365, window = self.select_btn)
+            # GRIMOIRE LABEL NAME P2
+            self.name_label2 = tk.Label(self.bg_canvas, text = 'P2 grimoire', bg='black')
+            self.bg_canvas.create_window(int(root.winfo_screenwidth()*0.999)-490, 325, window = self.name_label2)
+            # SELECT BTN PLAYER 2
+            if app.num_players == 2:
+                self.select_btn2 = tk.Button(self.bg_canvas, text = 'SELECT P2', wraplength = 190, font = ('chalkduster', 22), fg='indianred', highlightbackground = 'tan3', command=select2)
+                self.bg_canvas.create_window(int(root.winfo_screenwidth()*0.999)-380, 325, window = self.select_btn2)
         # SPELL COUNT TOTAL LABEL
         self.spell_total = tk.IntVar()
         self.spell_total.set(0)
         self.spell_total_label = tk.Label(self.bg_canvas, textvariable = self.spell_total, bg = 'black', fg = 'indianred')
-        self.bg_canvas.create_window(int(root.winfo_screenwidth()*0.999)-300, 350, window = self.spell_total_label)
+        self.bg_canvas.create_window(100, 350, window = self.spell_total_label)
         # SECOND BD IMG BOTTOM SCREEN
         self.bd_img2 = ImageTk.PhotoImage(Image.open('border.png').resize((root.winfo_screenwidth()-130, root.winfo_screenheight()//3+104)))
         self.bg_canvas.create_image(root.winfo_screenwidth()//2, root.winfo_screenheight()//3+300, image =self.bd_img2)
@@ -25582,10 +25536,15 @@ class App(tk.Frame):
             app.dethloks[name] = tk.IntVar(0)
             self.grimoire_editor(mode = 'select', lockname = name)
             app.wait_variable(app.dethloks[name])
-            entomb_deck = []
-            for k,v in self.grimoire.items():
+            entomb_deck_p1 = []
+            for k,v in self.grimoire_p1.items():
                 for x in range(v):
-                    entomb_deck.append(k.replace(' ','_'))
+                    entomb_deck_p1.append(k.replace(' ','_'))
+            if self.num_players == 2:
+                app.entomb_deck_p2 = []
+                for k,v in self.grimoire_p2.items():
+                    for x in range(v):
+                        app.entomb_deck_p2.append(k.replace(' ','_'))
             for child in root.winfo_children():
                 if child._name != '!app':
                     child.destroy()
@@ -25667,7 +25626,7 @@ class App(tk.Frame):
             self.load_witch(witch = protaganist_object.name, player_num = 1, protaganist_object = protaganist_object)
         else:# LOADING FIRST LEVEL, NOT SAVE GAME
             # load/select grimoire here, that func should exit to load_witch
-            self.load_witch(witch = self.p1_witch, player_num = 1, protaganist_object = None, entomb_deck = entomb_deck[:])
+            self.load_witch(witch = self.p1_witch, player_num = 1, protaganist_object = None, entomb_deck = entomb_deck_p1[:])
 #             self.choose_witch()
         
     # Called twice for 2player mode, first call defaults to first player choice, second call passes player_num = 2
@@ -25775,7 +25734,7 @@ class App(tk.Frame):
             self.map_trigger_loop()
         # CHOOSE SECOND PLAYER WITCH
         elif self.num_players == 2 and player_num == 1:# and self.p2_witch == '':
-            self.load_witch(witch = self.p2_witch, player_num = 2)
+            self.load_witch(witch = self.p2_witch, player_num = 2, entomb_deck = app.entomb_deck_p2[:])
 #             self.choose_witch(player_num = 2)
         # EXIT CHOOSING IF BOTH FINISHED AND START TURN
         else: #self.num_players == 2 and self.p2_witch != '':
@@ -26013,18 +25972,19 @@ class App(tk.Frame):
     def generate_witch_magick(self):
         # p1
         witch = app.ent_dict[app.p1_witch]
+        shuffle(witch.entomb_deck)
         tombs = len([k for k,v in app.all_ents().items() if v.name == 'Tomb' and v.owner == witch.owner])
         witch.magick += witch.magick_regen
         witch.magick += (tombs*2)
         # p2
         if app.num_players == 2:
             witch = app.ent_dict[app.p2_witch]
+            shuffle(witch.entomb_deck)
             tombs = len([k for k,v in app.all_ents().items() if v.name == 'Tomb' and v.owner == witch.owner])
             witch.magick += witch.magick_regen
             if app.turn_counter == 0:
                 witch.magick += 5
             witch.magick += (tombs*2)
-        shuffle(witch.entomb_deck)
         self.handle_sot_effects()
         
     # Resolve start-of-turn effects on each entity AND loc_effects(on map)
