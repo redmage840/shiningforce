@@ -1,15 +1,8 @@
-# put labels showing grimoire name next to 'select' btn in grimoire_editor()
-
-# grimoire_editor(), on add spell to grim_lbox, jump-to/highlight that row
-
 # instead of start level popup, victory popup, just put big text object, disable all input, create_window of button on main canvas (confirm/ok)
 
 # should use of entomb remove from entomb_deck for turn/round?
 
 # in select mode of grimoire editor, after choosing campaign mode, check to see that additional keypress/buttonpresses are not accepted while the 'SELECT' btn is pressed and setting the wait_var
-
-# when to select grimoire, attach grimoire object for 2 player duel
-# make sure grimoire object is saved and passed properly with protag_obj through level progression
 
 # white dragon free fly away seeks locations that are outside of its current range (if reason is less than base)
 # dragon makes redundant move when out of acts, seeking melee targets, before free fly move
@@ -24687,9 +24680,15 @@ class App(tk.Frame):
                     self.grimoire[name] += 1
                     count = self.grimoire[name]
                     self.grim_lbox.insert(ix, name+' '+str(count))
+                    self.grim_lbox.selection_clear(0,'end')
+                    self.grim_lbox.selection_set(ix)
+                    self.grim_lbox.see(ix)
                 else:# ADD TO GRIMOIRE
                     self.grimoire[name] = 1
                     self.grim_lbox.insert('end',name.replace('_',' ')+' '+'1')
+                    self.grim_lbox.selection_clear(0,'end')
+                    self.grim_lbox.selection_set('end')
+                    self.grim_lbox.see(ix)
                 j = self.spell_total.get()
                 self.spell_total.set(j+1)
         adder = partial(add)
@@ -24711,6 +24710,9 @@ class App(tk.Frame):
                     if count == 1:#REMOVE FROM struct and lbox
                         all = self.grim_lbox.get(0,'end')
                         ix = all.index(name+' '+str(count))
+                        self.grim_lbox.selection_clear(0,'end')
+                        self.grim_lbox.selection_set(ix)
+                        self.grim_lbox.see(ix)
                         self.grim_lbox.delete(ix)
                         del self.grimoire[name]
                     else:# DECR COUNT
@@ -24720,6 +24722,9 @@ class App(tk.Frame):
                         self.grimoire[name] -= 1
                         count = self.grimoire[name]
                         self.grim_lbox.insert(ix, name+' '+str(count))
+                        self.grim_lbox.selection_clear(0,'end')
+                        self.grim_lbox.selection_set(ix)
+                        self.grim_lbox.see(ix)
                 else:
                     pass
         rmv = partial(remove) 
@@ -24813,6 +24818,8 @@ class App(tk.Frame):
                     self.name_label1.config(fg='indianred')
                     # sets lockvar called from create_map_curs_context
                     if app.num_players == 1:
+                        app.dethloks[lockname].set(1)
+                    elif app.num_players == 2 and app.grimoire_p2 != {}:
                         app.dethloks[lockname].set(1)
             def select2():
                 if self.spell_total.get() >= 60:
