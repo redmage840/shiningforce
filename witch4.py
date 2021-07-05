@@ -1,3 +1,6 @@
+# continue summon buttons grimoire_editor
+
+# witch4 is version testing this:
 # consider mixing smns and arcana in entomb deck, can either entomb a spell or summon a smn
 
 # put names of effects resolving in init q during eot/sot
@@ -19140,6 +19143,7 @@ class Witch(Summon):
         self.summon_count = 0
         self.arcane_dict = {}
         self.entomb_deck = entomb_deck
+        self.summons = []
         # populate ARCANE dict
         for k in entomb_deck:
             spl = app.arcane_dict[k]
@@ -19298,64 +19302,64 @@ class Witch(Summon):
                 self.base_spirit = 50
                 self.magick_regen = 2
             elif level == 2:
-                self.arcane_dict['Boiling_Blood'] = Spell('Boiling_Blood',self.boiling_blood, 2,0,0)
-                self.arcane_dict['Dark_Sun'] = Spell('Dark_Sun',self.dark_sun, 3,0,0)
-                self.arcane_dict['Meditate'] = Spell('Meditate',self.meditate, 2,0,0)
-                self.arcane_dict['Legerdemain'] = Spell('Legerdemain',self.legerdemain, 2,0,0)
-                self.arcane_dict['Grasp_of_the_Old_Ones'] = Spell('Grasp_of_the_Old_Ones',self.grasp_of_the_old_ones, 3,0,0)
-                self.arcane_dict['Horrid_Wilting'] = Spell('Horrid_Wilting',self.horrid_wilting, 7,0,0)
-                self.arcane_dict['Mind_Rot'] = Spell('Mind_Rot',self.mind_rot, 8,0,0)
-                self.arcane_dict['Dust_Devil'] = Spell('Dust_Devil',self.dust_devil, 5,0,0)
-                self.arcane_dict['Dispel'] = Spell('Dispel',self.dispel, 7,0,0)
-                self.arcane_dict['Disintegrate'] = Spell('Disintegrate',self.disintegrate, 5,0,0)
-                self.arcane_dict['Mummify'] = Spell('Mummify',self.mummify, 3,0,0)
-                self.arcane_dict['Immolate'] = Spell('Immolate',self.immolate, 8,0,0)
-                self.arcane_dict['Command_of_Osiris'] = Spell('Command_of_Osiris',self.command_of_osiris, 8,0,0)
-                self.arcane_dict['Psionic_Push'] = Spell('Psionic_Push',self.psionic_push, 2, 0, 0)
-                self.arcane_dict["Minerva's_Gift"] = Spell("Minerva's_Gift",self.minervas_gift, 1, 0, 0)
-                self.arcane_dict['Bewitch'] = Spell('Bewitch',self.bewitch, 3, 0, 0)
-                self.arcane_dict['Read_the_Stars'] = Spell('Read_the_Stars',self.read_the_stars, 2, 0, 0)
-                self.arcane_dict['Energize'] = Spell('Energize',self.energize, 3, 0, 0)
-                self.arcane_dict['Psi_Blades'] = Spell('Psi_Blades',self.psi_blades, 3, 0, 0)
-                self.arcane_dict['Cosmic_Sight'] = Spell('Cosmic_Sight',self.cosmic_sight, 2, 0, 0)
-                self.arcane_dict['Astrological_Guidance'] = Spell('Astrological_Guidance',self.astrological_guidance, 4, 0, 0)
-                self.arcane_dict['Foul_Familiar'] = Spell('Foul_Familiar',self.foul_familiar, 3, 0, 0)
-                self.arcane_dict['Plague'] = Spell('Plague',self.plague, 5, 0, 0)
-                self.arcane_dict['Pestilence'] = Spell('Pestilence',self.pestilence, 11, 0, 0)
-                self.arcane_dict['Curse_of_Oriax'] = Spell('Curse_of_Oriax',self.curse_of_oriax, 5, 0, 0)
-                self.arcane_dict['Demonic_Sight'] = Spell('Demonic_Sight',self.demonic_sight, 3, 0, 0)
-                self.arcane_dict['Molecular_Subversion'] = Spell('Molecular_Subversion',self.molecular_subversion, 4, 0, 0)
-                self.arcane_dict['Plutonian_Cloak'] = Spell('Plutonian_Cloak',self.plutonian_cloak, 6, 0, 0)
-                self.arcane_dict['Hidden_From_the_Stars'] = Spell('Hidden_From_the_Stars',self.hidden_from_the_stars, 4, 0, 0)
-                self.arcane_dict['Strength_of_the_Void'] = Spell('Strength_of_the_Void',self.strength_of_the_void, 4, 0, 0)
-                self.arcane_dict['Iron_Spirit'] = Spell('Iron_Spirit',self.iron_spirit, 4, 0, 0)
-                self.arcane_dict["Mercury's_Blessing"] = Spell("Mercury's_Blessing",self.mercurys_blessing, 4, 0, 0)
-                self.arcane_dict['Gift_of_Mars'] = Spell('Gift_of_Mars',self.gift_of_mars, 4, 0, 0)
-                self.arcane_dict['Gravity'] = Spell('Gravity',self.gravity, 6, 0, 0)
-                self.arcane_dict["Beleth's_Command"] = Spell("Beleth's_Command",self.beleths_command, 7, 0, 0)
-                self.arcane_dict['Lift'] = Spell('Lift',self.lift, 3, 0, 0)
-                self.arcane_dict['Cloister'] = Spell('Cloister',self.cloister, 3, 0, 0)
-                self.arcane_dict['Aura_of_Agony'] = Spell('Aura_of_Agony',self.aura_of_agony, 5, 0, 0)
-                self.arcane_dict['Dampening_Emanation'] = Spell('Dampening_Emanation',self.dampening_emanation, 7, 0, 0)
-                self.arcane_dict['Blind'] = Spell('Blind',self.blind, 6, 0, 0)
-                self.arcane_dict['Enmeshing_Coils'] = Spell('Enmeshing_Coils',self.enmeshing_coils, 7, 0, 0)
-                self.arcane_dict['Mirror_Armor'] = Spell('Mirror_Armor',self.mirror_armor, 6, 0, 0)
-                self.arcane_dict['Forcefield'] = Spell('Forcefield',self.forcefield, 5, 0, 0)
-                self.arcane_dict['Vengeance'] = Spell('Vengeance',self.vengeance, 8, 0, 0)
-                self.arcane_dict['Pain'] = Spell('Pain',self.pain, 5, 0, 0)
-                self.arcane_dict['Torment'] = Spell('Torment',self.torment, 9, 0, 0)
-                self.arcane_dict['Hatred'] = Spell('Hatred',self.hatred, 6, 0, 0)
-                self.arcane_dict['Fangs_of_Apophis'] = Spell('Fangs_of_Apophis',self.fangs_of_apophis, 4, 0, 0)
-                self.arcane_dict['Wreathed_in_Flame'] = Spell('Wreathed_in_Flame',self.wreathed_in_flame, 5, 0, 0)
-                self.arcane_dict['Mass_Hysteria'] = Spell('Mass_Hysteria',self.mass_hysteria, 5, 0, 0)
-                self.arcane_dict['Reaping_of_Saturnus'] = Spell('Reaping_of_Saturnus',self.reaping_of_saturnus, 7, 0, 0)
-                self.arcane_dict['Genjutsushi'] = Spell('Genjutsushi',self.genjutsushi, 3, 0, 0)
-                self.arcane_dict['Summon_Lesser_Demon'] = Spell('Summon_Lesser_Demon',self.summon_lesser_demon, 15, 0, 0)
-                self.arcane_dict['Summon_Cenobite'] = Spell('Summon_Cenobite',self.summon_cenobite, 15, 0, 0)
-                self.arcane_dict['Animate_Tomb'] = Spell('Animate_Tomb',self.animate_tomb, 4, 0, 0)
-                self.arcane_dict['Hunting_Hawk'] = Spell('Hunting_Hawk',self.hunting_hawk, 3, 0, 0)
-                self.arcane_dict['Barrow_Wight'] = Spell('Barrow_Wight',self.barrow_wight, 6, 0, 0)
-                self.arcane_dict['Haunted_Cairn'] = Spell('Haunted_Cairn',self.haunted_cairn, 12, 0, 0)
+#                 self.arcane_dict['Boiling_Blood'] = Spell('Boiling_Blood',self.boiling_blood, 2,0,0)
+#                 self.arcane_dict['Dark_Sun'] = Spell('Dark_Sun',self.dark_sun, 3,0,0)
+#                 self.arcane_dict['Meditate'] = Spell('Meditate',self.meditate, 2,0,0)
+#                 self.arcane_dict['Legerdemain'] = Spell('Legerdemain',self.legerdemain, 2,0,0)
+#                 self.arcane_dict['Grasp_of_the_Old_Ones'] = Spell('Grasp_of_the_Old_Ones',self.grasp_of_the_old_ones, 3,0,0)
+#                 self.arcane_dict['Horrid_Wilting'] = Spell('Horrid_Wilting',self.horrid_wilting, 7,0,0)
+#                 self.arcane_dict['Mind_Rot'] = Spell('Mind_Rot',self.mind_rot, 8,0,0)
+#                 self.arcane_dict['Dust_Devil'] = Spell('Dust_Devil',self.dust_devil, 5,0,0)
+#                 self.arcane_dict['Dispel'] = Spell('Dispel',self.dispel, 7,0,0)
+#                 self.arcane_dict['Disintegrate'] = Spell('Disintegrate',self.disintegrate, 5,0,0)
+#                 self.arcane_dict['Mummify'] = Spell('Mummify',self.mummify, 3,0,0)
+#                 self.arcane_dict['Immolate'] = Spell('Immolate',self.immolate, 8,0,0)
+#                 self.arcane_dict['Command_of_Osiris'] = Spell('Command_of_Osiris',self.command_of_osiris, 8,0,0)
+#                 self.arcane_dict['Psionic_Push'] = Spell('Psionic_Push',self.psionic_push, 2, 0, 0)
+#                 self.arcane_dict["Minerva's_Gift"] = Spell("Minerva's_Gift",self.minervas_gift, 1, 0, 0)
+#                 self.arcane_dict['Bewitch'] = Spell('Bewitch',self.bewitch, 3, 0, 0)
+#                 self.arcane_dict['Read_the_Stars'] = Spell('Read_the_Stars',self.read_the_stars, 2, 0, 0)
+#                 self.arcane_dict['Energize'] = Spell('Energize',self.energize, 3, 0, 0)
+#                 self.arcane_dict['Psi_Blades'] = Spell('Psi_Blades',self.psi_blades, 3, 0, 0)
+#                 self.arcane_dict['Cosmic_Sight'] = Spell('Cosmic_Sight',self.cosmic_sight, 2, 0, 0)
+#                 self.arcane_dict['Astrological_Guidance'] = Spell('Astrological_Guidance',self.astrological_guidance, 4, 0, 0)
+#                 self.arcane_dict['Foul_Familiar'] = Spell('Foul_Familiar',self.foul_familiar, 3, 0, 0)
+#                 self.arcane_dict['Plague'] = Spell('Plague',self.plague, 5, 0, 0)
+#                 self.arcane_dict['Pestilence'] = Spell('Pestilence',self.pestilence, 11, 0, 0)
+#                 self.arcane_dict['Curse_of_Oriax'] = Spell('Curse_of_Oriax',self.curse_of_oriax, 5, 0, 0)
+#                 self.arcane_dict['Demonic_Sight'] = Spell('Demonic_Sight',self.demonic_sight, 3, 0, 0)
+#                 self.arcane_dict['Molecular_Subversion'] = Spell('Molecular_Subversion',self.molecular_subversion, 4, 0, 0)
+#                 self.arcane_dict['Plutonian_Cloak'] = Spell('Plutonian_Cloak',self.plutonian_cloak, 6, 0, 0)
+#                 self.arcane_dict['Hidden_From_the_Stars'] = Spell('Hidden_From_the_Stars',self.hidden_from_the_stars, 4, 0, 0)
+#                 self.arcane_dict['Strength_of_the_Void'] = Spell('Strength_of_the_Void',self.strength_of_the_void, 4, 0, 0)
+#                 self.arcane_dict['Iron_Spirit'] = Spell('Iron_Spirit',self.iron_spirit, 4, 0, 0)
+#                 self.arcane_dict["Mercury's_Blessing"] = Spell("Mercury's_Blessing",self.mercurys_blessing, 4, 0, 0)
+#                 self.arcane_dict['Gift_of_Mars'] = Spell('Gift_of_Mars',self.gift_of_mars, 4, 0, 0)
+#                 self.arcane_dict['Gravity'] = Spell('Gravity',self.gravity, 6, 0, 0)
+#                 self.arcane_dict["Beleth's_Command"] = Spell("Beleth's_Command",self.beleths_command, 7, 0, 0)
+#                 self.arcane_dict['Lift'] = Spell('Lift',self.lift, 3, 0, 0)
+#                 self.arcane_dict['Cloister'] = Spell('Cloister',self.cloister, 3, 0, 0)
+#                 self.arcane_dict['Aura_of_Agony'] = Spell('Aura_of_Agony',self.aura_of_agony, 5, 0, 0)
+#                 self.arcane_dict['Dampening_Emanation'] = Spell('Dampening_Emanation',self.dampening_emanation, 7, 0, 0)
+#                 self.arcane_dict['Blind'] = Spell('Blind',self.blind, 6, 0, 0)
+#                 self.arcane_dict['Enmeshing_Coils'] = Spell('Enmeshing_Coils',self.enmeshing_coils, 7, 0, 0)
+#                 self.arcane_dict['Mirror_Armor'] = Spell('Mirror_Armor',self.mirror_armor, 6, 0, 0)
+#                 self.arcane_dict['Forcefield'] = Spell('Forcefield',self.forcefield, 5, 0, 0)
+#                 self.arcane_dict['Vengeance'] = Spell('Vengeance',self.vengeance, 8, 0, 0)
+#                 self.arcane_dict['Pain'] = Spell('Pain',self.pain, 5, 0, 0)
+#                 self.arcane_dict['Torment'] = Spell('Torment',self.torment, 9, 0, 0)
+#                 self.arcane_dict['Hatred'] = Spell('Hatred',self.hatred, 6, 0, 0)
+#                 self.arcane_dict['Fangs_of_Apophis'] = Spell('Fangs_of_Apophis',self.fangs_of_apophis, 4, 0, 0)
+#                 self.arcane_dict['Wreathed_in_Flame'] = Spell('Wreathed_in_Flame',self.wreathed_in_flame, 5, 0, 0)
+#                 self.arcane_dict['Mass_Hysteria'] = Spell('Mass_Hysteria',self.mass_hysteria, 5, 0, 0)
+#                 self.arcane_dict['Reaping_of_Saturnus'] = Spell('Reaping_of_Saturnus',self.reaping_of_saturnus, 7, 0, 0)
+#                 self.arcane_dict['Genjutsushi'] = Spell('Genjutsushi',self.genjutsushi, 3, 0, 0)
+#                 self.arcane_dict['Summon_Lesser_Demon'] = Spell('Summon_Lesser_Demon',self.summon_lesser_demon, 15, 0, 0)
+#                 self.arcane_dict['Summon_Cenobite'] = Spell('Summon_Cenobite',self.summon_cenobite, 15, 0, 0)
+#                 self.arcane_dict['Animate_Tomb'] = Spell('Animate_Tomb',self.animate_tomb, 4, 0, 0)
+#                 self.arcane_dict['Hunting_Hawk'] = Spell('Hunting_Hawk',self.hunting_hawk, 3, 0, 0)
+#                 self.arcane_dict['Barrow_Wight'] = Spell('Barrow_Wight',self.barrow_wight, 6, 0, 0)
+#                 self.arcane_dict['Haunted_Cairn'] = Spell('Haunted_Cairn',self.haunted_cairn, 12, 0, 0)
                 self.base_smns = 1
                 self.smns = 1
                 self.base_acts = 1
@@ -19548,7 +19552,8 @@ class Witch(Summon):
     
     def page_summons(self, event = None, index = None):
         app.depop_context(event = None)
-        sum_list = ['Berserker','Illusionist','Umbrae_Wolf','Thaumaturge','Murrain_Wolf','Fiend','Wurdulak','Chirurgeon','Hexmage','Fell_Evolver','Drake','Inquisitor','Pixie','Chronomancer']
+#         sum_list = ['Berserker','Illusionist','Umbrae_Wolf','Thaumaturge','Murrain_Wolf','Fiend','Wurdulak','Chirurgeon','Hexmage','Fell_Evolver','Drake','Inquisitor','Pixie','Chronomancer']
+        sum_list = self.summons[:]
         for i, smn in enumerate(sum_list[index:index+7]):
             i += 1
             p = partial(self.place_summon, type = smn)
@@ -24487,6 +24492,21 @@ class App(tk.Frame):
         self.arcane_dict['Hunting_Hawk'] = Spell('Hunting_Hawk',Witch.hunting_hawk, 3, 0, 0)
         self.arcane_dict['Barrow_Wight'] = Spell('Barrow_Wight',Witch.barrow_wight, 6, 0, 0)
         self.arcane_dict['Haunted_Cairn'] = Spell('Haunted_Cairn',Witch.haunted_cairn, 12, 0, 0)
+        self.summon_dict = {}
+        self.summon_dict['Berserker'] = ('Berserker',9)
+        self.summon_dict['Illusionist'] = ('Illusionist',7)
+        self.summon_dict['Umbrae_Wolf'] = ('Umbrae_Wolf',10)
+        self.summon_dict['Thaumaturge'] = ('Thaumaturge',11)
+        self.summon_dict['Murrain_Wolf'] = ('Murrain_Wolf',8)
+        self.summon_dict['Fiend'] = ('Fiend',8)
+        self.summon_dict['Wurdulak'] = ('Wurdulak',10)
+        self.summon_dict['Chirurgeon'] = ('Chirurgeon',11)
+        self.summon_dict['Hexmage'] = ('Hexmage',9)
+        self.summon_dict['Fell_Evolver'] = ('Fell_Evolver',11)
+        self.summon_dict['Drake'] = ('Drake',9)
+        self.summon_dict['Inquisitor'] = ('Inquisitor',8)
+        self.summon_dict['Pixie'] = ('Pixie',8)
+        self.summon_dict['Chronomancer'] = ('Chronomancer',11)
         # the following few anim dicts are for testing 'load images on game start, instead of as needed'
         # results in faster response for image loading in game, longer load time (as would be expected)
         self.sqr_anims = {}
@@ -24604,10 +24624,6 @@ class App(tk.Frame):
             del self.grim_edit
             del self.one_player
             del self.two_player
-#         else:
-#             for child in root.winfo_children():
-#                 if child._name != '!app':
-#                     child.destroy()
         # BG IMAGE AND 1ST BORDER IMG
         self.bg_img = ImageTk.PhotoImage(Image.open('grimoire_editor_bg.png').resize((root.winfo_screenwidth(),root.winfo_screenheight())))
         self.bg_canvas = tk.Canvas(root, width = root.winfo_screenwidth(), bg = 'black', highlightthickness = 0, height = root.winfo_screenheight())
@@ -24620,12 +24636,19 @@ class App(tk.Frame):
         self.addremove_frame = tk.Frame(root, width = 100, height = 100)
         self.spell_frame = tk.Frame(root, width = 800, height = 100)
         self.spell_frame.pack_propagate(False)
+        self.summon_frame = tk.Frame(root, width = 800, height = 100)
+        self.summon_frame.pack_propagate(False)
         # SPELL BUTTONS, keep refs to only spell buttons
         self.spell_buttons = []
+        self.summon_buttons = []
         # STRUCT THAT HOLDS SPELLS ADDED TO GRIMOIRE, in bottom listbox
         self.grimoire = {}
         # SPELL OBJECTS from arcane dict, holds order?
         self.spell_list = [v for v in self.arcane_dict.values()]
+        
+        
+        self.summon_list = [v for v in self.summon_dict.values()]
+        
         # SPELL BUTTON HIGHLIGHTER (WHEN BUTTON DEPRESSED)
         def depress(event = None, btn = None):
             if app.selected_btn == []:
@@ -24640,8 +24663,12 @@ class App(tk.Frame):
                 app.selected_btn = []
                 app.selected_btn.append(btn)
         # PAGE BACK remakes all top frame spell buttons
+        def deselect():
+            if app.selected_btn != []:
+                app.selected_btn[0].config(fg = 'indianred')
+                app.selected_btn = []
         def page_back():
-            app.selected_btn = []
+            deselect()
             for btn in self.spell_buttons:
                 btn.destroy()
             self.spell_list = [self.spell_list[-1]]+self.spell_list[:-1]
@@ -24653,9 +24680,24 @@ class App(tk.Frame):
                 b1.bind('<Button-2>', lambda event, b = b1, n = spell.name.replace('_',' ') : app.action_info(event, name = n, button = b))
                 self.spell_buttons.append(b1)
         prev = partial(page_back)
+        def page_back2():
+            deselect()
+            for btn in self.summon_buttons:
+                btn.destroy()
+            self.summon_list = [self.summon_list[-1]]+self.summon_list[:-1]
+            for smn in self.summon_list[0:5]:
+                name = smn[0]
+                cost = smn[1]
+                func = partial(depress)
+                b1 = tk.Button(self.summon_frame, text = name.replace('_',' ') + ' •'+str(cost), wraplength = 190, font = ('chalkduster', 17), fg='indianred', highlightbackground = 'tan3')
+                b1.config(command = lambda btn = b1 : func(btn=btn))
+                b1.pack(side = 'left', fill = 'both', expand = True)
+                b1.bind('<Button-2>', lambda event, b = b1, n = name.replace('_',' ') : app.action_info(event, name = n, button = b))
+                self.summon_buttons.append(b1)
+        prev2 = partial(page_back2)
         # next moves spells in frame 'forward'
         def page_forward():
-            app.selected_btn = []
+            deselect()
             for btn in self.spell_buttons:
                 btn.destroy()
             self.spell_list = self.spell_list[1:]+[self.spell_list[0]]
@@ -24668,12 +24710,34 @@ class App(tk.Frame):
                 b1.bind('<Button-2>', lambda event, b = b1, n = spell.name.replace('_',' ') : app.action_info(event, name = n, button = b))
                 self.spell_buttons.append(b1)
         next = partial(page_forward)
-        # LEFT ARROW
-        self.l_arrow = tk.Button(self.lr_frame, text = '<', height = 4, width = 1, fg = 'indianred', highlightbackground = 'black', font = ('chalkduster', 38), relief = 'raised', command = prev)
-        # RIGHT ARROW
-        self.r_arrow = tk.Button(self.lr_frame, text = '>', height = 4, width = 1, fg = 'indianred', highlightbackground = 'black', font = ('chalkduster', 38), relief = 'raised', command = next)
-        self.l_arrow.pack(side = 'left', fill = 'y', expand = 1)
-        self.r_arrow.pack(side = 'left', fill = 'y', expand = 1)
+        def page_forward2():
+            deselect()
+            for btn in self.summon_buttons:
+                btn.destroy()
+            self.summon_list = self.summon_list[1:]+[self.summon_list[0]]
+            col = 0
+            for smn in self.summon_list[0:5]:
+                name = smn[0]
+                cost = smn[1]
+                func = partial(depress)
+                b1 = tk.Button(self.summon_frame, text = name.replace('_',' ') + ' •'+str(cost), wraplength = 190, font = ('chalkduster', 17), fg='indianred', highlightbackground = 'tan3')
+                b1.config(command = lambda btn = b1 : func(btn=btn))
+                b1.pack(side = 'left', fill = 'both', expand = True)
+                b1.bind('<Button-2>', lambda event, b = b1, n = name.replace('_',' ') : app.action_info(event, name = n, button = b))
+                self.summon_buttons.append(b1)
+        next2 = partial(page_forward2)
+        # LEFT ARROW TOP
+        self.l_arrow = tk.Button(self.lr_frame, text = '<', height = 2, width = 1, fg = 'indianred', highlightbackground = 'black', font = ('chalkduster', 38), relief = 'raised', command = prev)
+        self.l_arrow.grid(row = 0, column = 0)
+        # LEFT ARROW BTM
+        self.l_arrow2 = tk.Button(self.lr_frame, text = '<', height = 2, width = 1, fg = 'indianred', highlightbackground = 'black', font = ('chalkduster', 38), relief = 'raised', command = prev2)
+        self.l_arrow2.grid(row = 1, column = 0)
+        # RIGHT ARROW TOP
+        self.r_arrow = tk.Button(self.lr_frame, text = '>', height = 2, width = 1, fg = 'indianred', highlightbackground = 'black', font = ('chalkduster', 38), relief = 'raised', command = next)
+        self.r_arrow.grid(row = 0, column = 1)
+        # RIGHT ARROW BTM
+        self.r_arrow2 = tk.Button(self.lr_frame, text = '>', height = 2, width = 1, fg = 'indianred', highlightbackground = 'black', font = ('chalkduster', 38), relief = 'raised', command = next2)
+        self.r_arrow2.grid(row = 1, column = 1)
         # WINDOW FOR FRAME 1 LR BUTTONS
         self.bg_canvas.create_window(200, 200, window = self.lr_frame)
         # ADD REMOVE SPELL BUTTONS
@@ -24749,7 +24813,7 @@ class App(tk.Frame):
         self.bg_canvas.create_window(root.winfo_screenwidth()-200, 200, window = self.addremove_frame)
 #         SELECTED BTN LOCK
         self.selected_btn = []
-#         grab 5 spell buttons and smush them into the avail space
+        # INITIAL SPELL BTNS
         for spell in self.spell_list[:5]:
             func = partial(depress)
             b1 = tk.Button(self.spell_frame, text = spell.name.replace('_',' ') + ' •'+str(spell.cost), wraplength = 190, font = ('chalkduster', 17), fg='indianred', highlightbackground = 'tan3')
@@ -24757,8 +24821,20 @@ class App(tk.Frame):
             b1.pack(side = 'left', fill = 'both', expand = True)
             b1.bind('<Button-2>', lambda event, b = b1, n = spell.name.replace('_',' ') : app.action_info(event, name = n, button = b))
             self.spell_buttons.append(b1)
+        # INITIAL SUMMONS BTNS
+        for smn in self.summon_list[:5]:
+            func = partial(depress)
+            name = smn[0]
+            cost = smn[1]
+            b1 = tk.Button(self.summon_frame, text = name.replace('_',' ') + ' •'+str(cost), wraplength = 190, font = ('chalkduster', 17), fg='indianred', highlightbackground = 'tan3')
+            b1.config(command = lambda btn = b1 : func(btn=btn))
+            b1.pack(side = 'left', fill = 'both', expand = True)
+            b1.bind('<Button-2>', lambda event, b = b1, n = name.replace('_',' ') : app.action_info(event, name = n, button = b))
+            self.summon_buttons.append(b1)
 #         WINDOW FOR FRAME 3 SPELL BUTTONS
-        self.bg_canvas.create_window(root.winfo_screenwidth()//2, 200, window = self.spell_frame)
+        self.bg_canvas.create_window(root.winfo_screenwidth()//2, 150, window = self.spell_frame)
+        # WINDOW FOR FRAME SUMMON BUTTONS
+        self.bg_canvas.create_window(root.winfo_screenwidth()//2, 250, window = self.summon_frame)
         # SAVE / LOAD / MAIN MENU BUTTONS between frames
         def save_grim():
             # constrain save size
@@ -24878,20 +24954,39 @@ class App(tk.Frame):
                 ix = row.find('•')
                 name = row[:ix].rstrip(' ')
                 ix2 = 0
-                for i,s in enumerate(self.spell_list[:]):
-                    if s.name.replace('_',' ') == name:
-                        ix2 = i
-                app.selected_btn = []
-                for btn in self.spell_buttons:
-                    btn.destroy()
-                self.spell_list = list(self.spell_list[ix2:])+list(self.spell_list[:ix2])
-                for spell in self.spell_list[0:5]:
-                    func = partial(depress)
-                    b1 = tk.Button(self.spell_frame, text = spell.name.replace('_',' ') + ' •'+str(spell.cost), wraplength = 190, font = ('chalkduster', 17), fg='indianred', highlightbackground = 'tan3')
-                    b1.config(command = lambda btn = b1 : func(btn=btn))
-                    b1.pack(side = 'left', fill = 'both', expand = True)
-                    b1.bind('<Button-2>', lambda event, b = b1, n = spell.name.replace('_',' ') : app.action_info(event, name = n, button = b))
-                    self.spell_buttons.append(b1)
+                if name.replace(' ','_') in app.summon_dict.keys():# IS SUMMON
+                    for i,s in enumerate(self.summon_list[:]):
+                        n = s[0]
+                        if n.replace('_',' ') == name:
+                            ix2 = i
+                    deselect()
+                    for btn in self.summon_buttons:
+                        btn.destroy()
+                    self.summon_list = list(self.summon_list[ix2:])+list(self.summon_list[:ix2])
+                    for smn in self.summon_list[0:5]:
+                        name = smn[0]
+                        cost = smn[1]
+                        func = partial(depress)
+                        b1 = tk.Button(self.summon_frame, text = name.replace('_',' ') + ' •'+str(cost), wraplength = 190, font = ('chalkduster', 17), fg='indianred', highlightbackground = 'tan3')
+                        b1.config(command = lambda btn = b1 : func(btn=btn))
+                        b1.pack(side = 'left', fill = 'both', expand = True)
+                        b1.bind('<Button-2>', lambda event, b = b1, n = name.replace('_',' ') : app.action_info(event, name = n, button = b))
+                        self.summon_buttons.append(b1)
+                else:# IS SPELL
+                    for i,s in enumerate(self.spell_list[:]):
+                        if s.name.replace('_',' ') == name:
+                            ix2 = i
+                    app.selected_btn = []
+                    for btn in self.spell_buttons:
+                        btn.destroy()
+                    self.spell_list = list(self.spell_list[ix2:])+list(self.spell_list[:ix2])
+                    for spell in self.spell_list[0:5]:
+                        func = partial(depress)
+                        b1 = tk.Button(self.spell_frame, text = spell.name.replace('_',' ') + ' •'+str(spell.cost), wraplength = 190, font = ('chalkduster', 17), fg='indianred', highlightbackground = 'tan3')
+                        b1.config(command = lambda btn = b1 : func(btn=btn))
+                        b1.pack(side = 'left', fill = 'both', expand = True)
+                        b1.bind('<Button-2>', lambda event, b = b1, n = spell.name.replace('_',' ') : app.action_info(event, name = n, button = b))
+                        self.spell_buttons.append(b1)
         self.grim_lbox.bind('<<ListboxSelect>>', clickEvent)
         self.sb.config(command = self.grim_lbox.yview)
         self.grim_lbox.pack(side = 'left', fill = 'y', expand = 1)
