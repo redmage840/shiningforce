@@ -1,12 +1,24 @@
-# instead of start level popup, victory popup, just put big text object, disable all input, create_window of button on main canvas (confirm/ok)
+# put names of effects resolving in init q during eot/sot
+
+# mult copies of same prox efct should not stack? winnowing verdure, hexmage stuff?
+
+'''
+
+from typing import Union
+
+def add(x: Union[int, float], y: Union[int, float]):
+    return x + y
+    
+becomes
+
+def add(x: int | float, y: int | float):
+    return x + y
+'''
 
 # should use of entomb remove from entomb_deck for turn/round?
 
-# in select mode of grimoire editor, after choosing campaign mode, check to see that additional keypress/buttonpresses are not accepted while the 'SELECT' btn is pressed and setting the wait_var
-
 # white dragon free fly away seeks locations that are outside of its current range (if reason is less than base)
 # dragon makes redundant move when out of acts, seeking melee targets, before free fly move
-# dragon iceblast can hit self
 
 # levels where you must encroach on groups of mostly stationary enemies, to progress through some terrain/walls/rooms
 
@@ -38,8 +50,6 @@
 # target sqr is edge of map? other edge cases?
 # 'around' = 
 
-# better images for level begin/end background splash images
-
 # make 'strat' section -chiru/chrono 'battery', double chrono loop time warp, rend space max out, sanity max out, invis/psyshield abuse, elusive ranged drake/pixie/illus, atk tombs pixie/fiend, scarab/cadaver/tomb abuse with pain/etc..., 
 
 # wraith, perm def efct reduce melee/ranged dmg to 1, perm psyshield
@@ -49,8 +59,6 @@
 # r-click on minimap to jump screen position...show block sqrs
 
 # log relevant text items in background of context menu
-
-# magick regen rate, make this use getter so it can be changed by effects
 
 # smart bots, smart targeting, ie kobold shamans prefer targets with low psyche/wisdom
 
@@ -320,7 +328,7 @@ def action_description(act):
     elif act == 'Disintegrate':
         return 'Spell target within range reason gets -1 to random ability among str, agl, end, rsn, san. It also gets end-of-turn effect that gives -1 among the same abilities and causes 1 acid damage. Duration is reason. Level is wisdom.'
     elif act == 'Darkness':
-        return 'A location within range reason, and all within range 1 of that, get location effect causing units with normal or flying move type (which are not immovable) moving from them -2 move range. Costs 1 magick. Lasts 2 turns at level wisdom.'
+        return 'A location within range reason, and all within range 1 of that, get location effect causing units with normal or flying move type (which are not immovable) moving from them -2 move range. Costs 3 magick. Lasts 2 turns at level wisdom.'
     elif act == 'Foul Familiar':
         return 'Summon familiar under your control. Caster takes 5 magick damage on familiar death.'
     elif act == 'Poison Sting':
@@ -428,7 +436,7 @@ def action_description(act):
     elif act == 'Fuse Trap':
         return 'Add local effect to a location within reason. On undo, do 3 explosive undo damage to each unit within range 3 of the effect (damage source is caster of fuse trap). Duration is 1. Level is wisdom.'
     elif act == 'Entomb':
-        return 'Place tomb at empty adjacent location. Imprint one arcana spell. Spells may be cast once per turn for each imprint, as long as you have the necessary magick to spend. The tomb has no moves and one action, Vivify, that restores spirit and magick to summons based on Tomb psyche. Witch gains 2 magick at the beginning of the start-of-turn phase for each tomb controlled. Entomb costs 1 action to use.'
+        return 'Place tomb at empty adjacent location. Imprint one arcana spell. Spells may be cast once per turn for each imprint, as long as you have the necessary magick to spend. The tomb has no moves and one action, Vivify, that restores spirit and magick to summons based on Tomb psyche. Witch gains magick at the beginning of the start-of-turn phase for each tomb controlled plus its magick regen rate. Entomb costs 1 action to use.'
     elif act == 'Arcana':
         return 'Cast an arcane spell. Spells may be cast once for each time they are imprinted on Tombs you created, and as long as you have the magick to spend. Using an arcane spell does not use up actions.'
     elif act == 'Pain':
@@ -7469,7 +7477,7 @@ class Fell_Evolver(Summon):
             self.rsn = 5
             self.san = 13
             self.init = 5
-            self.spirit = 25
+            self.spirit = 21
             self.magick = 0
             self.acts = 1
             self.mvs = 1
@@ -7489,7 +7497,7 @@ class Fell_Evolver(Summon):
             self.rsn = 6
             self.san = 12
             self.init = 6
-            self.spirit = 31
+            self.spirit = 25
             self.magick = 0
             self.acts = 1
             self.mvs = 1
@@ -7837,7 +7845,7 @@ class Fell_Evolver(Summon):
             ent.resist_effects.remove(wooden_resist)
             ent.weak_effects.remove(wooden_weak)
             root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
-        u = partial(undo, self)
+        u = partial(undo, self, p)
         self.effects_dict['Wooden_Skin'] = Effect(name = 'Wooden_Skin', undo_func = u, duration = self.get_abl('str'), level = self.get_abl('str'))
         root.after(2666, self.finish_wooden_skin)
         
@@ -8101,6 +8109,13 @@ class Fell_Evolver(Summon):
                 def cleanup_scorch(name):
                     del app.vis_dict[name]
                     app.canvas.delete(name)
+                ids = [k for k,v in app.all_ents().items() if dist(v.loc,sqr)<=1 and v.owner != self.owner]
+                for id in ids:
+                    ent = app.ent_dict[id]
+                    n = 'scorch'+str(app.count)
+                    app.count += 1
+                    app.vis_dict[n] = Vis(name = 'Immolate', loc = ent.loc)
+                    root.after(1666, lambda n = n : cleanup_scorch(n))
                 def scorch_loop(ids):
                     if ids == []:
                         cancel_attack(None, obj)
@@ -8108,10 +8123,6 @@ class Fell_Evolver(Summon):
                         id = ids[0]
                         ids = ids[1:]
                         ent = app.ent_dict[id]
-                        n = 'scorch'+str(app.count)
-                        app.count += 1
-                        app.vis_dict[n] = Vis(name = 'Immolate', loc = ent.loc)
-                        root.after(1666, lambda n = n : cleanup_scorch(n))
                         my_mm = obj.get_abl('mm')
                         tar_dod = ent.get_abl('dodge')
                         if to_hit(my_mm, tar_dod) == True:
@@ -8124,7 +8135,6 @@ class Fell_Evolver(Summon):
                             miss(ent.loc)
                             root.after(1333, lambda t = 'text' : app.canvas.delete(t))
                             root.after(1444, lambda ids = ids : scorch_loop(ids))
-                ids = [k for k,v in app.all_ents().items() if dist(v.loc,sqr)<=1 and v.owner != self.owner]
                 scorch_loop(ids)
             # INNER INNER FUNC
             def cancel_attack(event = None, obj = None):
@@ -12417,7 +12427,7 @@ class White_Dragon(Bot):
                 app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict[n].img, tags = n)
                 root.after(1666, lambda n = n : cleanup_vis(n))
             if index == 2:
-                ids = [k for k,v in app.all_ents().items() if dist(v.loc, loc) <= 2]
+                ids = [k for k,v in app.all_ents().items() if dist(v.loc, loc) <= 2 and v != self]
                 self.continue_iceblast(ids, loc)
             else:
                 root.after(111, lambda j = index+1 : iceblast_vis_loop(j))
@@ -16731,7 +16741,7 @@ class Berserker(Summon):
             self.rsn = 3
             self.san = 12
             self.init = 5
-            self.spirit = 23
+            self.spirit = 27
             self.magick = 0
             self.acts = 1
             self.mvs = 1
@@ -18510,9 +18520,9 @@ class Familiar_Imp(Summon):
     def do_darkness(self, event = None, sqr = None, sqrs = None):
         if sqr not in sqrs:
             return
-        if self.magick < 1:
+        if self.magick < 3:
             return
-        self.magick -= 1
+        self.magick -= 3
         self.acts -= 1
         app.unbind_all()
         app.depop_context(event = None)
@@ -25588,7 +25598,7 @@ class App(tk.Frame):
         for coord in terrain:
             self.grid[coord[0]][coord[1]] = 'block'
         # CONTEXT MENU
-        self.con_bg = ImageTk.PhotoImage(Image.open('texture2.png').resize(( 200, root.winfo_screenheight())))
+        self.con_bg = ImageTk.PhotoImage(Image.open('context_menu_bg.png').resize(( 200, root.winfo_screenheight())))
         self.context_menu = tk.Canvas(root, bg = 'black', bd=0, highlightthickness=0, relief='raised', height = root.winfo_screenheight(), width = 200)
         self.context_menu.pack_propagate(0)
         self.context_menu.pack(side = 'left', fill = 'both', expand = 'false')
@@ -25600,7 +25610,7 @@ class App(tk.Frame):
             width = self.map_width
         if self.map_height < height:
             height = self.map_height
-        self.canvas = tk.Canvas(root, width = width, bg = 'black', height = height, bd=4, highlightthickness=0, relief='sunken')
+        self.canvas = tk.Canvas(root, width = width, bg = 'black', height = height, bd=0, highlightthickness=0, relief='sunken')
         self.canvas.pack()
         # MAP
         if self.num_players == 1:
@@ -25791,23 +25801,13 @@ class App(tk.Frame):
 #             self.map_trigger_loop()
         
     def start_level_popup(self):
-        name = 'dethlok'+str(app.death_count)
-        app.death_count += 1
-#         app.dethloks[name] = tk.IntVar(0)
-        def end(window, lockname):
-            self.start_turn()
-#             app.dethloks[lockname].set(1)
-            self.destroy_release(window)
-        self.start_popup = tk.Toplevel()
-        self.start_popup.grab_set()
-        self.start_popup.attributes('-topmost', 'true')
         if app.num_players == 2:
             start_text = '''
-            Defeat the opposing Witch...\n
+        Defeat the opposing Witch...
             '''
         elif app.map_number == 2:
             start_text = '''
-        Defeat either Undead Knight...\n
+        Defeat either Undead Knight...
         '''
         elif app.map_number == 121:
             start_text = '''
@@ -25815,33 +25815,38 @@ class App(tk.Frame):
         '''
         elif app.map_number == 122:
             start_text = '''
-        Defeat the Warlock...\n
+        Defeat the Warlock...
         '''
         elif app.map_number == 21:
             start_text = '''
-        Find and Defeat the Ghost...\n
+        Find and Defeat the Ghost...
         '''
         elif app.map_number == 22:
             start_text = '''
-        Defeat the White Dragon...\n
+        Defeat the White Dragon...
         '''
         elif app.map_number == 3:
             start_text = '''
-        Defeat Kensai, Barbarian, and Sorceress...\n
+        Defeat Kensai, Barbarian, and Sorceress...
         '''
         elif app.map_number == 4:
             start_text = '''
-        Defeat Earth and Air mages, end the round. Then, defeat Fire and Water mages...\n
+        Defeat Earth and Air mages, end the round. Then, defeat Fire and Water mages...
         '''
         else:
             start_text = '''
-        Defeat all the enemies and end the turn...\n
+        Defeat all the enemies and end the turn...
         '''
-        self.text = tk.Label(self.start_popup, text = start_text, font = ('chalkduster', 22), fg='indianred', bg = 'black')
-        self.text.pack()
-        self.close = tk.Button(self.start_popup, text = 'OK', font = ('chalkduster', 22), fg='tan3', command = lambda win = self.start_popup, ln = name : end(win, ln))
-        self.close.pack()
-#         root.wait_variable(app.dethloks[name])
+        self.canvas.create_text(399, root.winfo_screenheight()//2-1, text = start_text, font = ('chalkduster', 38), fill = 'black', tags = 'start_text')
+        self.canvas.create_text(400, root.winfo_screenheight()//2, text = start_text, font = ('chalkduster', 38), fill = 'indianred', tags = 'start_text')
+        def starter():
+            self.close_btn.destroy()
+            self.canvas.delete('start_text')
+            self.start_turn()
+        p = partial(starter)
+        self.close_btn = tk.Button(self.canvas, text = 'OK', font = ('chalkduster', 22), highlightbackground='black', fg='tan3', command = p)
+        self.canvas.create_window(root.winfo_screenwidth()//2-150, self.canvas.winfo_screenheight()//2+150, window = self.close_btn)
+        
             
     # handle_sot_campaign() for Campaign mode OTHERWISE generate initiative queue (app.generate_init_q)
     def start_turn(self): # AWAIT button press, start level popup
@@ -25985,7 +25990,7 @@ class App(tk.Frame):
         shuffle(witch.entomb_deck)
         tombs = len([k for k,v in app.all_ents().items() if v.name == 'Tomb' and v.owner == witch.owner])
         witch.magick += witch.magick_regen
-        witch.magick += (tombs*2)
+        witch.magick += (tombs)
         # p2
         if app.num_players == 2:
             witch = app.ent_dict[app.p2_witch]
@@ -25993,8 +25998,8 @@ class App(tk.Frame):
             tombs = len([k for k,v in app.all_ents().items() if v.name == 'Tomb' and v.owner == witch.owner])
             witch.magick += witch.magick_regen
             if app.turn_counter == 0:
-                witch.magick += 5
-            witch.magick += (tombs*2)
+                witch.magick += witch.magick_regen
+            witch.magick += (tombs)
         self.handle_sot_effects()
         
     # Resolve start-of-turn effects on each entity AND loc_effects(on map)
@@ -26074,6 +26079,7 @@ class App(tk.Frame):
         app.canvas.create_text(app.canvas.winfo_screenwidth()//4, app.canvas.winfo_screenheight()-70, text='End-of-Turn Phase', anchor = 'nw', font = ('chalkduster', 24), fill = 'indianred', tags = 'eot_text')
         efs = [j for k,v in app.ent_dict.items() for i,j in v.effects_dict.items()] + [j for k,v in app.loc_dict.items() for i,j in v.effects_dict.items()] + [v for k,v in app.proximity_effects_dict.items()]
         q = []
+        # put efs in init q
         while efs != []:
             ef = efs[0]
             efs = efs[1:]
@@ -26225,6 +26231,7 @@ class App(tk.Frame):
             if isinstance(ent, Witch):
                 ent.smns = ent.get_abl('smns')
                 ent.entomb_used = False
+                ent.magick = 0
                 # reset times_cast to 0
                 for spell in ent.arcane_dict.values():
                     ent.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,0)
@@ -26407,38 +26414,38 @@ class App(tk.Frame):
         self.canvas.create_image(100+right-5,self.canvas.winfo_height()-20-self.minimap.height()+down, anchor='sw', image =self.minimap_screen, tags = 'minimap')
 
     def victory_popup_duel(self, winner, loser, draw = None, lockname = None):
-        def end(window):
-            self.destroy_release(window)
+        def end():
+            self.close_btn.destroy()
+            self.canvas.delete('victory_text')
             app.dethloks[lockname].set(1)
             self.reset()
-        self.vic_popup = tk.Toplevel()
-        self.vic_popup.grab_set()
-        self.vic_popup.attributes('-topmost', 'true')
         if draw == True:
             vic_text = 'Draw'
         else:
             vic_text = winner.replace('_',' ')+' is the victor'
-        self.text = tk.Label(self.vic_popup, text = vic_text, font = ('chalkduster', 22), fg='indianred', bg = 'black')
-        self.text.pack()
-        self.close = tk.Button(self.vic_popup, text = 'OK', font = ('chalkduster', 22), fg='tan3', command = lambda win = self.vic_popup : end(win))
-        self.close.pack()
+        self.canvas.create_text(399, root.winfo_screenheight()//2-1, text = vic_text, font = ('chalkduster', 38), fill = 'black', tags = 'victory_text')
+        self.canvas.create_text(400, root.winfo_screenheight()//2, text = vic_text, font = ('chalkduster', 38), fill = 'indianred', tags = 'victory_text')
+        p = partial(end)
+        self.close_btn = tk.Button(self.canvas, text = 'OK', font = ('chalkduster', 22), highlightbackground='black', fg='tan3', command = p)
+        self.canvas.create_window(root.winfo_screenwidth()//2-150, self.canvas.winfo_screenheight()//2+150, window = self.close_btn)
+        
     
     def victory_popup(self, next_level = None, lockname = None):
-        def end(window):
-            self.destroy_release(window)
+        def end():
+            self.close_btn.destroy()
+            self.canvas.delete('victory_text')
             app.dethloks[lockname].set(1)
             self.end_level(next_level = next_level)
-        self.vic_popup = tk.Toplevel()
-        self.vic_popup.grab_set()
-        self.vic_popup.attributes('-topmost', 'true')
         vic_text = '''
-        Victory Achieved, for now...\n
+        Victory Achieved, for now...
         '''
-        self.text = tk.Label(self.vic_popup, text = vic_text, font = ('chalkduster', 22), fg='indianred', bg = 'black')
-        self.text.pack()
-        self.close = tk.Button(self.vic_popup, text = 'OK', font = ('chalkduster', 22), fg='tan3', command = lambda win = self.vic_popup : end(win))
-        self.close.pack()
-    
+        self.canvas.create_text(399, root.winfo_screenheight()//2-1, text = vic_text, font = ('chalkduster', 38), fill = 'black', tags = 'victory_text')
+        self.canvas.create_text(400, root.winfo_screenheight()//2, text = vic_text, font = ('chalkduster', 38), fill = 'indianred', tags = 'victory_text')
+        p = partial(end)
+        self.close_btn = tk.Button(self.canvas, text = 'OK', font = ('chalkduster', 22), highlightbackground='black', fg='tan3', command = p)
+        self.canvas.create_window(root.winfo_screenwidth()//2-150, self.canvas.winfo_screenheight()//2+150, window = self.close_btn)
+        
+        
     def map_trigger_loop(self):
         for mt in self.map_triggers:
             result = mt()
