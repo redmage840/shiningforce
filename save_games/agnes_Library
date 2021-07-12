@@ -1,6 +1,6 @@
 Agnes_Sampson
 2
-['Psionic_Push', "Minerva's_Gift", 'Bewitch', 'Read_the_Stars', 'Energize', 'Psi_Blades', 'Cosmic_Sight', 'Foul_Familiar', 'Plague', 'Pestilence', 'Curse_of_Oriax', 'Demonic_Sight', 'Molecular_Subversion', 'Plutonian_Cloak', 'Hidden_From_the_Stars', 'Gravity', "Beleth's_Command", 'Vengeance', 'Pain', 'Torment', 'Hatred', 'Entomb']
+['Pain', 'Blind', 'Gravity', 'Curse_of_Oriax', 'Pestilence', 'Foul_Familiar', 'Astrological_Guidance', 'Scrye', 'Frantic_Search', 'Grave_Twin', 'Dark_Ritual', 'Dispel', 'Rite_of_Spring', 'Reaping_of_Saturnus', 'Dampening_Emanation', 'Mirror_Armor', 'Wreathed_in_Flame', 'Hidden_From_the_Stars']
 6
 7
 7
@@ -18,6 +18,6 @@ Agnes_Sampson
 1
 1
 50
-3
+4
 121
-['Legerdemain', 'Astrological_Guidance', 'Hunting_Hawk', 'Legerdemain', 'Gravity', 'Dispel', 'Dust_Devil', 'Gravity', 'Foul_Familiar', 'Foul_Familiar', 'Mind_Rot', 'Dust_Devil', 'Haunted_Cairn', 'Disintegrate', 'Curse_of_Oriax', 'Foul_Familiar', 'Dark_Sun', 'Dark_Sun', 'Command_of_Osiris', 'Legerdemain', 'Mind_Rot', 'Psionic_Push', 'Animate_Tomb', 'Animate_Tomb', 'Foul_Familiar', 'Legerdemain', 'Command_of_Osiris', 'Animate_Tomb', 'Bewitch', 'Astrological_Guidance', 'Reaping_of_Saturnus', 'Gravity', 'Mummify', 'Disintegrate', 'Command_of_Osiris', 'Curse_of_Oriax', 'Psionic_Push', 'Dust_Devil', 'Bewitch', 'Hunting_Hawk', 'Curse_of_Oriax', 'Disintegrate', 'Curse_of_Oriax', 'Hunting_Hawk', 'Haunted_Cairn', 'Enmeshing_Coils', 'Disintegrate', 'Enmeshing_Coils', 'Dispel', 'Gravity', 'Astrological_Guidance', 'Reaping_of_Saturnus', 'Dark_Sun', 'Haunted_Cairn', 'Mummify', 'Astrological_Guidance', 'Enmeshing_Coils', 'Hunting_Hawk', 'Enmeshing_Coils', 'Psionic_Push']
+['Astrological_Guidance', 'Illusionist', 'Enchantress', 'Reaping_of_Saturnus', 'Rite_of_Spring', 'Inquisitor', 'Enchantress', 'Mirror_Armor', 'Enchantress', 'Blind', 'Curse_of_Oriax', 'Wreathed_in_Flame', 'Pestilence', 'Gravity', 'Scrye', 'Inquisitor', 'Thaumaturge', 'Grave_Twin', 'Enchantress', 'Rite_of_Spring', 'Foul_Familiar', 'Foul_Familiar', 'Enchantress', 'Grave_Twin', 'Illusionist', 'Thaumaturge', 'Thaumaturge', 'Frantic_Search', 'Foul_Familiar', 'Frantic_Search', 'Frantic_Search', 'Hidden_From_the_Stars', 'Scrye', 'Frantic_Search', 'Hidden_From_the_Stars', 'Hidden_From_the_Stars', 'Curse_of_Oriax', 'Scrye', 'Illusionist', 'Thaumaturge', 'Gravity', 'Inquisitor', 'Thaumaturge', 'Dark_Ritual', 'Pain', 'Astrological_Guidance', 'Enchantress', 'Curse_of_Oriax', 'Dampening_Emanation', 'Inquisitor', 'Grave_Twin', 'Rite_of_Spring', 'Curse_of_Oriax', 'Umbrae_Wolf', 'Dark_Ritual', 'Dark_Ritual', 'Scrye', 'Hidden_From_the_Stars', 'Inquisitor', 'Dispel']
