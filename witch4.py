@@ -160,6 +160,32 @@ def round_100(x):
 def action_description(act):
     if act == 'Slash':
         return 'To-hit agility vs agility, strength vs endurance slashing melee damage, adjacent target as action.'
+    elif act == '':
+        return ''
+    elif act == 'Scrye':
+        return 'Draw 1 card.'
+    elif act == 'Dark Ritual':
+        return 'Gain 1 magick plus 1 for each adjacent friendly summon that is not inert, then do 2 magick spell damage to each of those summons.'
+    elif act == 'Grave Twin':
+        return 'If caster has at least 2 empty adjacent locations, may place 2 tombs of the same name instead of the normal 1.'
+    elif act == 'Rite of Spring':
+        return 'Draw a card for each less than the summon cap your current summon total.'
+    elif act == 'Frantic Search':
+        return 'Draw 2 cards and discard 2 cards.'
+    elif act == 'Forestwalk':
+        return 'Caster gains invisibility and psyshield until the end of this turn.'
+    elif act == 'Aura Blast':
+        return 'Spell target in range reason, on to-hit wisdom vs wisom, takes magick spell damage equal to the in_hand total of owner Witch. Costs 4 magick.'
+    elif act == 'Regrowth':
+        return 'Return a card from your discard to pile to hand. Costs 3 magick.'
+    elif act == 'Enlightenment':
+        return 'Draw a card for each wisdom effect on caster.'
+    elif act == 'Wall of Blossoms':
+        return 'All empty locations surrounding a spell target withing range reason become populated with inert Wall of Blossoms summons. Costs 2 magick.'
+    elif act == 'Wildfire':
+        return 'A spell target in range reason that has weakness to fire, and each connected summon with weakness to fire are consumed with wildfire. Those summons, and each adjacent summon, all take caster psyche vs endurance fire spell damage. Costs 4 magick.'
+    elif act == 'Animate Tomb':
+        return 'A tomb is able to move and act, gains move and tomb bash, a melee crushing attack.'
     elif act == 'Tomb Bash':
         return 'To-hit agility vs agility, strength vs endurance crushing melee damage.'
     elif act == 'Summon Lesser Demon':
@@ -665,6 +691,8 @@ def loc_effect_description(ef):
 def effect_description(ef):
     if ef.name == 'Curse_of_Oriax':
         return '-1 psy,wis,rsn,san,init, 2 magick dmg eot, dur = '+str(ef.duration)+', level = '+str(ef.level)
+    elif ef.name == 'Forestwalk':
+        return 'Invisibility and psyshield, dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Pixie_Dust':
         return 'psyshield, dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Stasis':
@@ -2931,9 +2959,9 @@ class Enchantress(Summon):
             return
         if isinstance(app.ent_dict[id],Witch):
             return
-        if self.magick < 4:
+        if self.magick < 2:
             return
-        self.magick -= 4
+        self.magick -= 2
 #         effect1 = mixer.Sound('Sound_Effects/stitch_cadaver.ogg')
 #         effect1.set_volume(.5)
 #         sound_effects.play(effect1, 0)
@@ -28101,6 +28129,8 @@ class App(tk.Frame):
         txt += 'Death Triggers:'+'\n'
         for dt in ent.death_triggers:
             txt += '  '+ dt.name.replace('_',' ') +': '+death_trigger_description(dt.name)+'\n'
+        # INERT
+        txt += 'Inert :'+str(ent.get_inert())+'\n'
         return txt
 
                  
