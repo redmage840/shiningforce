@@ -1,6 +1,10 @@
-# in globe
+# artificer based deck
 
-# hypnotic spectre more evasive or seek witch 
+# bottle gnomes heal spirit
+
+# gnomes, cadaver, moth, hawk, spectre.... when move type changes or when all moves are blocked?
+
+# more maps in duel, page maps
 
 # regrowth cost, foretell drawback
 
@@ -8,15 +12,11 @@
 
 # check smn move ranges...
 
-# desc wrath, styxian, giant growth, mass grave, myopic, coercion, foretell, compr immun, defile, deaths head, efface, graverob, lobotomy, poison weapon, infiltrate, retreating strike, hypnotic spectre, spectre_attack, wight attack, moth atk,
-
-# gaea;s blsing type recycle discard stuff
+# desc wrath, styxian, giant growth, mass grave, myopic, coercion, foretell, compr immun, defile, deaths head, efface, graverob, lobotomy, poison weapon, infiltrate, retreating strike, hypnotic spectre, spectre_attack, wight attack, moth atk, lost art, globe, globe roll, globe hover, pyrrhic gnomes, bottle gnomes
 
 # screen/window to log text objects, make popup from menu?
 
 # wyvern images in assets
-
-# put names of effects resolving in init q during eot/sot
 
 # mult copies of same prox efct should not stack? winnowing verdure, hexmage stuff?
 
@@ -413,7 +413,7 @@ def action_description(act):
     elif act == 'Gaze':
         return 'Action target within range ballistics, which does not already have this effect, on to-hit marksmanship vs dodge, gets -3 move range to a minimum of 1, if its move range is above zero. Duration is missle. Level is marksmanship.'
     elif act == 'Howl From Beyond':
-        return 'All enemy units within range reason without this effect, on to-hit strength vs strength, get -2 sanity and -3 reason. Duration is endurance. Level is strength.'
+        return 'All non-Witch, enemy units within range reason without this effect, on to-hit strength vs strength, get -2 sanity and -3 reason. Duration is endurance. Level is strength.'
     elif act == 'Track':
         return 'All enemy units within range reason, on to-hit agility vs agility, get an effect that removes invisibility. Duration is endurance. Level is strength.'
     elif act == 'Toxic Miasma':
@@ -2981,7 +2981,7 @@ class Enchantress(Summon):
         if level == 1:
             self.actions = {'Move':self.move, 'Enlightenment':self.enlightenment, 'Wall of Blossoms':self.wall_of_blossoms, 'Regrowth':self.regrowth, 'Aura Blast':self.aura_blast, 'Forestwalk':self.forestwalk, 'Wildfire':self.wildfire}
             self.str = 2
-            self.agl = 6
+            self.agl = 4
             self.end = 5
             self.mm = 1
             self.msl = 0
@@ -3001,7 +3001,7 @@ class Enchantress(Summon):
         elif level == 2:
             self.actions = {'Move':self.move, 'Enlightenment':self.enlightenment, 'Wall of Blossoms':self.wall_of_blossoms, 'Regrowth':self.regrowth, 'Aura Blast':self.aura_blast, 'Forestwalk':self.forestwalk, 'Wildfire':self.wildfire}
             self.str = 3
-            self.agl = 7
+            self.agl = 5
             self.end = 6
             self.mm = 1
             self.msl = 0
@@ -3511,9 +3511,9 @@ class Artificer(Summon):
             return
         self.magick -= 4
         if self.owner == 'p1':
-            witch = app.ent_dict[app.ent_dict[app.p1_witch]]
+            witch = app.ent_dict[app.p1_witch]
         else:
-            witch = app.ent_dict[app.ent_dict[app.p2_witch]]
+            witch = app.ent_dict[app.p2_witch]
         imprints = [v.imprint for k,v in app.all_ents().items() if isinstance(v,Tomb)]
         uniq_dis_tombs = [c for c in witch.discard if c not in app.summons_list and c not in imprints]
         if uniq_dis_tombs == []:
@@ -3536,7 +3536,7 @@ class Artificer(Summon):
         def cleanup_lost_art():
             del app.vis_dict['Lost_Artifact']
             app.canvas.delete('Lost_Artifact')
-        root.after(1999, cleanup_cleanup_lost_art)
+        root.after(1999, cleanup_lost_art)
         self.page_lost_art(cards=uniq_dis_tombs)
                     
                     
@@ -3724,8 +3724,6 @@ class Artificer(Summon):
         id = app.grid[sqr[0]][sqr[1]]
         if id in app.all_ents().keys():
             ent = app.ent_dict[id]
-            if isinstance(ent,Witch):
-                return
             has_ent = True
         else:
             has_ent = False
@@ -3899,8 +3897,6 @@ class Artificer(Summon):
         if id not in app.all_ents().keys():
             return
         ent = app.ent_dict[id]
-        if isinstance(ent, Witch):
-            return
         if self.magick < 6:
             return
         self.magick -= 6
@@ -4067,8 +4063,9 @@ class Artificer(Summon):
             else:
                 d = damage(globe_ent.get_abl('str'),e.get_abl('end'))
                 lock(apply_damage, globe_ent, e, -d, 'crushing', 'Globe Roll', 'globe_roll')
-                lock(Bot.ai_flying_move, e, nrst)
-        self.cancel_globe_roll()
+                if e.id in app.all_ents().keys():
+                    lock(Bot.ai_flying_move, e, nrst)
+        root.after(1666, self.cancel_globe_roll)
         
     def cancel_globe_roll(self, event = None):
         app.depop_context(event = None)
@@ -4081,32 +4078,29 @@ class Artificer(Summon):
     # summon inert ent, on init choose a smn type, gnome seeks the smn type if it exists, will only occupy locs as near as possible to targets otherwise not affecting them, has death trigger that does 3*turns_since_init to adjacent ents
     # max 2-3?
     def pyrrhic_gnomes(self, event = None):
-    
-    
         if self.acts < 1:
             return
         app.unbind_nonarrows()
-        root.bind('<q>', self.finish_stitch_cadaver)
-        sqrs = [c for c in app.coords if 1 <= dist(self.loc, c) <= self.get_abl('rsn') and app.grid[c[0]][c[1]]=='']
+        root.bind('<q>', self.finish_pyrrhic_gnomes)
+        sqrs = [c for c in app.coords if dist(self.loc, c) == 1 and app.grid[c[0]][c[1]]=='']
         app.animate_squares(sqrs)
         app.depop_context(event = None)
-        root.bind('<a>', lambda e, sqr = grid_pos, sqrs = sqrs : self.do_stitch_cadaver(event = e, sqr = sqr, sqrs = sqrs))
-        b = tk.Button(app.context_menu, text = "Choose Location for Cadaver", wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_stitch_cadaver(event = e, sqr = sqr, sqrs = sqrs))
+        root.bind('<a>', lambda e, sqr = grid_pos, sqrs = sqrs : self.do_pyrrhic_gnomes(event = e, sqr = sqr, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = "Choose Location for Pyrrhic Gnomes", wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_pyrrhic_gnomes(event = e, sqr = sqr, sqrs = sqrs))
         b.pack(side = 'top')
         app.context_buttons.append(b)
         b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
         b2.pack(side = 'top')
         app.context_buttons.append(b2)
         
-    def do_stitch_cadaver(self, event, sqr, sqrs):
+    def do_pyrrhic_gnomes(self, event, sqr, sqrs):
         if sqr not in sqrs:
             return
-        id = app.grid[sqr[0]][sqr[1]]
-        if id != '':
+        if len([k for k,v in app.all_ents().items() if v.owner == self.owner and v.name == 'Pyrrhic_Gnome']) > 1:
             return
-        if self.magick < 4:
+        if self.magick < 5:
             return
-        self.magick -= 4
+        self.magick -= 5
 #         effect1 = mixer.Sound('Sound_Effects/stitch_cadaver.ogg')
 #         effect1.set_volume(.5)
 #         sound_effects.play(effect1, 0)
@@ -4114,35 +4108,84 @@ class Artificer(Summon):
         app.depop_context(event = None)
         app.cleanup_squares()
         self.acts -= 1
-        app.vis_dict['Summon'] = Vis(name = 'Summon', loc = sqr[:])
-        vis = app.vis_dict['Summon']
-        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = vis.img, tags = 'Summon')
+        app.vis_dict['Gnome_Assemble'] = Vis(name = 'Gnome_Assemble', loc = sqr[:])
         def cleanup_summon():
-            app.canvas.delete('Summon')
-            del app.vis_dict['Summon']
-        root.after(2666, cleanup_summon)
-        root.after(2333, lambda s = sqr[:] : self.continue_stitch_cadaver(s))
+            app.canvas.delete('Gnome_Assemble')
+            del app.vis_dict['Gnome_Assemble']
+        root.after(2333, cleanup_summon)
+        root.after(2333, lambda s = sqr[:] : self.continue_pyrrhic_gnomes(s))
         
-    def continue_stitch_cadaver(self, sqr):
-        img = ImageTk.PhotoImage(Image.open('summon_imgs/Cadaver.png'))
+    def continue_pyrrhic_gnomes(self, sqr):
+        img = ImageTk.PhotoImage(Image.open('summon_imgs/Pyrrhic_Gnome.png'))
         if self.owner == 'p1':
             id = 'a'+str(app.ent_dict[app.p1_witch].summon_ids)
             app.ent_dict[app.p1_witch].summon_ids += 1
         else:
             id = 'b'+str(app.ent_dict[app.p2_witch].summon_ids)
             app.ent_dict[app.p2_witch].summon_ids += 1
-        app.ent_dict[id] =  Cadaver(name = 'Cadaver', id = id, img = img, loc = sqr[:], owner = self.owner, level = self.level)
+        app.ent_dict[id] =  Pyrrhic_Gnome(name = 'Pyrrhic_Gnome', id = id, img = img, loc = sqr[:], owner = self.owner, level = self.level)
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.ent_dict[id].img, tags = app.ent_dict[id].tags)
         app.grid[sqr[0]][sqr[1]] = id
-        self.finish_stitch_cadaver()
+        self.finish_pyrrhic_gnomes()
         
-    def finish_stitch_cadaver(self, event = None):
+    def finish_pyrrhic_gnomes(self, event = None):
         app.generic_cancel()
         
     # inert ent that wanders, atks randomly, has death trigger- owner witch gains 1 magick
     # max 2-3?
     def bottle_gnomes(self, event = None):
-        pass
+        if self.acts < 1:
+            return
+        app.unbind_nonarrows()
+        root.bind('<q>', self.finish_bottle_gnomes)
+        sqrs = [c for c in app.coords if dist(self.loc, c) == 1 and app.grid[c[0]][c[1]]=='']
+        app.animate_squares(sqrs)
+        app.depop_context(event = None)
+        root.bind('<a>', lambda e, sqr = grid_pos, sqrs = sqrs : self.do_bottle_gnomes(event = e, sqr = sqr, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = "Choose Location for Bottle Gnomes", wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_bottle_gnomes(event = e, sqr = sqr, sqrs = sqrs))
+        b.pack(side = 'top')
+        app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
+        
+    def do_bottle_gnomes(self, event, sqr, sqrs):
+        if sqr not in sqrs:
+            return
+        if len([k for k,v in app.all_ents().items() if v.owner == self.owner and v.name == 'Bottle_Gnome']) > 1:
+            return
+        if self.magick < 5:
+            return
+        self.magick -= 5
+#         effect1 = mixer.Sound('Sound_Effects/stitch_cadaver.ogg')
+#         effect1.set_volume(.5)
+#         sound_effects.play(effect1, 0)
+        app.unbind_all()
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        self.acts -= 1
+        app.vis_dict['Gnome_Assemble'] = Vis(name = 'Gnome_Assemble', loc = sqr[:])
+        def cleanup_summon():
+            app.canvas.delete('Gnome_Assemble')
+            del app.vis_dict['Gnome_Assemble']
+        root.after(2333, cleanup_summon)
+        root.after(2333, lambda s = sqr[:] : self.continue_bottle_gnomes(s))
+        
+    def continue_bottle_gnomes(self, sqr):
+        img = ImageTk.PhotoImage(Image.open('summon_imgs/Bottle_Gnome.png'))
+        if self.owner == 'p1':
+            id = 'a'+str(app.ent_dict[app.p1_witch].summon_ids)
+            app.ent_dict[app.p1_witch].summon_ids += 1
+        else:
+            id = 'b'+str(app.ent_dict[app.p2_witch].summon_ids)
+            app.ent_dict[app.p2_witch].summon_ids += 1
+        app.ent_dict[id] =  Bottle_Gnome(name = 'Bottle_Gnome', id = id, img = img, loc = sqr[:], owner = self.owner, level = self.level)
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.ent_dict[id].img, tags = app.ent_dict[id].tags)
+        app.grid[sqr[0]][sqr[1]] = id
+        self.finish_bottle_gnomes()
+        
+    def finish_bottle_gnomes(self, event = None):
+        app.generic_cancel()
     
 
 
@@ -4710,6 +4753,7 @@ class Diabolist(Summon):
         if sqr not in sqrs:
             return
         self.acts -= 1
+        s = sqr[:]
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -4720,11 +4764,11 @@ class Diabolist(Summon):
         if to_hit(self.get_abl('agl'), ent.get_abl('agl')):
             d = damage(self.get_abl('str'), ent.get_abl('end'))
             lock(apply_damage, self, ent, -d, 'slashing', 'Retreating Strike', 'melee')
-            root.after(111, lambda sqr = sqr : self.cont_retreating_strike(sqr))
+            root.after(111, lambda sqr = s : self.cont_retreating_strike(sqr))
         else:
             miss(ent.loc)
             root.after(1888, lambda t = 'text' : app.canvas.delete(t))
-            root.after(1999, lambda sqr = sqr : self.cont_retreating_strike(sqr))
+            root.after(1999, lambda sqr = s : self.cont_retreating_strike(sqr))
             
     def cont_retreating_strike(self, sqr):
         lock(Bot.ai_teleport_move, self, sqr)
@@ -11129,7 +11173,7 @@ class Thaumaturge(Summon):
             self.level = level
 #             name = 'Ranger' #this works, just need appr anim files
         self.move_type = 'normal'
-        self.weak = ['poison']
+        self.weak = []
         self.resist = ['slashing']
         super().__init__(name, id, img, loc, owner)
         
@@ -11796,9 +11840,9 @@ class Inquisitor(Summon):
     def __init__(self, name, id, img, loc, owner, level):
         if level == 1:
             self.actions = {'Move':self.move, 'Cleanse with Fire':self.cleanse_with_fire, 'Persecute':self.persecute, 'Prophecy':self.prophecy, 'Nullify':self.nullify, 'Abeyance':self.abeyance, 'Anoint':self.anoint, 'Reveal':self.reveal}
-            self.str = 4
+            self.str = 8
             self.agl = 4
-            self.end = 6
+            self.end = 7
             self.mm = 4
             self.msl = 0
             self.bls = 0
@@ -11816,9 +11860,9 @@ class Inquisitor(Summon):
             self.level = level
         elif level == 2:
             self.actions = {'Move':self.move, 'Cleanse with Fire':self.cleanse_with_fire, 'Persecute':self.persecute, 'Prophecy':self.prophecy, 'Nullify':self.nullify, 'Abeyance':self.abeyance, 'Anoint':self.anoint, 'Reveal':self.reveal}
-            self.str = 5
+            self.str = 9
             self.agl = 5
-            self.end = 7
+            self.end = 8
             self.mm = 5
             self.msl = 0
             self.bls = 0
@@ -18804,7 +18848,7 @@ class Berserker(Summon):
         s = self.loc[:]
         app.canvas.create_text(s[0]*100+49-app.moved_right, s[1]*100+84-app.moved_down, text = 'Howl From Beyond', font = ('chalkduster', 13), fill = 'gray33', tags = 'text')
         app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+85-app.moved_down, text = 'Howl From Beyond', font = ('chalkduster', 13), fill = 'gray88', tags = 'text')
-        ents = [k for k,v in app.all_ents().items() if v.loc in sqrs and v.owner != self.owner and 'Howl_From_Beyond' not in [j.name for i,j in v.effects_dict.items()]]
+        ents = [k for k,v in app.all_ents().items() if v.loc in sqrs and v.owner != self.owner and 'Howl_From_Beyond' not in [j.name for i,j in v.effects_dict.items()] and isinstance(v,Witch)==False]
         def cleanup_howl(n):
             del app.vis_dict[n]
             app.canvas.delete(n)
@@ -20583,7 +20627,7 @@ class Hypnotic_Spectre(Summon):
         self.mvs = 1
         self.move_range = 5
         self.move_type = 'flying'
-        self.attack_range = 1 # this attr is for player-owned, computer-controlled summons
+        self.attack_range = 4 # this attr is for player-owned, computer-controlled summons
         self.resist = []
         self.weak = ['fire', 'elec']
         super().__init__(name, id, img, loc, owner)
@@ -20591,41 +20635,61 @@ class Hypnotic_Spectre(Summon):
 #         self.id = id
 #         self.tags = id
         def eot(lockname = None):
-            self.effects_dict['control'].duration += 1 # permanent effect, each call increases duration
-            ents = [v for k,v in app.spell_target_ents().items() if v.owner != self.owner and v.get_inert()==False]
-            if ents == []:
-                root.after(666, lambda ln = lockname : app.dethloks[ln].set(1))
-            else:
-                goals = unique([c for c in app.coords for e in ents if dist(c,e.loc)==1 and app.grid[c[0]][c[1]]==''])
-                moves = self.legal_moves()
-                adj = [v for v in ents if dist(v.loc,self.loc)==1 and v.get_inert()==False]
-                if adj == []:
-                    if moves == []:# CANNOT MOVE, NONE ADJ
+            self.effects_dict['control'].duration += 1 # permanent effect
+            # move hawk to sqr w/i moverange that is w/i attackrange(5) and maximally distant from all enemies and then atk
+            # if no enemies w/i attack range, move to a random sqr w/i move range
+            els = [v.loc for k,v in app.action_target_ents().items() if v.owner != self.owner]
+            sqrs = [s for s in app.coords for el in els if 1 <= dist(s,el) <= self.attack_range]
+            moves = self.legal_moves()
+            gs = intersect(sqrs, moves)
+            if gs == []:
+                # move to rand sqr in moves
+                if moves == []:
+                    # cannot move at all, attempt attack wo moving
+                    ents = [v for k,v in app.action_target_ents().items() if dist(v.loc,self.loc) <= self.attack_range and v.owner != self.owner]
+                    if ents == []:
                         root.after(666, lambda ln = lockname : app.dethloks[ln].set(1))
                     else:
-                        goal = reduce(lambda a,b : a if dist(a,self.loc) < dist(b,self.loc) else b,goals)
-                        move = reduce(lambda a,b : a if dist(a,goal) < dist(b,goal) else b,moves)
-                        app.focus_square(move)
-                        root.after(666, lambda m = move, ln = lockname : self.hawk_move(m, ln))
-                else:#ATK ADJ
-                    ent = choice(adj)
-                    app.get_focus(ent.id)
-                    root.after(666, lambda id = ent.id, ln = lockname : self.hawk_attack(id, ln))
+                        x = [e for e in ents if isinstance(e,Witch)]
+                        if x:
+                            ent = choice(x)
+                        else:
+                            ent = choice(ents)
+                        id = choice(ent.id)
+                        app.get_focus(id)
+                        root.after(666, lambda id = id, ln = lockname : self.hawk_attack(id, ln))
+                else:
+                    move = choice(moves)
+                    app.focus_square(move)
+                    root.after(666, lambda m = move, ln = lockname : self.hawk_move(m, ln))
+            else:
+                g = reduce(lambda a,b : a if sum([dist(a,el) for el in els]) > sum([dist(b,el) for el in els]) else b, gs)
+                app.focus_square(g)
+                root.after(666, lambda sqr = g[:], ln = lockname : self.hawk_move(sqr, ln))
         e = partial(eot)
         def undo(lockname = None):
             root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
         u = partial(undo)
-        self.effects_dict['control'] = Effect(name = self.owner+"'s Hypnotic Spectre", eot_func = e, undo_func = u, duration = 666, level = 666)
+        self.effects_dict['control'] = Effect(name = self.owner+"'s Hawk", eot_func = e, undo_func = u, duration = 666, level = 666)
                 
+
     def hawk_attack(self, id, lockname):
         ent = app.ent_dict[id]
-        app.vis_dict['Spectre_Attack'] = Vis(name = 'Spectre_Attack', loc = ent.loc[:])
-        def cleanup_hawk_attack():
-            app.canvas.delete('Spectre_Attack')
-            del app.vis_dict['Spectre_Attack']
-        root.after(1666, cleanup_hawk_attack)
+        old_loc = ent.loc[:]
+        origin = self.loc[:]
+        lock(Bot.ai_flying_move, self, ent.loc[:])
+        lock(Bot.ai_flying_move, self, origin)
+        ent.loc = old_loc
+        app.grid[old_loc[0]][old_loc[1]] = ent.id
+#         ent = app.ent_dict[id]
+#         app.vis_dict['Hawk_Attack'] = Vis(name = 'Hawk_Attack', loc = ent.loc[:])
+#         app.canvas.create_image(ent.loc[0]*100+50-app.moved_right, ent.loc[1]*100+50-app.moved_down, image = app.vis_dict['Hawk_Attack'].img, tags = 'Hawk_Attack')
+#         def cleanup_hawk_attack():
+#             app.canvas.delete('Hawk_Attack')
+#             del app.vis_dict['Hawk_Attack']
+#         root.after(1666, cleanup_hawk_attack)
         my_agl = self.get_abl('agl')
-        tar_agl = ent.get_abl('agl')
+        tar_agl = app.ent_dict[id].get_abl('agl')
         if to_hit(my_agl, tar_agl) == True:
             # if witch, discard at random
             if isinstance(ent, Witch):
@@ -20639,9 +20703,13 @@ class Hypnotic_Spectre(Summon):
             tar_psy = ent.get_abl('psyche')
             d = damage(my_psy, tar_psy)
             lock(apply_damage, self, ent, -d, 'magick', 'Spectre Attack', 'melee')
+            my_str = self.get_abl('str')
+            tar_end = app.ent_dict[id].get_abl('end')
+            d = damage(my_str, tar_end)
+            lock(apply_damage, self, app.ent_dict[id], -d, 'piercing', 'Hawk Attack', 'melee')
             root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
         else: # miss
-            miss(ent.loc)
+            miss(app.ent_dict[id].loc)
             root.after(1555, lambda t = 'text' : app.canvas.delete(t))
             root.after(1666, lambda ln = lockname : app.dethloks[ln].set(1))
 
@@ -20716,7 +20784,7 @@ class Hypnotic_Spectre(Summon):
         app.grid[end[0]][end[1]] = self.id
         self.mvs -= 1
         # if enemy w/i range: atk else done
-        ents = [k for k,v in app.action_target_ents().items() if 1 <= dist(v.loc,self.loc) <= self.attack_range and v.owner != self.owner and isinstance(v,Tomb)]
+        ents = [k for k,v in app.all_ents().items() if dist(v.loc,self.loc) <= self.attack_range and v.owner != self.owner]
         if ents == []:
             root.after(1999, lambda ln = lockname : app.dethloks[ln].set(1))
         else:
@@ -21271,6 +21339,425 @@ class Wall_of_Blossoms(Summon):
         super().__init__(name, id, img, loc, owner)
         self.inert = True
         
+        
+class Bottle_Gnome(Summon):
+    def __init__(self, name, id, img, loc, owner, level):
+        self.actions = {}
+        self.level = level
+        if level == 1:
+            self.str = 1
+            self.agl = 3
+            self.end = 1
+            self.mm = 1
+            self.msl = 0
+            self.bls = 0
+            self.dodge = 3
+            self.psyche = 3
+            self.wis = 1
+            self.rsn = 1
+            self.san = 25
+            self.init = 3
+            self.spirit = 7
+            self.magick = 0
+            self.acts = 1
+            self.mvs = 1
+            self.move_range = 4
+        elif level == 2:
+            self.str = 1
+            self.agl = 3
+            self.end = 1
+            self.mm = 1
+            self.msl = 0
+            self.bls = 0
+            self.dodge = 3
+            self.psyche = 3
+            self.wis = 1
+            self.rsn = 1
+            self.san = 25
+            self.init = 3
+            self.spirit = 7
+            self.magick = 0
+            self.acts = 1
+            self.mvs = 1
+            self.move_range = 4
+        self.move_type = 'normal'
+        self.attack_range = 1
+        self.resist = ['slashing', 'crushing', 'piercing']
+        self.weak = []
+        super().__init__(name, id, img, loc, owner)
+        self.inert = True
+        
+        def explode_trigger(lockname = None):
+            app.focus_square(self.loc)
+            ents = [v for k,v in app.all_ents().items() if dist(v.loc,self.loc) == 1 and v.owner == self.owner]
+            amt = self.get_abl('psyche')
+            def cleanup_gnomes(n):
+                del app.vis_dict[n]
+                app.canvas.delete(n)
+            for ent in ents:
+                n = 'gnomes'+str(app.count)
+                app.count += 1
+                app.vis_dict[n] = Vis(name = 'Legerdemain', loc = ent.loc)
+                root.after(1666, lambda n = n : cleanup_gnomes(n))
+                ent.magick += amt
+                if ent.magick > ent.base_magick:
+                    ent.magick = ent.base_magick
+                app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+14-app.moved_down, text = '+'+str(amt)+' magick', font = ('chalkduster', 14), fill = 'black', tags = 'text')
+                app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+15-app.moved_down, text = '+'+str(amt)+' magick', font = ('chalkduster', 14), fill = 'cyan', tags = 'text')
+            root.after(1666, lambda ln = lockname : app.dethloks[ln].set(1))
+        dt = partial(explode_trigger)
+        def undo(lockname = None):
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+        u = partial(undo)
+        d_inst = Death_Trigger(name = 'Gnome_Death', level = 10, undo_func = u, dt = dt)
+        self.death_triggers.append(d_inst)
+        
+        def eot(lockname = None):
+            self.effects_dict['control'].duration += 1 # permanent effect
+            els = [v.loc for k,v in app.all_ents().items() if v.owner == self.owner]
+            sqrs = [s for s in app.coords for el in els if 1 <= dist(s,el) <= self.attack_range]
+            moves = self.legal_moves()
+            gs = intersect(sqrs, moves)
+            if gs == []:
+                # move to rand sqr in moves
+                if moves == []:
+                    root.after(666, lambda ln = lockname : app.dethloks[ln].set(1))
+                else:
+                    move = choice(moves)
+                    app.focus_square(move)
+                    root.after(666, lambda m = move, ln = lockname : self.gnome_move(m, ln))
+            else:
+                g = reduce(lambda a,b : a if sum([dist(a,el) for el in els]) > sum([dist(b,el) for el in els]) else b, gs)
+                app.focus_square(g)
+                root.after(666, lambda sqr = g[:], ln = lockname : self.gnome_move(sqr, ln))
+        e = partial(eot)
+        def undo(lockname = None):
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+        u = partial(undo)
+        self.effects_dict['control'] = Effect(name = self.owner+"'s Bottle Gnome", eot_func = e, undo_func = u, duration = 666, level = 666)
+        
+    def gnome_move(self, endloc, lockname):
+        global selected
+        effect1 = mixer.Sound('Sound_Effects/footsteps.ogg')
+        effect1.set_volume(app.effects_volume.get())
+        sound_effects.play(effect1, -1)
+        selected = [self.id]
+        id = self.id
+        start_sqr = self.loc[:]
+        path = bfs(start_sqr, [endloc], app.grid[:]) # end_sqr must be put in list
+        begin = path[0]
+        end = path[1]
+        x = begin[0]*100+50-app.moved_right
+        y = begin[1]*100+50-app.moved_down
+        endx = end[0]*100+50-app.moved_right
+        endy = end[1]*100+50-app.moved_down
+        def move_loop(id, x, y, endx, endy, start_sqr, endloc, path):
+            if x % 20 == 0 or y % 20 == 0:
+                self.rotate_image()
+                app.canvas.delete(id)
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+            if x > endx:
+                x -= 10
+                app.canvas.move(id, -10, 0)
+            elif x < endx: 
+                x += 10
+                app.canvas.move(id, 10, 0)
+            if y > endy: 
+                y -= 10
+                app.canvas.move(id, 0, -10)
+            elif y < endy: 
+                y += 10
+                app.canvas.move(id, 0, 10)
+            try: app.canvas.tag_lower((self.tags), 'large')
+            except: pass
+            app.canvas.tag_lower((self.tags), 'maptop')
+            app.canvas.tag_raise('cursor')
+            if x == endloc[0]*100+50-app.moved_right and y == endloc[1]*100+50-app.moved_down: # END WHOLE MOVE
+                self.gnome_finish_move(endloc, start_sqr, lockname)
+            elif x == endx and y == endy: # END PORTION OF PATH
+                path = path[1:]
+                begin = path[0]
+                end = path[1]
+                x = begin[0]*100+50-app.moved_right
+                y = begin[1]*100+50-app.moved_down
+                endx = end[0]*100+50-app.moved_right
+                endy = end[1]*100+50-app.moved_down
+                move_loop(id, x, y, endx, endy, start_sqr, endloc, path)
+            else: # CONTINUE LOOP
+                root.after(44, lambda id = id, x = x, y = y, ex = endx, ey = endy, s = start_sqr, s2 = endloc, p = path : move_loop(id, x, y, ex, ey, s, s2, p))
+        move_loop(id, x, y, endx, endy, start_sqr, endloc, path)
+# 
+    def gnome_finish_move(self, end_sqr, start_sqr, lockname):
+        global selected
+        sound_effects.stop()
+        self.mvs -= 1
+        selected = []
+        self.loc = end_sqr[:]
+        app.grid[start_sqr[0]][start_sqr[1]] = ''
+        app.grid[end_sqr[0]][end_sqr[1]] = self.id
+        root.after(999, lambda ln = lockname : app.dethloks[ln].set(1))
+        
+class Pyrrhic_Gnome(Summon):
+    def __init__(self, name, id, img, loc, owner, level):
+        self.actions = {}
+        self.level = level
+        if level == 1:
+            self.str = 1
+            self.agl = 3
+            self.end = 5
+            self.mm = 1
+            self.msl = 0
+            self.bls = 0
+            self.dodge = 3
+            self.psyche = 1
+            self.wis = 1
+            self.rsn = 1
+            self.san = 25
+            self.init = 3
+            self.spirit = 7
+            self.magick = 0
+            self.acts = 1
+            self.mvs = 1
+            self.move_range = 4
+        elif level == 2:
+            self.str = 1
+            self.agl = 3
+            self.end = 5
+            self.mm = 1
+            self.msl = 0
+            self.bls = 0
+            self.dodge = 3
+            self.psyche = 1
+            self.wis = 1
+            self.rsn = 1
+            self.san = 25
+            self.init = 3
+            self.spirit = 7
+            self.magick = 0
+            self.acts = 1
+            self.mvs = 1
+            self.move_range = 4
+            self.tick = 1
+        self.move_type = 'normal'
+        self.attack_range = 1
+        self.resist = ['slashing', 'crushing', 'piercing']
+        self.weak = []
+        super().__init__(name, id, img, loc, owner)
+        self.inert = True
+        
+        def explode_trigger(lockname = None):
+            app.focus_square(self.loc)
+            ents = [v for k,v in app.all_ents().items() if dist(v.loc,self.loc) == 1]
+            d = self.tick*3
+            def cleanup_gnomes(n):
+                del app.vis_dict[n]
+                app.canvas.delete(n)
+            for ent in ents:
+                n = 'gnomes'+str(app.count)
+                app.count += 1
+                app.vis_dict[n] = Vis(name = 'Pain_Explode', loc = ent.loc)
+                root.after(1666, lambda n = n : cleanup_gnomes(n))
+                lock(apply_damage, self, ent, -d, 'explosive', 'Pyrrhic Gnome', 'ranged')
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+        dt = partial(explode_trigger)
+        def undo(lockname = None):
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+        u = partial(undo)
+        d_inst = Death_Trigger(name = 'Gnome_Death', level = 10, undo_func = u, dt = dt)
+        self.death_triggers.append(d_inst)
+        
+        def eot(lockname = None):
+            self.tick += 1
+            self.effects_dict['control'].duration += 1 # permanent effect
+            els = [v.loc for k,v in app.all_ents().items() if v.owner != self.owner]
+            sqrs = [s for s in app.coords for el in els if 1 <= dist(s,el) <= self.attack_range]
+            moves = self.legal_moves()
+            gs = intersect(sqrs, moves)
+            if gs == []:
+                # move to rand sqr in moves
+                if moves == []:
+                    root.after(666, lambda ln = lockname : app.dethloks[ln].set(1))
+                else:
+                    move = choice(moves)
+                    app.focus_square(move)
+                    root.after(666, lambda m = move, ln = lockname : self.gnome_move(m, ln))
+            else:
+                g = reduce(lambda a,b : a if sum([dist(a,el) for el in els]) > sum([dist(b,el) for el in els]) else b, gs)
+                app.focus_square(g)
+                root.after(666, lambda sqr = g[:], ln = lockname : self.gnome_move(sqr, ln))
+        e = partial(eot)
+        def undo(lockname = None):
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+        u = partial(undo)
+        self.effects_dict['control'] = Effect(name = self.owner+"'s Pyrrhic Gnome", eot_func = e, undo_func = u, duration = 666, level = 666)
+        
+    def gnome_move(self, endloc, lockname):
+        global selected
+        effect1 = mixer.Sound('Sound_Effects/footsteps.ogg')
+        effect1.set_volume(app.effects_volume.get())
+        sound_effects.play(effect1, -1)
+        selected = [self.id]
+        id = self.id
+        start_sqr = self.loc[:]
+        path = bfs(start_sqr, [endloc], app.grid[:]) # end_sqr must be put in list
+        begin = path[0]
+        end = path[1]
+        x = begin[0]*100+50-app.moved_right
+        y = begin[1]*100+50-app.moved_down
+        endx = end[0]*100+50-app.moved_right
+        endy = end[1]*100+50-app.moved_down
+        def move_loop(id, x, y, endx, endy, start_sqr, endloc, path):
+            if x % 20 == 0 or y % 20 == 0:
+                self.rotate_image()
+                app.canvas.delete(id)
+                app.canvas.create_image(x, y, image = self.img, tags = self.tags)
+            if x > endx:
+                x -= 10
+                app.canvas.move(id, -10, 0)
+            elif x < endx: 
+                x += 10
+                app.canvas.move(id, 10, 0)
+            if y > endy: 
+                y -= 10
+                app.canvas.move(id, 0, -10)
+            elif y < endy: 
+                y += 10
+                app.canvas.move(id, 0, 10)
+            try: app.canvas.tag_lower((self.tags), 'large')
+            except: pass
+            app.canvas.tag_lower((self.tags), 'maptop')
+            app.canvas.tag_raise('cursor')
+            if x == endloc[0]*100+50-app.moved_right and y == endloc[1]*100+50-app.moved_down: # END WHOLE MOVE
+                self.gnome_finish_move(endloc, start_sqr, lockname)
+            elif x == endx and y == endy: # END PORTION OF PATH
+                path = path[1:]
+                begin = path[0]
+                end = path[1]
+                x = begin[0]*100+50-app.moved_right
+                y = begin[1]*100+50-app.moved_down
+                endx = end[0]*100+50-app.moved_right
+                endy = end[1]*100+50-app.moved_down
+                move_loop(id, x, y, endx, endy, start_sqr, endloc, path)
+            else: # CONTINUE LOOP
+                root.after(44, lambda id = id, x = x, y = y, ex = endx, ey = endy, s = start_sqr, s2 = endloc, p = path : move_loop(id, x, y, ex, ey, s, s2, p))
+        move_loop(id, x, y, endx, endy, start_sqr, endloc, path)
+# 
+    def gnome_finish_move(self, end_sqr, start_sqr, lockname):
+        global selected
+        sound_effects.stop()
+        self.mvs -= 1
+        selected = []
+        self.loc = end_sqr[:]
+        app.grid[start_sqr[0]][start_sqr[1]] = ''
+        app.grid[end_sqr[0]][end_sqr[1]] = self.id
+        root.after(999, lambda ln = lockname : app.dethloks[ln].set(1))
+        
+        
+class Carrion_Wyrm(Summon):
+    def __init__(self, name, id, img, loc, owner, level, j = 1):
+        self.actions = {'Move':self.move, 'Bite':self.bite}
+        self.level = level
+        if level == 1:
+            self.str = j
+            self.agl = j
+            self.end = j
+            self.mm = j
+            self.msl = j
+            self.bls = j
+            self.dodge = j
+            self.psyche = j
+            self.wis = j
+            self.rsn = j
+            self.san = 13
+            self.init = j
+            self.spirit = j*3
+            self.magick = 0
+            self.acts = 1
+            self.mvs = 1
+            self.move_range = 6
+        elif level == 2:
+            self.str = j
+            self.agl = j
+            self.end = j
+            self.mm = j
+            self.msl = j
+            self.bls = j
+            self.dodge = j
+            self.psyche = j
+            self.wis = j
+            self.rsn = j
+            self.san = 13
+            self.init = j
+            self.spirit = j*3
+            self.magick = 0
+            self.acts = 1
+            self.mvs = 1
+            self.move_range = 6
+        self.move_type = 'normal'
+        self.attack_range = 1
+        self.resist = ['poison','acid']
+        self.weak = ['fire']
+        super().__init__(name, id, img, loc, owner)
+        
+        
+    def bite(self, event = None):
+        if self.acts < 1:
+            return
+        app.unbind_nonarrows()
+        root.bind('<q>', self.finish_bite)
+        sqrs = [c for c in app.coords if dist(self.loc, c) == 1]
+        app.animate_squares(sqrs)
+        app.depop_context(event = None)
+        root.bind('<a>', lambda e, sqr = grid_pos, sqrs = sqrs : self.do_bite(event = e, sqr = sqr, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Confirm Bite Target', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.do_bite(event = e, sqr = sqr, sqrs = sqrs))
+        b.pack(side = 'top')
+        app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
+        
+    def do_bite(self, event, sqr, sqrs):
+        if sqr not in sqrs:
+            return
+        id = app.grid[sqr[0]][sqr[1]]
+        if id not in app.action_target_ents().keys():
+            return
+#         effect1 = mixer.Sound('Sound_Effects/bite.ogg')
+#         effect1.set_volume(.5)
+#         sound_effects.play(effect1, 0)
+        app.unbind_all()
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        self.acts -= 1
+        n = 'Bite' + str(app.count)
+        app.count += 1
+        app.vis_dict[n] = Vis(name = 'Bite', loc = sqr[:])
+        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict[n].img, tags = n)
+        def cleanup_bite(n):
+            del app.vis_dict[n]
+            app.canvas.delete(n)
+        root.after(1666, lambda n = n : cleanup_bite(n))
+        my_agl = self.get_abl('agl')
+        tar_agl = app.ent_dict[id].get_abl('agl')
+        if to_hit(my_agl, tar_agl) == True:
+            my_str = self.get_abl('str')
+            tar_end = app.ent_dict[id].get_abl('end')
+            d = damage(my_str, tar_end)
+            lock(apply_damage, self, app.ent_dict[id], -d, 'slashing', 'Bite', 'melee')
+            root.after(333, self.finish_bite)
+        else:
+            miss(app.ent_dict[id].loc)
+            root.after(1666, self.finish_bite)
+        
+    def finish_bite(self, event = None):
+        app.depop_context(event = None)
+        app.canvas.delete('text')
+        app.cleanup_squares()
+        app.unbind_all()
+        app.rebind_all()
+        app.exists_check(app.active_ent)
+        
+        
 class Cadaver(Summon):
     def __init__(self, name, id, img, loc, owner, level):
         self.actions = {}
@@ -21316,8 +21803,6 @@ class Cadaver(Summon):
         self.resist = ['elec', 'cold', 'poison', 'acid', 'slashing', 'crushing', 'piercing', 'magick']
         self.weak = ['fire']
         super().__init__(name, id, img, loc, owner)
-#         self.id = id
-#         self.tags = id
 #         def eot(lockname = None):
 #             self.effects_dict['control'].duration += 1 # permanent effect
 #             els = [v.loc for k,v in app.all_ents().items() if v.owner != self.owner]
@@ -21538,14 +22023,14 @@ class Witch(Summon):
                 self.dodge = 8
                 self.psyche = 10
                 self.wis = 10
-                self.rsn = 7
-                self.san = 15
+                self.rsn = 6
+                self.san = 17
                 self.init = 9
-                self.spirit = 50
+                self.spirit = 20
                 self.magick = 0
                 self.weak = []
                 self.resist = ['poison', 'fire']
-                self.base_spirit = 50
+                self.base_spirit = 20
 #                 self.base_magick = 85
                 self.magick_regen = 1
             self.color_img = ImageTk.PhotoImage(Image.open('animations/Agnes_Sampson_Color/Agnes_Sampson_Color.png'))
@@ -21558,34 +22043,6 @@ class Witch(Summon):
                 app.p2_color_img = self.color_img
         elif name == 'Fakir_Ali':
             if level == 1:
-                self.arcane_dict['Boiling_Blood'] = Spell('Boiling_Blood',self.boiling_blood, 2,0,0)
-                self.arcane_dict['Dark_Sun'] = Spell('Dark_Sun',self.dark_sun, 3,0,0)
-                self.arcane_dict['Meditate'] = Spell('Meditate',self.meditate, 2,0,0)
-                self.arcane_dict['Legerdemain'] = Spell('Legerdemain',self.legerdemain, 2,0,0)
-                self.arcane_dict['Grasp_of_the_Old_Ones'] = Spell('Grasp_of_the_Old_Ones',self.grasp_of_the_old_ones, 3,0,0)
-                self.arcane_dict['Horrid_Wilting'] = Spell('Horrid_Wilting',self.horrid_wilting, 7,0,0)
-                self.arcane_dict['Mind_Rot'] = Spell('Mind_Rot',self.mind_rot, 8,0,0)
-                self.arcane_dict['Dust_Devil'] = Spell('Dust_Devil',self.dust_devil, 5,0,0)
-                self.arcane_dict['Dispel'] = Spell('Dispel',self.dispel, 7,0,0)
-                self.arcane_dict['Disintegrate'] = Spell('Disintegrate',self.disintegrate, 5,0,0)
-                self.arcane_dict['Mummify'] = Spell('Mummify',self.mummify, 3,0,0)
-                self.arcane_dict['Immolate'] = Spell('Immolate',self.immolate, 8,0,0)
-                self.arcane_dict['Command_of_Osiris'] = Spell('Command_of_Osiris',self.command_of_osiris, 8,0,0)
-                self.arcane_dict['Energize'] = Spell('Energize',self.energize, 2, 0, 0)
-                self.arcane_dict['Psi_Blades'] = Spell('Psi_Blades',self.psi_blades, 1, 0, 0)
-                self.arcane_dict['Cosmic_Sight'] = Spell('Cosmic_Sight',self.cosmic_sight, 1, 0, 0)
-                self.arcane_dict['Foul_Familiar'] = Spell('Foul_Familiar',self.foul_familiar, 3, 0, 0)
-                self.arcane_dict['Demonic_Sight'] = Spell('Demonic_Sight',self.demonic_sight, 3, 0, 0)
-                self.arcane_dict['Hidden_From_the_Stars'] = Spell('Hidden_From_the_Stars',self.hidden_from_the_stars, 4, 0, 0)
-                self.arcane_dict['Strength_of_the_Void'] = Spell('Strength_of_the_Void',self.strength_of_the_void, 4, 0, 0)
-                self.arcane_dict['Iron_Spirit'] = Spell('Iron_Spirit',self.iron_spirit, 4, 0, 0)
-                self.arcane_dict["Mercury's_Blessing"] = Spell("Mercury's_Blessing",self.mercurys_blessing, 4, 0, 0)
-                self.arcane_dict['Gift_of_Mars'] = Spell('Gift_of_Mars',self.gift_of_mars, 4, 0, 0)
-                self.arcane_dict['Lift'] = Spell('Lift',self.lift, 3, 0, 0)
-                self.arcane_dict['Cloister'] = Spell('Cloister',self.cloister, 3, 0, 0)
-                self.arcane_dict['Blind'] = Spell('Blind',self.blind, 6, 0, 0)
-                self.arcane_dict['Enmeshing_Coils'] = Spell('Enmeshing_Coils',self.enmeshing_coils, 6, 0, 0)
-                self.arcane_dict['Mirror_Armor'] = Spell('Mirror_Armor',self.mirror_armor, 5, 0, 0)
                 self.base_smns = 1
                 self.smns = 1
                 self.base_acts = 1
@@ -21613,64 +22070,6 @@ class Witch(Summon):
                 self.base_spirit = 50
                 self.magick_regen = 1
             elif level == 2:
-#                 self.arcane_dict['Boiling_Blood'] = Spell('Boiling_Blood',self.boiling_blood, 2,0,0)
-#                 self.arcane_dict['Dark_Sun'] = Spell('Dark_Sun',self.dark_sun, 3,0,0)
-#                 self.arcane_dict['Meditate'] = Spell('Meditate',self.meditate, 2,0,0)
-#                 self.arcane_dict['Legerdemain'] = Spell('Legerdemain',self.legerdemain, 2,0,0)
-#                 self.arcane_dict['Grasp_of_the_Old_Ones'] = Spell('Grasp_of_the_Old_Ones',self.grasp_of_the_old_ones, 3,0,0)
-#                 self.arcane_dict['Horrid_Wilting'] = Spell('Horrid_Wilting',self.horrid_wilting, 7,0,0)
-#                 self.arcane_dict['Mind_Rot'] = Spell('Mind_Rot',self.mind_rot, 8,0,0)
-#                 self.arcane_dict['Dust_Devil'] = Spell('Dust_Devil',self.dust_devil, 5,0,0)
-#                 self.arcane_dict['Dispel'] = Spell('Dispel',self.dispel, 7,0,0)
-#                 self.arcane_dict['Disintegrate'] = Spell('Disintegrate',self.disintegrate, 5,0,0)
-#                 self.arcane_dict['Mummify'] = Spell('Mummify',self.mummify, 3,0,0)
-#                 self.arcane_dict['Immolate'] = Spell('Immolate',self.immolate, 8,0,0)
-#                 self.arcane_dict['Command_of_Osiris'] = Spell('Command_of_Osiris',self.command_of_osiris, 8,0,0)
-#                 self.arcane_dict['Psionic_Push'] = Spell('Psionic_Push',self.psionic_push, 2, 0, 0)
-#                 self.arcane_dict["Minerva's_Gift"] = Spell("Minerva's_Gift",self.minervas_gift, 1, 0, 0)
-#                 self.arcane_dict['Bewitch'] = Spell('Bewitch',self.bewitch, 3, 0, 0)
-#                 self.arcane_dict['Read_the_Stars'] = Spell('Read_the_Stars',self.read_the_stars, 2, 0, 0)
-#                 self.arcane_dict['Energize'] = Spell('Energize',self.energize, 3, 0, 0)
-#                 self.arcane_dict['Psi_Blades'] = Spell('Psi_Blades',self.psi_blades, 3, 0, 0)
-#                 self.arcane_dict['Cosmic_Sight'] = Spell('Cosmic_Sight',self.cosmic_sight, 2, 0, 0)
-#                 self.arcane_dict['Astrological_Guidance'] = Spell('Astrological_Guidance',self.astrological_guidance, 4, 0, 0)
-#                 self.arcane_dict['Foul_Familiar'] = Spell('Foul_Familiar',self.foul_familiar, 3, 0, 0)
-#                 self.arcane_dict['Plague'] = Spell('Plague',self.plague, 5, 0, 0)
-#                 self.arcane_dict['Pestilence'] = Spell('Pestilence',self.pestilence, 11, 0, 0)
-#                 self.arcane_dict['Curse_of_Oriax'] = Spell('Curse_of_Oriax',self.curse_of_oriax, 5, 0, 0)
-#                 self.arcane_dict['Demonic_Sight'] = Spell('Demonic_Sight',self.demonic_sight, 3, 0, 0)
-#                 self.arcane_dict['Molecular_Subversion'] = Spell('Molecular_Subversion',self.molecular_subversion, 4, 0, 0)
-#                 self.arcane_dict['Plutonian_Cloak'] = Spell('Plutonian_Cloak',self.plutonian_cloak, 6, 0, 0)
-#                 self.arcane_dict['Hidden_From_the_Stars'] = Spell('Hidden_From_the_Stars',self.hidden_from_the_stars, 4, 0, 0)
-#                 self.arcane_dict['Strength_of_the_Void'] = Spell('Strength_of_the_Void',self.strength_of_the_void, 4, 0, 0)
-#                 self.arcane_dict['Iron_Spirit'] = Spell('Iron_Spirit',self.iron_spirit, 4, 0, 0)
-#                 self.arcane_dict["Mercury's_Blessing"] = Spell("Mercury's_Blessing",self.mercurys_blessing, 4, 0, 0)
-#                 self.arcane_dict['Gift_of_Mars'] = Spell('Gift_of_Mars',self.gift_of_mars, 4, 0, 0)
-#                 self.arcane_dict['Gravity'] = Spell('Gravity',self.gravity, 6, 0, 0)
-#                 self.arcane_dict["Beleth's_Command"] = Spell("Beleth's_Command",self.beleths_command, 7, 0, 0)
-#                 self.arcane_dict['Lift'] = Spell('Lift',self.lift, 3, 0, 0)
-#                 self.arcane_dict['Cloister'] = Spell('Cloister',self.cloister, 3, 0, 0)
-#                 self.arcane_dict['Aura_of_Agony'] = Spell('Aura_of_Agony',self.aura_of_agony, 5, 0, 0)
-#                 self.arcane_dict['Dampening_Emanation'] = Spell('Dampening_Emanation',self.dampening_emanation, 7, 0, 0)
-#                 self.arcane_dict['Blind'] = Spell('Blind',self.blind, 6, 0, 0)
-#                 self.arcane_dict['Enmeshing_Coils'] = Spell('Enmeshing_Coils',self.enmeshing_coils, 7, 0, 0)
-#                 self.arcane_dict['Mirror_Armor'] = Spell('Mirror_Armor',self.mirror_armor, 6, 0, 0)
-#                 self.arcane_dict['Forcefield'] = Spell('Forcefield',self.forcefield, 5, 0, 0)
-#                 self.arcane_dict['Vengeance'] = Spell('Vengeance',self.vengeance, 8, 0, 0)
-#                 self.arcane_dict['Pain'] = Spell('Pain',self.pain, 5, 0, 0)
-#                 self.arcane_dict['Torment'] = Spell('Torment',self.torment, 9, 0, 0)
-#                 self.arcane_dict['Hatred'] = Spell('Hatred',self.hatred, 6, 0, 0)
-#                 self.arcane_dict['Fangs_of_Apophis'] = Spell('Fangs_of_Apophis',self.fangs_of_apophis, 4, 0, 0)
-#                 self.arcane_dict['Wreathed_in_Flame'] = Spell('Wreathed_in_Flame',self.wreathed_in_flame, 5, 0, 0)
-#                 self.arcane_dict['Mass_Hysteria'] = Spell('Mass_Hysteria',self.mass_hysteria, 5, 0, 0)
-#                 self.arcane_dict['Reaping_of_Saturnus'] = Spell('Reaping_of_Saturnus',self.reaping_of_saturnus, 7, 0, 0)
-#                 self.arcane_dict['Genjutsushi'] = Spell('Genjutsushi',self.genjutsushi, 3, 0, 0)
-#                 self.arcane_dict['Summon_Lesser_Demon'] = Spell('Summon_Lesser_Demon',self.summon_lesser_demon, 15, 0, 0)
-#                 self.arcane_dict['Summon_Cenobite'] = Spell('Summon_Cenobite',self.summon_cenobite, 15, 0, 0)
-#                 self.arcane_dict['Animate_Tomb'] = Spell('Animate_Tomb',self.animate_tomb, 4, 0, 0)
-#                 self.arcane_dict['Hunting_Hawk'] = Spell('Hunting_Hawk',self.hunting_hawk, 3, 0, 0)
-#                 self.arcane_dict['Barrow_Wight'] = Spell('Barrow_Wight',self.barrow_wight, 6, 0, 0)
-#                 self.arcane_dict['Haunted_Cairn'] = Spell('Haunted_Cairn',self.haunted_cairn, 12, 0, 0)
                 self.base_smns = 1
                 self.smns = 1
                 self.base_acts = 1
@@ -21685,17 +22084,17 @@ class Witch(Summon):
                 self.mm = 5
                 self.msl = 0
                 self.bls = 0
-                self.dodge = 6
+                self.dodge = 8
                 self.psyche = 9
                 self.wis = 9
-                self.rsn = 7
-                self.san = 17
+                self.rsn = 6
+                self.san = 16
                 self.init = 8
-                self.spirit = 60
+                self.spirit = 30
                 self.magick = 0
                 self.weak = []
                 self.resist = ['slashing', 'piercing', 'fire']
-                self.base_spirit = 60
+                self.base_spirit = 30
                 self.magick_regen = 1
             self.color_img = ImageTk.PhotoImage(Image.open('animations/Fakir_Ali_Color/Fakir_Ali_Color.png'))
             self.minimap_img = ImageTk.PhotoImage(Image.open('animations/Fakir_Ali_Minimap_Img/0.png').resize((10,10)))
@@ -24895,6 +25294,57 @@ class Witch(Summon):
         ent.effects_dict[n] = Effect(name = 'Strength_of_the_Void', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
         root.after(2111, lambda  name = 'Strength_of_the_Void' : self.cleanup_spell(name = name))
         
+    def quicksilver(self, event = None):
+        app.depop_context(event = None)
+        root.bind('<q>', self.cleanup_spell)
+        sqrs = [s for s in app.coords if dist(self.loc, s) == 1]
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_quicksilver(event = e, sqr = s, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Choose Target For Quicksilver', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_quicksilver(e, s, sqrs = sqrs))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
+        
+    def do_quicksilver(self, event, sqr, sqrs):
+        if sqr not in sqrs:
+            return
+        id = app.grid[sqr[0]][sqr[1]]
+        if id not in app.spell_target_ents().keys():
+            return
+        ent = app.ent_dict[id]
+        if isinstance(ent, Witch):
+            return
+        if 'Quicksilver' in [v.name for k,v in ent.effects_dict.items()]:
+            return
+        self.magick -= self.arcane_dict['Quicksilver'].cost
+        spell = self.arcane_dict['Quicksilver']
+        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        effect1 = mixer.Sound('Sound_Effects/hidden_from_the_stars.ogg')
+        effect1.set_volume(app.effects_volume.get())
+        sound_effects.play(effect1, 0)
+#         self.init_cast_anims()
+        app.unbind_all()
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        app.vis_dict['Quicksilver'] = Vis(name = 'Quicksilver', loc = sqr[:])
+        app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+14-app.moved_down, text = 'Quicksilver', justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
+        app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+15-app.moved_down, text = 'Quicksilver', justify = 'center', font = ('chalkduster', 14), fill = 'turquoise', tags = 'text')
+        app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+84-app.moved_down, text = '+4 init', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
+        app.canvas.create_text(ent.loc[0]*100+50-app.moved_right, ent.loc[1]*100+85-app.moved_down, text = '+4 init', justify = 'center', font = ('chalkduster', 13), fill = 'turquoise', tags = 'text')
+        def quicksilver_effect(stat):
+            return stat+4
+        p = partial(quicksilver_effect)
+        ent.init_effects.append(p)
+        def un(ent, p, lockname = None):
+            ent.init_effects.remove(p)
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+        u = partial(un, ent, p)
+        n = 'qsilver' + str(app.count)
+        ent.effects_dict[n] = Effect(name = 'Quicksilver', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
+        root.after(2111, lambda  name = 'Quicksilver' : self.cleanup_spell(name = name))
+        
         
     def hidden_from_the_stars(self, event = None):
         app.depop_context(event = None)
@@ -25343,6 +25793,100 @@ class Witch(Summon):
         root.after(1444, lambda ids = ids : hysteria_loop(ids))
         
         
+    def carrion_wyrm(self, event = None):
+        app.depop_context(event = None)
+        root.bind('<q>', self.cleanup_spell)
+        sqrs = [c for c in app.coords if 1 <= dist(self.loc, c) <= self.get_abl('rsn') and app.grid[c[0]][c[1]]=='']
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_carrion_wyrm(event = e, sqr = s, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Choose Location for Carrion Wyrm', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_carrion_wyrm(e, s, sqrs = sqrs))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
+        
+    def do_carrion_wyrm(self, event, sqr, sqrs):
+        if sqr not in sqrs:
+            return
+        cards = list(set(self.discard[:]))
+        if cards == []:
+            return
+        self.magick -= self.arcane_dict['Carrion_Wyrm'].cost
+        spell = self.arcane_dict['Carrion_Wyrm']
+        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        effect1 = mixer.Sound('Sound_Effects/dark_sun.ogg')
+        effect1.set_volume(app.effects_volume.get())
+        sound_effects.play(effect1, 0)
+#         self.init_cast_anims()
+        app.unbind_all()
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        app.vis_dict['Carrion_Wyrm'] = Vis(name = 'Carrion_Wyrm', loc = sqr[:])
+        # debug custom vis
+        app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+84-app.moved_down, text = 'Carrion Wyrm', justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
+        app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+85-app.moved_down, text = 'Carrion Wyrm', justify = 'center', font = ('chalkduster', 14), fill = 'gray', tags = 'text')
+        self.page_carrion_wyrm(cards = cards, loc = sqr[:])
+
+
+    def page_carrion_wyrm(self, event = None, cards = None, index = 0, amt = 0, loc = None):
+        app.unbind_all()
+        for b in app.context_buttons:
+            if isinstance(b, tk.Button):
+                b.destroy()
+        for i, card in enumerate(cards[index:index+9]):
+            i += 1
+            p = partial(self.discard_carrion_wyrm, card = card, cards = cards, amt = amt, loc = loc)
+            root.bind(str(i), p)
+            b1 = tk.Button(app.context_menu, wraplength = 190, text = str(card.replace('_', ' ')), font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = p)
+            b1.pack(side = 'top', pady = 2)
+            app.context_buttons.append(b1)
+            b1.bind('<Button-2>', lambda n = card : action_description(n))
+        if index > 0:
+            b4 = tk.Button(app.context_menu, text = 'W : Prev', font = ('chalkduster', 14), fg='tan3', highlightbackground = 'tan3', command = lambda cards = cards, i = index-9, amt = amt, loc = loc : self.page_carrion_wyrm(cards = cards, index = i, amt = amt, loc = loc))
+            b4.pack(side = 'top', pady = 2)
+            root.bind('<w>', lambda e, cards = cards, i = index-9, amt = amt, loc = loc : self.page_carrion_wyrm(cards = cards, index = i, amt = amt, loc = loc))
+            app.context_buttons.append(b4)
+        if len(cards) > len(cards[:index+9]):
+            b3 = tk.Button(app.context_menu, text = 'E : Next', font = ('chalkduster', 14), fg='tan3', highlightbackground = 'tan3', command = lambda cards = cards, i = index+9, amt = amt, loc = loc : self.page_carrion_wyrm(cards = cards, index = i, amt = amt, loc = loc))
+            b3.pack(side = 'top', pady = 2)
+            app.context_buttons.append(b3)
+            root.bind('<e>', lambda e, cards = cards, i = index+9, amt = amt : self.page_carrion_wyrm(cards = cards, index = i, amt = amt))
+        # add 'done' button
+        b4 = tk.Button(app.context_menu, text = 'Done', font = ('chalkduster', 14), fg='tan3', highlightbackground = 'tan3', command = lambda amt = amt, loc = loc : self.finish_carrion_wyrm(amt = amt, loc = loc))
+        b4.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b4)
+#         root.bind('<e>', lambda e, hand = hand, i = index+5, ent = ent : self.page_giant_growth(hand = hand, index = i, ent = ent))
+            
+            
+    def discard_carrion_wyrm(self, event = None, card = None, cards = None, amt = None, loc = None):
+        app.depop_context(event = None)
+        self.discard.remove(card)
+        self.exile.append(card)
+        cards.remove(card)
+        amt += 1
+        if cards == []:
+            self.finish_carrion_wyrm(amt = amt, loc = loc)
+        else:
+            self.page_carrion_wyrm(cards = cards, amt = amt, loc = loc)
+        
+    def finish_carrion_wyrm(self, amt = None, loc = None):
+        app.depop_context(event = None)
+        # smn wyrm
+        img = ImageTk.PhotoImage(Image.open('summon_imgs/Carrion_Wyrm.png'))
+        if self.owner == 'p1':
+            id = 'a'+str(app.ent_dict[app.p1_witch].summon_ids)
+            app.ent_dict[app.p1_witch].summon_ids += 1
+        else:
+            id = 'b'+str(app.ent_dict[app.p2_witch].summon_ids)
+            app.ent_dict[app.p2_witch].summon_ids += 1
+        app.ent_dict[id] =  Carrion_Wyrm(name = 'Carrion_Wyrm', id = id, img = img, loc = loc[:], owner = self.owner, level = self.level, j = amt)
+        app.canvas.create_image(loc[0]*100+50-app.moved_right, loc[1]*100+50-app.moved_down, image = app.ent_dict[id].img, tags = app.ent_dict[id].tags)
+        app.grid[loc[0]][loc[1]] = id
+        root.after(2333, lambda  name = 'Carrion_Wyrm' : self.cleanup_spell(name = name))
+        
+        
+        
     def giant_growth(self, event = None):
         app.depop_context(event = None)
         root.bind('<q>', self.cleanup_spell)
@@ -25747,7 +26291,7 @@ class Witch(Summon):
             self.page_myopic(hand = self.in_hand[:])
 
 
-    def page_myopic(self, event = None, hand = None, index = 0, amt = 1):
+    def page_myopic(self, event = None, hand = None, index = 0, amt = 0):
         app.unbind_all()
         for b in app.context_buttons:
             if isinstance(b, tk.Button):
@@ -26305,7 +26849,7 @@ class Witch(Summon):
         self.magick += int(len(ents)+1)# magic number debug spell.cost instead
         for e in ents:
             lock(apply_damage, self, e, -2, 'magick', 'Dark Ritual', 'spell')
-        root.after(2333, lambda  name = 'Dark_Ritual' : self.cleanup_spell(name = name))
+        root.after(666, lambda  name = 'Dark_Ritual' : self.cleanup_spell(name = name))
         
         
     def rite_of_spring(self, event = None):
@@ -26576,8 +27120,9 @@ class Witch(Summon):
         b2 = tk.Button(app.context_menu, text = '-', wraplength = 190, font = ('chalkduster', 22), fg = 'indianred', highlightbackground = 'tan3', command = p2)
         b2.pack(side = 'top', pady = 2)
         app.context_buttons.append(b2)
-        self.total_label = tk.Label(app.context_menu, textvariable = app.tmp, bg = 'black', fg = 'indianred')
-        self.total_label.pack(side = 'top', pady = 2)
+        total_label = tk.Label(app.context_menu, textvariable = app.tmp, bg = 'black', fg = 'indianred')
+        total_label.pack(side = 'top', pady = 2)
+        app.context_buttons.append(total_label)
         def okay():
             cur = app.tmp.get()
             self.magick -= cur
@@ -28227,6 +28772,7 @@ class App(tk.Frame):
         self.arcane_dict['Bewitch'] = Spell('Bewitch',Witch.bewitch, 1, 0, 0)
         self.arcane_dict['Dark_Ritual'] = Spell('Dark_Ritual',Witch.dark_ritual, 1,0,0)
         self.arcane_dict['Myopic_Neuroticism'] = Spell('Myopic_Neuroticism',Witch.myopic_neuroticism, 1,0,0)
+        self.arcane_dict['Quicksilver'] = Spell('Quicksilver',Witch.quicksilver, 1, 0, 0)
         self.arcane_dict['Scrye'] = Spell('Scrye',Witch.scrye, 2,0,0)
         self.arcane_dict['Cloister'] = Spell('Cloister',Witch.cloister, 2, 0, 0)
         self.arcane_dict["Siren's_Call"] = Spell("Siren's_Call",Witch.sirens_call, 2, 0, 0)
@@ -28251,6 +28797,7 @@ class App(tk.Frame):
         self.arcane_dict['Grasp_of_the_Old_Ones'] = Spell('Grasp_of_the_Old_Ones',Witch.grasp_of_the_old_ones, 2,0,0)
         self.arcane_dict['Dark_Sun'] = Spell('Dark_Sun',Witch.dark_sun, 3,0,0)
         self.arcane_dict['Hypnotic_Spectre'] = Spell('Hypnotic_Spectre',Witch.hypnotic_spectre, 3,0,0)
+        self.arcane_dict['Carrion_Wyrm'] = Spell('Carrion_Wyrm',Witch.carrion_wyrm, 3,0,0)
         self.arcane_dict['Foul_Familiar'] = Spell('Foul_Familiar',Witch.foul_familiar, 3, 0, 0)
         self.arcane_dict['Astrological_Guidance'] = Spell('Astrological_Guidance',Witch.astrological_guidance, 3, 0, 0)
         self.arcane_dict['Wreathed_in_Flame'] = Spell('Wreathed_in_Flame',Witch.wreathed_in_flame, 3, 0, 0)
@@ -30946,6 +31493,8 @@ class App(tk.Frame):
             txt += 'Summon Cap: ' + str(ent.summon_count) + '/' + str(ent.summon_cap) + '\n'
             txt += 'Magick: ' + str(ent.magick) + '\n'
             txt += 'In Hand: ' + str(len(ent.in_hand)) + '\n'
+        elif isinstance(ent,(Pyrrhic_Gnome)):
+            txt += 'Tick : '+str(ent.tick)+'\n'
         else:
             txt += 'Magick: ' + str(ent.magick) + '/' + str(ent.base_magick) + '\n'
         txt += 'Spirit: ' + str(ent.spirit) + '/' + str(ent.base_spirit)
