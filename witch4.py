@@ -1,7 +1,3 @@
-# survival otf is currently functioning as tutor, is not checking that either the discarded or searched for cards are summons
-
-# globe undo is done, (any map effect that could change location, really any could be changed by other stuff) so map effect undo need to check for their location on undo
-
 # Effects, can have visuals, in animate loop, for each ent not in selected (during normal ent animation block) check each item in ent.effects_dict for 'animated' flag, if exists/true, delete/rotate/create image at ents location
 # stuff like wreathed in flame, not effects that only have upkeep/control functions like 'control' or placeholders for eot/sot/atk/def/stat functions with 'passive' like effects (changing types...), no explicit rule, just stuff that is served with intuitive visual
 
@@ -9,10 +5,6 @@
 # test a little at a time
 
 # rec nightmare, destroy a tomb with this imprint and a smn you own in smn list, smn a smn that exists in your discard
-
-# update murrain, w yellow priest
-
-# artificer/chirurgeon/chrono/murrainwolf (anything to make mass smns) based deck, use pain, anything sacrificial... living death, 
 
 # more maps in duel, page maps
 
@@ -26,10 +18,6 @@
 # levels where you must encroach on groups of mostly stationary enemies, to progress through some terrain/walls/rooms
 
 # Tomb Void - all tombs wo psyshield in area take dmg
-
-# Siphon Spell - cast a spell imprinted on enemy tomb
-
-# plaguelord/censerbearer insanity grenade, sanity based deck
 
 # for rage, just disable all action buttons except ..?
 
@@ -165,14 +153,14 @@ def action_description(act):
         return 'To-hit agility vs agility, strength vs endurance slashing melee damage, adjacent target as action.'
     elif act == 'Survival_of_the_Fittest':
         return 'Discard a summon card to search for any summon in library and add to hand.'
-    elif act == 'Carrion_Wyrm':
+    elif act == 'Carrion Wyrm':
         return 'Remove any number of unique cards from your discard (put in exile) to create a Wyrm user-controlled unit with base stats equal to the number removed.'
     elif act == 'Spectral Pillory':
         return '-2 move range (max 0), end-of-turn 2 magick damage.'
-    elif act == '':
-        return ''
-    elif act == '':
-        return ''
+    elif act == 'Upheaval':
+        return 'Destroy all summon list summons and tombs. Each player draws a card for each and summon count is decreased.'
+    elif act == 'Fork':
+        return 'Cast the spell imprinted on spell target tomb in range reason with an imprint not set to empty. If spell is cancelled, either by the player or because it cannot be cast, magick for the spell is returned, but not the 3 magick spent on fork itself.'
     elif act == '':
         return ''
     elif act == '':
@@ -210,7 +198,7 @@ def action_description(act):
     elif act == 'Trials of Hatheg Kla':
         return 'A spell target enemy unit, on to-hit wisdom vs wisdom, is teleported among the furthest empty sqrs. It gets -5 sanity, +1 acts.'
     elif act == "Dagon's Chosen":
-        return 'A spell target friendly unit gets sanity reduced to 1, +1 acts and moves, +2 move range, strength, agility, endurance, dodge, initiative.'
+        return 'A spell target friendly unit gets sanity reduced to 3, +1 acts and moves, +2 move range, strength, agility, endurance, dodge, initiative.'
     elif act == 'Grasp':
         return 'On to-hit agility vs agility, relocate self and target among the closest sqrs within move range to the nearest friendly Yellow Priest, or Witch if no Priests exist.'
     elif act == 'Proboscis':
@@ -504,7 +492,7 @@ def action_description(act):
     elif act == 'Toxic Miasma':
         return 'All enemy units, which are not Murrain Wolves, within range reason, on to-hit wisdom vs wisdom, get an effect that removes invisibility. Another to-hit wisdom vs wisdom gives -1 sanity and reason. Duration is reason. Level is wisdom.'
     elif act == 'Leprous Bite':
-        return 'An adjacent action target unit, on to-hit agility vs agility, gets -1 str, end, agl, mm, psy, wis, rsn, san, init and takes strength vs endurance slashing melee damage.'
+        return 'An adjacent action target unit, on to-hit agility vs agility, gets -1 str, end, agl, mm, psy, wis, rsn, init, -3 sanity, and takes strength vs endurance slashing melee damage.'
     elif act == 'Concerted Volley':
         return 'Each friendly unit within range 2 of caster gets +X marksmanship where X is equal to the number of friendly units within range 2 of caster without this effect, max +4 bonus to each unit. Duration is wisdom. Level is wisdom. Costs 1.'
     elif act == 'Vengeance':
@@ -1689,7 +1677,7 @@ class Entity():
         loc = app.ent_dict[id].loc[:]
         app.vis_dict[visid] = Vis(name = visid, loc = self.loc[:])
         app.canvas.create_image(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+50-app.moved_down, image = app.vis_dict[visid].img, tags = visid)
-        selected_vis = [visid]
+        selected_vis.append(visid)
         def fireball_loop(startx, endx, starty, endy, xstep, ystep):
             if starty > endy:
                 starty -= ystep
@@ -1714,6 +1702,7 @@ class Entity():
                 # debug here, if within certain range...
             app.vis_dict[visid].rotate_image()
             if abs(starty - endy) < 13 and abs(startx - endx) < 13:
+                selected_vis.remove(visid)
                 app.dethloks[lockname].set(1)
             else:
                 root.after(40, lambda sx = startx, ex = endx, sy = starty, ey = endy, xs = xstep, ys = ystep  : fireball_loop(sx, ex, sy, ey, xs, ys))
@@ -2141,7 +2130,7 @@ class Bot(Entity):
             effect1 = mixer.Sound('Sound_Effects/footsteps.ogg')
             effect1.set_volume(app.effects_volume.get())
             sound_effects.play(effect1, -1)
-        selected = [self.id]
+        selected.append(self.id)
         id = self.id
         start_sqr = self.loc[:]
         path = bfs(start_sqr, [endloc], app.grid[:]) # end_sqr must be put in list
@@ -2190,7 +2179,7 @@ class Bot(Entity):
     # used by flying and ethereal ents (any ai ents that move unobstructed)
     def ai_flying_move(self, sqr, lockname = None):
         global selected
-        selected = selected+[self.id]
+        selected.append(self.id)
         app.focus_square(sqr)
         if isinstance(self, Revenant):
             effect1 = mixer.Sound('Sound_Effects/revenant_move.ogg')
@@ -2369,7 +2358,7 @@ class Summon(Entity):
         id = self.id
         start_sqr = self.loc[:]
         end_sqr = loc[:]
-        selected = [id]
+        selected.append(id)
         # get path and move_loop over each sqr until path consumed
         path = bfs(start_sqr, [end_sqr], app.grid) # end_sqr must be in list
         begin = path[0]
@@ -2417,7 +2406,7 @@ class Summon(Entity):
     def normal_move_finish(self, end, start, ln):
         sound_effects.stop()
         global selected
-        selected = []
+        selected.remove(self.id)
         self.loc = end[:]
         app.grid[start[0]][start[1]] = ''
         app.grid[end[0]][end[1]] = self.id
@@ -2429,7 +2418,7 @@ class Summon(Entity):
     # for flying, ethereal, ents unobstructed by 'block' or other ents
     def unobstructed_move(self, sqr, lockname = None):
         global selected
-        selected = [self.id]
+        selected.append(self.id)
         ln = lockname
         if isinstance(self, Familiar_Imp):
             effect1 = mixer.Sound('Sound_Effects/familiar_imp_move.ogg')
@@ -2676,7 +2665,7 @@ class Chronomancer(Summon):
     def __init__(self, name, id, img, loc, owner, level):
         if level == 1:
             self.actions = {'Move':self.move, 'Enervating Blow':self.enervating_blow, 'Time Warp':self.time_warp, 'Slow Motion':self.slow_motion, 'Stasis':self.stasis, 'Vanish':self.vanish}
-            self.str = 2
+            self.str = 3
             self.agl = 7
             self.end = 4
             self.mm = 1
@@ -2692,11 +2681,11 @@ class Chronomancer(Summon):
             self.magick = 23
             self.acts = 1
             self.mvs = 1
-            self.move_range = 4
+            self.move_range = 5
             self.level = level
         elif level == 2:
             self.actions = {'Move':self.move, 'Enervating Blow':self.enervating_blow, 'Time Warp':self.time_warp, 'Slow Motion':self.slow_motion, 'Stasis':self.stasis, 'Recall':self.recall, 'Vanish':self.vanish}
-            self.str = 3
+            self.str = 4
             self.agl = 8
             self.end = 5
             self.mm = 1
@@ -2712,7 +2701,7 @@ class Chronomancer(Summon):
             self.magick = 27
             self.acts = 1
             self.mvs = 1
-            self.move_range = 4
+            self.move_range = 5
             self.level = level
         self.move_type = 'normal'
         self.weak = []
@@ -3534,7 +3523,7 @@ class Enchantress(Summon):
         def forest_move(type):
             return 'ethereal'
         p2 = partial(forest_move)
-        ent.move_type_effects.append(p2)
+        self.move_type_effects.append(p2)
         def undo(ent, p, p2, lockname = None):
             ent.type_effects.remove(p)
             ent.move_type_effects.remove(p2)
@@ -3610,7 +3599,7 @@ class Enchantress(Summon):
 class Yellow_Priest(Summon):
     def __init__(self, name, id, img, loc, owner, level):
         if level == 1:
-            self.actions = {'Move':self.move, 'Censer Grenade':self.censer_grenade, 'Guardian of the Chthonic Gate':self.guardian, 'Offering to Dagon':self.offering_to_dagon, 'Call Migo':self.call_migo, 'Call Nightgaunt':self.call_nightgaunt, 'Trials of Hatheg Kla':self.trials_of_hatheg_kla, "Dagon's Chosen":self.dagons_chosen}
+            self.actions = {'Move':self.move, 'Censer Grenade':self.censer_grenade, 'Offering to Dagon':self.offering_to_dagon, 'Trials of Hatheg Kla':self.trials_of_hatheg_kla, "Dagon's Chosen":self.dagons_chosen, 'Call Nightgaunt':self.call_nightgaunt, 'Call Migo':self.call_migo, 'Guardian of the Chthonic Gate':self.guardian}
             self.str = 4
             self.agl = 7
             self.end = 7
@@ -3618,8 +3607,8 @@ class Yellow_Priest(Summon):
             self.msl = 7
             self.bls = 4
             self.dodge = 11
-            self.psyche = 6
-            self.wis = 7
+            self.psyche = 9
+            self.wis = 10
             self.rsn = 7
             self.san = 13
             self.init = 7
@@ -3629,8 +3618,7 @@ class Yellow_Priest(Summon):
             self.mvs = 1
             self.move_range = 4
         elif level == 2:
-            self.actions = {'Move':self.move, 'Censer Grenade':self.censer_grenade, 'Guardian of the Chthonic Gate':self.guardian, 'Offering to Dagon':self.offering_to_dagon, 'Call Migo':self.call_migo, 'Call Nightgaunt':self.call_nightgaunt, 'Trials of Hatheg Kla':self.trials_of_hatheg_kla, "Dagon's Chosen":self.dagons_chosen}
-            self.str = 4
+            self.actions = {'Move':self.move, 'Censer Grenade':self.censer_grenade, 'Offering to Dagon':self.offering_to_dagon,   'Trials of Hatheg Kla':self.trials_of_hatheg_kla, "Dagon's Chosen":self.dagons_chosen, 'Call Nightgaunt':self.call_nightgaunt, 'Call Migo':self.call_migo, 'Guardian of the Chthonic Gate':self.guardian}
             self.str = 4
             self.agl = 7
             self.end = 7
@@ -3638,8 +3626,8 @@ class Yellow_Priest(Summon):
             self.msl = 7
             self.bls = 4
             self.dodge = 11
-            self.psyche = 6
-            self.wis = 7
+            self.psyche = 9
+            self.wis = 10
             self.rsn = 7
             self.san = 13
             self.init = 7
@@ -3681,6 +3669,8 @@ class Yellow_Priest(Summon):
             return
         ent = app.ent_dict[id]
         if ent.owner != self.owner:
+            return
+        if isinstance(ent,Witch):
             return
         if ent.immovable == True:
             return
@@ -3772,6 +3762,8 @@ class Yellow_Priest(Summon):
         if id not in app.spell_target_ents().keys():
             return
         ent = app.ent_dict[id]
+        if isinstance(ent,Witch):
+            return
         if ent.owner == self.owner:
             return
         if ent.immovable == True:
@@ -3952,10 +3944,10 @@ class Yellow_Priest(Summon):
     def cont_call_migo(self, sqr):
         img = ImageTk.PhotoImage(Image.open('summon_imgs/Migo.png'))
         if self.owner == 'p1':
-            id = 'a'+str(app.ent_dict[app.p1_witch].summon_count)
+            id = 'a'+str(app.ent_dict[app.p1_witch].summon_ids)
             app.ent_dict[app.p1_witch].summon_ids += 1
         else:
-            id = 'b'+str(app.ent_dict[app.p1_witch].summon_count)
+            id = 'b'+str(app.ent_dict[app.p1_witch].summon_ids)
             app.ent_dict[app.p2_witch].summon_ids += 1
         app.ent_dict[id] =  Migo(name = 'Migo', id = id, img = img, loc = sqr[:], owner = self.owner, level = self.level)
         app.grid[sqr[0]][sqr[1]] = id
@@ -4079,7 +4071,6 @@ class Yellow_Priest(Summon):
             id = self.id+'guardian'
             app.ent_dict[app.p2_witch].summon_ids += 1
         app.ent_dict[id] =  Guardian_of_the_Chthonic_Gate(name = 'Guardian_of_the_Chthonic_Gate', id = id, img = img, loc = sqr[:], owner = self.owner, level = self.level)
-        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.ent_dict[id].img, tags = app.ent_dict[id].tags)
         app.grid[sqr[0]][sqr[1]] = id
         self.finish_guardian()
         
@@ -4115,7 +4106,7 @@ class Yellow_Priest(Summon):
         app.cleanup_squares()
         self.acts -= 1
         app.vis_dict['Censer_Grenade'] = Vis(name = 'Censer_Grenade', loc = self.loc)
-        selected_vis = ['Censer_Grenade']
+        selected_vis.append('Censer_Grendade')
         x = self.loc[0]*100+50-app.moved_right
         y = self.loc[1]*100+50-app.moved_down
         endx = sqr[0]*100+50-app.moved_right
@@ -4181,7 +4172,7 @@ class Yellow_Priest(Summon):
         app.canvas.delete('text')
         del app.vis_dict['Censer_Grenade']
         app.canvas.delete('Censer_Grenade')
-        selected_vis = []
+        selected_vis.remove('Censer_Grenade')
         effect1 = mixer.Sound('Sound_Effects/pox.ogg')
         effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
@@ -4241,6 +4232,53 @@ class Yellow_Priest(Summon):
 #         app.unbind_all()
         app.rebind_all()
     
+
+class Goblin_Shaman(Summon):
+    def __init__(self, name, id, img, loc, owner, level):
+        if level == 1:
+            self.actions = {'Move':self.move}
+            self.str = 2
+            self.agl = 6
+            self.end = 5
+            self.mm = 1
+            self.msl = 0
+            self.bls = 0
+            self.dodge = 6
+            self.psyche = 7
+            self.wis = 9
+            self.rsn = 6
+            self.san = 12
+            self.init = 7
+            self.spirit = 23
+            self.magick = 27
+            self.acts = 1
+            self.mvs = 1
+            self.move_range = 3
+        elif level == 2:
+            self.actions = {'Move':self.move}
+            self.str = 3
+            self.agl = 7
+            self.end = 6
+            self.mm = 1
+            self.msl = 0
+            self.bls = 0
+            self.dodge = 7
+            self.psyche = 8
+            self.wis = 10
+            self.rsn = 7
+            self.san = 13
+            self.init = 8
+            self.spirit = 29
+            self.magick = 36
+            self.acts = 1
+            self.mvs = 1
+            self.move_range = 3
+        self.level = level
+        self.move_type = 'normal'
+        self.weak = []
+        self.resist = ['fire', 'explosive', 'magick']
+        super().__init__(name, id, img, loc, owner)
+
 
 class Artificer(Summon):
     def __init__(self, name, id, img, loc, owner, level):
@@ -4562,6 +4600,7 @@ class Artificer(Summon):
         if sqr not in sqrs:
             return
         app.unbind_all()
+        app.depop_context(event = None)
         # move globe incrmntly, and ent if exists, move same time, use fly-type move
         global selected, selected_vis
         selected_vis.append('Globe_of_Invulnerability'+self.id)
@@ -4800,17 +4839,18 @@ class Artificer(Summon):
                     app.canvas.delete(ent.tags)
                     app.canvas.create_image(x, y, image = ent.img, tags = ent.tags)
             if abs(x - endx) < 13 and abs(y - endy) < 13:
-                self.finish_recall_globe(end_sqr, start_sqr, vis)
+                self.finish_recall_globe(end_sqr, start_sqr, vis, id)
             else: # CONTINUE LOOP
                 root.after(33, lambda x = x, y = y, e = endx, e2 = endy, s = start_sqr, s2 = end_sqr, acm = acm, tic = tic, xs = xstep, ys = ystep : flying_arc(x, y, e, e2, s, s2, acm, tic, xs, ys))
         flying_arc(x, y, endx, endy, start_sqr, end_sqr, tic+1, tic, xstep, ystep)
             
         
-    def finish_recall_globe(self, end_sqr, start_sqr, vis):
+    def finish_recall_globe(self, end_sqr, start_sqr, vis, id):
         global selected, selected_vis
         sound_effects.stop()
-        selected = []
-        selected_vis = []
+        if id != '':
+            selected.remove(id)
+        selected_vis.remove(vis.id)
         vis.loc = end_sqr[:]
         app.loc_dict[tuple(end_sqr)] = app.loc_dict[tuple(start_sqr)]
         app.loc_dict[tuple(start_sqr)] = Loc(start_sqr)
@@ -4896,9 +4936,9 @@ class Artificer(Summon):
         sqrs = lateral_sqrs(ent.loc[:], self.get_abl('psyche'), blocked='blocks', dir=dir)
         sqr = reduce(lambda a,b : a if dist(a,ent.loc)>dist(b,ent.loc) else b, sqrs)
         # move globe incrmntly, and ent if exists, move same time, use fly-type move
-        selected_vis = ['Globe_of_Invulnerability'+self.id]
+        selected_vis.append('Globe_of_Invulnerability'+self.id)
         vis = app.vis_dict['Globe_of_Invulnerability'+self.id]
-        selected = [ent.id]
+        selected.append(ent.id)
 #         app.grid[ent.loc[0]][ent.loc[1]] = ''
         app.focus_square(sqr)
         effect1 = mixer.Sound('Sound_Effects/traced.ogg')
@@ -4982,8 +5022,8 @@ class Artificer(Summon):
     def finish_globe_roll(self, end_sqr, start_sqr, vis, ent):
         global selected, selected_vis
         sound_effects.stop()
-        selected = []
-        selected_vis = []
+        selected.remove(ent.id)
+        selected_vis.remove(vis.id)
         # move any occupying ent at loc to nrst '' sqr, get all interceding ents, perform ent's atk
         if start_sqr[0] < end_sqr[0]:
             dir = 'east'
@@ -6050,7 +6090,7 @@ class Illusionist(Summon):
         self.acts -= 1
         app.vis_dict['Tracer_Grenade'] = Vis(name = 'Tracer_Grenade', loc = self.loc)
         app.canvas.create_image(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+50-app.moved_down, image = app.vis_dict['Tracer_Grenade'].img, tags = 'Tracer_Grenade')
-        selected_vis = ['Tracer_Grenade']
+        selected_vis.append('Tracer_Grenade')
         x = self.loc[0]*100+50-app.moved_right
         y = self.loc[1]*100+50-app.moved_down
         endx = sqr[0]*100+50-app.moved_right
@@ -6116,7 +6156,7 @@ class Illusionist(Summon):
         app.canvas.delete('text')
         del app.vis_dict['Tracer_Grenade']
         app.canvas.delete('Tracer_Grenade')
-        selected_vis = []
+        selected_vis.remove('Tracer_Grenade')
         effect1 = mixer.Sound('Sound_Effects/fuse_explosion.ogg')
         effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
@@ -6214,7 +6254,7 @@ class Illusionist(Summon):
         self.acts -= 1
         app.vis_dict['Mortar'] = Vis(name = 'Mortar', loc = self.loc)
         app.canvas.create_image(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+50-app.moved_down, image = app.vis_dict['Mortar'].img, tags = 'Mortar')
-        selected_vis = ['Mortar']
+        selected_vis.append('Mortar')
         x = self.loc[0]*100+50-app.moved_right
         y = self.loc[1]*100+50-app.moved_down
         endx = sqr[0]*100+50-app.moved_right
@@ -6280,7 +6320,7 @@ class Illusionist(Summon):
         app.canvas.delete('text')
         del app.vis_dict['Mortar']
         app.canvas.delete('Mortar')
-        selected_vis = []
+        selected_vis.remove('Mortar')
         effect1 = mixer.Sound('Sound_Effects/fuse_explosion.ogg')
         effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
@@ -6444,7 +6484,7 @@ class Illusionist(Summon):
         y = start_loc[1]*100+50-app.moved_down
         end_left = start_loc[0]*100-app.moved_right # minus 50 from center
         end_right = start_loc[0]*100+100-app.moved_right # plus 50 from center
-        selected_vis = ['Simulacrum']
+        selected_vis.append('Simulacrum')
         def simulacrum_loop_left(vis, x, y, end_left, tar):
             if x % 5 == 0: # this just gets new image (flickers simulacrum opacity)
                 app.vis_dict[vis].rotate_image()
@@ -6470,6 +6510,9 @@ class Illusionist(Summon):
                 x += 10
                 app.canvas.move('right',10,0)
             if x == end_right:
+                def rmv_vis():
+                    selected_vis.remove('Simulacrum')
+                root.after(555, rmv_vis)
                 root.after(666, self.cleanup_simulacrum)
             else:
                 root.after(100, lambda vis = 'Simulacrum', x = x, y = y, end_right = end_right, tar = tar : simulacrum_loop_right(vis, x, y, end_right, tar))
@@ -6678,7 +6721,7 @@ class Umbrae_Wolf(Summon):
         
     def do_phase_shift(self, event = None):
         global selected
-        selected = [self.tags]
+        selected.append(self.tags)
         effect1 = mixer.Sound('Sound_Effects/phase_shift.ogg')
         effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
@@ -6865,7 +6908,7 @@ class Umbrae_Wolf(Summon):
                 self.legal_moves = p
         def reappear():
             global selected
-            selected = []
+            selected.remove(selected_vis)
         root.after(2111, self.init_normal_anims)
         root.after(2222, reappear)
         root.after(2333, self.cancel_phase_shift)
@@ -7004,7 +7047,7 @@ class Umbrae_Wolf(Summon):
         y = start_loc[1]*100+50-app.moved_down
         end_left = start_loc[0]*100-app.moved_right # minus 50 from center
         end_right = start_loc[0]*100+100-app.moved_right # plus 50 from center
-        selected_vis = ['Encumber']
+        selected_vis.append('Encumber')
         def simulacrum_loop_left(vis, x, y, end_left, tar):
             if x % 5 == 0: # this just gets new image (flickers simulacrum opacity)
                 app.vis_dict[vis].rotate_image()
@@ -7030,6 +7073,9 @@ class Umbrae_Wolf(Summon):
                 x += 10
                 app.canvas.move('right',10,0)
             if x == end_right:
+                def rmv_vis():
+                    selected_vis.remove('Encumber')
+                root.after(555, rmv_vis)
                 root.after(666, self.cleanup_encumber)
             else:
                 root.after(100, lambda vis = 'Encumber', x = x, y = y, end_right = end_right, tar = tar : simulacrum_loop_right(vis, x, y, end_right, tar))
@@ -7152,7 +7198,7 @@ class Umbrae_Wolf(Summon):
         y = start_loc[1]*100+50-app.moved_down
         end_left = start_loc[0]*100-app.moved_right # minus 50 from center
         end_right = start_loc[0]*100+100-app.moved_right # plus 50 from center
-        selected_vis = ['Haste']
+        selected_vis.append('Haste')
         def simulacrum_loop_left(vis, x, y, end_left, tar):
             if x % 5 == 0: # this just gets new image (flickers simulacrum opacity)
                 app.vis_dict[vis].rotate_image()
@@ -7178,6 +7224,9 @@ class Umbrae_Wolf(Summon):
                 x += 10
                 app.canvas.move('right',10,0)
             if x == end_right:
+                def rmv_vis():
+                    selected_vis.remove('Haste')
+                root.after(555, rmv_vis)
                 root.after(666, self.cleanup_haste)
             else:
                 root.after(100, lambda vis = 'Haste', x = x, y = y, end_right = end_right, tar = tar : simulacrum_loop_right(vis, x, y, end_right, tar))
@@ -8651,7 +8700,7 @@ class Murrain_Wolf(Summon):
         if level == 1:
             self.actions = {'Move':self.move, 'Pox':self.pox, 'Paralyze':self.paralyze, 'Scarab Gestation':self.scarab_gestation, 'Leprous Bite':self.leprous_bite, 'Toxic Miasma':self.toxic_miasma}
             self.str = 6
-            self.agl = 5
+            self.agl = 7
             self.end = 6
             self.mm = 2
             self.msl = 0
@@ -8671,7 +8720,7 @@ class Murrain_Wolf(Summon):
         elif level == 2:
             self.actions = {'Move':self.move, 'Pox':self.pox, 'Paralyze':self.paralyze, 'Scarab Gestation':self.scarab_gestation, 'Leprous Bite':self.leprous_bite, 'Toxic Miasma':self.toxic_miasma, 'Spore Cloud':self.spore_cloud, 'Scarab Swarm':self.scarab_swarm}
             self.str = 5
-            self.agl = 6
+            self.agl = 8
             self.end = 6
             self.mm = 2
             self.msl = 0
@@ -8792,9 +8841,11 @@ class Murrain_Wolf(Summon):
             ent.psyche_effects.append(p)
             ent.wis_effects.append(p)
             ent.rsn_effects.append(p)
-            ent.san_effects.append(p)
             ent.init_effects.append(p)
-            def undo(ent, f, lockname = None):
+            def lepr_san(stat):
+                return max(1,stat-3)
+            p2 = partial(lepr_san)
+            def undo(ent, f, f2, lockname = None):
                 ent.str_effects.remove(f)
                 ent.agl_effects.remove(f)
                 ent.end_effects.remove(f)
@@ -8802,15 +8853,15 @@ class Murrain_Wolf(Summon):
                 ent.psyche_effects.remove(f)
                 ent.wis_effects.remove(f)
                 ent.rsn_effects.remove(f)
-                ent.san_effects.remove(f)
                 ent.init_effects.remove(f)
+                ent.san_effects.remove(f2)
                 root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
-            u = partial(undo, ent, p)
+            u = partial(undo, ent, p, p2)
             un = 'Leprous_Bite'+str(app.count)
             app.count += 1
             ent.effects_dict[un] = Effect(name = 'Leprous_Bite', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
-            app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+14-app.moved_down, text = '-1 abilities', font = ('chalkduster', 14), fill = 'black', tags = 'text')
-            app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+15-app.moved_down, text = '-1 abilities', font = ('chalkduster', 14), fill = 'olivedrab2', tags = 'text')
+            app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+14-app.moved_down, text = '-1 abilities, -3 sanity', font = ('chalkduster', 14), fill = 'black', tags = 'text')
+            app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+15-app.moved_down, text = '-1 abilities, -3 sanity', font = ('chalkduster', 14), fill = 'olivedrab2', tags = 'text')
             my_str = self.get_abl('str')
             tar_end = ent.get_abl('end')
             d = damage(my_str, tar_end)
@@ -9308,9 +9359,9 @@ class Scarab_Swarm(Summon):
     def __init__(self, name, id, img, loc, owner, level):
         if level == 1:
             self.actions = {'Move':self.move, 'Bite':self.bite}
-            self.str = 4
-            self.agl = 9
-            self.end = 7
+            self.str = 6
+            self.agl = 13
+            self.end = 9
             self.mm = 8
             self.msl = 4
             self.bls = 7
@@ -9320,16 +9371,16 @@ class Scarab_Swarm(Summon):
             self.rsn = 4
             self.san = 16
             self.init = 9
-            self.spirit = 21
+            self.spirit = 23
             self.magick = 0
             self.acts = 1
             self.mvs = 1
             self.move_range = 4
         elif level == 2: # level should start at 2 unless spell gained early...same stats as lvl 1 for now
             self.actions = {'Move':self.move, 'Bite':self.bite}
-            self.str = 4
-            self.agl = 9
-            self.end = 7
+            self.str = 6
+            self.agl = 13
+            self.end = 9
             self.mm = 8
             self.msl = 4
             self.bls = 7
@@ -9339,7 +9390,7 @@ class Scarab_Swarm(Summon):
             self.rsn = 4
             self.san = 16
             self.init = 9
-            self.spirit = 21
+            self.spirit = 23
             self.magick = 0
             self.acts = 1
             self.mvs = 1
@@ -9689,6 +9740,7 @@ class Guardian_of_the_Chthonic_Gate(Summon):
         return 'Fail'
         
     def warpfire_cloud(self, lockname):
+        app.get_focus(self.id)
 #         self.init_attack_anims()
         effect1 = mixer.Sound('Sound_Effects/pestilence.ogg')
         sound_effects.play(effect1, 0)
@@ -9762,7 +9814,7 @@ class Nightgaunt(Summon):
             self.spirit = 19
             self.acts = 1
             self.mvs = 1
-            self.move_range = 4
+            self.move_range = 6
         elif level == 2:
             self.actions = {'Move':self.move, 'Grasp':self.grasp}
             self.str = 4
@@ -9781,7 +9833,7 @@ class Nightgaunt(Summon):
             self.spirit = 19
             self.acts = 1
             self.mvs = 1
-            self.move_range = 4
+            self.move_range = 6
         self.level = level
         self.move_type = 'flying'
         self.weak = ['elec']
@@ -9816,13 +9868,34 @@ class Nightgaunt(Summon):
 #         effect1 = mixer.Sound('Sound_Effects/bite.ogg')
 #         effect1.set_volume(.5)
 #         sound_effects.play(effect1, 0)
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        # insert choose location
+        app.unbind_nonarrows()
+        root.bind('<q>', self.finish_grasp)
+        sqrs = [c for c in app.coords if dist(self.loc, c) <= self.get_abl('move_range') and app.grid[c[0]][c[1]]=='']
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e, sqr = grid_pos, sqrs = sqrs, ent = ent : self.choose_grasp(event = e, sqr = sqr, sqrs = sqrs, ent = ent))
+        b = tk.Button(app.context_menu, text = 'Choose Location', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs, ent = ent : self.choose_grasp(event = e, sqr = sqr, sqrs = sqrs, ent = ent))
+        b.pack(side = 'top')
+        app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
+        
+    def choose_grasp(self, event = None, sqr = None, sqrs = None, ent = None):
+        if sqr not in sqrs:
+            return
+#         effect1 = mixer.Sound('Sound_Effects/paralyze.ogg')
+#         effect1.set_volume(.5)
+#         sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
         self.acts -= 1
         n = 'Bite' + str(app.count)
         app.count += 1
-        app.vis_dict[n] = Vis(name = 'Grasp_of_the_Old_Ones', loc = sqr[:])
+        app.vis_dict[n] = Vis(name = 'Grasp_of_the_Old_Ones', loc = ent.loc[:])
         def cleanup_bite(n):
             del app.vis_dict[n]
             app.canvas.delete(n)
@@ -9830,27 +9903,15 @@ class Nightgaunt(Summon):
         my_agl = self.get_abl('agl')
         tar_agl = ent.get_abl('agl')
         if to_hit(my_agl, tar_agl) == True:
-            # bring towards any friendly yellow priest or witch if none
-            priests = [v for k,v in app.all_ents().items() if v.owner==self.owner and isinstance(v,Yellow_Priest)]
-            if len(priests)>0:
-                ent2 = reduce(lambda a,b : a if dist(a.loc,self.loc)<dist(b.loc,self.loc) else b,priests)
-            else:
-                if self.owner == 'p1':
-                    ent2 = app.ent_dict[app.p1_witch]
-                else:
-                    ent2 = app.ent_dict[app.p2_witch]
-            cs = [c for c in app.coords if app.grid[c[0]][c[1]]=='' and dist(c,self.loc)<=self.get_abl('move_range')]
-            if len(cs)<2:
-                root.after(1666, self.finish_grasp)
-            else:
-                sqr1 = reduce(lambda a,b : a if dist(a,ent2.loc)<dist(b,ent2.loc) else b,cs)
-                cs.remove(sqr1)
-                sqr2 = reduce(lambda a,b : a if dist(a,ent2.loc)<dist(b,ent2.loc) else b,cs)
-                Bot.ai_flying_move(self, sqr1)
-                lock(Bot.ai_flying_move, ent, sqr2)
-                self.finish_grasp()
+            # flying move ent to sqr, flying move self to nrst empty
+            cs = [c for c in app.coords if app.grid[c[0]][c[1]]=='' and c != sqr]
+            sqr2 = reduce(lambda a,b : a if dist(a,sqr)<dist(b,sqr) else b,cs)
+            Bot.ai_flying_move(ent, sqr)
+            lock(Bot.ai_flying_move, self, sqr2)
+            self.finish_grasp()
         else:
-            miss(app.ent_dict[id].loc)
+            miss(ent.loc)
+            root.after(1555, lambda t = 'text' : app.canvas.delete(t))
             root.after(1666, self.finish_grasp)
             
         
@@ -9987,28 +10048,28 @@ class Scarab(Summon):
     def __init__(self, name, id, img, loc, owner, level):
         if level == 1:
             self.actions = {'Move':self.move, 'Bite':self.bite}
-            self.str = 3
-            self.agl = 5
-            self.end = 5
+            self.str = 6
+            self.agl = 11
+            self.end = 8
             self.mm = 1
             self.msl = 0
             self.bls = 0
-            self.dodge = 5
+            self.dodge = 6
             self.psyche = 4
-            self.wis = 3
+            self.wis = 4
             self.rsn = 4
-            self.san = 14
-            self.init = 6
+            self.san = 16
+            self.init = 7
             self.magick = 0
-            self.spirit = 13
+            self.spirit = 19
             self.acts = 1
             self.mvs = 1
             self.move_range = 4
         elif level == 2:
             self.actions = {'Move':self.move, 'Bite':self.bite}
-            self.str = 4
-            self.agl = 6
-            self.end = 6
+            self.str = 6
+            self.agl = 11
+            self.end = 8
             self.mm = 1
             self.msl = 0
             self.bls = 0
@@ -12875,7 +12936,7 @@ class Thaumaturge(Summon):
         app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+75-app.moved_down, text = 'Moonlight', font = ('chalkduster', 16), fill = 'azure', tags = 'text')
         app.canvas.create_text(s[0]*100+49-app.moved_right, s[1]*100+89-app.moved_down, text = '+'+str(amt)+' Spirit', font = ('chalkduster', 13), fill = 'black', tags = 'text')
         app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+90-app.moved_down, text = '+'+str(amt)+' Spirit', font = ('chalkduster', 13), fill = 'azure', tags = 'text')
-        selected_vis = ['Moonlight']
+        selected_vis.append('Moonlight')
         def moonlight_loop(starty, endy, x):
             if starty > endy:
                 app.vis_dict['Moonlight'].rotate_image()
@@ -12885,6 +12946,7 @@ class Thaumaturge(Summon):
                 app.canvas.move('Moonlight', 0, -10)
                 app.canvas.tag_raise('Moonlight')
             if starty == endy:
+                selected_vis.remove('Moonlight')
                 root.after(333, self.cleanup_moonlight)
             else:
                 root.after(166, lambda sy = starty, ey = endy, x = x : moonlight_loop(sy, ey, x))
@@ -12893,7 +12955,6 @@ class Thaumaturge(Summon):
         moonlight_loop(locy, locy-120, locx)
         
     def cleanup_moonlight(self, event = None):
-        global selected, selected_vis
 #         self.init_normal_anims()
         app.unbind_all()
         app.rebind_all()
@@ -12905,8 +12966,6 @@ class Thaumaturge(Summon):
         except: pass
         try: app.canvas.delete('text')
         except: pass
-        selected = []
-        selected_vis = []
         
     def unholy_chant(self, event = None):
         if self.acts < 1:
@@ -13332,10 +13391,11 @@ class Inquisitor(Summon):
         def cleanup_cleanse(n):
             del app.vis_dict[n]
             app.canvas.delete(n)
-        for s in sqrs:
+        for id in ids:
+            ent = app.ent_dict[id]
             n = 'Cleanse' + str(app.count)
             app.count += 1
-            app.vis_dict[n] = Vis(name = 'Cleanse_with_Fire', loc = s[:])
+            app.vis_dict[n] = Vis(name = 'Cleanse_with_Fire', loc = ent.loc[:])
             root.after(1999, lambda n = n : cleanup_cleanse(n))
         def cleanse_loop(ids):
             if ids == []:
@@ -15069,7 +15129,7 @@ class Fiend(Summon):
         endy = sqr[1]*100+50-app.moved_down
         start_sqr = self.loc[:]
         end_sqr = sqr[:]
-        selected = [self.id]
+        selected.append(self.id)
         total_distance = abs(x - endx) + abs(y - endy)
         tic = total_distance/6 # tic is based on number of images in image source folders
         if x == endx:
@@ -15126,7 +15186,7 @@ class Fiend(Summon):
             
     def finish_pounce(self, end_sqr, start_sqr):
         global selected
-        selected = []
+        selected.remove('Pounce')
         self.loc = end_sqr[:]
         app.grid[start_sqr[0]][start_sqr[1]] = ''
         app.grid[end_sqr[0]][end_sqr[1]] = self.id
@@ -15557,7 +15617,7 @@ class White_Dragon(Bot):
             
     def white_dragon_move(self, endloc):
         global selected
-        selected = [self.id, self.id+'top']
+        selected.append([self.id, self.id+'top'])
         app.canvas.delete(self.id)
         app.canvas.delete(self.id+'top')
         self.init_ascend_anims()
@@ -15648,7 +15708,8 @@ class White_Dragon(Bot):
         self.init_normal_anims()
         self.type = 'large_bottom'
         self.tags = self.id
-        selected = []
+        selected.remove(self.id)
+        selected.remove(self.id+'top')
         app.canvas.delete(self.id)
         app.canvas.create_image(self.loc[0]*100-app.moved_right+50, self.loc[1]*100-app.moved_down+50, image = self.img, tags = self.tags)
         self.do_round()
@@ -15663,7 +15724,7 @@ class White_Dragon(Bot):
         loc = app.ent_dict[id].loc[:]
         app.vis_dict['Iceblast'] = Vis(name = 'Iceblast', loc = [self.loc[0],self.loc[1]-100])
 #         app.canvas.create_image(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+50-app.moved_down, image = app.vis_dict['Iceblast'].img, tags = 'Iceblast')
-        selected_vis = ['Iceblast']
+        selected_vis.remove('Iceblast')
         def fireball_loop(startx, endx, starty, endy, xstep, ystep):
             if starty > endy:
                 starty -= ystep
@@ -15713,7 +15774,7 @@ class White_Dragon(Bot):
             
     def continue_ranged_attack(self, id):
         global selected_vis
-        selected_vis = []
+        selected_vis.remove('Iceblast')
         del app.vis_dict['Iceblast']
 #         app.canvas.delete('Iceblast')
         loc = app.ent_dict[id].loc[:]
@@ -15915,7 +15976,7 @@ class Skeleton_Archer(Bot):
         loc = app.ent_dict[id].loc[:]
         app.vis_dict['Barrage'] = Vis(name = 'Barrage', loc = self.loc[:])
         app.canvas.create_image(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+50-app.moved_down, image = app.vis_dict['Barrage'].img, tags = 'Barrage')
-        selected_vis = ['Barrage']
+        selected_vis.append('Barrage')
         def fireball_loop(startx, endx, starty, endy, xstep, ystep):
             if starty > endy:
                 starty -= ystep
@@ -15969,7 +16030,7 @@ class Skeleton_Archer(Bot):
         tar_dod = app.ent_dict[id].get_abl('dodge')
         def cleanup_fireball():
             global selected_vis
-            selected_vis = []
+            selected_vis.remove('Barrage')
             self.init_normal_anims()
             try: 
                 del app.vis_dict['Barrage']
@@ -16811,7 +16872,7 @@ class Kobold_Shaman(Bot):
         loc = app.ent_dict[id].loc[:]
         app.vis_dict['Flare'] = Vis(name = 'Flare', loc = self.loc[:])
         app.canvas.create_image(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+50-app.moved_down, image = app.vis_dict['Flare'].img, tags = 'Flare')
-        selected_vis = ['Flare']
+        selected_vis.append('Flare')
         def fireball_loop(startx, endx, starty, endy, xstep, ystep):
             if starty > endy:
                 starty -= ystep
@@ -16865,7 +16926,7 @@ class Kobold_Shaman(Bot):
         target_wis = app.ent_dict[id].get_abl('wis')
         def cleanup_fireball():
             global selected_vis
-            selected_vis = []
+            selected_vis.remove('Flare')
             self.init_normal_anims()
             try: 
                 del app.vis_dict['Flare']
@@ -17838,7 +17899,7 @@ class Air_Elemental(Bot):
         loc = app.ent_dict[id].loc[:]
         app.vis_dict['Gale'] = Vis(name = 'Gale', loc = self.loc[:])
         app.canvas.create_image(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+50-app.moved_down, image = app.vis_dict['Gale'].img, tags = 'Gale')
-        selected_vis = ['Gale']
+        selected_vis.append('Gale')
         def fireball_loop(startx, endx, starty, endy, xstep, ystep):
             if starty > endy:
                 starty -= ystep
@@ -17892,7 +17953,7 @@ class Air_Elemental(Bot):
         target_dod = app.ent_dict[id].get_abl('dodge')
         def cleanup_fireball():
             global selected_vis
-            selected_vis = []
+            selected_vis.remove('Gale')
             self.init_normal_anims()
             try: 
                 del app.vis_dict['Gale']
@@ -18222,7 +18283,7 @@ class Water_Elemental(Bot):
         loc = app.ent_dict[id].loc[:]
         app.vis_dict['Surge'] = Vis(name = 'Surge', loc = self.loc[:])
         app.canvas.create_image(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+50-app.moved_down, image = app.vis_dict['Surge'].img, tags = 'Surge')
-        selected_vis = ['Surge']
+        selected_vis.append('Surge')
         def fireball_loop(startx, endx, starty, endy, xstep, ystep):
             if starty > endy:
                 starty -= ystep
@@ -18276,7 +18337,7 @@ class Water_Elemental(Bot):
         target_dod = app.ent_dict[id].get_abl('dodge')
         def cleanup_fireball():
             global selected_vis
-            selected_vis = []
+            selected_vis.remove('Surge')
             self.init_normal_anims()
             try: 
                 del app.vis_dict['Surge']
@@ -18889,7 +18950,7 @@ class Sorceress(Bot):
         loc = app.ent_dict[id].loc[:]
         app.vis_dict['Fireblast'] = Vis(name = 'Fireblast', loc = self.loc[:])
         app.canvas.create_image(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+50-app.moved_down, image = app.vis_dict['Fireblast'].img, tags = 'Fireblast')
-        selected_vis = ['Fireblast']
+        selected_vis.append('Fireblast')
         def fireball_loop(startx, endx, starty, endy, xstep, ystep):
             if starty > endy:
                 starty -= ystep
@@ -18943,7 +19004,7 @@ class Sorceress(Bot):
         target_wis = ent.get_abl('wis')
         def cleanup_fireball():
             global selected_vis
-            selected_vis = []
+            selected_vis.remove('Fireblast')
             self.init_normal_anims()
             try: 
                 del app.vis_dict['Fireblast']
@@ -19000,7 +19061,7 @@ class Sorceress(Bot):
         loc = app.ent_dict[id].loc[:]
         app.vis_dict['Charged_Bolt'] = Vis(name = 'Charged_Bolt', loc = self.loc[:])
         app.canvas.create_image(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+50-app.moved_down, image = app.vis_dict['Charged_Bolt'].img, tags = 'Charged_Bolt')
-        selected_vis = ['Charged_Bolt']
+        selected_vis.append('Charged_Bolt')
         def fireball_loop(startx, endx, starty, endy, xstep, ystep):
             if starty > endy:
                 starty -= ystep
@@ -19053,7 +19114,7 @@ class Sorceress(Bot):
         target_wis = app.ent_dict[id].get_abl('wis')
         def cleanup_fireball():
             global selected_vis
-            selected_vis = []
+            selected_vis.remove('Charged_Bolt')
             self.init_normal_anims()
             try: 
                 del app.vis_dict['Charged_Bolt']
@@ -19199,7 +19260,7 @@ class Fire_Elemental(Bot):
         loc = app.ent_dict[id].loc[:]
         app.vis_dict['Flare'] = Vis(name = 'Flare', loc = self.loc[:])
         app.canvas.create_image(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+50-app.moved_down, image = app.vis_dict['Flare'].img, tags = 'Flare')
-        selected_vis = ['Flare']
+        selected_vis.append('Flare')
         def fireball_loop(startx, endx, starty, endy, xstep, ystep):
             if starty > endy:
                 starty -= ystep
@@ -19253,7 +19314,7 @@ class Fire_Elemental(Bot):
         target_dod = app.ent_dict[id].get_abl('dodge')
         def cleanup_fireball():
             global selected_vis
-            selected_vis = []
+            selected_vis.remove('Flare')
             self.init_normal_anims()
             try: 
                 del app.vis_dict['Flare']
@@ -19363,7 +19424,7 @@ class Barbarian(Bot):
         endy = sqr[1]*100+50-app.moved_down
         start_sqr = self.loc[:]
         end_sqr = sqr[:]
-        selected = [self.id]
+        selected.append(self.id)
         total_distance = abs(x - endx) + abs(y - endy)
         tic = total_distance/6 # tic is based on number of images in image source folders
         if x == endx:
@@ -19420,7 +19481,7 @@ class Barbarian(Bot):
             
     def finish_leap(self, end_sqr, start_sqr):
         global selected
-        selected = []
+        selected.remove(self.id)
         self.loc = end_sqr[:]
         app.grid[start_sqr[0]][start_sqr[1]] = ''
         app.grid[end_sqr[0]][end_sqr[1]] = self.id
@@ -23691,6 +23752,8 @@ class Witch(Summon):
             cls = Artificer
         elif type == 'Yellow_Priest':
             cls = Yellow_Priest
+        elif type == 'Goblin_Shaman':
+            cls = Goblin_Shaman
         self.continue_place_summon(cls, sqr)
         
         
@@ -23762,6 +23825,9 @@ class Witch(Summon):
         elif summon == Yellow_Priest:
             name = 'Yellow_Priest'
             img = ImageTk.PhotoImage(Image.open('summon_imgs/Yellow_Priest.png'))
+        elif summon == Goblin_Shaman:
+            name = 'Goblin_Shaman'
+            img = ImageTk.PhotoImage(Image.open('summon_imgs/Goblin_Shaman.png'))
         s = summon(name = name, id = id, img = img, loc = sqr[:], owner = self.owner, level = self.level)
         app.cleanup_squares()
         app.depop_context(event = None)
@@ -24341,6 +24407,60 @@ class Witch(Summon):
                 miss(e.loc)
                 root.after(1666, lambda n = n : cleanup_dessicate(n))
         root.after(2333, lambda  name = 'Dessicate' : self.cleanup_spell(name = name))
+    
+    # any spell target tomb in range rsn which has an imprint with spell costing less than or equal to this spell cost, is immediately cast by fork caster
+    def fork(self, event = None):
+        app.depop_context(event = None)
+        root.bind('<q>', lambda name = '' : self.cleanup_spell(name = name))
+        sqrs = [s for s in app.coords if 1 <= dist(self.loc, s) <= self.get_abl('rsn')]
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_fork(event = e, sqr = s, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Choose Target For Fork', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_fork(e, s, sqrs))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
+        
+    def do_fork(self, event, sqr, sqrs):
+        if sqr not in sqrs:
+            return
+        id = app.grid[sqr[0]][sqr[1]]
+        if id not in app.spell_target_ents().keys():
+            return
+        ent = app.ent_dict[id]
+        if isinstance(ent,Tomb)==False:
+            return
+        if ent.imprint=='':
+            return
+        spell_obj = self.arcane_dict[ent.imprint]
+        if spell_obj.cost > self.arcane_dict['Fork'].cost:
+            return
+#         self.init_cast_anims()
+        effect1 = mixer.Sound('Sound_Effects/energize.ogg')
+        effect1.set_volume(app.effects_volume.get())
+        sound_effects.play(effect1, 0)
+        app.unbind_all()
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        # INSERT cast here, pay for fork? pay for imprint spell?
+        # hack to account for spell.func handling costs paid
+        self.magick += spell_obj.cost
+        # make sure to exit on spell_obj.func
+        # bug spell_obj.func has hotkeys/buttons that allow for cancel, which will exit before costs are paid for spell,
+        # how to / if? disallow cancel?
+        # wrap/call func
+        self.magick -= self.arcane_dict['Fork'].cost
+        spell = self.arcane_dict['Fork']
+        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        app.vis_dict['Fork'] = Vis(name = 'Fork', loc = sqr[:])
+        app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+14-app.moved_down, text = 'Fork', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
+        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+15-app.moved_down, text = 'Fork', justify = 'center', font = ('chalkduster', 13), fill = 'indianred', tags = 'text')
+        root.after(1666, lambda  name = 'Fork' : self.cleanup_spell(name = name))
+        root.after(1777, lambda spell_obj = spell_obj : self.cont_fork(spell_obj))
+        
+    def cont_fork(self, spell_obj):
+        spell_obj.func()
     
     
     def compromised_immunity(self, event = None):
@@ -26787,6 +26907,59 @@ class Witch(Summon):
         root.after(2111, lambda  name = 'Quicksilver' : self.cleanup_spell(name = name))
         
         
+    def calm(self, event = None):
+        app.depop_context(event = None)
+        root.bind('<q>', self.cleanup_spell)
+        sqrs = [s for s in app.coords if dist(self.loc, s) == 1]
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_calm(event = e, sqr = s, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Choose Target For Calm', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_calm(e, s, sqrs = sqrs))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
+        
+    def do_calm(self, event, sqr, sqrs):
+        if sqr not in sqrs:
+            return
+        id = app.grid[sqr[0]][sqr[1]]
+        if id not in app.spell_target_ents().keys():
+            return
+        ent = app.ent_dict[id]
+        if isinstance(ent, Witch):
+            return
+        if 'Calm' in [v.name for k,v in ent.effects_dict.items()]:
+            return
+        self.magick -= self.arcane_dict['Calm'].cost
+        spell = self.arcane_dict['Calm']
+        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        effect1 = mixer.Sound('Sound_Effects/hidden_from_the_stars.ogg')
+        effect1.set_volume(app.effects_volume.get())
+        sound_effects.play(effect1, 0)
+#         self.init_cast_anims()
+        app.unbind_all()
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        app.vis_dict['Calm'] = Vis(name = 'Calm', loc = sqr[:])
+        app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+14-app.moved_down, text = 'Calm', justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
+        app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+15-app.moved_down, text = 'Calm', justify = 'center', font = ('chalkduster', 14), fill = 'antiquewhite', tags = 'text')
+        app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+84-app.moved_down, text = '+3 sanity', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
+        app.canvas.create_text(ent.loc[0]*100+50-app.moved_right, ent.loc[1]*100+85-app.moved_down, text = '+3 sanity', justify = 'center', font = ('chalkduster', 13), fill = 'antiquewhite', tags = 'text')
+        def calm_effect(stat):
+            return stat+3
+        p = partial(calm_effect)
+        ent.san_effects.append(p)
+        def un(ent, p, lockname = None):
+            ent.san_effects.remove(p)
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+        u = partial(un, ent, p)
+        n = 'calm' + str(app.count)
+        ent.effects_dict[n] = Effect(name = 'Calm', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
+        root.after(2111, lambda  name = 'Calm' : self.cleanup_spell(name = name))
+        
+        
+        
     def hidden_from_the_stars(self, event = None):
         app.depop_context(event = None)
         root.bind('<q>', self.cleanup_spell)
@@ -27713,7 +27886,8 @@ class Witch(Summon):
     def do_survival_of_the_fittest(self, event, sqr, sqrs):
         if sqr not in sqrs:
             return
-        if self.in_hand == []:
+        cards = list(filter(lambda x : x in app.summons_list, self.in_hand[:]))
+        if cards == []:
             return
         self.magick -= self.arcane_dict['Survival_of_the_Fittest'].cost
         spell = self.arcane_dict['Survival_of_the_Fittest']
@@ -27728,7 +27902,7 @@ class Witch(Summon):
         app.vis_dict['Survival_of_the_Fittest'] = Vis(name = 'Survival_of_the_Fittest', loc = sqr[:])
         app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+84-app.moved_down, text = 'Survival of the Fittest', justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
         app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+85-app.moved_down, text = 'Survival of the Fittest', justify = 'center', font = ('chalkduster', 14), fill = 'gray', tags = 'text')
-        self.page_survival_otf(hand = self.in_hand[:])
+        self.page_survival_otf(hand = cards)
 
 
     def page_survival_otf(self, event = None, hand = None, index = 0):
@@ -27764,10 +27938,13 @@ class Witch(Summon):
         self.discard.append(card)
         app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+14-app.moved_down, text = 'Discard '+str(card), justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
         app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+15-app.moved_down, text = 'Discard '+str(card), justify = 'center', font = ('chalkduster', 14), fill = 'green', tags = 'text')
-        if self.library != []:
-            self.page_surv_library(cards = self.library[:])
+        cards = list(filter(lambda x : x in app.summons_list, self.library[:]))
+        if cards != []:
+            self.page_surv_library(cards = cards)
         else:
-            root.after(1999, lambda  name = 'Survival_of_the_Fittest' : self.cleanup_spell(name = name))
+            app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+74-app.moved_down, text = 'No summons to fetch...', justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
+            app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+75-app.moved_down, text = 'No summons to fetch...', justify = 'center', font = ('chalkduster', 14), fill = 'green', tags = 'text')
+            root.after(1666, lambda  name = 'Survival_of_the_Fittest' : self.cleanup_spell(name = name))
 
     def page_surv_library(self, event = None, cards = None, index = 0):
         app.unbind_all()
@@ -27801,7 +27978,7 @@ class Witch(Summon):
         sqr = self.loc[:]
         app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+14-app.moved_down, text = 'Fetch '+str(card).replace('_',' '), justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
         app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+15-app.moved_down, text = 'Fetch '+str(card).replace('_',' '), justify = 'center', font = ('chalkduster', 13), fill = 'antiquewhite', tags = 'text')
-        root.after(1999, lambda  name = 'Survival_of_the_Fittest' : self.cleanup_spell(name = name))
+        root.after(1666, lambda  name = 'Survival_of_the_Fittest' : self.cleanup_spell(name = name))
         
         
     def myopic_neuroticism(self, event = None):
@@ -28782,8 +28959,8 @@ class Witch(Summon):
         self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
         sqr = self.loc[:]
         app.vis_dict['Frantic_Search'] = Vis(name = 'Frantic_Search', loc = sqr[:])
-        app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+84-app.moved_down, text = 'Frantic Search, draw 2, discard 2', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
-        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+85-app.moved_down, text = 'Frantic Search, draw 2, discard 2', justify = 'center', font = ('chalkduster', 13), fill = 'white', tags = 'text')
+        app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+84-app.moved_down, text = 'Frantic Search, draw 2, discard 3', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
+        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+85-app.moved_down, text = 'Frantic Search, draw 2, discard 3', justify = 'center', font = ('chalkduster', 13), fill = 'white', tags = 'text')
         self.in_hand += self.library[0:2]
         self.library = self.library[2:]
         if len(self.in_hand) < 2:
@@ -30361,6 +30538,7 @@ class App(tk.Frame):
         self.arcane_dict['Bewitch'] = Spell('Bewitch',Witch.bewitch, 1, 0, 0)
         self.arcane_dict['Dark_Ritual'] = Spell('Dark_Ritual',Witch.dark_ritual, 1,0,0)
         self.arcane_dict['Quicksilver'] = Spell('Quicksilver',Witch.quicksilver, 1, 0, 0)
+        self.arcane_dict['Calm'] = Spell('Calm',Witch.calm, 1, 0, 0)
         self.arcane_dict['Fists_of_Stone'] = Spell('Fists_of_Stone',Witch.fangs_of_apophis, 1, 0, 0)
         self.arcane_dict['Survival_of_the_Fittest'] = Spell('Survival_of_the_Fittest',Witch.survival_of_the_fittest, 1, 0, 0)
         self.arcane_dict['Scrye'] = Spell('Scrye',Witch.scrye, 2,0,0)
@@ -30388,6 +30566,7 @@ class App(tk.Frame):
         self.arcane_dict['Gift_of_Mars'] = Spell('Gift_of_Mars',Witch.gift_of_mars, 2, 0, 0)
         self.arcane_dict['Grasp_of_the_Old_Ones'] = Spell('Grasp_of_the_Old_Ones',Witch.grasp_of_the_old_ones, 2,0,0)
         self.arcane_dict['Dark_Sun'] = Spell('Dark_Sun',Witch.dark_sun, 3,0,0)
+        self.arcane_dict['Fork'] = Spell('Fork',Witch.fork, 3,0,0)
         self.arcane_dict['Hypnotic_Spectre'] = Spell('Hypnotic_Spectre',Witch.hypnotic_spectre, 3,0,0)
         self.arcane_dict['Carrion_Wyrm'] = Spell('Carrion_Wyrm',Witch.carrion_wyrm, 3,0,0)
         self.arcane_dict['Foul_Familiar'] = Spell('Foul_Familiar',Witch.foul_familiar, 3, 0, 0)
@@ -30449,7 +30628,8 @@ class App(tk.Frame):
         self.summon_dict['Diabolist'] = ('Diabolist',0)
         self.summon_dict['Artificer'] = ('Artificer',0)
         self.summon_dict['Yellow_Priest'] = ('Yellow_Priest',0)
-        self.summons_list = ['Berserker','Illusionist','Umbrae_Wolf','Thaumaturge','Murrain_Wolf','Fiend','Wurdulak','Chirurgeon','Hexmage','Fell_Evolver','Drake','Inquisitor','Pixie','Chronomancer','Enchantress', 'Diabolist', 'Artificer', 'Yellow_Priest']
+        self.summon_dict['Goblin_Shaman'] = ('Goblin_Shaman',0)
+        self.summons_list = ['Berserker','Illusionist','Umbrae_Wolf','Thaumaturge','Murrain_Wolf','Fiend','Wurdulak','Chirurgeon','Hexmage','Fell_Evolver','Drake','Inquisitor','Pixie','Chronomancer','Enchantress', 'Diabolist', 'Artificer', 'Yellow_Priest', 'Goblin_Shaman']
         # the following few anim dicts are for testing 'load images on game start, instead of as needed'
         # results in faster response for image loading in game, longer load time (as would be expected)
         self.sqr_anims = {}
@@ -32729,9 +32909,9 @@ class App(tk.Frame):
 #         bg.create_text(15, 8, text=expanded_name + '\n', width = 190, anchor = 'nw', font = ('chalkduster', 17), fill = 'gray30')
         text = expanded_name+'\n'
         text +=  self.get_info_text(e)
-        bg.create_text(14, 7, text=text, width = 190, anchor = 'nw', font = ('chalkduster', 13), fill = 'ghostwhite')
-        bg.create_text(16, 9, text=text, width = 190, anchor = 'nw', font = ('chalkduster', 13), fill = 'ghostwhite')
-        bg.create_text(15, 8, text=text, width = 190, anchor = 'nw', font = ('chalkduster', 13), fill = 'gray30')
+        bg.create_text(14, 7, text=text, width = 180, anchor = 'nw', font = ('chalkduster', 13), fill = 'ghostwhite')
+        bg.create_text(16, 9, text=text, width = 180, anchor = 'nw', font = ('chalkduster', 13), fill = 'ghostwhite')
+        bg.create_text(15, 8, text=text, width = 180, anchor = 'nw', font = ('chalkduster', 13), fill = 'gray30')
         # create 'info' button as last element
         if e != self.active_ent:
             txt3 = self.get_more_info(e)
@@ -32790,6 +32970,7 @@ class App(tk.Frame):
         for b in self.context_buttons:
             b.destroy()
         self.context_buttons = []
+        root.unbind('<p>')
     
     
     def move_curs(self, event = None, dir = None):
@@ -33556,9 +33737,9 @@ class App(tk.Frame):
         
     def debugger(self, event):
 #         global grid_pos, curs_pos, map_pos
-        print('grid_pos ',grid_pos)
-        print('curs_pos ',curs_pos)
-        print('map_pos ',map_pos)
+        global selected, selected_vis
+        print(selected)
+        print(selected_vis)
     # doesnt work since curs_pos is tied to grid_pos/map_pos
     # movement of cursor keeps all in sync
 #         app.move_map('Left')
