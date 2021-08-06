@@ -1,11 +1,3 @@
-# how many ways exist to alter vivify amount?
-
-# spl to take advntg, chirur 2 acts
-
-# witch spell that moves smn to front of initq (for imdtly cast smns)
-
-# stuff that can be used somehow from discard/exile?
-
 # way to wrap card draw... something happens when...
 
 # cenobite into summon
@@ -18,7 +10,7 @@
 # done, the wheel-shuffle discard and exile into lib, draw a card -3
 # done, the fool- tar wis reduced to 1, gets def efct melee/rngd/spl reduce to 1 and causes +1 wis efct, 1
 # done, the magician- tport caster to loc in rng rsn, -2
-# the moon- create a copy of any list smn, that does not use smn cap and has 1 spirit, -3
+# done, the moon- create a copy of any list smn, that does not use smn cap and has 1 spirit, -3
 # the tower- caster gets efct -1 all stats on undo, draw a card, -2
 # the sun- all undead type wi rng 2 of caster have efcts dispelled at mod +6, -3
 # Death- caster gets undead type and +1 end, -1
@@ -185,11 +177,35 @@ def round_100(x):
         prefix += 1
     return prefix
 
-# plague vermin, voodoo doll, the_magician
+# plague vermin, voodoo doll, the_magician, the moon, the hierophant, the fool
 # descriptions of spells and actions, takes a string that has been stripped of underscores (as it exists in the move dict of ents)
 def action_description(act):
     if act == 'Slash':
         return 'To-hit agility vs agility, strength vs endurance slashing melee damage, adjacent target as action.'
+    elif act == '':
+        return ''
+    elif act == '':
+        return ''
+    elif act == '':
+        return ''
+    elif act == '':
+        return ''
+    elif act == '':
+        return ''
+    elif act == '':
+        return ''
+    elif act == '':
+        return ''
+    elif act == '':
+        return ''
+    elif act == '':
+        return ''
+    elif act == '':
+        return ''
+    elif act == '':
+        return ''
+    elif act == '':
+        return ''
     elif act == 'Sigil':
         return 'An adjacent animal type without this effect gets weakness or resistance of any type at duration reason and level wisdom. Costs 3 magick.'
     elif act == 'Unsummon':
@@ -206,10 +222,6 @@ def action_description(act):
         return 'The caster, on passing a wisdom save check, teleports to any location in range reason.'
     elif act == 'The Hierophant':
         return 'Caster gets proximity effect that gives all friendly units up to range 1 +2 str, end, agl, dodge, init.'
-    elif act == '':
-        return ''
-    elif act == '':
-        return ''
     elif act == 'Foresight':
         return 'Search your library for up to three cards and exile them.'
     elif act == 'Aftershock':
@@ -255,7 +267,7 @@ def action_description(act):
     elif act == 'Pull from the Aether':
         return 'Put a card from your exiled cards into your hand.'
     elif act == 'Carrion Wyrm':
-        return 'Remove any number of unique cards from your discard (put in exile) to create a Wyrm user-controlled unit with base stats equal to the number removed.'
+        return 'Remove any number of unique cards from your discard (put in exile) to create a Wyrm user-controlled unit with base stats equal to 1 plus the number removed.'
     elif act == 'Spectral Pillory':
         return 'On to-hit wisdom vs wisdom, target gets effect: -2 move range (max 0), end-of-turn 2 magick damage.'
     elif act == 'Upheaval':
@@ -24677,41 +24689,41 @@ class Pyrrhic_Gnome(Summon):
         
         
 class Carrion_Wyrm(Summon):
-    def __init__(self, name, id, img, loc, owner, level, j = 1):
+    def __init__(self, name, id, img, loc, owner, level, j = 0):
         self.actions = {'Move':self.move, 'Bite':self.bite}
         self.level = level
         if level == 1:
-            self.str = j
-            self.agl = j
-            self.end = j
-            self.mm = j
-            self.msl = j
-            self.bls = j
-            self.dodge = j
-            self.psyche = j
-            self.wis = j
-            self.rsn = j
+            self.str = 1 + j
+            self.agl = 1 + j
+            self.end = 1 + j
+            self.mm = 1 + j
+            self.msl = 1 + j
+            self.bls = 1 + j
+            self.dodge = 1 + j
+            self.psyche = 1 + j
+            self.wis = 1 + j
+            self.rsn = 1 + j
             self.san = 13
-            self.init = j
-            self.spirit = j*3
+            self.init = 1 + j
+            self.spirit = (j+1)*3
             self.magick = 0
             self.acts = 1
             self.mvs = 1
             self.move_range = 6
         elif level == 2:
-            self.str = j
-            self.agl = j
-            self.end = j
-            self.mm = j
-            self.msl = j
-            self.bls = j
-            self.dodge = j
-            self.psyche = j
-            self.wis = j
-            self.rsn = j
+            self.str = 1 + j
+            self.agl = 1 + j
+            self.end = 1 + j
+            self.mm = 1 + j
+            self.msl = 1 + j
+            self.bls = 1 + j
+            self.dodge = 1 + j
+            self.psyche = 1 + j
+            self.wis = 1 + j
+            self.rsn = 1 + j
             self.san = 13
-            self.init = j
-            self.spirit = j*3
+            self.init = 1 + j
+            self.spirit = (j+1)*3
             self.magick = 0
             self.acts = 1
             self.mvs = 1
@@ -29308,6 +29320,70 @@ class Witch(Summon):
         root.after(2111, lambda  name = 'Calm' : self.cleanup_spell(name = name))
         
         
+    def the_moon(self, event = None):
+        app.depop_context(event = None)
+        root.bind('<q>', self.cleanup_spell)
+        sqrs = [s for s in app.coords if 1 <= dist(self.loc, s) <= self.get_abl('rsn')]
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_the_moon(event = e, sqr = s, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Choose Target For The Moon', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_the_moon(e, s, sqrs = sqrs))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
+        
+    def do_the_moon(self, event, sqr, sqrs):
+        if sqr not in sqrs:
+            return
+        id = app.grid[sqr[0]][sqr[1]]
+        if id not in app.spell_target_ents().keys():
+            return
+        ent = app.ent_dict[id]
+        if ent.name not in app.summons_list:
+            return
+        self.magick -= self.arcane_dict['The_Moon'].cost
+        spell = self.arcane_dict['The_Moon']
+        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        effect1 = mixer.Sound('Sound_Effects/hidden_from_the_stars.ogg')
+        effect1.set_volume(app.effects_volume.get())
+        sound_effects.play(effect1, 0)
+#         self.init_cast_anims()
+        app.unbind_all()
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        app.vis_dict['The_Moon'] = Vis(name = 'The_Moon', loc = sqr[:])
+        app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+14-app.moved_down, text = 'The Moon', justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
+        app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+15-app.moved_down, text = 'The Moon', justify = 'center', font = ('chalkduster', 14), fill = 'ghostwhite', tags = 'text')
+        app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+84-app.moved_down, text = 'Create Illusion...', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
+        app.canvas.create_text(ent.loc[0]*100+50-app.moved_right, ent.loc[1]*100+85-app.moved_down, text = 'Create Illusion...', justify = 'center', font = ('chalkduster', 13), fill = 'ghostwhite', tags = 'text')
+        smn = ent.name
+        cs =  [c for c in app.coords if app.grid[c[0]][c[1]]=='']
+        if cs == []:
+            app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+34-app.moved_down, text = 'No available area', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
+            app.canvas.create_text(ent.loc[0]*100+50-app.moved_right, ent.loc[1]*100+35-app.moved_down, text = 'No available area', justify = 'center', font = ('chalkduster', 13), fill = 'ghostwhite', tags = 'text')
+            root.after(1777, lambda t = 'text' : app.canvas.delete(t))
+            root.after(1888, lambda  name = 'The_Moon' : self.cleanup_spell(name = name))
+        else:
+            loc = reduce(lambda a,b : a if dist(a,sqr)<dist(b,sqr) else b, cs)
+            app.vis_dict['Legerdemain'] = Vis(name = 'Legerdemain', loc = loc[:])
+            def cleanup_mn():
+                del app.vis_dict['Legerdemain']
+                app.canvas.delete('Legerdemain')
+            root.after(1666, cleanup_mn)
+            img = ImageTk.PhotoImage(Image.open('summon_imgs/'+smn+'.png'))
+            if self.owner == 'p1':
+                id = 'a'+str(app.ent_dict[app.p1_witch].summon_ids)
+                app.ent_dict[app.p1_witch].summon_ids += 1
+            else:
+                id = 'b'+str(app.ent_dict[app.p2_witch].summon_ids)
+                app.ent_dict[app.p2_witch].summon_ids += 1
+            app.ent_dict[id] =  eval(smn)(name = smn, id = id, img = img, loc = loc[:], owner = self.owner, level = self.level)
+#             app.canvas.create_image(loc[0]*100+50-app.moved_right, loc[1]*100+50-app.moved_down, image = app.ent_dict[id].img, tags = app.ent_dict[id].tags)
+            app.grid[loc[0]][loc[1]] = id
+            app.ent_dict[id].spirit = 1
+            root.after(2111, lambda  name = 'The_Moon' : self.cleanup_spell(name = name))
+        
         
     def hidden_from_the_stars(self, event = None):
         app.depop_context(event = None)
@@ -29415,7 +29491,7 @@ class Witch(Summon):
                     amt = -1
                 def fool_wis_def(stat):
                     return stat+1
-                p = partial(fool_wis)
+                p = partial(fool_wis_def)
                 dfndr.wis_effects.append(p)
                 def undo(ent, p, lockname = None):
                     ent.wis_effects.remove(p)
@@ -33414,6 +33490,7 @@ class App(tk.Frame):
         self.arcane_dict['Pain'] = Spell('Pain',Witch.pain, 3, 0, 0)
         self.arcane_dict['Dust_Devil'] = Spell('Dust_Devil',Witch.dust_devil, 4,0,0)
         self.arcane_dict['Forcefield'] = Spell('Forcefield',Witch.forcefield, 4, 0, 0)
+        self.arcane_dict['The_Moon'] = Spell('The_Moon',Witch.the_moon, 4, 0, 0)
         self.arcane_dict['The_Hierophant'] = Spell('The_Hierophant',Witch.the_hierophant, 4, 0, 0)
         self.arcane_dict['Disintegrate'] = Spell('Disintegrate',Witch.disintegrate, 4,0,0)
         self.arcane_dict['Mass_Hysteria'] = Spell('Mass_Hysteria',Witch.mass_hysteria, 4, 0, 0)
