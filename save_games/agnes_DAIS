@@ -1,6 +1,6 @@
 Agnes_Sampson
 2
-['Pain', 'Blind', 'Gravity', 'Curse_of_Oriax', 'Pestilence', 'Foul_Familiar', 'Astrological_Guidance', 'Scrye', 'Frantic_Search', 'Grave_Twin', 'Dark_Ritual', 'Dispel', 'Rite_of_Spring', 'Reaping_of_Saturnus', 'Dampening_Emanation', 'Mirror_Armor', 'Wreathed_in_Flame', 'Hidden_From_the_Stars']
+['Frantic_Search', 'Dark_Ritual', 'Mass_Grave', 'Scour', 'The_Fool', 'The_Empress', 'The_Chariot', 'The_Hermit', 'The_Hanged_Man', 'The_Moon', 'The_Devil', "Witch's_Blood", 'Acid_Arrow', 'Iron_Skins', 'Black_Blade_of_Disaster', 'Imbue_Thrall', 'Quicksilver', 'Magick_Missle', 'Pull_from_the_Aether', 'Spectral_Pillory']
 6
 7
 7
@@ -10,14 +10,14 @@ Agnes_Sampson
 0
 8
 10
-7
+6
 10
-15
+17
 9
 1
 1
 1
-50
+30
 4
 22
-['Astrological_Guidance', 'Illusionist', 'Enchantress', 'Reaping_of_Saturnus', 'Rite_of_Spring', 'Inquisitor', 'Enchantress', 'Mirror_Armor', 'Enchantress', 'Blind', 'Curse_of_Oriax', 'Wreathed_in_Flame', 'Pestilence', 'Gravity', 'Scrye', 'Inquisitor', 'Thaumaturge', 'Grave_Twin', 'Enchantress', 'Rite_of_Spring', 'Foul_Familiar', 'Foul_Familiar', 'Enchantress', 'Grave_Twin', 'Illusionist', 'Thaumaturge', 'Thaumaturge', 'Frantic_Search', 'Foul_Familiar', 'Frantic_Search', 'Frantic_Search', 'Hidden_From_the_Stars', 'Scrye', 'Frantic_Search', 'Hidden_From_the_Stars', 'Hidden_From_the_Stars', 'Curse_of_Oriax', 'Scrye', 'Illusionist', 'Thaumaturge', 'Gravity', 'Inquisitor', 'Thaumaturge', 'Dark_Ritual', 'Pain', 'Astrological_Guidance', 'Enchantress', 'Curse_of_Oriax', 'Dampening_Emanation', 'Inquisitor', 'Grave_Twin', 'Rite_of_Spring', 'Curse_of_Oriax', 'Umbrae_Wolf', 'Dark_Ritual', 'Dark_Ritual', 'Scrye', 'Hidden_From_the_Stars', 'Inquisitor', 'Dispel']
+['Quicksilver', 'Artificer', 'Goblin_Shaman', 'Quicksilver', 'Iron_Skins', 'Inquisitor', 'Acid_Arrow', 'The_Moon', 'Iron_Skins', 'Artificer', "Witch's_Blood", 'The_Fool', 'Frantic_Search', 'Enchantress', 'Dark_Ritual', 'The_Hanged_Man', 'The_Hermit', 'Pull_from_the_Aether', 'Artificer', 'Magick_Missle', 'Imbue_Thrall', 'The_Fool', 'Beastmaster', 'The_Empress', 'Thaumaturge', 'Inquisitor', 'Spectral_Pillory', 'The_Empress', 'Artificer', 'Enchantress', 'The_Devil', 'Enchantress', 'Dark_Ritual', 'Mass_Grave', 'Yellow_Priest', 'Thaumaturge', 'Inquisitor', 'Frantic_Search', 'Illusionist', 'The_Chariot', 'Mass_Grave', 'Umbrae_Wolf', 'Scour', "Witch's_Blood", 'Frantic_Search', 'Spectral_Pillory', 'The_Chariot', 'The_Fool', 'The_Empress', 'Thaumaturge', 'Magick_Missle', 'Black_Blade_of_Disaster', 'The_Hermit', 'Frantic_Search', 'Acid_Arrow', 'Dark_Ritual', 'Iron_Skins', 'Mass_Grave', 'Enchantress', 'Scour']
