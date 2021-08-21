@@ -1,8 +1,11 @@
-# summon r-click desc
-
 # some kind of mulligan protection... all/no-summon? what about non-summon decks? what about information protection/revealing for duel?
 # could actually enforce some kind of pseudo random... arbitrary criteria: within some threshold of proportion of deck total... for example
 #    a 60 card deck with 20 summons would redraw a starting hand where more than twice that proportion exists OR less than half that proportion exists... so hands with MORE THAN 2/3s summons OR LESS THAN 1/6 = auto redraw (do not need to necessarily make this process obvious or a matter of choice for player)
+# auto-redraw depending on IF a threshold of summon to non-summon exists,
+# for example, threshold is 10 percent (deck must consist of 90/10 ratio tombs/summons, either)
+#     then-- auto-redraw rule is in effect for opening hand
+#     - auto-redraw will enforce that opening hand is within some range of the ratio of tombs/summons
+#       - start testing with range at half and twice as much as ratio, 90/10 becomes 95/5 - 80/20
 
 # need gate-like spell for ents (Witch spell that targets ents)
 
@@ -25,7 +28,7 @@
 # the sun dispel timing with undo effects that need time to resolve...?
 
 # cenobite into summon
-# in fact, entire cenobite crew...
+# need cenobite gifs or images...
 
 # for each less sanity than 10 (X), +X phys stats max 4 -2
 # spend spirit?, discard hand? sacrifice some amount of ents/animals
@@ -44,14 +47,9 @@
 
 # screen/window to log text objects, make popup from menu?
 
-# white dragon free fly away seeks locations that are outside of its current range (if reason is less than base)
-# dragon makes redundant move when out of acts, seeking melee targets, before free fly move
-
 # levels where you must encroach on groups of mostly stationary enemies, to progress through some terrain/walls/rooms
 
 # desc in info for minotaur and dragon special rules (actions that cannot be removed from ent, ignore invis/psyshield, free move/charge/iceblast and conditions for)
-
-# minotaur, free charge on cond, 1 use of pound, 1 use of stomp, change move type to 'charge'?
 
 # in center_focus()
 # minimap captures r-click ONLY to 'jump' (move_map()) to translated pixel location
@@ -194,39 +192,39 @@ def action_description(act):
     elif act == '':
         return ''
     elif act == 'Yellow Priest':
-        return ''
+        return 'Censer Grenade attacks the sanity of grouped units. Trials of Hatheg-Kla gives +1 actions, but -5 sanity and teleports the target among the furthest distant locations. Dagons Chosen gives many stat bonuses but reduces sanity to 3. Yellow Priest summons Nightgaunts that can move around hit targets with Grasp. Nightgaunts can be destroyed to summon Migo, with very high stats but only action leaves -1 mental stats on hit. Migo can be destroyed to summon Guardian of the Chthonic Gate, which is immobile but very dangerous to nearby units...'
     elif act == 'Diabolist':
-        return ''
-    elif act == 'Enchatress':
-        return ''
+        return 'Good physical stats and disruptive attacks against an opposing Witch (versus the campaign mode) that can remove the imprint from a Tomb or search and remove a card from the deck. Can teleport units with infiltrate and give invisibility. Can heal self and remove cards from Discard with Graverob.'
+    elif act == 'Enchantress':
+        return 'High spirit, good mental stats, and Wall of Blossoms to make blocking/surround situations make for a defensive summon. Enlightment and Regrowth can gain card draw and reuse of key cards. Aura Blast does magick damage based on owners in-hand size. Wildfire can damage a group of enemies near those with a weakness to fire. Forestwalk gives ethereal move type, psyshield, and invisibility until the end of turn.'
     elif act == 'Chronomancer':
-        return ''
+        return 'Can give negative effects to initiative or move enemies to back of initiative queue. Time Warp is most powerful action, but has to be planned for, with adjacent friendly units with a higher initiative than the Chronomancer.'
     elif act == 'Inquisitor':
-        return ''
+        return 'Above average all stats but only can deal damage with Cleanse with Fire. Otherwise, can attack magick of a group of enemies or remove actions with Abeyance. Nullify is one of few ways to remove effects. Prophecy and Anoint can give bonuses to either reason or wisdom.'
     elif act == 'Drake':
-        return ''
+        return 'Good ranged poison attack and high physical stats, but low mental stats. Can give self either invisibility or psyshield, or place a map effect to give -3 move range, agility, and dodge to units with normal move type. Wing Buffet does explosive ranged damage and can relocate a unit.'
     elif act == 'Chirurgeon':
-        return ''
+        return 'Summons Cadavers that start out with no actions or moves, but are fairly resilient. Cadavers can be given either an acid ranged attack or slashing melee attack, in addition to Move action and stat bonuses by a Chirurgeon. Is one of few units to start with 2 actions, but can quickly use up all of its magick every turn and needs replenishment from Tombs or something.'
     elif act == 'Wurdulak':
-        return ''
+        return 'Has ranged actions Entrance and Entrall to attack the ranged stats or sanity of targets. Vampiric Bite gives a +3 bonus to psyche if it hits with piercing damage. Chill Touch does cold melee damage and leaves -1 wisdom effect. Can change to Bat Form for flying and movement bonues or Wolf Form for physical stat increase, both lasting until the end of the turn. High physical and good mental stats, inhibited by move range or stat decrease from Form changes.'
     elif act == 'Fiend':
-        return ''
+        return 'Chain Lightning can hit many nearby units with ranged electrical damage. Pounce hits adjacent enemies with slashing melee damage and moves the Fiend over obstacles. Hidden Haymaker will auto-hit if user is invisible. Overload will add another action, if they strength and psyche of the Fiend can somehow be increased to more than 2 their base value. Roar will damage the sanity of a group of nearby enemies. High physical stats and low mental stats.'
     elif act == 'Beastmaster':
-        return ''
+        return 'Summons a group of animal units with Wyld Hunt. Can use Unsummon on any animal type to destroy it and have the owner draw a card. Can give weaknesses and resistances to animal types with Sigil. Can place adjacent animal types at the front of the initiative queue with Orions Call, even if they have already used a round this turn. Swarm and Heel can either enhance or detract from the movement of nearby animal types. Spiritual Hammer does crushing spell damage to an adjacent target. Moderate stats with not much offense besides Hammer. Has to support animals from Wyld Hunt or elsewhere, or use them for drawing cards. Although, crushing attacks are rare and useful against Tombs.'
     elif act == 'Goblin Shaman':
-        return ''
+        return 'Can use Lightning Rod or Jokulhaups to do a lot of damage to all nearby enemies, with Lightning Rod hitting automatically but target are chosen randomly and Jokulhaups doing two separate to-hit rolls for fire and explosive spell damage to non-flying. Can summon Plague Vermin that leave end-of-turn poison damage. Fervor increases the physical stats of nearby animals at the expense of sanity. Teleport Field can move a group of units at once. Call Mount will give the Goblin Shaman either a Boar or flying Eyegaunt mount. The Boar can use charge to damage all adjacent enemies with slashing damage and increases the casters physical stats. The Eyegaunt gives flying move type, ranged stat bonuses, and a ranged attack againts non-flying units that does explosive damage.'
     elif act == 'Artificer':
-        return ''
+        return 'Place Tombs from discard with Lost Artifact, if they are unique among Tombs in play. Globe of Invulnerability can trap or protect units, reducing damage they deal and receive, and inhibiting their move range. Globe Roll will damage impacted units based on the contained unit strength. Two types of Gnome summons either damage when they explode or heal friendly spirit and magick. Low physical stats and medium mental stats. Needs to protect self with Globe or stay away from attacks and play a support role.'
     elif act == 'Thaumaturge':
-        return 'Among best healers and one of few ways to dispel effects or map effects with Esuna and Tranquility. Can give stat bonuses with Devils Mark and Unholy Chant. Can make piercing or spell ranged attacks with Arrow of Diana or Zephyr Lance.'
+        return 'Among best healers with Aura and Moonlight. Hass one of few ways to dispel effects or map effects with Esuna and Tranquility. Can give stat bonuses with Devils Mark and Unholy Chant. Can make piercing or spell ranged attacks with Arrow of Diana or Zephyr Lance. High agility, dodge, medium wisdom and psyche,  and slashing resistance gives decent defense.'
     elif act == 'Murrain Wolf':
-        return 'Slow moving and resilient, can poison adjacent enemies. Can give Scarab death trigger that summons Scarab that can then transform with Scarab Swarm. Can give -1 acts and -3 moves on a Paralyze hit.'
+        return 'Slow moving and resilient, can poison adjacent enemies. Can give Scarab death trigger that summons Scarab that can then transform with Scarab Swarm. Can give -1 acts and -3 moves on a Paralyze hit. A lot of spirit and most stats above average give good defense, but limited by move range and range of actions.'
     elif act == 'Fell Evolver':
-        return 'Can choose one of its Evolutions to use each round. Each tier of evolutions requires one of the previous tier. Each tier is mutually exclusive. Can either choose a combination of melee (slashing,crushing,poison) OR ranged (fire,acid,poison) attack, and either bonuses or resistances affecting either melee combat (agility, endurance) OR spell casting (reason). Can gain flying type move (and the ranged fire attack) with Chimeric Mutation OR +1 acts with Unstable Mutation.'
+        return 'Can choose one of its Evolutions to use each round. Each tier of evolutions requires one of the previous tier. Each tier is mutually exclusive. Can either choose a combination of melee (slashing,crushing,poison) OR ranged (fire,acid,poison) attack, and either bonuses or resistances affecting either melee combat (agility, endurance) OR spell casting (reason). Can gain flying type move (and the ranged fire attack) with Chimeric Mutation OR +1 acts with Unstable Mutation. All stats start at the high end of average (6), but get bonuses based on which evolutions are chosen.'
     elif act == 'Pixie':
-        return 'Can switch psyche and strength of target with Biotranspose, reduce reason with Glammering, grant psyshield with Pixie Dust, Dispel effects that have end-of-turn effects with Detox, and caused either crushing or piercing ranged spell damage.'
+        return 'Can switch psyche and strength of target with Biotranspose, reduce reason with Glammering, grant psyshield with Pixie Dust, Dispel effects that have end-of-turn effects with Detox, and caused either crushing or piercing ranged spell damage. High mental stats and low physical stats. Flying move type.'
     elif act == 'Hexmage':
-        return 'Uses one of a few unique Hexes (proximity effects on self) that can decrease enemy strength or psyche, or give physical combat resists or boost wisdom. Otherwise, has melee slashing attacks that either decrease strength or reason.'
+        return 'Uses one of a few unique Hexes (proximity effects on self) that can decrease enemy strength or psyche, or give physical combat resists, boost wisdom, or reduce move range. Otherwise, has melee slashing attacks that either decrease strength or reason.'
     elif act == 'Umbrae Wolf':
         return '2 forms, use Phase Shift to switch between. Wolf form has higher physical stats and does ranged cold damage. Can also dispel, heal, or grant invisibility among Darkblast and Dark Shroud. Gaze decreases move range. Stalk increases physical damage received by the affected unit. Mist form has low physical and high mental stats (wisdom, reason, psyche). Can do magick damage and heal self with drain life. Haste that increases initiative and moves.'
     elif act == 'Illusionist':
@@ -308,7 +306,7 @@ def action_description(act):
     elif act == 'Sigil':
         return 'An adjacent animal type without this effect gets weakness or resistance of any type at duration reason and level wisdom. Costs 3 magick.'
     elif act == 'Unsummon':
-        return 'Destroy an adjacent spell target animal type. Its owner draws a card. Costs 4 magick.'
+        return 'Destroy an adjacent spell target animal type. Its owner draws a card. Costs 1 magick.'
     elif act == 'Calm':
         return 'An adjacent spell target unit gets +3 sanity at duration reason and level wisdom.'
     elif act == 'Offering':
@@ -382,11 +380,11 @@ def action_description(act):
     elif act == 'Fists of Stone':
         return 'An adjacent spell target gets an attack effect changing melee to crushing damage.'
     elif act == 'Call Migo':
-        return 'Destroy a nightgaunt you own to summon a Migo, a flying, user-controlled unit that gives -1 psyche, wisdom, reason, sanity on hit. '
+        return 'Destroy a nightgaunt you own to summon a Migo, a flying, user-controlled unit that gives -1 psyche, wisdom, reason, sanity on hit. Costs 6 magick.'
     elif act == 'Call Nightgaunt':
-        return 'Summon a user controlled flying nightgaunt, whose grasp attack does not damage but moves the unit to a location within move range. Self is randomly moved among the closest empty locations.'
+        return 'Summon a user controlled flying nightgaunt, whose grasp attack does not damage but moves the unit to a location within move range. Self is randomly moved among the closest empty locations. Costs 4 magick.'
     elif act == 'Guardian of the Chthonic Gate':
-        return 'Destroy a Migo you own to summon Guardian. Has no moves, always fails sanity checks, 2 acts, high stats, proximity effect causing -4 sanity (all range 3), and end-of-turn: all in range 2 on to-hit wisdom vs wisdom, -2 psyche, wisdom, reason, sanity.'
+        return 'Destroy a Migo you own to summon Guardian. Has no moves, always fails sanity checks, 2 acts, high stats, proximity effect causing -4 sanity (all range 3), and end-of-turn: all in range 2 on to-hit wisdom vs wisdom, -2 psyche, wisdom, reason, sanity. Costs 9 magick.'
     elif act == 'Trials of Hatheg Kla':
         return 'A spell target enemy unit, on to-hit wisdom vs wisdom, is teleported among the furthest empty sqrs. It gets -5 sanity, +1 acts.'
     elif act == "Dagon's Chosen":
@@ -400,7 +398,7 @@ def action_description(act):
     elif act == 'Lost Artifact':
         return 'If a tomb is in your discard that is unique among tombs in play, return it to play with 1 spirit remaining.'
     elif act == 'Globe of Invulnerability':
-        return 'Create a map effect at a location. Gives -5 move range, attack and defense effects that reduce melee, ranged, and spell damage to maximum of 2. Costs 6 magick.'
+        return 'Create a map effect at a location. Gives -5 move range, attack and defense effects that reduce melee, ranged, and spell damage to maximum of 2. Cannot be cast on same location as Witch. Costs 6 magick.'
     elif act == 'Globe Hover':
         return 'Relocate Globe of Invulnerability created by caster and any contained unit to a location within range reason. Costs 2 magick.'
     elif act == 'Globe Roll':
@@ -468,7 +466,7 @@ def action_description(act):
     elif act == 'Aura Blast':
         return 'Spell target in range reason, on to-hit wisdom vs wisom, takes magick spell damage equal to the in_hand total of owner Witch. Costs 4 magick.'
     elif act == 'Regrowth':
-        return 'Return a card from your discard to pile to hand. Costs 3 magick.'
+        return 'Return a Tomb from your discard to hand. Costs 3 magick.'
     elif act == 'Enlightenment':
         return 'Draw a card for each wisdom effect on caster. Costs 4 magick.'
     elif act == 'Wall of Blossoms':
@@ -780,7 +778,7 @@ def action_description(act):
     elif act == 'Stomp':
         return 'All units, that are not flying, ethereal, or immovable, take between 1 and 6 minus their distance from caster, electric ranged damage. They are then moved up to 2 squares closer towards the caster, if an unobstructed path exists.'
     elif act == 'Pound':
-        return 'An adjacent enemy unit, on to-hit agility vs agility, takes strength vs endurance crushing melee damage.'
+        return 'All adjacent enemy units, on to-hit agility vs agility, takes strength vs endurance crushing melee damage.'
     elif act == 'Charge':
         return 'An enemy unit on a straight path from caster, whose location is equal to or greater than the caster move range   but less than or equal to 2 times the caster move range, is Charged. The caster is relocated adjacent, and on to-hit agility vs agility, the unit takes strength vs endurance crushing melee damage.'
     elif act == 'Rake':
@@ -3511,6 +3509,7 @@ class Enchantress(Summon):
             discard = app.ent_dict[app.p1_witch].discard[:]
         else:
             discard = app.ent_dict[app.p2_witch].discard[:]
+        discard = [c for c in discard if c not in app.summons_list]
         if discard == []:
             root.after(1666, lambda e = None : self.finish_regrowth(event = e))
         else:# MAKE BUTTONS becomes page effects like page actions
@@ -4205,11 +4204,9 @@ class Yellow_Priest(Summon):
     def do_call_nightgaunt(self, event, sqr, sqrs):
         if sqr not in sqrs:
             return
-        if self.id+'nightgaunt' in app.all_ents().keys():
+        if self.magick < 4:
             return
-        if self.magick < 5:
-            return
-        self.magick -= 5
+        self.magick -= 4
 #         effect1 = mixer.Sound('Sound_Effects/stitch_cadaver.ogg')
 #         effect1.set_volume(.5)
 #         sound_effects.play(effect1, 0)
@@ -4227,10 +4224,10 @@ class Yellow_Priest(Summon):
     def continue_call_nightgaunt(self, sqr):
         img = ImageTk.PhotoImage(Image.open('summon_imgs/Nightgaunt.png'))
         if self.owner == 'p1':
-            id = self.id+'nightgaunt'
+            id = self.id+'nightgaunt'+ str(app.ent_dict[app.p1_witch].summon_ids)
             app.ent_dict[app.p1_witch].summon_ids += 1
         else:
-            id = self.id+'nightgaunt'
+            id = self.id+'nightgaunt'+str(app.ent_dict[app.p2_witch].summon_ids)
             app.ent_dict[app.p2_witch].summon_ids += 1
         app.ent_dict[id] =  Nightgaunt(name = 'Nightgaunt', id = id, img = img, loc = sqr[:], owner = self.owner, level = self.level)
         app.grid[sqr[0]][sqr[1]] = id
@@ -5604,9 +5601,9 @@ class Beastmaster(Summon):
         ent = app.ent_dict[id]
         if 'animal' not in ent.get_types():
             return
-        if self.magick < 4:
+        if self.magick < 1:
             return
-        self.magick -= 4
+        self.magick -= 1
 #         effect1 = mixer.Sound('Sound_Effects/paralyze.ogg')
 #         effect1.set_volume(.5)
 #         sound_effects.play(effect1, 0)
@@ -5940,6 +5937,10 @@ class Artificer(Summon):
             return
         if self.magick < 6:
             return
+        if app.grid[sqr[0]][sqr[1]] in app.all_ents():
+            ent = app.grid[sqr[0]][sqr[1]]
+            if isinstance(ent, Witch):
+                return
         self.magick -= 6
         app.unbind_all()
         app.depop_context(event = None)
@@ -19043,6 +19044,7 @@ class Warlock(Bot):
         self.resist = ['magick', 'fire', 'elec', 'cold', 'acid']
         self.weak = []
         super().__init__(name, img, loc, owner)
+        self.info_text = 'Warlock is immune to all effects that alter abilities, including acts and moves.'
         
     # OVERRIDE BASE METHOD, WARLOCK ABLS NOT AFFECTED BY EFFECTS
     def get_abl(self, abl):
@@ -20212,6 +20214,7 @@ class Earth_Mage(Bot):
         self.resist = ['slashing', 'piercing', 'crushing', 'elec']
         self.weak = ['cold', 'explosive', 'acid']
         super().__init__(name, img, loc, owner)
+        self.info_text = 'Earth Mage gets +1 to abls, besides acts and moves, for each Earth Elemental that exists. Earthquake can still be cast even if removed from actions.'
         
     # OVERRIDE BASE METHOD, +1 for each alive elemental
     def get_abl(self, abl):
@@ -25310,6 +25313,7 @@ class Wyld_Boar(Summon):
                     miss(ent.loc)
                     root.after(1555, lambda t = 'text' : app.canvas.delete(t))
                     root.after(1666, lambda ents = ents : charge_loop(ents))
+        app.get_focus(self.id)
         charge_loop(ents)
         
         
@@ -37028,26 +37032,44 @@ class App(tk.Frame):
         # CHOOSE MAPS
         maps = [m for r,d,m in walk('./2_player_map_portraits')][0]
         maps = [m for m in maps[:] if m[0] != '.']
-        self.map_button_list = []
-        self.tmp_mapimg_dict = {}
-        for map in maps:
-            b = tk.Button(root)
+        self.tmp_list = []
+        self.page_maps(maps = maps)
+        
+#         self.map_button_list = []
+#         self.tmp_mapimg_dict = {}
+#         for map in maps:
+    def page_maps(self, event = None, maps = None, index = 0):
+        for b in app.context_buttons:
+            if isinstance(b, tk.Button):
+                b.destroy()
+        if index > 0:
+            b4 = tk.Button(root, text = 'W : Prev', font = ('chalkduster', 14), fg='tan3', highlightbackground = 'tan3', command = lambda maps = maps, i = index-5 : self.page_maps(maps = maps, index = i))
+            b4.pack(side = 'top', pady = 2)
+            app.context_buttons.append(b4)
+        if len(maps) > len(maps[:index+5]):
+            b3 = tk.Button(root, text = 'E : Next', font = ('chalkduster', 14), fg='tan3', highlightbackground = 'tan3', command = lambda maps = maps, i = index+5 : self.page_maps(maps = maps, index = i))
+            b3.pack(side = 'top', pady = 2)
+            app.context_buttons.append(b3)
+        for map in maps[index:index+5]:
+            photo = ImageTk.PhotoImage(Image.open('./2_player_map_portraits/' + map).reduce((2)))
+            self.tmp_list.append(photo)
             map_num = map.rstrip('.png')
             cmd = lambda indx = map_num : self.map_choice_cleanup(indx)
-            photo = ImageTk.PhotoImage(Image.open('./2_player_map_portraits/' + map).resize((300,300)))
-            self.tmp_mapimg_dict['map'+map_num] = photo
-            b.config(image = self.tmp_mapimg_dict['map'+map_num], bg = 'black', highlightbackground = 'tan3', command = cmd)
+            b = tk.Button(root, image = photo, bg = 'black', highlightbackground = 'tan3', command = cmd)
+    #             self.tmp_mapimg_dict['map'+map_num] = photo
+    #             b.config(image = self.tmp_mapimg_dict['map'+map_num], bg = 'black', highlightbackground = 'tan3', command = cmd)
             # DEBUG packing will have to be fixed here for different screen sizes
-            b.pack(side = 'left', padx = 55)
-            self.map_button_list.append(b)
-        
+            b.pack(side = 'left', padx = 10, pady = 10)
+            self.context_buttons.append(b)
+            
+            
+            
     def map_choice_cleanup(self, map_number):
         self.two_player_map_num = int(map_number)
         self.choosemap.destroy()
-        del self.tmp_mapimg_dict
-        for b in self.map_button_list:
+        for b in self.context_buttons:
             b.destroy()
-        del self.map_button_list
+        del self.tmp_list
         self.choose_witch(player_num = 1)
 #         self.create_map_curs_context(map_number)
         
@@ -37360,10 +37382,10 @@ class App(tk.Frame):
             
     # handle_sot_campaign() for Campaign mode OTHERWISE generate initiative queue (app.generate_init_q)
     def start_turn(self): # AWAIT button press, start level popup
-#         if self.num_players == 1:
-        self.handle_sot_campaign()
-#         else:
-#             self.generate_init_q()
+        if self.num_players == 1:
+            self.handle_sot_campaign()
+        else:
+            self.generate_init_q()
     
     # Effects for Campaign mode
     # exit on generate_init_q()
@@ -39084,11 +39106,12 @@ class App(tk.Frame):
         app.rebind_all()
         
     def debugger(self, event):
-        global grid_pos, curs_pos, map_pos
-        id = app.grid[grid_pos[0]][grid_pos[1]]
-        if id in app.all_ents().items():
-            ent = app.ent_dict[id]
-            print(ent.get_stat_total())
+        pass
+#         global grid_pos, curs_pos, map_pos
+#         id = app.grid[grid_pos[0]][grid_pos[1]]
+#         if id in app.all_ents().items():
+#             ent = app.ent_dict[id]
+#             print(ent.get_stat_total())
     # doesnt work since curs_pos is tied to grid_pos/map_pos
     # movement of cursor keeps all in sync
 #         app.move_map('Left')
