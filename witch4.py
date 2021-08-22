@@ -1,4 +1,13 @@
+# ghast final control lock is not set, possibly name mangled with other locked funcs in control ai
+
+# quicker way to see summary of in-hand...
+
+# make windows, linux exes...
+
 # make other comp-controlled stuff behave like pyrrhic gnome move
+
+# change user-owner, computer-controlled stuff to allow for arb. added actions...
+# their eot control should account for variable attack ranges (use/add Entity.attack_range?), added or removed actions, incr/decr moves/acts/moverange,
 
 # some kind of mulligan protection... all/no-summon? what about non-summon decks? what about information protection/revealing for duel?
 # could actually enforce some kind of pseudo random... arbitrary criteria: within some threshold of proportion of deck total... for example
@@ -5959,8 +5968,8 @@ class Artificer(Summon):
         # Exile card
         witch.discard.remove(card)
         witch.exile.append(card)
-        app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+14-app.moved_down, text = 'Exile '+card, justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
-        app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+15-app.moved_down, text = 'Exile '+card, justify = 'center', font = ('chalkduster', 14), fill = 'ghostwhite', tags = 'text')
+        app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+14-app.moved_down, text = 'Exile '+card.replace('_',' '), justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
+        app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+15-app.moved_down, text = 'Exile '+card.replace('_',' '), justify = 'center', font = ('chalkduster', 14), fill = 'ghostwhite', tags = 'text')
         cs = [c for c in app.coords if app.grid[c[0]][c[1]]=='']
         sqr = reduce(lambda a,b : a if dist(a,self.loc)<dist(b,self.loc) else b,cs)
         spell = witch.arcane_dict[card]
@@ -11081,7 +11090,7 @@ class Haunted_Cairn(Summon):
 class Ghast(Summon):
     def __init__(self, name, id, img, loc, owner, level):
         if level == 1:
-            self.actions = {}
+            self.actions = {'Cut':self.cut}
             self.str = 4
             self.agl = 12
             self.end = 6
@@ -11125,52 +11134,67 @@ class Ghast(Summon):
         super().__init__(name, id, img, loc, owner)
         self.inert = True
         self.types = ['animal', 'undead']
+        
+        
+        # CHANGE to include ghast_attack, not just pursuit/adjacent goals
         def eot(lockname = None):
-            self.effects_dict['control'].duration += 1 # permanent effect, each call increases duration
-            app.get_focus(self.id)
-            ents = [v for k,v in app.action_target_ents().items() if v.owner != self.owner]
-            if ents == []:# no ents
-                root.after(666, lambda ln = lockname : app.dethloks[ln].set(1))
-            else:
-                goals = unique([c for c in app.coords for t in ents if dist(c,t.loc)==1 and app.grid[c[0]][c[1]]==''])
-                moves = self.legal_moves()
-                adj = [v for v in ents if dist(v.loc,self.loc)==1]
-                if adj == []:
-                    if moves == []:# CANNOT MOVE, NONE ADJ
+            self.effects_dict['control'].duration += 1 # permanent effect
+            els = [v.loc for k,v in app.all_ents().items() if v.owner != self.owner and v.get_inert()==False]
+            goals = unique([c for c in app.coords for el in els if dist(el,c)==1 and app.grid[c[0]][c[1]]==''])
+            moves = self.legal_moves()
+            gs = intersect(goals, moves)
+            if gs == []:
+                if els == []:
+                    root.after(666, lambda ln = lockname : app.dethloks[ln].set(1))
+                else:
+                    # get closest el and if moves exist, reduce to move that is closest to closest el
+                    if moves == []:
                         root.after(666, lambda ln = lockname : app.dethloks[ln].set(1))
                     else:
-                        if goals == []:#there are ents, but no current goal sqrs
-                            tar_ent = reduce(lambda a,b : a if dist(a.loc,self.loc) < dist(b.loc,self.loc) else b, ents)
-                            move = reduce(lambda a,b : a if dist(a,tar_ent.loc)<dist(b,tar_ent.loc) else b, moves)
+                        # at this point, no goals in legal moves, some els and moves exist, not ncsrly goals
+                        if goals == []:
+                            # no goals, just move to loc that minimizes dist to closest el
+                            el = reduce(lambda a,b : a if dist(a,self.loc)<dist(b,self.loc) else b, els)
+                            move = reduce(lambda a,b : a if dist(a,self.loc)>dist(b,self.loc) else b, moves)
+                            app.focus_square(move)
+                            lock(Bot.do_move, self, move)
+                            root.after(222, lambda ln = lockname : app.dethloks[ln].set(1))
                         else:
-                            goal = reduce(lambda a,b : a if dist(a,self.loc) < dist(b,self.loc) else b,goals)
-                            move = reduce(lambda a,b : a if dist(a,goal) < dist(b,goal) else b,moves)
-                        app.focus_square(move)
-                        mt = self.get_move_type()
-                        if mt == 'normal' or mt == 'charge':
-                            lock(Bot.ai_normal_move, self, move)
-                        elif mt == 'teleport':
-                            lock(Bot.ai_teleport_move, self, move)
-                        else:
-                            lock(Bot.ai_flying_move, self, move)
-                        adj = [v for v in ents if dist(v.loc,self.loc)==1]
-                        if adj == []:
-                            root.after(666, lambda ln = lockname : app.dethloks[ln].set(1))
-                        else:
-                            id = choice(adj)
-                            app.get_focus(id.id)
-                            root.after(666, lambda id = id.id, ln = lockname : self.ghast_attack(id, ln))
-                else:#ATK ADJ
-                    id = choice(adj)
-                    app.get_focus(id.id)
-                    root.after(666, lambda id = id.id, ln = lockname : self.ghast_attack(id, ln))
+                            # goals exist but not ncsrly path
+                            # try path to all goals, if None returned by bfs() just do same as above (move closest to closest)
+                            if path := bfs(self.loc, goals, app.grid[:]):
+                                moves = intersect(path, moves)
+                                move = reduce(lambda a,b : a if dist(a,self.loc)>dist(b,self.loc) else b, moves)
+                                app.focus_square(move)
+                                lock(Bot.do_move, self, move)
+                                root.after(222, lambda ln = lockname : app.dethloks[ln].set(1))
+                            else:
+                                el = reduce(lambda a,b : a if dist(a,self.loc)<dist(b,self.loc) else b, els)
+                                move = reduce(lambda a,b : a if dist(a,el)<dist(b,el) else b, moves)
+                                app.focus_square(move)
+                                lock(Bot.do_move, self, move)
+                                root.after(222, lambda ln = lockname : app.dethloks[ln].set(1))
+            else:
+                g = reduce(lambda a,b : a if sum([dist(a,el) for el in els]) > sum([dist(b,el) for el in els]) else b, gs)
+                app.focus_square(g)
+                # choose target and do atk
+                lock(Bot.do_move, self, g)
+                adj = [v for k,v in app.all_ents().items() if dist(v.loc,self.loc)==1 and v.owner != self.owner]
+                if adj:
+                    ent = choice(adj)
+                    app.get_focus(ent.id)
+                    lock(self.cut, ent.id)
+                    root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+                else:
+                    root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
         e = partial(eot)
         def undo(lockname = None):
             root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
         u = partial(undo)
         self.effects_dict['control'] = Effect(name = self.owner+"'s Ghast", eot_func = e, undo_func = u, duration = 666, level = 666)
         
-    def ghast_attack(self, id, lockname):
+        
+    def cut(self, id, lockname):
         self.init_attack_anims()
         app.get_focus(id)
         effect1 = mixer.Sound('Sound_Effects/undead_knight_attack.ogg')
