@@ -1,3 +1,5 @@
+# make other comp-controlled stuff behave like pyrrhic gnome move
+
 # some kind of mulligan protection... all/no-summon? what about non-summon decks? what about information protection/revealing for duel?
 # could actually enforce some kind of pseudo random... arbitrary criteria: within some threshold of proportion of deck total... for example
 #    a 60 card deck with 20 summons would redraw a starting hand where more than twice that proportion exists OR less than half that proportion exists... so hands with MORE THAN 2/3s summons OR LESS THAN 1/6 = auto redraw (do not need to necessarily make this process obvious or a matter of choice for player)
@@ -198,7 +200,7 @@ def action_description(act):
     elif act == 'Enchantress':
         return 'High spirit, good mental stats, and Wall of Blossoms to make blocking/surround situations make for a defensive summon. Enlightment and Regrowth can gain card draw and reuse of key cards. Aura Blast does magick damage based on owners in-hand size. Wildfire can damage a group of enemies near those with a weakness to fire. Forestwalk gives ethereal move type, psyshield, and invisibility until the end of turn.'
     elif act == 'Chronomancer':
-        return 'Can give negative effects to initiative or move enemies to back of initiative queue. Time Warp is most powerful action, but has to be planned for, with adjacent friendly units with a higher initiative than the Chronomancer.'
+        return 'Can give negative effects to initiative or move enemies to back of initiative queue. Vanish and Gate can relocate units. Time Warp is most powerful action, but has to be planned for, with adjacent friendly units with a higher initiative than the Chronomancer.'
     elif act == 'Inquisitor':
         return 'Above average all stats but only can deal damage with Cleanse with Fire. Otherwise, can attack magick of a group of enemies or remove actions with Abeyance. Nullify is one of few ways to remove effects. Prophecy and Anoint can give bonuses to either reason or wisdom.'
     elif act == 'Drake':
@@ -554,7 +556,7 @@ def action_description(act):
     elif act == 'Tendrils of Chaos':
         return 'Spell target in range reason, on to-hit wisdom vs wisdom, gets -2 to a random ability among all abilities besides acts, moves, move range, ballistics, and missle, and can be given multiple times to the same unit. Duration equal to caster reason  at level of wisdom. Target as spell.'
     elif act == 'Warpfire':
-        return 'A location which does not already have a warpfire effect has a warpfire placed on it. At the start of the turn, each unit within range 3 of the warpfire is teleported to a random square among the squares CLOSEST to the warpfire. At end-of-turn, if a unit occupies the location, it gets -2 sanity effect at reason duration and wisdom level (of original caster).'
+        return 'A location which does not already have a warpfire effect has a warpfire placed on it. At the start of the turn, each unit within range 3 of the warpfire is teleported to a random square among the squares CLOSEST to the warpfire. At end-of-turn, if a unit occupies the location, it gets -4 sanity effect at reason duration and wisdom level (of original caster).'
     elif act == 'Phase Shift':
         return 'Switch between the Umbrae Wolf and Umbrae Mist forms. Counts as action.'
     elif act == 'Dark Shroud':
@@ -860,7 +862,7 @@ def action_description(act):
     elif act == 'Assail':
         return 'Adjacent action target, on to-hit agility vs agility, takes strength vs endurance slashing melee damage.'
     elif act == 'Wooden Skin':
-        return 'Evolution that changes melee damage to crushing and for melee, ranged, or spell damage, leaves splinter effect on targets, causing 2 piercing end-of-turn damage with duration reason and level wisdom, if they do not already have this effect. +3 strength. Add resist and remove weakness to piercing.'
+        return 'Evolution that changes melee damage to crushing type and leaves splinter effect on targets, causing 2 piercing end-of-turn damage with duration reason and level wisdom, if they do not already have this effect (melee damage only). +3 strength. Add resist and remove weakness to piercing.'
     elif act == 'Calcify':
         return 'Evolution that gives +3 wisdom and psyche. Melee damage changed to piercing. Adds resistance and removes weakness to magick. Cannot be used with wooden skin.'
     elif act == 'Unstable Fervor':
@@ -1115,7 +1117,7 @@ def effect_description(ef):
     elif ef.name == 'Disintegrate':
         return '-1 to random ability among str, agl, end, rsn, san and also additional -1 randomly among same at end-of-turn. 1 acid damage end-of-turn. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Warp_Insane':
-        return '-2 sanity. dur = '+str(ef.duration)+', level = '+str(ef.level)
+        return '-4 sanity. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Hex':
         return '-1 str,agl,end,mm,dod,psy,wis,rsn,san,init. dur = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Poison_Sting':
@@ -2892,7 +2894,7 @@ energy transfer- two spell tar ents in initq exchange places in initq
 class Chronomancer(Summon):
     def __init__(self, name, id, img, loc, owner, level):
         if level == 1:
-            self.actions = {'Move':self.move, 'Enervating Blow':self.enervating_blow, 'Time Warp':self.time_warp, 'Slow Motion':self.slow_motion, 'Stasis':self.stasis, 'Vanish':self.vanish}
+            self.actions = {'Move':self.move, 'Enervating Blow':self.enervating_blow, 'Gate':self.gate, 'Time Warp':self.time_warp, 'Slow Motion':self.slow_motion, 'Stasis':self.stasis, 'Vanish':self.vanish}
             self.str = 3
             self.agl = 7
             self.end = 4
@@ -2912,7 +2914,7 @@ class Chronomancer(Summon):
             self.move_range = 5
             self.level = level
         elif level == 2:
-            self.actions = {'Move':self.move, 'Enervating Blow':self.enervating_blow, 'Time Warp':self.time_warp, 'Slow Motion':self.slow_motion, 'Stasis':self.stasis, 'Recall':self.recall, 'Vanish':self.vanish}
+            self.actions = {'Move':self.move, 'Enervating Blow':self.enervating_blow, 'Gate':self.gate, 'Time Warp':self.time_warp, 'Slow Motion':self.slow_motion, 'Stasis':self.stasis, 'Recall':self.recall, 'Vanish':self.vanish}
             self.str = 4
             self.agl = 8
             self.end = 5
@@ -2935,6 +2937,85 @@ class Chronomancer(Summon):
         self.weak = []
         self.resist = ['explosive', 'piercing']
         super().__init__(name, id, img, loc, owner)
+
+    def gate(self, event = None):
+        if self.acts < 1:
+            return
+        app.unbind_nonarrows()
+        root.bind('<q>', self.cleanup_gate)
+        sqrs = [c for c in app.coords if dist(c,self.loc) <= self.get_abl('rsn')]
+        app.animate_squares(sqrs)
+        app.depop_context(event = None)
+        root.bind('<a>', lambda e, sqr = grid_pos, sqrs = sqrs : self.choose_target(e, sqr = sqr, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Choose Target', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = lambda e = None, sqr = grid_pos, sqrs = sqrs : self.choose_target(event = e, sqr = sqr, sqrs = sqrs))
+        b.pack(side = 'top')
+        app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
+        
+        
+    def choose_target(self, event = None, sqr = None, sqrs = None):
+        if sqr not in sqrs:
+            return
+        id = app.grid[sqr[0]][sqr[1]]
+        if id not in app.spell_target_ents().keys():
+            return
+        if app.ent_dict[id].immovable == True:
+            return
+        if self.magick < 2:
+            return
+        app.depop_context(event = None)
+        app.unbind_all()
+        app.rebind_arrows()
+        root.bind('<q>', self.cleanup_gate)
+        distance = self.get_abl('rsn')
+        app.cleanup_squares()
+        sqrs = [c for c in app.coords if dist(self.loc,c)<=distance and app.grid[c[0]][c[1]]=='']
+        if sqrs == []:
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100+49-app.moved_right, app.ent_dict[id].loc[1]*100+59-app.moved_down, text = 'No Available Area', font = ('chalkduster', 14), fill = 'black', tags = 'text')
+            app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+60-app.moved_down, text = 'No Available Area', font = ('chalkduster', 14), fill = 'white', tags = 'text')
+            root.after(999, self.cleanup_gate)
+        else:
+            app.animate_squares(sqrs)
+            root.bind('<a>', lambda e, id = id, sqr = grid_pos, sqrs = sqrs : self.do_gate(e, id = id, sqr = sqr, sqrs = sqrs))
+            b = tk.Button(app.context_menu, text = 'Choose Location', font = ('chalkduster', 22), fg = 'tan3', wraplength = 190, highlightbackground = 'tan3', command = lambda e = None, id = id, sqr = grid_pos, sqrs = sqrs : self.do_gate(e, id, sqr, sqrs))
+            b.pack(side = 'top')
+            app.context_buttons.append(b)
+    
+    def do_gate(self, event = None, id = None, sqr = None, sqrs = None):
+        if sqr not in sqrs:
+            return
+        self.acts -= 1
+        self.magick -= 2
+        app.unbind_all()
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        effect1 = mixer.Sound('Sound_Effects/gate.ogg')
+        effect1.set_volume(app.effects_volume.get())
+        sound_effects.play(effect1, 0)
+        ent = app.ent_dict[id]
+        def cleanup_gate(name):
+            del app.vis_dict[name]
+            app.canvas.delete(name)
+        n = 'gate'+str(app.count)
+        app.count += 1
+        app.vis_dict[n] = Vis(name = 'Gate', loc = ent.loc[:])
+        root.after(1666, lambda n = n : cleanup_gate(n))
+        n = 'gate'+str(app.count)
+        app.count += 1
+        app.vis_dict[n] = Vis(name = 'Gate', loc = sqr[:])
+        root.after(1999, lambda n = n : cleanup_gate(n))
+        lock(Bot.ai_teleport_move, ent, sqr)
+        self.cleanup_gate()
+    
+    def cleanup_gate(self, event = None):
+        app.canvas.delete('text')
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        app.rebind_all()
+        app.exists_check(app.active_ent)
+
 
     def vanish(self, event = None):
         if self.acts < 1:
@@ -8042,7 +8123,7 @@ class Illusionist(Summon):
         root.bind('<q>', self.cleanup_gate)
         distance = self.get_abl('rsn')
         app.cleanup_squares()
-        sqrs = self.doorway_squares(distance)
+        sqrs = [c for c in app.coords if dist(self.loc,c)<=distance and app.grid[c[0]][c[1]]=='']
         if sqrs == []:
             app.canvas.create_text(app.ent_dict[id].loc[0]*100+49-app.moved_right, app.ent_dict[id].loc[1]*100+59-app.moved_down, text = 'No Available Area', font = ('chalkduster', 14), fill = 'black', tags = 'text')
             app.canvas.create_text(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+60-app.moved_down, text = 'No Available Area', font = ('chalkduster', 14), fill = 'white', tags = 'text')
@@ -8065,48 +8146,22 @@ class Illusionist(Summon):
         effect1 = mixer.Sound('Sound_Effects/gate.ogg')
         effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
-        oldloc = app.ent_dict[id].loc[:]
-        newloc = sqr[:]
-        app.vis_dict['Gate'] = Vis(name = 'Gate', loc = oldloc[:])
-        vis = app.vis_dict['Gate']
-        app.canvas.create_image(oldloc[0]*100+50-app.moved_right, oldloc[1]*100+50-app.moved_down, image = vis.img, tags = 'Gateway')
-        root.after(1666, lambda newloc = newloc, id = id : self.finish_gate(newloc, id))
-        
-    def finish_gate(self, newloc, id):
-        app.grid[app.ent_dict[id].loc[0]][app.ent_dict[id].loc[1]] = ''
-        app.canvas.delete(id)
-        app.ent_dict[id].loc = newloc[:]
-        app.grid[newloc[0]][newloc[1]] = id
-        try: 
-            del app.vis_dict['Gate']
-            app.canvas.delete('Gate')
-        except: pass
-        app.vis_dict['Gate'] = Vis(name = 'Gate', loc = newloc[:])
-        vis = app.vis_dict['Gate']
-        root.after(1666, lambda id = id, newloc = newloc : self.place_entity(id, newloc))
-        
-    def place_entity(self, id, newloc):
-        del app.vis_dict['Gate']
-        app.canvas.delete('Gate')
-        app.canvas.create_image(app.ent_dict[id].loc[0]*100+50-app.moved_right, app.ent_dict[id].loc[1]*100+50-app.moved_down, image = app.ent_dict[id].img, tags = app.ent_dict[id].tags)
-        try: app.canvas.tag_lower((app.ent_dict[id].tags), 'large')
-        except: pass
-        app.canvas.tag_lower((app.ent_dict[id].tags), 'maptop')
-        root.after(666, self.cleanup_gate)
-    
-    def doorway_squares(self, distance):
-        sqr_list = []
-        for c in app.coords:
-            if dist(c, self.loc) <= distance: 
-                if app.grid[c[0]][c[1]] == '':
-                    sqr_list.append(c)
-        return sqr_list
+        ent = app.ent_dict[id]
+        def cleanup_gate(name):
+            del app.vis_dict[name]
+            app.canvas.delete(name)
+        n = 'gate'+str(app.count)
+        app.count += 1
+        app.vis_dict[n] = Vis(name = 'Gate', loc = ent.loc[:])
+        root.after(1666, lambda n = n : cleanup_gate(n))
+        n = 'gate'+str(app.count)
+        app.count += 1
+        app.vis_dict[n] = Vis(name = 'Gate', loc = sqr[:])
+        root.after(1999, lambda n = n : cleanup_gate(n))
+        lock(Bot.ai_teleport_move, ent, sqr)
+        self.cleanup_gate()
     
     def cleanup_gate(self, event = None):
-        try:
-            del app.vis_dict['Gate']
-            app.canvas.delete('Gate')
-        except: pass
         app.canvas.delete('text')
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -9032,10 +9087,10 @@ class Umbrae_Wolf(Summon):
         def warp_eot(sqr, lockname = None):
             if ent := [v for k,v in app.all_ents().items() if v.loc == sqr]:
                 ent = ent[0]
-                app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+84-app.moved_down, text = '-2 Sanity', font = ('chalkduster', 14), fill = 'black', tags = 'text')
-                app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+85-app.moved_down, text = '-2 Sanity', font = ('chalkduster', 14), fill = 'deeppink', tags = 'text')
+                app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+84-app.moved_down, text = '-4 Sanity', font = ('chalkduster', 14), fill = 'black', tags = 'text')
+                app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+85-app.moved_down, text = '-4 Sanity', font = ('chalkduster', 14), fill = 'deeppink', tags = 'text')
                 def warp_insane(stat):
-                    return max(1, stat-2)
+                    return max(1, stat-4)
                 p = partial(warp_insane)
                 ent.san_effects.append(p)
                 def undo(ent, func, lockname = None):
@@ -12766,7 +12821,7 @@ class Fell_Evolver(Summon):
         # ATTACK EFFECT
         def wooden_atk(atkr, dfndr, dmg, type, sn, st, lockname = None):
             loc = dfndr.loc[:]
-            if st == 'melee' or st == 'ranged' or st == 'spell':
+            if st == 'melee':
                 if st == 'melee':
                     type = 'crushing'
                 if 'Splinters' not in [v.name for k,v in dfndr.effects_dict.items()]:
@@ -24982,7 +25037,6 @@ class Pyrrhic_Gnome(Summon):
         super().__init__(name, id, img, loc, owner)
         self.inert = True
         self.types = ['animal']
-
         
         def explode_trigger(lockname = None):
             app.focus_square(self.loc)
@@ -25009,17 +25063,37 @@ class Pyrrhic_Gnome(Summon):
             self.tick += 1
             self.effects_dict['control'].duration += 1 # permanent effect
             els = [v.loc for k,v in app.all_ents().items() if v.owner != self.owner and v.get_inert()==False]
-            sqrs = [s for s in app.coords for el in els if 1 <= dist(s,el) <= self.attack_range]
+            goals = unique([c for c in app.coords for el in els if dist(el,c)==1 and app.grid[c[0]][c[1]]==''])
             moves = self.legal_moves()
-            gs = intersect(sqrs, moves)
+            gs = intersect(goals, moves)
             if gs == []:
-                # move to rand sqr in moves
-                if moves == []:
+                if els == []:
                     root.after(666, lambda ln = lockname : app.dethloks[ln].set(1))
                 else:
-                    move = choice(moves)
-                    app.focus_square(move)
-                    root.after(666, lambda m = move, ln = lockname : self.gnome_move(m, ln))
+                    # get closest el and if moves exist, reduce to move that is closest to closest el
+                    if moves == []:
+                        root.after(666, lambda ln = lockname : app.dethloks[ln].set(1))
+                    else:
+                        # at this point, no goals in legal moves, some els and moves exist, not ncsrly goals
+                        if goals == []:
+                            # no goals, just move to loc that minimizes dist to closest el
+                            el = reduce(lambda a,b : a if dist(a,self.loc)<dist(b,self.loc) else b, els)
+                            move = reduce(lambda a,b : a if dist(a,self.loc)>dist(b,self.loc) else b, moves)
+                            app.focus_square(move)
+                            root.after(222, lambda m = move, ln = lockname : self.gnome_move(m, ln))
+                        else:
+                            # goals exist but not ncsrly path
+                            # try path to all goals, if None returned by bfs() just do same as above (move closest to closest)
+                            if path := bfs(self.loc, goals, app.grid[:]):
+                                moves = intersect(path, moves)
+                                move = reduce(lambda a,b : a if dist(a,self.loc)>dist(b,self.loc) else b, moves)
+                                app.focus_square(move)
+                                root.after(222, lambda m = move, ln = lockname : self.gnome_move(m, ln))
+                            else:
+                                el = reduce(lambda a,b : a if dist(a,self.loc)<dist(b,self.loc) else b, els)
+                                move = reduce(lambda a,b : a if dist(a,el)<dist(b,el) else b, moves)
+                                app.focus_square(move)
+                                root.after(222, lambda m = move, ln = lockname : self.gnome_move(m, ln))
             else:
                 g = reduce(lambda a,b : a if sum([dist(a,el) for el in els]) > sum([dist(b,el) for el in els]) else b, gs)
                 app.focus_square(g)
@@ -25095,7 +25169,7 @@ class Pyrrhic_Gnome(Summon):
             lock(app.kill, self.id)
             root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
         else:
-            root.after(999, lambda ln = lockname : app.dethloks[ln].set(1))
+            root.after(222, lambda ln = lockname : app.dethloks[ln].set(1))
         
         
 class Carrion_Wyrm(Summon):
@@ -30571,7 +30645,8 @@ class Witch(Summon):
                             to_remove.append((k,v))
                         break
                 if to_remove != []:
-                    lock(to_remove[0].undo_func)
+                    lock(to_remove[0][1].undo_func)
+                    del dfndr.effects_dict[to_remove[0][0]]
                 # remove 1 iron skin
 #                 to_remove = []
 #                 for k,ef in dfndr.effects_dict.items():
@@ -35775,7 +35850,6 @@ class App(tk.Frame):
         self.arcane_dict['Dessicate'] = Spell('Dessicate',Witch.dessicate, 2, 0, 0)
         self.arcane_dict['The_Chariot'] = Spell('The_Chariot',Witch.the_chariot, 2, 0, 0)
         self.arcane_dict["Siren's_Call"] = Spell("Siren's_Call",Witch.sirens_call, 2, 0, 0)
-        self.arcane_dict['Spectral_Pillory'] = Spell('Spectral_Pillory',Witch.spectral_pillory, 2, 0, 0)
         self.arcane_dict['The_Fool'] = Spell('The_Fool',Witch.the_fool, 2, 0, 0)
         self.arcane_dict['Scour'] = Spell('Scour',Witch.scour, 2, 0, 0)
         self.arcane_dict['Molecular_Subversion'] = Spell('Molecular_Subversion',Witch.molecular_subversion, 2, 0, 0)
@@ -35800,6 +35874,7 @@ class App(tk.Frame):
         self.arcane_dict['Hallowed_Ground'] = Spell('Hallowed_Ground',Witch.hallowed_ground, 2, 0, 0)
         self.arcane_dict['Grasp_of_the_Old_Ones'] = Spell('Grasp_of_the_Old_Ones',Witch.grasp_of_the_old_ones, 2,0,0)
         self.arcane_dict['Dark_Sun'] = Spell('Dark_Sun',Witch.dark_sun, 3,0,0)
+        self.arcane_dict['Spectral_Pillory'] = Spell('Spectral_Pillory',Witch.spectral_pillory, 3, 0, 0)
         self.arcane_dict['The_Sun'] = Spell('The_Sun',Witch.the_sun, 3, 0, 0)
         self.arcane_dict['Fork'] = Spell('Fork',Witch.fork, 3,0,0)
         self.arcane_dict['Voodoo_Doll'] = Spell('Voodoo_Doll',Witch.voodoo_doll, 3,0,0)
