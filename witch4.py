@@ -1,23 +1,31 @@
+1# add summon_descr, myconid major_demon, ogre
+# and their action/effect descr
+
+# button that shows in_hand (with other action buttons, for Witch) just quicker access, better display
+
+# where page functions tried to bind r-click hotkeys to popup description of the cards being paged, they were calling the function that returns the specific info (action_description()) instead of the function that presents/controls the presentation (app.action_info())
+
+# stats of summons in action descr + popup profile plus profile picture
+
+# all ent ranges, 1,2,3,4
+
+# something action/spell, that reduces str (for use with ogre/myconid swarm)
+
+# bot that can dispel map effects
+
+# multiple defense effects, resolve fine but text objects appear same time (loop continues wo waiting)? spore cloud plus the_fool
+# needs to actually lock in attack/defense loop
+
 # phobos level, make gates a class with end-of-turn effect that smns specific type if none exist, (cyberdemon, imp, cacodemon...)
 
 # phobos level, 'pens' holding enemies closed off by 'block', subboss vis/action/map_trigger 'opens' gates at various triggers/events, changing 'block' sqrs to open
 # stuff teleporting in through gate...?
 
-
 # major demon needs one more action using 'excess cards in owner hand', like black vise
 
 # load save game AND load grimoire (in grimoire editor) button-boxes need to be scrollable with mousewheel (button 3)
 
-# finish actions ogre, myconid, major demon
-# ogre summon fairy
-
-# change end_turn() ent attr resets, to a function reset_ent_attrs(), each Entity has func defaulting to None, otherwise Entity.reset_attrs() will be set for each specific Entity that needs it
-
 # make 'card' objects actual classes, instead of storing as strings and translating...
-
-# dark ritual plus artificer bottle gnome, too good?
-
-# stats of summons in action descr + popup profile plus profile picture
 
 # quicker way to see summary of in-hand...
 
@@ -204,36 +212,12 @@ def round_100(x):
         prefix += 1
     return prefix
 
-
-
-# vorpal blade- adds vorpal strike- adj agl v agl, str v end slsh melee, autokill animal type
-# descriptions of spells and actions, takes a string that has been stripped of underscores (as it exists in the move dict of ents)
-def action_description(act):
-    if act == 'Slash':
-        return 'To-hit agility vs agility, strength vs endurance slashing melee damage, adjacent target as action.'
-    elif act == '':
-        return ''
-    elif act == '':
-        return ''
-    elif act == '':
-        return ''
-    elif act == '':
-        return ''
-    elif act == '':
-        return ''
-    elif act == '':
-        return ''
-    elif act == '':
-        return ''
-    elif act == '':
-        return ''
-    elif act == 'Crush':
-        return 'Each adjacent non-flying unit, on to-hit agl vs agl, take str vs end crushing melee damage.'
-    elif act == 'Cloudkill':
-        return 'Leaves a map effect at each location without this effect at each location in range 2 from a location. At end of turn, any unit occupying one of these locations gets an effect causing end of turn 2 poison damage.'
-    elif act == 'Inertia':
-        return 'Spell target gets defense effect that redirects melee, ranged, or spell damage that is crushing type to all adjacent units and reduces the damage to the original unit to zero.'
-    elif act == 'Yellow Priest':
+# takes strings of names of summon-list summons, this is used in grimoire_editor() or from more_info button (in game),
+# change to return descr plus image for summons,
+# will still need to handle... popups usually expect text from whatever calls this,
+# ensure whatever calls this can receive the new return type... what calls this?
+def summon_description(act):
+    if act == 'Yellow Priest':
         return 'Censer Grenade attacks the sanity of grouped units. Trials of Hatheg-Kla gives +1 actions, but -5 sanity and teleports the target among the furthest distant locations. Dagons Chosen gives many stat bonuses but reduces sanity to 3. Yellow Priest summons Nightgaunts that can move around hit targets with Grasp. Nightgaunts can be destroyed to summon Migo, with very high stats but only action leaves -1 mental stats on hit. Migo can be destroyed to summon Guardian of the Chthonic Gate, which is immobile but very dangerous to nearby units...'
     elif act == 'Diabolist':
         return 'Good physical stats and disruptive attacks against an opposing Witch (versus the campaign mode) that can remove the imprint from a Tomb or search and remove a card from the deck. Can teleport units with infiltrate and give invisibility. Can heal self and remove cards from Discard with Graverob.'
@@ -273,6 +257,36 @@ def action_description(act):
         return 'Low physical stats, teleport move type. Can teleport other units with Gate. Provide physical combat bonuses with Simulacrum and Doubling Cube. Smoke Bomb creates a map effect providing invisibility. Ranged attacks that either do explosive damage or decrease Dodge and reveal invisibility with Pyrotechnics, Mortar, and Tracer Grenade.'
     elif act == 'Berserker':
         return 'Quick, evasive movement with Leap (free action to move over obstacles) and Charge type move preventing many move status effects. Slashing melee damage with Whirlwind to damage all adjacent, at a reduced accuracy. Can turn own melee attacks to fire or poison with Molten or Bane Claws. Howl From Beyond affects sanity and reason of enemies. Can reveal invisible units with Track or attempt to Dispel effects on self with Rage. Low defense against spells (wisdom and psyche), high physical stats.'
+    else:
+        return 'Some description'
+
+# vorpal blade- adds vorpal strike- adj agl v agl, str v end slsh melee, autokill animal type
+# descriptions of spells and actions, takes a string that has been stripped of underscores (as it exists in the move dict of ents)
+def action_description(act):
+    if act.replace(' ','_') in app.summons_list:
+        return summon_description(act)
+    elif act == '':
+        return ''
+    elif act == '':
+        return ''
+    elif act == '':
+        return ''
+    elif act == '':
+        return ''
+    elif act == '':
+        return ''
+    elif act == '':
+        return ''
+    elif act == '':
+        return ''
+    elif act == 'Slash':
+        return 'To-hit agility vs agility, strength vs endurance slashing melee damage, adjacent target as action.'
+    elif act == 'Crush':
+        return 'Each adjacent non-flying unit, on to-hit agl vs agl, take str vs end crushing melee damage.'
+    elif act == 'Cloudkill':
+        return 'Leaves a map effect at each location without this effect at each location in range 2 from a location. At end of turn, any unit occupying one of these locations gets an effect causing end of turn 2 poison damage.'
+    elif act == 'Inertia':
+        return 'Spell target gets defense effect that redirects melee, ranged, or spell damage that is crushing type to all adjacent units and reduces the damage to the original unit to zero.'
     elif act == 'The World':
         return 'Each player draws a card for each Tomb they own.'
     elif act == 'Burning Hands':
@@ -385,7 +399,7 @@ def action_description(act):
         return 'Summon Eagle, Boar, and Wolf, as long as none of these still exist from the same caster. Costs 6 magick.'
     elif act == 'Dive':
         return 'On to-hit agl vs agl, str vs end piercing ranged damage.'
-    elif act == 'Survival_of_the_Fittest':
+    elif act == 'Survival of the Fittest':
         return 'Discard a summon card to search for any summon in library and add to hand.'
     elif act == 'Call Mount':
         return 'Call either Eyegaunt or Boar mount for caster. Eyegaunt gives caster flying, +2 move range, bonuses to ranged attack stats, and bombard, a ranged attack. Boar gives +3 physical stats, +3 move range, charge type move, and charge attack, moving forward up to full move range and damaging all adjacent enemies at the end of move range in some direction. Costs 4 magick.'
@@ -1855,7 +1869,8 @@ class Sqr():
 
 
 class Entity():
-    def __init__(self, name, id, img, loc, owner, type = 'normal', info_text = None):
+    def __init__(self, name, id, img, loc, owner, type = 'normal', info_text = None, needs_reset = False):
+        self.needs_reset = needs_reset
         self.info_text = info_text
         self.inert = False
         self.name = name
@@ -5962,7 +5977,7 @@ class Artificer(Summon):
             b1 = tk.Button(app.context_menu, wraplength = 190, text = str(card.replace('_', ' ')), font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = p)
             b1.pack(side = 'top', pady = 2)
             app.context_buttons.append(b1)
-            b1.bind('<Button-2>', lambda n = card : action_description(n))
+#             b1.bind('<Button-2>', lambda n = card : action_description(n))
         if index > 0:
             b4 = tk.Button(app.context_menu, text = 'W : Prev', font = ('chalkduster', 14), fg='tan3', highlightbackground = 'tan3', command = lambda cards = cards, i = index-5 : self.page_lost_art(cards = cards, index = i))
             b4.pack(side = 'top', pady = 2)
@@ -6969,7 +6984,7 @@ class Diabolist(Summon):
             b1 = tk.Button(app.context_menu, wraplength = 190, text = str(card.replace('_', ' ')), font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = p)
             b1.pack(side = 'top', pady = 2)
             app.context_buttons.append(b1)
-            b1.bind('<Button-2>', lambda name = card : action_description(name))
+#             b1.bind('<Button-2>', lambda name = card : action_description(name))
         if index > 0:
             b4 = tk.Button(app.context_menu, text = 'W : Prev', font = ('chalkduster', 14), fg='tan3', highlightbackground = 'tan3', command = lambda cards = cards, i = index-5 : self.page_graverob(cards = cards, index = i))
             b4.pack(side = 'top', pady = 2)
@@ -7079,7 +7094,7 @@ class Diabolist(Summon):
             b1 = tk.Button(app.context_menu, wraplength = 190, text = str(card.replace('_', ' ')), font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = p)
             b1.pack(side = 'top', pady = 2)
             app.context_buttons.append(b1)
-            b1.bind('<Button-2>', lambda n = card : action_description(n))
+#             b1.bind('<Button-2>', lambda n = card : action_description(n))
         if index > 0:
             b4 = tk.Button(app.context_menu, text = 'W : Prev', font = ('chalkduster', 14), fg='tan3', highlightbackground = 'tan3', command = lambda cards = cards, i = index-5, ent = ent : self.page_lobotomy(cards = cards, index = i, ent = ent))
             b4.pack(side = 'top', pady = 2)
@@ -9715,7 +9730,10 @@ class Wurdulak(Summon):
         self.shift_form = 1
         super().__init__(name, id, img, loc, owner)
         self.types = ['undead']
+        self.needs_reset = True
         
+    def reset_vars(self):
+        self.shift_form = 1
         
     def entrance(self, event = None):
         if self.acts < 1:
@@ -12566,6 +12584,11 @@ class Fell_Evolver(Summon):
         self.resist = []
         self.evolved = False
         super().__init__(name, id, img, loc, owner)
+        self.needs_reset = True
+        
+    def reset_vars(self):
+        self.evolved = False
+    
         
         
     # atk efct, add efct -3 rsn, mv rng, atk type becomes poison, rmv all wkns, add all rsts
@@ -17207,6 +17230,10 @@ class White_Dragon(Bot):
         # create top half
         img = ImageTk.PhotoImage(Image.open('animations/White_Dragon_Top/0.png'))
         app.ent_dict[self.id+'top'] = White_Dragon_Top(name = 'White_Dragon_Top', img = img, loc = [self.loc[0],self.loc[1]], owner = 'p2', id = self.id+'top')
+        self.needs_reset = True
+        
+    def reset_vars(self):
+        self.free_fly = True
         
     def large_undo(self):
         app.canvas.delete(self.id+'top')
@@ -19059,6 +19086,10 @@ class Troll(Bot):
         self.regen_this_round = False
         super().__init__(name, img, loc, owner)
         self.types = ['animal']
+        self.needs_reset = True
+        
+    def reset_vars(self):
+        self.regen_this_round = False
         
     def troll_regen(self):
         app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+74-app.moved_down, text='Regen 2 Spirit', font= ('chalkduster', 13), fill = 'black', tags = 'regen_text')
@@ -19141,6 +19172,10 @@ class Warlock(Bot):
         self.weak = []
         super().__init__(name, img, loc, owner)
         self.info_text = 'Warlock is immune to all effects that alter abilities, including acts and moves.'
+        self.needs_reset = True
+        
+    def reset_vars(self):
+        self.summoned_undead = False
         
     # OVERRIDE BASE METHOD, WARLOCK ABLS NOT AFFECTED BY EFFECTS
     def get_abl(self, abl):
@@ -19887,6 +19922,11 @@ class Water_Mage(Bot):
         self.resist = ['fire', 'crushing', 'explosive']
         self.weak = ['elec']
         super().__init__(name, img, loc, owner)
+        self.needs_reset = True
+        
+    def reset_vars(self):
+        self.summoned_elementals = False
+        self.purify_used = False
         
             
     def do_round(self):
@@ -20747,6 +20787,10 @@ class Sorceress(Bot):
         self.resist = ['magick', 'fire', 'elec']
         self.weak = []
         super().__init__(name, img, loc, owner)
+        self.needs_reset = True
+        
+    def reset_vars(self):
+        self.teleport_used = False
         
     def do_round(self):
         if self.waiting == True or self.id not in app.all_ents().keys():
@@ -21324,6 +21368,10 @@ class Barbarian(Bot):
             a = ImageTk.PhotoImage(Image.open('animations/Barbarian_Leap/' + anim))
             self.leap_anims[i] = a
         super().__init__(name, img, loc, owner)
+        self.needs_reset = True
+        
+    def reset_vars(self):
+        self.leap_used = False
 
         
     def init_leap_anims(self):
@@ -22201,7 +22249,7 @@ class Myconid(Summon):
         s = self.loc[:]
         app.canvas.create_text(s[0]*100+49-app.moved_right, s[1]*100+84-app.moved_down, text = 'Confusion', font = ('chalkduster', 13), fill = 'black', tags = 'text')
         app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+85-app.moved_down, text = 'Confusion', font = ('chalkduster', 13), fill = 'orchid1', tags = 'text')
-        ents = [v for k,v in app.all_ents().items() if v.loc in sqrs and isinstance(v,Myconid) == False and isinstance(v,Witch)==False]
+        ents = [v for k,v in app.all_ents().items() if v.loc in sqrs and isinstance(v,Myconid) == False and isinstance(v,Witch)==False and isinstance(v,Tomb)==False and 'Confusion' not in [j.name for i,j in v.effects_dict.items()]]
         def cleanup_confusion(n):
             del app.vis_dict[n]
             app.canvas.delete(n)
@@ -22211,6 +22259,7 @@ class Myconid(Summon):
             else:
                 ent = ents[0]
                 ents = ents[1:]
+                app.get_focus(ent.id)
                 name = 'confusion' + str(app.count)
                 app.count += 1
                 app.vis_dict[name] = Vis(name = 'Confusion', loc = ent.loc[:])
@@ -22384,8 +22433,7 @@ class Myconid(Summon):
         app.unbind_all()
         app.rebind_all()
 
-        
-    # on to-hit mm vs dod, msl v end crushing ranged to each non-flying, non-myconid in range bls 
+    # on to-hit mm vs dod, X crushing ranged dmg to each non-flying, non-myconid in range bls, X is num Myconids owned
     def tremor(self, event = None):
         if self.acts < 1:
             return
@@ -22417,11 +22465,6 @@ class Myconid(Summon):
         def cleanup_tremor(n):
             del app.vis_dict[n]
             app.canvas.delete(n)
-        for ent in ents:
-            n = 'Tremor' + str(app.count)
-            app.count += 1
-            app.vis_dict[n] = Vis(name = 'Tremor', loc = ent.loc[:])
-            root.after(1999, lambda n = n : cleanup_tremor(n))
         def tremor_loop(ents):
             if ents == []:
                 self.finish_tremor()
@@ -22432,8 +22475,12 @@ class Myconid(Summon):
                 ent = ents[0]
                 app.get_focus(ent.id)
                 ents = ents[1:]
+                n = 'Tremor' + str(app.count)
+                app.count += 1
+                app.vis_dict[n] = Vis(name = 'Tremor', loc = ent.loc[:])
+                root.after(1999, lambda n = n : cleanup_tremor(n))
                 if to_hit(self.get_abl('mm'), ent.get_abl('dodge')):
-                    d = damage(self.get_abl('msl'), ent.get_abl('end'))
+                    d = len([k for k,v in app.all_ents().items() if v.owner == self.owner and isinstance(v,Myconid)])
                     lock(apply_damage, self, ent, -d, 'crushing', 'Tremor', 'ranged')
                     tremor_loop(ents)
                 else:
@@ -22576,6 +22623,11 @@ class Major_Demon(Summon):
         self.weak = []
         self.resist = []
         super().__init__(name, id, img, loc, owner)
+        self.needs_reset = True
+        
+    def reset_vars(self):
+        self.ethereal_projection_used = False
+    
         
     # discard a summon, each adj to caster on to-hit wis vs wis, takes mgk spl dmg equal to discarded psyche
     def soul_squander(self, event = None):
@@ -22645,7 +22697,7 @@ class Major_Demon(Summon):
             b1.pack(side = 'top', pady = 2)
             app.context_buttons.append(b1)
             # below should become effect_description_popup, (there is no equivalent to more info popup, effect desc shown in more info
-            b1.bind('<Button-2>', lambda card = card : app.action_description(card))
+#             b1.bind('<Button-2>', lambda card = card : app.action_description(card))
         if index > 0:
             b4 = tk.Button(app.context_menu, text = 'W : Prev', font = ('chalkduster', 14), fg='tan3', highlightbackground = 'tan3', command = lambda cards = cards, i = index-5 : self.page_soul_squander(cards = cards, index = i))
             b4.pack(side = 'top', pady = 2)
@@ -22847,21 +22899,24 @@ class Major_Demon(Summon):
         app.unbind_all()
         app.cleanup_squares()
         s = sqr[:]
-        if self.owner == 'p1':
-            witch = app.ent_dict[app.p2_witch]
+        if app.num_players == 2:
+            if self.owner == 'p1':
+                witch = app.ent_dict[app.p2_witch]
+            else:
+                witch = app.ent_dict[app.p1_witch]
+            if witch.library != []:
+                witch.in_hand.append(witch.library[0])
+                witch.library = witch.library[1:]
+                app.get_focus(witch.id)
+                app.canvas.create_text(witch.loc[0]*100+49-app.moved_right, witch.loc[1]*100+84-app.moved_down, text = 'Draw 1', font = ('chalkduster', 14), fill = 'black', tags = 'text')
+                app.canvas.create_text(witch.loc[0]*100+49-app.moved_right, witch.loc[1]*100+85-app.moved_down, text = 'Draw 1', font = ('chalkduster', 14), fill = 'ghostwhite', tags = 'text')
+                root.after(1666, lambda t = 'text' : app.canvas.delete(t))
+                root.after(1777, lambda loc = s : self.continue_ethereal_projection(loc))
+            else:
+                self.continue_ethereal_projection(sqr)
         else:
-            witch = app.ent_dict[app.p1_witch]
-        if witch.library != []:
-            witch.in_hand.append(witch.library[0])
-            witch.library = witch.library[1:]
-            app.get_focus(witch.id)
-            app.canvas.create_text(witch.loc[0]*100+49-app.moved_right, witch.loc[1]*100+84-app.moved_down, text = 'Draw 1', font = ('chalkduster', 14), fill = 'black', tags = 'text')
-            app.canvas.create_text(witch.loc[0]*100+49-app.moved_right, witch.loc[1]*100+85-app.moved_down, text = 'Draw 1', font = ('chalkduster', 14), fill = 'ghostwhite', tags = 'text')
-            root.after(1666, lambda t = 'text' : app.canvas.delete(t))
-            root.after(1777, lambda loc = s : self.continue_ethereal_projection(loc))
-        else:
-            self.continue_ethereal_projection(sqr)
-            
+                self.continue_ethereal_projection(sqr)
+
     def continue_ethereal_projection(self, sqr):
         app.focus_square(sqr)
         lock(self.trailing_move, sqr)
@@ -23403,7 +23458,7 @@ class Ogre(Summon):
             ent.effects_dict[un] = Effect(name = 'Grapple', undo_func = u, duration = self.get_abl('str'), level = self.get_abl('str'))
             app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+14-app.moved_down, text = '-3 move range', font = ('chalkduster', 14), fill = 'black', tags = 'text')
             app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+15-app.moved_down, text = '-3 move range', font = ('chalkduster', 14), fill = 'ivory', tags = 'text')
-            root.after(111, self.finish_grapple)
+            root.after(1666, self.finish_grapple)
         else:
             miss(ent.loc)
             root.after(1666, self.finish_grapple)
@@ -23514,8 +23569,8 @@ class Berserker(Summon):
             self.msl = 0
             self.bls = 0
             self.dodge = 8
-            self.psyche = 4
-            self.wis = 4
+            self.psyche = 5
+            self.wis = 5
             self.rsn = 4
             self.san = 12
             self.init = 9
@@ -23532,6 +23587,10 @@ class Berserker(Summon):
         for k,v in app.leap_anims.items():
             self.leap_anims[k] = v
         super().__init__(name, id, img, loc, owner)
+        self.needs_reset = True
+        
+    def reset_vars(self):
+        self.leap_used = False
         
     def init_leap_anims(self):
         self.anim_dict = {}
@@ -27471,6 +27530,16 @@ class Witch(Summon):
                 app.p2_color_img = self.color_img
         id = self.name
         super().__init__(name, id, img, loc, owner, type = 'normal')
+        self.needs_reset = True
+    # for each entity that needs it, called by app.end_turn(), resets Object-specific vars/etc... if nscsry
+    def reset_vars(self):
+        self.smns = self.get_abl('smns')
+        self.spell_entomb_used = False
+        self.summon_entomb_used = False
+        self.magick = 0
+        # reset times_cast to 0
+        for spell in self.arcane_dict.values():
+            self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,0)
         
         
     # clean protagonist object (Witch) between levels DEBUG debug change to new...
@@ -28103,7 +28172,7 @@ class Witch(Summon):
             b1 = tk.Button(app.context_menu, wraplength = 190, text = str(card.replace('_', ' ')), font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = p)
             b1.pack(side = 'top', pady = 2)
             app.context_buttons.append(b1)
-            b1.bind('<Button-2>', lambda n = card : action_description(n))
+#             b1.bind('<Button-2>', lambda n = card : action_description(n))
         if index > 0:
             b4 = tk.Button(app.context_menu, text = 'W : Prev', font = ('chalkduster', 14), fg='tan3', highlightbackground = 'tan3', command = lambda hand = hand, i = index-9, all = all, loc = loc : self.page_mass_grave(hand = hand, index = i, all = all, loc = loc))
             b4.pack(side = 'top', pady = 2)
@@ -28425,7 +28494,7 @@ class Witch(Summon):
             b1 = tk.Button(app.context_menu, wraplength = 190, text = str(card.replace('_', ' ')), font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = p)
             b1.pack(side = 'top', pady = 2)
             app.context_buttons.append(b1)
-            b1.bind('<Button-2>', lambda n = card : action_description(n))
+#             b1.bind('<Button-2>', lambda n = card : action_description(n))
         if index > 0:
             b4 = tk.Button(app.context_menu, text = 'W : Prev', font = ('chalkduster', 14), fg='tan3', highlightbackground = 'tan3', command = lambda hand = hand, i = index-9 : self.page_the_star(hand = hand, index = i))
             b4.pack(side = 'top', pady = 2)
@@ -33021,7 +33090,7 @@ class Witch(Summon):
             b1 = tk.Button(app.context_menu, wraplength = 190, text = str(card.replace('_', ' ')), font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = p)
             b1.pack(side = 'top', pady = 2)
             app.context_buttons.append(b1)
-            b1.bind('<Button-2>', lambda n = card : action_description(n))
+#             b1.bind('<Button-2>', lambda n = card : action_description(n))
         if index > 0:
             b4 = tk.Button(app.context_menu, text = 'W : Prev', font = ('chalkduster', 14), fg='tan3', highlightbackground = 'tan3', command = lambda cards = cards, i = index-9, amt = amt, loc = loc : self.page_carrion_wyrm(cards = cards, index = i, amt = amt, loc = loc))
             b4.pack(side = 'top', pady = 2)
@@ -33124,7 +33193,7 @@ class Witch(Summon):
             b1 = tk.Button(app.context_menu, wraplength = 190, text = str(card.replace('_', ' ')), font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = p)
             b1.pack(side = 'top', pady = 2)
             app.context_buttons.append(b1)
-            b1.bind('<Button-2>', lambda n = card : action_description(n))
+#             b1.bind('<Button-2>', lambda n = card : action_description(n))
         if index > 0:
             b4 = tk.Button(app.context_menu, text = 'W : Prev', font = ('chalkduster', 14), fg='tan3', highlightbackground = 'tan3', command = lambda hand = hand, i = index-9, ent = ent, amt = amt : self.page_giant_growth(hand = hand, index = i, ent = ent, amt = amt))
             b4.pack(side = 'top', pady = 2)
@@ -33290,7 +33359,7 @@ class Witch(Summon):
             b1 = tk.Button(app.context_menu, wraplength = 190, text = str(card.replace('_', ' ')), font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = p)
             b1.pack(side = 'top', pady = 2)
             app.context_buttons.append(b1)
-            b1.bind('<Button-2>', lambda n = card : action_description(n))
+#             b1.bind('<Button-2>', lambda n = card : action_description(n))
             
             
     def put_foretell(self, event = None, card = None, cards = None):
@@ -33394,7 +33463,7 @@ class Witch(Summon):
             b1 = tk.Button(app.context_menu, wraplength = 190, text = str(card.replace('_', ' ')), font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = p)
             b1.pack(side = 'top', pady = 2)
             app.context_buttons.append(b1)
-            b1.bind('<Button-2>', lambda n = card : action_description(n))
+#             b1.bind('<Button-2>', lambda n = card : action_description(n))
         if index > 0:
             b4 = tk.Button(app.context_menu, text = 'W : Prev', font = ('chalkduster', 14), fg='tan3', highlightbackground = 'tan3', command = lambda hand = hand, i = index-9, player = player : self.page_coercion(hand = hand, index = i, player = player))
             b4.pack(side = 'top', pady = 2)
@@ -33482,7 +33551,7 @@ class Witch(Summon):
             b1 = tk.Button(app.context_menu, wraplength = 190, text = str(card.replace('_', ' ')), font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = p)
             b1.pack(side = 'top', pady = 2)
             app.context_buttons.append(b1)
-            b1.bind('<Button-2>', lambda n = card : action_description(n))
+#             b1.bind('<Button-2>', lambda n = card : action_description(n))
         if index > 0:
             b4 = tk.Button(app.context_menu, text = 'W : Prev', font = ('chalkduster', 14), fg='tan3', highlightbackground = 'tan3', command = lambda hand = hand, i = index-9 : self.page_survival_otf(hand = hand, index = i))
             b4.pack(side = 'top', pady = 2)
@@ -33522,7 +33591,7 @@ class Witch(Summon):
             b1 = tk.Button(app.context_menu, wraplength = 190, text = str(card.replace('_', ' ')), font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = p)
             b1.pack(side = 'top', pady = 2)
             app.context_buttons.append(b1)
-            b1.bind('<Button-2>', lambda n = card : action_description(n))
+#             b1.bind('<Button-2>', lambda n = card : action_description(n))
         if index > 0:
             b4 = tk.Button(app.context_menu, text = 'W : Prev', font = ('chalkduster', 14), fg='tan3', highlightbackground = 'tan3', command = lambda cards = cards, i = index-9 : self.page_surv_library(cards = cards, index = i))
             b4.pack(side = 'top', pady = 2)
@@ -33593,7 +33662,7 @@ class Witch(Summon):
             b1 = tk.Button(app.context_menu, wraplength = 190, text = str(card.replace('_', ' ')), font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = p)
             b1.pack(side = 'top', pady = 2)
             app.context_buttons.append(b1)
-            b1.bind('<Button-2>', lambda n = card : action_description(n))
+#             b1.bind('<Button-2>', lambda n = card : action_description(n))
         if index > 0:
             b4 = tk.Button(app.context_menu, text = 'W : Prev', font = ('chalkduster', 14), fg='tan3', highlightbackground = 'tan3', command = lambda hand = hand, i = index-9, amt = amt : self.page_myopic(hand = hand, index = i, amt = amt))
             b4.pack(side = 'top', pady = 2)
@@ -34355,7 +34424,7 @@ class Witch(Summon):
             b1 = tk.Button(app.context_menu, wraplength = 190, text = str(card.replace('_', ' ')), font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = p)
             b1.pack(side = 'top', pady = 2)
             app.context_buttons.append(b1)
-            b1.bind('<Button-2>', lambda card = card : action_description(card))
+#             b1.bind('<Button-2>', lambda card = card : action_description(card))
         if index > 0:
             b4 = tk.Button(app.context_menu, text = 'W : Prev', font = ('chalkduster', 14), fg='tan3', highlightbackground = 'tan3', command = lambda ts = twins, i = index-5 : self.page_twin(twins = ts, index = i))
             b4.pack(side = 'top', pady = 2)
@@ -34480,7 +34549,7 @@ class Witch(Summon):
             b1 = tk.Button(app.context_menu, wraplength = 190, text = str(card.replace('_', ' ')), font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = p)
             b1.pack(side = 'top', pady = 2)
             app.context_buttons.append(b1)
-            b1.bind('<Button-2>', lambda card = card : action_description(card))
+#             b1.bind('<Button-2>', lambda card = card : action_description(card))
         if index > 0:
             b4 = tk.Button(app.context_menu, text = 'W : Prev', font = ('chalkduster', 14), fg='tan3', highlightbackground = 'tan3', command = lambda cards = cards, i = index-5, place = place : self.page_temperance(cards = cards, index = i, place = place))
             b4.pack(side = 'top', pady = 2)
@@ -34582,7 +34651,7 @@ class Witch(Summon):
             b1 = tk.Button(app.context_menu, wraplength = 190, text = str(card.replace('_', ' ')), font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = p)
             b1.pack(side = 'top', pady = 2)
             app.context_buttons.append(b1)
-            b1.bind('<Button-2>', lambda n = card : action_description(n))
+#             b1.bind('<Button-2>', lambda n = card : action_description(n))
         if index > 0:
             b4 = tk.Button(app.context_menu, text = 'W : Prev', font = ('chalkduster', 14), fg='tan3', highlightbackground = 'tan3', command = lambda cards = cards, i = index-9, times = times : self.page_foresight(cards = cards, index = i, times = times))
             b4.pack(side = 'top', pady = 2)
@@ -34659,7 +34728,7 @@ class Witch(Summon):
             b1 = tk.Button(app.context_menu, wraplength = 190, text = str(card.replace('_', ' ')), font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = p)
             b1.pack(side = 'top', pady = 2)
             app.context_buttons.append(b1)
-            b1.bind('<Button-2>', lambda n = card : action_description(n))
+#             b1.bind('<Button-2>', lambda n = card : action_description(n))
         if index > 0:
             b4 = tk.Button(app.context_menu, text = 'W : Prev', font = ('chalkduster', 14), fg='tan3', highlightbackground = 'tan3', command = lambda lib = lib, i = index-9 : self.page_styxian(lib = lib, index = i))
             b4.pack(side = 'top', pady = 2)
@@ -34827,7 +34896,7 @@ class Witch(Summon):
             b1 = tk.Button(app.context_menu, wraplength = 190, text = str(card.replace('_', ' ')), font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = p)
             b1.pack(side = 'top', pady = 2)
             app.context_buttons.append(b1)
-            b1.bind('<Button-2>', lambda n = card : action_description(n))
+#             b1.bind('<Button-2>', lambda n = card : action_description(n))
         if index > 0:
             b4 = tk.Button(app.context_menu, text = 'W : Prev', font = ('chalkduster', 14), fg='tan3', highlightbackground = 'tan3', command = lambda cards = cards, i = index-9 : self.page_pull_aether(cards = cards, index = i))
             b4.pack(side = 'top', pady = 2)
@@ -35058,7 +35127,7 @@ class Witch(Summon):
             b1 = tk.Button(app.context_menu, wraplength = 190, text = str(card.replace('_', ' ')), font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = p)
             b1.pack(side = 'top', pady = 2)
             app.context_buttons.append(b1)
-            b1.bind('<Button-2>', lambda name = card : action_description(name))
+#             b1.bind('<Button-2>', lambda name = card : action_description(name))
         if index > 0:
             b4 = tk.Button(app.context_menu, text = 'W : Prev', font = ('chalkduster', 14), fg='tan3', highlightbackground = 'tan3', command = lambda hl = hand_list, i = index-5, t = times : self.page_frantic_search(hand_list = hl, index = i, times = t))
             b4.pack(side = 'top', pady = 2)
@@ -37638,9 +37707,8 @@ class App(tk.Frame):
         self.game_title.create_window(root.winfo_screenwidth()/2, root.winfo_screenheight()-20, anchor='s', window = self.load_button)
         
         
-    # should destroy old windows/buttons, open new window that, in addition to editor/builder, allows actions:
-    # save grimoire, load grimoire, and back to title screen
-    # grimoire is chosen from saved after choosing either campaign or duel
+    # change to add- show totals of smns/tombs (right above create_window() for Listbox)
+    # grimoire is chosen from saved Grimoires (in files) after choosing either campaign or duel
     def grimoire_editor(self, mode = None, lockname = None):
         # cleanup title screen stuff
         if mode != 'select':
@@ -37796,8 +37864,11 @@ class App(tk.Frame):
                     self.grim_lbox.selection_clear(0,'end')
                     self.grim_lbox.selection_set('end')
                     self.grim_lbox.see(ix)
-                j = self.spell_total.get()
-                self.spell_total.set(j+1)
+                j = self.cards_total.get()
+                self.cards_total.set(j+1)
+                if name.replace(' ','_') in app.summons_list:
+                    y = self.smns_total.get()
+                    self.smns_total.set(y+1)
         adder = partial(add)
         self.add_button = tk.Button(self.addremove_frame, text = '+', height = 4, width = 1, fg = 'indianred', highlightbackground = 'black', font = ('chalkduster', 38), relief = 'raised', command = adder)
         # REMOVE
@@ -37811,8 +37882,11 @@ class App(tk.Frame):
                 name = name[:ix]
                 name = name.rstrip(' ')
                 if name in self.grimoire.keys():
-                    j = self.spell_total.get()
-                    self.spell_total.set(j-1)
+                    j = self.cards_total.get()
+                    self.cards_total.set(j-1)
+                    if name.replace(' ','_') in app.summons_list:
+                        y = self.smns_total.get()
+                        self.smns_total.set(y-1)
                     count = self.grimoire[name]
                     if count == 1:#REMOVE FROM struct and lbox
                         all = self.grim_lbox.get(0,'end')
@@ -37863,16 +37937,7 @@ class App(tk.Frame):
 #         WINDOW FOR FRAME 3 SPELL BUTTONS
         self.bg_canvas.create_window(root.winfo_screenwidth()//2, 150, window = self.spell_frame)
         # BIG PAGE SPELLS ABOVE SPELL FRAME (PAGE 5-10 at a time)
-        self.pg_left_btn = tk.Button(self.bg_canvas, text = '<PAGE', font = ('chalkduster', 17), fg='indianred', highlightbackground = 'tan3')
-        def big_page_left():
-            page_back()
-            page_back()
-            page_back()
-            page_back()
-            page_back()
-        self.pg_left_btn.config(command = big_page_left)
-        self.bg_canvas.create_window(root.winfo_screenwidth()//2-50, 50, window = self.pg_left_btn)
-        
+        # PAGE RIGHT (spells/tombs) button
         self.pg_rt_btn = tk.Button(self.bg_canvas, text = 'PAGE>', font = ('chalkduster', 17), fg='indianred', highlightbackground = 'tan3')
         def big_page_rt():
             page_forward()
@@ -37882,14 +37947,41 @@ class App(tk.Frame):
             page_forward()
         self.pg_rt_btn.config(command = big_page_rt)
         self.bg_canvas.create_window(root.winfo_screenwidth()//2+50, 50, window = self.pg_rt_btn)
+        # PAGE LEFT (spells/tombs) button
+        self.pg_left_btn = tk.Button(self.bg_canvas, text = '<PAGE', font = ('chalkduster', 17), fg='indianred', highlightbackground = 'tan3')
+        def big_page_left():
+            page_back()
+            page_back()
+            page_back()
+            page_back()
+            page_back()
+        self.pg_left_btn.config(command = big_page_left)
+        self.bg_canvas.create_window(root.winfo_screenwidth()//2-50, 50, window = self.pg_left_btn)
+        # TOTALS LABELS
+        # CARDS COUNT TOTAL LABEL
+        self.cards_label = tk.Label(self.bg_canvas, text = 'TOTAL CARDS', font = ('chalkduster', 9), bg = 'black', fg = 'indianred')
+        self.bg_canvas.create_window(root.winfo_screenwidth()//2-250, 50, window = self.cards_label)
+        self.cards_total = tk.IntVar()
+        self.cards_total.set(0)
+        self.cards_total_label = tk.Label(self.bg_canvas, textvariable = self.cards_total, bg = 'black', fg = 'indianred')
+        self.bg_canvas.create_window(root.winfo_screenwidth()//2-200, 50, window = self.cards_total_label)
+        
+        # SUMMONS TOTAL LABEL
+        self.smns_label = tk.Label(self.bg_canvas, text = 'TOTAL SUMMONS', font = ('chalkduster', 9), bg = 'black', fg = 'indianred')
+        self.bg_canvas.create_window(root.winfo_screenwidth()//2-350, 50, window = self.smns_label)
+        self.smns_total = tk.IntVar()
+        self.smns_total.set(0)
+        self.smns_total_label = tk.Label(self.bg_canvas, textvariable = self.smns_total, bg = 'black', fg = 'indianred')
+        self.bg_canvas.create_window(root.winfo_screenwidth()//2-300, 50, window = self.smns_total_label)
+        
         
         # WINDOW FOR FRAME SUMMON BUTTONS
         self.bg_canvas.create_window(root.winfo_screenwidth()//2, 250, window = self.summon_frame)
         # SAVE / LOAD / MAIN MENU BUTTONS between frames
         def save_grim():
             # constrain save size
-            if self.spell_total.get() < 60:
-                self.save_grim_var.set('grimoire minimum 60 spells')
+            if self.cards_total.get() < 60:
+                self.save_grim_var.set('grimoire minimum 60 cards')
                 return
             fname = self.save_grim_var.get()
             saves = [s for r,d,s in walk('./Grimoires')][0]
@@ -37915,6 +38007,8 @@ class App(tk.Frame):
             self.bg_canvas.create_window(root.winfo_screenwidth()/2 + root.winfo_screenwidth()/8, root.winfo_screenheight()-220, anchor = 'nw', window = self.scroll_frame)
             self.grimoire_save_btns = []
             def load_grimoire(grim_dict, filename):
+                self.smns_total.set(0)
+                self.cards_total.set(0)
                 app.grimoire_name_tmp.set(filename)
                 # clear grimoire struct and lbox, populate both with clicked grimoire
                 self.grimoire = grim_dict
@@ -37925,7 +38019,10 @@ class App(tk.Frame):
                     self.grim_lbox.insert(i,k+' '+str(v))
                     ttl += v
                     i += 1
-                self.spell_total.set(ttl)
+                    if k.replace(' ','_') in app.summons_list:
+                        y = self.smns_total.get()
+                        self.smns_total.set(y+v)
+                self.cards_total.set(ttl)
             for g in grims:
                 # expand filename into readable
                 with open('Grimoires/'+g, 'r') as f:
@@ -37953,7 +38050,7 @@ class App(tk.Frame):
         # SELECT FUNC
         if mode == 'select':
             def select():
-                if self.spell_total.get() >= 60:
+                if self.cards_total.get() >= 60:
                     app.grimoire_p1 = deepcopy(app.grimoire)
                     self.name_label1.config(fg='indianred')
                     # sets lockvar called from create_map_curs_context
@@ -37962,7 +38059,7 @@ class App(tk.Frame):
                     elif app.num_players == 2 and app.grimoire_p2 != {}:
                         app.dethloks[lockname].set(1)
             def select2():
-                if self.spell_total.get() >= 60:
+                if self.cards_total.get() >= 60:
                     app.grimoire_p2 = deepcopy(app.grimoire)
                     self.name_label2.config(fg='indianred')
                     # sets lockvar called from create_map_curs_context
@@ -37981,11 +38078,6 @@ class App(tk.Frame):
             if app.num_players == 2:
                 self.select_btn2 = tk.Button(self.bg_canvas, text = 'SELECT P2', wraplength = 190, font = ('chalkduster', 22), fg='indianred', highlightbackground = 'tan3', command=select2)
                 self.bg_canvas.create_window(int(root.winfo_screenwidth()*0.999)-380, 325, window = self.select_btn2)
-        # SPELL COUNT TOTAL LABEL
-        self.spell_total = tk.IntVar()
-        self.spell_total.set(0)
-        self.spell_total_label = tk.Label(self.bg_canvas, textvariable = self.spell_total, bg = 'black', fg = 'indianred')
-        self.bg_canvas.create_window(100, 350, window = self.spell_total_label)
         # SECOND BD IMG BOTTOM SCREEN
         self.bd_img2 = ImageTk.PhotoImage(Image.open('border.png').resize((root.winfo_screenwidth()-130, root.winfo_screenheight()//3+104)))
         self.bg_canvas.create_image(root.winfo_screenwidth()//2, root.winfo_screenheight()//3+300, image =self.bd_img2)
@@ -38041,6 +38133,7 @@ class App(tk.Frame):
         self.sb.config(command = self.grim_lbox.yview)
         self.grim_lbox.pack(side = 'left', fill = 'y', expand = 1)
         self.sb.pack(side = 'right', fill = 'y')
+        # CREATE WINDOW LISTBOX SCROLLABLE BOTTOM FRAME
         self.bg_canvas.create_window(root.winfo_screenwidth()//2, root.winfo_screenheight()//3+300, window = self.frame2)
         
         
@@ -39482,36 +39575,8 @@ class App(tk.Frame):
         for ent in ents:
             ent.mvs = ent.get_abl('mvs')
             ent.acts = ent.get_abl('acts')
-            if isinstance(ent, Witch):
-                ent.smns = ent.get_abl('smns')
-#                 ent.entomb_used = False
-                ent.spell_entomb_used = False
-                ent.summon_entomb_used = False
-                ent.magick = 0
-                # reset times_cast to 0
-                for spell in ent.arcane_dict.values():
-                    ent.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,0)
-            if isinstance(ent, Major_Demon):
-                ent.ethereal_projection_used = False
-            if isinstance(ent, Berserker):
-                ent.leap_used = False
-            if isinstance(ent, Wurdulak):
-                ent.shift_form = 1
-            if isinstance(ent, Fell_Evolver):
-                ent.evolved = False
-            if isinstance(ent, Troll):
-                ent.regen_this_round = False
-            if isinstance(ent, White_Dragon):
-                ent.free_fly = False
-            if isinstance(ent, Warlock):
-                ent.summoned_undead = False
-            if isinstance(ent, Sorceress):
-                ent.teleport_used = False
-            if isinstance(ent, Barbarian):
-                ent.leap_used = False
-            if isinstance(ent, Water_Mage):
-                ent.summoned_elementals = False
-                ent.purify_used = False
+            if ent.needs_reset == True:
+                ent.reset_vars()
         app.turn_counter += 1
         self.start_turn()
         # END TURN SEQUENCE
@@ -40686,9 +40751,9 @@ class App(tk.Frame):
 #         self.close = tk.Button(self.info_popup, text = 'OK', font = ('chalkduster', 22), fg='tan3', command = lambda win = self.info_popup : end(win))
 #         self.close.pack()
 
+    # working, change, debug here, change to allow for summons/other-tombs presentation by the popup returned
+    # summons should allow for image/stats
     def action_info(self, event = None, name = None, button = None):
-        txt = name+'\n'
-        txt += action_description(name)
         self.mi_popup = tk.Toplevel(bg = 'black')
         self.img = ImageTk.PhotoImage(Image.open('paper.png').resize((self.mi_popup.winfo_screenwidth(),self.mi_popup.winfo_screenheight())))
         bg = tk.Canvas(self.mi_popup, bg = 'burlywood4', bd=3, relief='raised', highlightthickness=0)
@@ -40703,6 +40768,18 @@ class App(tk.Frame):
         def on_close():
             pass
         self.mi_popup.protocol('WM_DELETE_WINDOW', on_close)
+        
+        
+        txt = name+'\n'
+        # just add images here, pack left
+        if name.replace(' ','_') in app.summons_list:
+            self.smn_img = ImageTk.PhotoImage(Image.open('summon_imgs/'+name.replace(' ','_')+'.png'))
+            self.smn_label = tk.Label(bg, image = self.smn_img)
+            self.smn_label.pack(side = 'left')
+            
+        txt += action_description(name)
+        
+        
         self.text = tk.Text(bg, yscrollcommand = sb.set, bg = 'black', highlightthickness = 0, relief = 'sunken', wrap = 'word', borderwidth = 0, fg = 'tan3', font = ('baskerville', 20))
         self.text.insert('end', txt)
         self.text.configure(state = 'disabled')
