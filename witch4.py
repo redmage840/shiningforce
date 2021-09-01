@@ -1,5 +1,10 @@
-1# add summon_descr, myconid major_demon, ogre
-# and their action/effect descr
+# smn with higher psyche but otherwise not great (for combo with soulsquander)
+
+# action descr ogre, myconid, major demon
+
+# handle umbrae wolf alt form Mist in summon descr (recursive descr of derived actions/summons, for example cadaver, scarab, hook attack...?)
+
+# also types? undead... for summon descr
 
 # button that shows in_hand (with other action buttons, for Witch) just quicker access, better display
 
@@ -219,6 +224,12 @@ def round_100(x):
 def summon_description(act):
     if act == 'Yellow Priest':
         return 'Censer Grenade attacks the sanity of grouped units. Trials of Hatheg-Kla gives +1 actions, but -5 sanity and teleports the target among the furthest distant locations. Dagons Chosen gives many stat bonuses but reduces sanity to 3. Yellow Priest summons Nightgaunts that can move around hit targets with Grasp. Nightgaunts can be destroyed to summon Migo, with very high stats but only action leaves -1 mental stats on hit. Migo can be destroyed to summon Guardian of the Chthonic Gate, which is immobile but very dangerous to nearby units...'
+    elif act == 'Ogre':
+        return 'High physical, low mental stats. Crushing melee or -3 move range with Crush and Grapple. Gives psyshield to all adjacent (useful with myconid swarms).'
+    elif act == 'Myconid':
+        return 'Can divide to create copies of self. Gaining invisibility or psyshield allows for healing and card draw. Confusion does sanity effect. Tremor damages many non-flying, depending on the amount of Myconids you own.'
+    elif act == 'Major Demon':
+        return 'Can quickly damage Witches, with large in-hand size, with Black Vise. Ethereal Projection allows for free mobility, at the cost of an opponent Witch drawing 1 card.'
     elif act == 'Diabolist':
         return 'Good physical stats and disruptive attacks against an opposing Witch (versus the campaign mode) that can remove the imprint from a Tomb or search and remove a card from the deck. Can teleport units with infiltrate and give invisibility. Can heal self and remove cards from Discard with Graverob.'
     elif act == 'Enchantress':
@@ -259,6 +270,8 @@ def summon_description(act):
         return 'Quick, evasive movement with Leap (free action to move over obstacles) and Charge type move preventing many move status effects. Slashing melee damage with Whirlwind to damage all adjacent, at a reduced accuracy. Can turn own melee attacks to fire or poison with Molten or Bane Claws. Howl From Beyond affects sanity and reason of enemies. Can reveal invisible units with Track or attempt to Dispel effects on self with Rage. Low defense against spells (wisdom and psyche), high physical stats.'
     else:
         return 'Some description'
+        
+
 
 # vorpal blade- adds vorpal strike- adj agl v agl, str v end slsh melee, autokill animal type
 # descriptions of spells and actions, takes a string that has been stripped of underscores (as it exists in the move dict of ents)
@@ -279,6 +292,48 @@ def action_description(act):
         return ''
     elif act == '':
         return ''
+    elif act == '':
+        return ''
+    elif act == '':
+        return ''
+    elif act == '':
+        return ''
+    elif act == '':
+        return ''
+    elif act == 'Needle Storm':
+        return 'A spell target in range reason, on to-hit wisdom vs wisdom, gets -1 dodge effect and takes psyche vs psyche piercing spell damage. Costs 2 magick.'
+    elif act == 'Offering to Dagon':
+        return 'Destroy a non-Witch unit you own. All adjacent friendly units heal 6 spirit and regain 3 magick. Costs 1 magick.'
+    elif act == 'Heel':
+        return 'Each animal type in range 2, on caster passing wisdom check, gets an effect giving -1 moves at duration reason and level wisdom. Costs 3 magick.'
+    elif act == 'Soul Squander':
+        return 'Owner discards a summon. On to-hit wisdom vs wisdom, each adjacent unit takes magick spell damage equal to the psyche of discarded summon. Costs 3 magick.'
+    elif act == 'Graveblink':
+        return 'Teleport each Tomb in range reason randomly among the closest empty locations outside range reason. Costs 2 magick.'
+    elif act == 'Black Vise':
+        return 'Each Witch takes X-4 damage, where X is number of in-hand cards. Costs 3 magick.'
+    elif act == 'Acid Burn':
+        return 'All units in a single lateral direction, up to range ballistics, on to-hit marksmanship vs dodge, take missle vs endurance acid ranged damage. Costs 2 magick.'
+    elif act == 'Ethereal Projection':
+        return 'If duel mode, opponent Witch draws a card. Make an ethereal type move at +2 move range. This action does not use either acts or moves, and can be used once per turn.'
+    elif act == 'Divide':
+        return 'Caster does slashing melee damage to self equal to half current spirit, rounded up. Place a copy of caster randomly among the nearest empty locations. Copy has stats of the current (not base) stats of caster. Copy has spirit equal to base damage done to caster (before applying weakness/resistance). Costs 5 magick.'
+    elif act == 'Phosphorescence':
+        return 'If caster has invisibility, heal caster equal to psyche. If caster has psyshield, owner draws a card. Costs 3 magick.'
+    elif act == 'Tremor':
+        return 'On to-hit mm vs dod, X crushing ranged dmg to each non-flying, non-myconid in range bls. X is number of Myconids owned. Costs 2 magick.'
+    elif act == 'Confusion':
+        return 'Each non-Witch/Myconid/Tomb in range ballistics, on to-hit wis vs wis, gets -4 sanity effect (if it does not already possess this effect) at duration reason and level wisdom. Costs 4 magick.'
+    elif act == 'Faerie Companion':
+        return 'Each adjacent, non-Witch, friendly unit gets psyshield effect at duration reason and level wisdom. Costs 2 magick.'
+    elif act == 'Dust Cloud':
+        return 'Leaves map effect at caster location and each adjacent that gives +5 dodge. Duration and level is strength.'
+    elif act == 'Sylvan Blessing':
+        return 'Caster and each friendly adjacent are healed equal to caster psyche. Costs 4 magick.'
+    elif act == 'Grapple':
+        return 'Adjacent action target, on to-hit agl vs agl, gets -3 move range effect at duration and level strength.'
+    elif act == 'Crush':
+        return 'Adjacent action target, on to-hit agl vs agl, takes str vs end crushing melee damage.'
     elif act == 'Slash':
         return 'To-hit agility vs agility, strength vs endurance slashing melee damage, adjacent target as action.'
     elif act == 'Crush':
@@ -1869,6 +1924,16 @@ class Sqr():
 
 
 class Entity():
+    # class name passed as string, return stats, weak, resist, move type, actions, as DICT
+    def get_class_info(cls):
+        cls = cls.replace(' ','_')
+        cls = eval(cls)
+        abl_dict = dict()
+        for abl in ['str','end','agl', 'mm', 'msl', 'bls', 'dodge','wis','psyche','rsn','san','init','move_range', 'acts','mvs','spirit','magick', 'move_type', 'weak','resist','actions']:
+            abl_dict[abl] = eval('cls.'+abl)
+        return abl_dict
+        
+        
     def __init__(self, name, id, img, loc, owner, type = 'normal', info_text = None, needs_reset = False):
         self.needs_reset = needs_reset
         self.info_text = info_text
@@ -1924,6 +1989,7 @@ class Entity():
         for abl in ['str','end','agl','dodge','wis','psyche','rsn']:
             total += self.get_abl(abl)
         print(total)
+        
         
     def get_inert(self):
         inert = self.inert
@@ -2933,6 +2999,27 @@ stasis- next 5 ents in initq, on tohit wis vs wis, get -1 acts efct if they do n
 energy transfer- two spell tar ents in initq exchange places in initq
 '''
 class Chronomancer(Summon):
+    actions = ['Move', 'Enervating Blow', 'Gate', 'Time Warp', 'Slow Motion', 'Stasis', 'Recall', 'Vanish']
+    str = 4
+    agl = 8
+    end = 5
+    mm = 1
+    msl = 0
+    bls = 0
+    dodge = 8
+    psyche = 6
+    wis = 7
+    rsn = 5
+    san = 15
+    init = 9
+    spirit = 27
+    magick = 39
+    acts = 1
+    mvs = 1
+    move_range = 5
+    move_type = 'normal'
+    weak = []
+    resist = ['explosive', 'piercing']
     def __init__(self, name, id, img, loc, owner, level):
         if level == 1:
             self.actions = {'Move':self.move, 'Enervating Blow':self.enervating_blow, 'Gate':self.gate, 'Time Warp':self.time_warp, 'Slow Motion':self.slow_motion, 'Stasis':self.stasis, 'Vanish':self.vanish}
@@ -3478,6 +3565,27 @@ class Chronomancer(Summon):
 
 
 class Enchantress(Summon):
+    actions = ['Move', 'Enlightenment', 'Wall of Blossoms', 'Regrowth', 'Aura Blast', 'Forestwalk', 'Wildfire']
+    str = 3
+    agl = 5
+    end = 6
+    mm = 1
+    msl = 0
+    bls = 0
+    dodge = 5
+    psyche = 7
+    wis = 8
+    rsn = 4
+    san = 15
+    init = 6
+    spirit = 39
+    magick = 33
+    acts = 1
+    mvs = 1
+    move_range = 4
+    move_type = 'normal'
+    weak = []
+    resist = ['poison', 'acid']
     def __init__(self, name, id, img, loc, owner, level):
         if level == 1:
             self.actions = {'Move':self.move, 'Enlightenment':self.enlightenment, 'Wall of Blossoms':self.wall_of_blossoms, 'Regrowth':self.regrowth, 'Aura Blast':self.aura_blast, 'Forestwalk':self.forestwalk, 'Wildfire':self.wildfire}
@@ -3946,6 +4054,27 @@ class Enchantress(Summon):
 
 
 class Yellow_Priest(Summon):
+    actions = ['Move', 'Censer Grenade', 'Offering to Dagon', 'Trials of Hatheg Kla', "Dagon's Chosen", 'Call Nightgaunt', 'Call Migo', 'Guardian of the Chthonic Gate']
+    str = 4
+    agl = 7
+    end = 7
+    mm = 8
+    msl = 7
+    bls = 4
+    dodge = 11
+    psyche = 9
+    wis = 10
+    rsn = 7
+    san = 13
+    init = 7
+    spirit = 17
+    magick = 26
+    acts = 1
+    mvs = 1
+    move_range = 4
+    move_type = 'normal'
+    weak = []
+    resist = ['fire', 'explosive','poison','acid','slashing','piercing']
     def __init__(self, name, id, img, loc, owner, level):
         if level == 1:
             self.actions = {'Move':self.move, 'Censer Grenade':self.censer_grenade, 'Offering to Dagon':self.offering_to_dagon, 'Trials of Hatheg Kla':self.trials_of_hatheg_kla, "Dagon's Chosen":self.dagons_chosen, 'Call Nightgaunt':self.call_nightgaunt, 'Call Migo':self.call_migo, 'Guardian of the Chthonic Gate':self.guardian}
@@ -4230,9 +4359,9 @@ class Yellow_Priest(Summon):
                 if isinstance(ent,Witch)==False:
                     if ent.magick>ent.base_magick:
                         ent.magick = ent.base_magick
-                apply_heal(self, ent, 3)
-                app.canvas.create_text(ent.loc[0]*100-app.moved_right+49, ent.loc[1]*100-app.moved_down+74, text = '+3 spirit, magick', justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
-                app.canvas.create_text(ent.loc[0]*100-app.moved_right+50, ent.loc[1]*100-app.moved_down+75, text = '+3 spirit, magick', justify = 'center', fill = 'indianred', font = ('chalkduster', 13), tags = 'text')
+                apply_heal(self, ent, 6)
+                app.canvas.create_text(ent.loc[0]*100-app.moved_right+49, ent.loc[1]*100-app.moved_down+74, text = '+6 spirit, +3 magick', justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
+                app.canvas.create_text(ent.loc[0]*100-app.moved_right+50, ent.loc[1]*100-app.moved_down+75, text = '+6 spirit, +3 magick', justify = 'center', fill = 'indianred', font = ('chalkduster', 13), tags = 'text')
                 root.after(1555, lambda t = 'text' : app.canvas.delete(t))
                 root.after(1666, lambda ents = ents : dagon_loop(ents))
         dagon_loop(ents)
@@ -4581,6 +4710,27 @@ class Yellow_Priest(Summon):
     
 
 class Goblin_Shaman(Summon):
+    actions = ['Move', 'Call Plague Vermin', 'Fervor', 'Teleport Field', 'Lightning Rod', 'Jokulhaups', 'Call Mount']
+    str = 4
+    agl = 5
+    end = 5
+    mm = 1
+    msl = 0
+    bls = 0
+    dodge = 6
+    psyche = 6
+    wis = 6
+    rsn = 7
+    san = 13
+    init = 8
+    spirit = 29
+    magick = 36
+    acts = 1
+    mvs = 1
+    move_range = 3
+    move_type = 'normal'
+    weak = []
+    resist = ['fire', 'explosive']
     def __init__(self, name, id, img, loc, owner, level):
         if level == 1:
             self.actions = {'Move':self.move, 'Call Plague Vermin':self.call_plague_vermin, 'Fervor':self.fervor, 'Teleport Field':self.teleport_field, 'Lightning Rod':self.lightning_rod, 'Jokulhaups':self.jokulhaups, 'Call Mount':self.call_mount}
@@ -5305,6 +5455,27 @@ class Goblin_Shaman(Summon):
 # spiritual hammer- adj agl v agl, str v end crsh spl, on tar psy save fail rmv from init q
 # heel- all nrby? animal types get -1 mvs 1 turn
 class Beastmaster(Summon):
+    actions = ['Move', 'Spiritual Hammer', "Wyld Hunt", 'Unsummon', 'Sigil', "Orion's Call", 'Heel', 'Swarm']
+    str = 7
+    agl = 7
+    end = 7
+    mm = 1
+    msl = 0
+    bls = 0
+    dodge = 7
+    psyche = 5
+    wis = 8
+    rsn = 4
+    san = 13
+    init = 8
+    spirit = 35
+    magick = 25
+    acts = 1
+    mvs = 1
+    move_range = 5
+    move_type = 'normal'
+    weak = []
+    resist = ['piercing', 'slashing', 'crushing']
     def __init__(self, name, id, img, loc, owner, level):
         if level == 1:
             self.actions = {'Move':self.move, 'Spiritual Hammer':self.spiritual_hammer, "Wyld Hunt":self.wyld_hunt, 'Unsummon':self.unsummon, 'Sigil':self.sigil, "Orion's Call":self.orions_call, 'Heel':self.heel, 'Swarm':self.swarm}
@@ -5484,7 +5655,9 @@ class Beastmaster(Summon):
                 def undo(ent, p, lockname = None):
                     ent.mvs_effects.remove(p)
                     root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
-                
+                n = 'heel'+str(app.count)
+                app.count += 1
+                ent.effects_dict[n] = Effect(name = 'Heel', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
                 root.after(1666, lambda un = un : cleanup_heel_vis(un))
                 root.after(1777, lambda ids = ids : self.heel_loop(ids))
             else:
@@ -5864,6 +6037,27 @@ class Beastmaster(Summon):
 
 
 class Artificer(Summon):
+    actions = ['Move', 'Lost Artifact', 'Globe of Invulnerability', 'Globe Hover', 'Globe Roll', 'Recall Globe', 'Pyrrhic Gnomes', 'Bottle Gnomes']
+    str = 3
+    agl = 7
+    end = 6
+    mm = 1
+    msl = 0
+    bls = 0
+    dodge = 7
+    psyche = 8
+    wis = 10
+    rsn = 7
+    san = 13
+    init = 8
+    spirit = 29
+    magick = 36
+    acts = 1
+    mvs = 1
+    move_range = 3
+    move_type = 'normal'
+    weak = ['slashing']
+    resist = ['fire', 'explosive']
     def __init__(self, name, id, img, loc, owner, level):
         if level == 1:
             self.actions = {'Move':self.move, 'Lost Artifact':self.lost_artifact, 'Globe of Invulnerability':self.globe, 'Globe Hover':self.globe_hover, 'Globe Roll':self.globe_roll, 'Recall Globe':self.recall_globe, 'Pyrrhic Gnomes':self.pyrrhic_gnomes, 'Bottle Gnomes':self.bottle_gnomes}
@@ -6780,6 +6974,27 @@ class Artificer(Summon):
 
 
 class Diabolist(Summon):
+    actions = ['Move', 'Efface', 'Graverob', 'Lobotomy', 'Poison Weapon', 'Infiltrate', 'Retreating Strike']
+    str = 6
+    agl = 9
+    end = 5
+    mm = 8
+    msl = 0
+    bls = 0
+    dodge = 9
+    psyche = 6
+    wis = 6
+    rsn = 6
+    san = 15
+    init = 10
+    spirit = 23
+    magick = 17
+    acts = 1
+    mvs = 1
+    move_range = 5
+    move_type = 'normal'
+    weak = []
+    resist = ['poison']
     def __init__(self, name, id, img, loc, owner, level):
         if level == 1:
             self.actions = {'Move':self.move, 'Efface':self.efface, 'Graverob':self.graverob, 'Lobotomy':self.lobotomy, 'Poison Weapon':self.poison_weapon, 'Infiltrate':self.infiltrate, 'Retreating Strike':self.retreating_strike}
@@ -7391,6 +7606,27 @@ class Diabolist(Summon):
 
 
 class Illusionist(Summon):
+    actions = ['Move', 'Pyrotechnics', 'Simulacrum','Gate', 'Mortar', 'Smoke Bomb', 'Analyze', 'Tracer Grenade', 'Doubling Cube']
+    str = 3
+    agl = 5
+    end = 5
+    mm = 8
+    msl = 6
+    bls = 9
+    dodge = 7
+    psyche = 6
+    wis = 7
+    rsn = 7
+    san = 13
+    init = 8
+    spirit = 21
+    magick = 17
+    acts = 1
+    mvs = 1
+    move_range = 5
+    move_type = 'teleport'
+    weak = ['crushing']
+    resist = ['explosive', 'fire']
     def __init__(self, name, id, img, loc, owner, level):
         if level == 1:
             self.actions = {'Move':self.move, 'Pyrotechnics':self.pyrotechnics, 'Simulacrum':self.simulacrum,'Gate':self.gate, 'Mortar':self.mortar, 'Smoke Bomb':self.smoke_bomb, 'Analyze':self.analyze}
@@ -8211,6 +8447,52 @@ class Illusionist(Summon):
     
     
 class Umbrae_Wolf(Summon):
+    actions = ['Move', 'Umbrae Strike', 'Dark Shroud', 'Gaze', 'Darkblast', 'Stalk', 'Phase Shift']
+    str = 6
+    agl = 8
+    end = 6
+    mm = 7
+    msl = 8
+    bls = 6
+    dodge = 8
+    psyche = 4
+    wis = 4
+    rsn = 4
+    san = 12
+    init = 8
+    spirit = 22
+    magick = 13
+    acts = 1
+    mvs = 1
+    move_range = 4
+    move_type = 'normal'
+    weak = ['elec']
+    resist = ['cold']
+        # MIST STUFF
+#                 self.str = 3
+#                 self.agl = 5
+#                 self.end = 4
+#                 self.mm = 3
+#                 self.msl = 3
+#                 self.bls = 6
+#                 self.dodge = 6
+#                 self.psyche = 9
+#                 self.wis = 8
+#                 self.rsn = 7
+#                 self.san = 16
+#                 self.init = 5
+# 
+#                 self.spirit = 19
+#                 magick = 33
+#                 self.base_acts = 1
+#                 self.base_mvs = 1
+#                 self.move_range = 4
+#                 self.move_type = 'ethereal'
+#                 self.weak = ['explosive']
+#                 self.resist = ['magick', 'slashing', 'piercing', 'crushing']
+#                 self.actions = {'Mist Move':self.move, 'Drain Life':self.drain_life, 'Muddle':self.muddle, 'Pierce Shield':self.pierce_shield, 'Haste':self.haste, 'Rend Space':self.rend_space, 'Phase Shift':self.phase_shift, 'Warpfire':self.warpfire, 'Tendrils of Chaos':self.tendrils_of_chaos}
+        
+        
     def __init__(self, name, id, img, loc, owner, level):
         if level == 1:
             self.actions = {'Move':self.move, 'Umbrae Strike':self.umbrae_strike, 'Dark Shroud':self.dark_shroud, 'Gaze':self.gaze, 'Phase Shift':self.phase_shift}
@@ -9682,6 +9964,27 @@ class Umbrae_Wolf(Summon):
     
     
 class Wurdulak(Summon):
+    actions = ['Move', 'Entrance', 'Enthrall', 'Chill Touch', 'Vampiric Bite', 'Enervating Grasp', 'Bat Form', 'Wolf Form']
+    str = 8
+    agl = 5
+    end = 8
+    mm = 1
+    msl = 0
+    bls = 0
+    dodge = 5
+    psyche = 8
+    wis = 6
+    rsn = 5
+    san = 14
+    init = 5
+    spirit = 29
+    magick = 23
+    acts = 1
+    mvs = 1
+    move_range = 2
+    move_type = 'normal'
+    resist = ['crushing']
+    weak = ['fire']
     def __init__(self, name, id, img, loc, owner, level):
         if level == 1:
             self.actions = {'Move':self.move, 'Entrance':self.entrance, 'Enthrall':self.enthrall, 'Chill Touch':self.chill_touch, 'Enervating Grasp':self.enervating_grasp, 'Bat Form':self.bat_form, 'Wolf Form':self.wolf_form}
@@ -10272,6 +10575,27 @@ class Wurdulak(Summon):
         
 
 class Murrain_Wolf(Summon):
+    actions = ['Move', 'Pox', 'Paralyze', 'Scarab Gestation', 'Leprous Bite', 'Toxic Miasma', 'Spore Cloud', 'Scarab Swarm']
+    str = 5
+    agl = 8
+    end = 6
+    mm = 2
+    msl = 0
+    bls = 0
+    dodge = 3
+    psyche = 8
+    wis = 6
+    rsn = 4
+    san = 11
+    init = 4
+    spirit = 31
+    magick = 35
+    acts = 1
+    mvs = 1
+    move_range = 3
+    move_type = 'normal'
+    resist = ['poison']
+    weak = ['acid']
     def __init__(self, name, id, img, loc, owner, level):
         if level == 1:
             self.actions = {'Move':self.move, 'Pox':self.pox, 'Paralyze':self.paralyze, 'Scarab Gestation':self.scarab_gestation, 'Leprous Bite':self.leprous_bite, 'Toxic Miasma':self.toxic_miasma}
@@ -11872,6 +12196,27 @@ class Plague_Vermin(Summon):
     
     
 class Chirurgeon(Summon):
+    actions = ['Move', 'Stitch Cadaver', 'Bone Pincers', 'Willful Perambulation', 'Corrosive Glands', 'Alacrity', 'Farsight', 'Enervating Grasp']
+    str = 3
+    agl = 5
+    end = 5
+    mm = 1
+    msl = 0
+    bls = 0
+    dodge = 5
+    psyche = 5
+    wis = 8
+    rsn = 5
+    san = 17
+    init = 6
+    spirit = 17
+    magick = 28
+    acts = 2
+    mvs = 1
+    move_range = 4
+    move_type = 'normal'
+    weak = []
+    resist = ['fire', 'magick']
     def __init__(self, name, id, img, loc, owner, level):
         self.level = level
         if level == 1:
@@ -12538,6 +12883,27 @@ class Chirurgeon(Summon):
         
         
 class Fell_Evolver(Summon):
+    actions = ['Move', 'Assail', 'Wooden Skin', 'Calcify', 'Unstable Fervor', 'Chimeric Mutation', 'Moldering Effluvium', 'Squamous Carapace', 'Winnowing Verdure', 'Noxious Respiration']
+    str = 6
+    agl = 6
+    end = 6
+    mm = 6
+    msl = 6
+    bls = 6
+    dodge = 6
+    psyche = 6
+    wis = 6
+    rsn = 6
+    san = 12
+    init = 6
+    spirit = 25
+    magick = 0
+    acts = 1
+    mvs = 1
+    move_range = 3
+    move_type = 'normal'
+    weak = ['slashing','piercing','crushing','fire','cold','elec']
+    resist = []
     def __init__(self, name, id, img, loc, owner, level):
         if level == 1:
             self.actions = {'Move':self.move, 'Assail':self.assail, 'Wooden Skin':self.wooden_skin, 'Calcify':self.calcify, 'Unstable Fervor':self.unstable_fervor, 'Chimeric Mutation':self.chimeric_mutation, 'Moldering Effluvium':self.moldering_effluvium, 'Squamous Carapace':self.squamous_carapace, 'Winnowing_Verdure':self.winnowing_verdure, 'Noxious_Respiration':self.noxious_respiration}
@@ -13469,6 +13835,27 @@ class Fell_Evolver(Summon):
         
         
 class Hexmage(Summon):
+    actions = ['Move', 'Nimbus of Oppression', 'Halo of Encumberance', 'Psychic Suffocation', 'Torpor Field', 'Cloak of Minerva', 'Rebuking Shield', 'Nix', 'Feedback', 'Trenchant Lunula', 'Pierce the Heart']
+    str = 5
+    agl = 8
+    end = 6
+    mm = 1
+    msl = 0
+    bls = 0
+    dodge = 6
+    psyche = 8
+    wis = 8
+    rsn = 5
+    san = 14
+    init = 8
+    spirit = 27
+    magick = 29
+    acts = 1
+    mvs = 1
+    move_range = 4
+    move_type = 'normal'
+    weak = []
+    resist = ['poison', 'magick']
     def __init__(self, name, id, img, loc, owner, level):
         if level == 1:
             self.actions = {'Move':self.move, 'Nimbus of Oppression':self.nimbus_of_oppression, 'Halo of Encumberance':self.halo_of_encumberance, 'Psychic Suffocation':self.psychic_suffocation, 'Torpor Field':self.torpor_field, 'Cloak of Minerva':self.cloak_of_minerva, 'Rebuking Shield':self.rebuking_shield, 'Nix':self.nix, 'Feedback':self.feedback, 'Trenchant Lunula':self.trenchant_lunula, 'Pierce the Heart':self.pierce_the_heart}
@@ -14264,6 +14651,27 @@ class Hexmage(Summon):
         
         
 class Thaumaturge(Summon):
+    actions = ['Move', 'Unholy Chant', 'Arrow of Diana', 'Zephyr Lance', 'Moonlight', 'Esuna', 'Aura', 'Tranquility', 'Concerted Volley', "Devil's Mark"]
+    str = 4
+    agl = 9
+    end = 5
+    mm = 10
+    msl = 6
+    bls = 9
+    dodge = 9
+    psyche = 6
+    wis = 8
+    rsn = 5
+    san = 13
+    init = 8
+    spirit = 27
+    magick = 29
+    acts = 1
+    mvs = 1
+    move_range = 5
+    move_type = 'normal'
+    weak = []
+    resist = ['slashing']
     def __init__(self, name, id, img, loc, owner, level):
         if level == 1:
             self.actions = {'Move':self.move, 'Unholy Chant':self.unholy_chant, 'Arrow of Diana' : self.arrow_of_diana, 'Zephyr Lance':self.zephyr_lance, 'Moonlight' : self.moonlight, 'Esuna':self.esuna, 'Concerted Volley':self.concerted_volley}
@@ -14967,8 +15375,28 @@ class Thaumaturge(Summon):
         app.exists_check(app.active_ent)
         
         
-# finish inquisitor, cleanse with fire- all wi range3 on wis v wis tohit take psy v psy fire spl, persecute- all wi rng3 on wis v wis tohit lose mgk = psy, prophecy- tar gets +3 rsn efct
 class Inquisitor(Summon):
+    actions = ['Move', 'Cleanse with Fire', 'Persecute', 'Prophecy', 'Nullify', 'Abeyance', 'Anoint', 'Reveal']
+    str = 9
+    agl = 5
+    end = 8
+    mm = 5
+    msl = 0
+    bls = 0
+    dodge = 5
+    psyche = 7
+    wis = 8
+    rsn = 6
+    san = 13
+    init = 8
+    spirit = 26
+    magick = 26
+    acts = 1
+    mvs = 1
+    move_range = 4
+    move_type = 'normal'
+    weak = []
+    resist = ['cold', 'fire']
     def __init__(self, name, id, img, loc, owner, level):
         if level == 1:
             self.actions = {'Move':self.move, 'Cleanse with Fire':self.cleanse_with_fire, 'Persecute':self.persecute, 'Prophecy':self.prophecy, 'Nullify':self.nullify, 'Abeyance':self.abeyance, 'Anoint':self.anoint, 'Reveal':self.reveal}
@@ -15556,6 +15984,27 @@ class Inquisitor(Summon):
         
         
 class Pixie(Summon):
+    actions = ['Move', 'Elemental Langour', 'Detox', 'Geomantic Clutch', 'Needle Storm', 'Biotranspose', 'Glammering', 'Pixie Dust']
+    str = 4
+    agl = 9
+    end = 4
+    mm = 1
+    msl = 0
+    bls = 0
+    dodge = 9
+    psyche = 6
+    wis = 8
+    rsn = 7
+    san = 14
+    init = 10
+    spirit = 21
+    magick = 35
+    acts = 1
+    mvs = 1
+    move_range = 5
+    move_type = 'flying'
+    weak = ['crushing']
+    resist = ['magick', 'explosive']
     def __init__(self, name, id, img, loc, owner, level):
         if level == 1:
             self.actions = {'Move':self.move, 'Elemental Langour':self.elemental_langour, 'Asthenia':self.asthenia, 'Detox':self.detox, 'Geomantic Clutch':self.geomantic_clutch, 'Biotranspose':self.biotranspose, 'Glammering':self.glammering}
@@ -16168,6 +16617,27 @@ class Pixie(Summon):
         
         
 class Drake(Summon):
+    actions = ['Move', 'Spit Venom', 'Hindering Mucilage', 'Wing Buffet', 'Screech', 'Chameleon Camouflage', 'Shimmering Scales']
+    str = 7
+    agl = 8
+    end = 8
+    mm = 9
+    msl = 6
+    bls = 5
+    dodge = 5
+    psyche = 4
+    wis = 4
+    rsn = 4
+    san = 11
+    init = 10
+    spirit = 29
+    magick = 0
+    acts = 1
+    mvs = 1
+    move_range = 5
+    move_type = 'flying'
+    weak = ['elec']
+    resist = ['poison']
     def __init__(self, name, id, img, loc, owner, level):
         if level == 1:
             self.actions = {'Move':self.move, 'Spit Venom':self.spit_venom, 'Hindering Mucilage':self.hindering_mucilage, 'Wing Buffet':self.wing_buffet, 'Chameleon Camouflage':self.chameleon_camouflage, 'Shimmering Scales':self.shimmering_scales}
@@ -16584,6 +17054,27 @@ class Drake(Summon):
         
         
 class Fiend(Summon):
+    actions = ['Move', 'Suplex', 'Chain Lightning', 'Hidden Haymaker', 'Overload', 'Roar']
+    str = 9
+    agl = 7
+    end = 7
+    mm = 7
+    msl = 6
+    bls = 5
+    dodge = 5
+    psyche = 4
+    wis = 4
+    rsn = 4
+    san = 11
+    init = 6
+    spirit = 29
+    magick = 16
+    acts = 1
+    mvs = 1
+    move_range = 3
+    move_type = 'normal'
+    weak = []
+    resist = ['elec']
     def __init__(self, name, id, img, loc, owner, level):
         if level == 1:
             self.actions = {'Move':self.move, 'Suplex':self.suplex, 'Chain Lightning':self.chain_lightning, 'Hidden Haymaker':self.hidden_haymaker, 'Overload':self.overload, 'Roar' : self.roar}
@@ -22173,6 +22664,27 @@ class Minotaur(Bot):
         
         
 class Myconid(Summon):
+    str = 3
+    agl = 7
+    end = 6
+    mm = 9
+    msl = 3
+    bls = 4
+    dodge = 7
+    psyche = 9
+    wis = 11
+    rsn = 6
+    san = 13
+    init = 5
+    spirit = 21
+    magick = 33
+    acts = 1
+    mvs = 1
+    move_range = 3
+    move_type = 'normal'
+    weak = []
+    resist = []
+    actions = ['Move','Confusion', 'Divide', 'Phosphorescence', 'Tremor', 'Spore Cloud']
     def __init__(self, name, id, img, loc, owner, level):
         if level == 1:
             self.actions = {'Move':self.move, 'Confusion':self.confusion, 'Divide':self.divide, 'Phosphorescence':self.phosphorescence, 'Tremor':self.tremor, 'Spore Cloud':self.spore_cloud}
@@ -22393,9 +22905,9 @@ class Myconid(Summon):
     def do_phosphorescence(self, event, sqr, sqrs):
         if sqr not in sqrs:
             return
-        if self.magick < 4:
+        if self.magick < 3:
             return
-        self.magick -= 4
+        self.magick -= 3
 #         effect1 = mixer.Sound('Sound_Effects/rage.ogg')
 #         effect1.set_volume(.5)
 #         sound_effects.play(effect1, 0)
@@ -22578,6 +23090,28 @@ class Myconid(Summon):
         
         
 class Major_Demon(Summon):
+    actions = ['Move', 'Ethereal Projection', 'Acid Burn', 'Black Vise', 'Graveblink', 'Soul Squander']
+    str = 9
+    agl = 6
+    end = 9
+    mm = 7
+    msl = 5
+    bls = 5
+    dodge = 5
+    psyche = 9
+    wis = 7
+    rsn = 4
+    san = 12
+    init = 8
+    spirit = 33
+    magick = 22
+    acts = 1
+    mvs = 1
+    move_range = 4
+    ethereal_projection_used = False
+    move_type = 'normal'
+    weak = []
+    resist = []
     def __init__(self, name, id, img, loc, owner, level):
         if level == 1:
             self.actions = {'Move':self.move, 'Ethereal Projection':self.ethereal_projection, 'Acid Burn':self.acid_burn, 'Black Vise':self.black_vise, 'Gravestorm':self.gravestorm, 'Soul Squander':self.soul_squander}
@@ -23053,7 +23587,7 @@ class Major_Demon(Summon):
             dir = 'west'
         elif self.loc[1] > sqr[1]:
             dir = 'north'
-        locs = lateral_sqrs(self.loc, self.get_abl('rsn'), blocked=False, dir=dir)
+        locs = lateral_sqrs(self.loc, self.get_abl('bls'), blocked=False, dir=dir)
 #                 obj.init_attack_anims()
 #         effect1 = mixer.Sound('Sound_Effects/hook_attack.ogg')
 #         effect1.set_volume(app.effects_volume.get())
@@ -23108,6 +23642,27 @@ class Major_Demon(Summon):
         
         
 class Ogre(Summon):
+    actions = ['Move', 'Crush', 'Grapple', 'Roar', 'Sylvan Blessing', 'Dust Cloud', 'Faerie Companion']
+    str = 12
+    agl = 8
+    end = 12
+    mm = 3
+    msl = 0
+    bls = 0
+    dodge = 6
+    psyche = 4
+    wis = 4
+    rsn = 4
+    san = 11
+    init = 5
+    spirit = 45
+    magick = 13
+    acts = 1
+    mvs = 1
+    move_range = 5
+    move_type = 'charge'
+    weak = []
+    resist = []
     def __init__(self, name, id, img, loc, owner, level):
         if level == 1:
             self.actions = {'Move':self.move, 'Crush':self.crush, 'Grapple':self.grapple, 'Roar':self.roar, 'Sylvan Blessing':self.sylvan_blessing, 'Dust Cloud':self.dust_cloud, 'Faerie Companion':self.faerie_companion}
@@ -23539,6 +24094,27 @@ class Ogre(Summon):
         
         
 class Berserker(Summon):
+    actions = ['Move', 'Leap', 'Slash', 'Whirlwind', 'Howl From Beyond', 'Track', 'Hurl', 'Rage', 'Molten Claws', 'Bane Claws']
+    str = 6
+    agl = 10
+    end = 6
+    mm = 3
+    msl = 0
+    bls = 0
+    dodge = 8
+    psyche = 5
+    wis = 5
+    rsn = 4
+    san = 12
+    init = 9
+    spirit = 35
+    magick = 0
+    acts = 1
+    mvs = 1
+    move_range = 3
+    move_type = 'charge'
+    weak = []
+    resist = ['poison', 'fire']
     def __init__(self, name, id, img, loc, owner, level):
         if level == 1:
             self.actions = {'Move':self.move, 'Leap':self.leap, 'Slash':self.slash, 'Howl From Beyond':self.howl_from_beyond, 'Track':self.track}
@@ -40734,22 +41310,6 @@ class App(tk.Frame):
     def action_target_ents(self):
         return {k:v for k,v in self.ent_dict.items() if v.type != 'large' and 'invisibility' not in v.get_types()}
         
-    # create popup with description of action name
-    # ADD manually lookup name for all actions and spells
-#     def action_info(self, event = None, name = None, button = None):
-#         def end(window):
-#             self.destroy_release(window)
-#         self.info_popup = tk.Toplevel()
-#         self.info_popup.grab_set()
-#         self.info_popup.attributes('-topmost', 'true')
-#         def on_close():
-#             pass
-#         self.info_popup.protocol('WM_DELETE_WINDOW', on_close)
-#         info_text = name + '\n' + action_description(name)
-#         self.text = tk.Label(self.info_popup, text = info_text, wraplength = 400, font = ('chalkduster', 22), fg='indianred', bg = 'black')
-#         self.text.pack()
-#         self.close = tk.Button(self.info_popup, text = 'OK', font = ('chalkduster', 22), fg='tan3', command = lambda win = self.info_popup : end(win))
-#         self.close.pack()
 
     # working, change, debug here, change to allow for summons/other-tombs presentation by the popup returned
     # summons should allow for image/stats
@@ -40768,18 +41328,31 @@ class App(tk.Frame):
         def on_close():
             pass
         self.mi_popup.protocol('WM_DELETE_WINDOW', on_close)
-        
-        
         txt = name+'\n'
         # just add images here, pack left
         if name.replace(' ','_') in app.summons_list:
             self.smn_img = ImageTk.PhotoImage(Image.open('summon_imgs/'+name.replace(' ','_')+'.png'))
             self.smn_label = tk.Label(bg, image = self.smn_img)
             self.smn_label.pack(side = 'left')
-            
+            for k,v in Entity.get_class_info(name).items():
+                if k == 'actions':
+                    for act in v:
+                        txt += '-|'+act + '|-'+action_description(act) + '\n'
+                elif k == 'weak':
+                    txt += 'Weak: ' + ','.join([j for j in v]) + '\n'
+                elif k == 'resist':
+                    txt += 'Resist: ' + ','.join([j for j in v]) + '\n'
+                else:
+                    txt += k+' '+str(v) + '\n'
+#                 txt += tup[0]+' '+str(tup[1]) + '\n'
+            # MOVE TYPE WEAK RESIST
+#             txt += 'Move Type: '+eval(name).move_type + '\n'
+#             txt += 'Weak: '+','.join(eval(name).weak) + '\n'
+#             txt += 'Resist: '+','.join(eval(name).resist) + '\n'
+#             # ACTION DESCr
+#             for x in eval(name).actions:
+#                 txt += action_description(k)
         txt += action_description(name)
-        
-        
         self.text = tk.Text(bg, yscrollcommand = sb.set, bg = 'black', highlightthickness = 0, relief = 'sunken', wrap = 'word', borderwidth = 0, fg = 'tan3', font = ('baskerville', 20))
         self.text.insert('end', txt)
         self.text.configure(state = 'disabled')
@@ -40818,8 +41391,7 @@ class App(tk.Frame):
         id = app.grid[sqr[0]][sqr[1]]
         if id in app.all_ents().keys():
             ent = app.ent_dict[id]
-            for k,v in ent.__dict__.items():
-                print(k,v)
+            print(ent.get_base_stats())
 #         global grid_pos, curs_pos, map_pos
 #         id = app.grid[grid_pos[0]][grid_pos[1]]
 #         if id in app.all_ents().items():
