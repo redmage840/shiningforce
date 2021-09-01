@@ -1,4 +1,8 @@
+# float/mass float, give aoe tomb flying
+
 # smn with higher psyche but otherwise not great (for combo with soulsquander)
+
+# the_fool, prob too good of an effect at any cost? reduces also the actions that damage self, like Divide? maybe okay?
 
 # action descr ogre, myconid, major demon
 
@@ -317,13 +321,13 @@ def action_description(act):
     elif act == 'Ethereal Projection':
         return 'If duel mode, opponent Witch draws a card. Make an ethereal type move at +2 move range. This action does not use either acts or moves, and can be used once per turn.'
     elif act == 'Divide':
-        return 'Caster does slashing melee damage to self equal to half current spirit, rounded up. Place a copy of caster randomly among the nearest empty locations. Copy has stats of the current (not base) stats of caster. Copy has spirit equal to base damage done to caster (before applying weakness/resistance). Costs 5 magick.'
+        return 'Caster does slashing melee damage to self equal to half current spirit, rounded up. Place a copy of caster randomly among the nearest empty locations. Copy has stats of the current (not base) stats of caster. Copy has spirit equal to base damage done to caster (before applying weakness/resistance or attack/defense effects). Costs 5 magick.'
     elif act == 'Phosphorescence':
         return 'If caster has invisibility, heal caster equal to psyche. If caster has psyshield, owner draws a card. Costs 3 magick.'
     elif act == 'Tremor':
         return 'On to-hit mm vs dod, X crushing ranged dmg to each non-flying, non-myconid in range bls. X is number of Myconids owned. Costs 2 magick.'
     elif act == 'Confusion':
-        return 'Each non-Witch/Myconid/Tomb in range ballistics, on to-hit wis vs wis, gets -4 sanity effect (if it does not already possess this effect) at duration reason and level wisdom. Costs 4 magick.'
+        return 'Each non-Witch/Myconid/Tomb, without nonsentient type, in range ballistics, on to-hit wis vs wis, gets -4 sanity effect (if it does not already possess this effect) at duration reason and level wisdom. Costs 4 magick.'
     elif act == 'Faerie Companion':
         return 'Each adjacent, non-Witch, friendly unit gets psyshield effect at duration reason and level wisdom. Costs 2 magick.'
     elif act == 'Dust Cloud':
@@ -22761,7 +22765,7 @@ class Myconid(Summon):
         s = self.loc[:]
         app.canvas.create_text(s[0]*100+49-app.moved_right, s[1]*100+84-app.moved_down, text = 'Confusion', font = ('chalkduster', 13), fill = 'black', tags = 'text')
         app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+85-app.moved_down, text = 'Confusion', font = ('chalkduster', 13), fill = 'orchid1', tags = 'text')
-        ents = [v for k,v in app.all_ents().items() if v.loc in sqrs and isinstance(v,Myconid) == False and isinstance(v,Witch)==False and isinstance(v,Tomb)==False and 'Confusion' not in [j.name for i,j in v.effects_dict.items()]]
+        ents = [v for k,v in app.all_ents().items() if v.loc in sqrs and isinstance(v,Myconid) == False and isinstance(v,Witch)==False and isinstance(v,Tomb)==False and 'Confusion' not in [j.name for i,j in v.effects_dict.items()] and 'nonsentient' not in v.get_types()]
         def cleanup_confusion(n):
             del app.vis_dict[n]
             app.canvas.delete(n)
