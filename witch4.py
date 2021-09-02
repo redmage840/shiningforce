@@ -1,10 +1,18 @@
-# float/mass float, give aoe tomb flying
+# card type as class
+# currently, the 'spells' associated with 'cards' (tombs) derive their costs from the function that shares their name, (the value to the key in app.arcane_dict)
+# somehow need to create each 'spell' as an instance of a 'card' with the kickoff function pointed to by some attr (spell_func)
+# currently, the instances (values) in the app.arcane_dict are named_tuples and the Witch.arcane_dict updates the named_tuples to see how many times the spell has been cast or its cost or the times it is imprinted on some tomb
+# the variables associated with the Witch are not tied to some perm state of the card, need to be separated
+# some struct that tracks imprints, costs which may be temp modified from their base 'card' value in context of Witch, and the number of times cast by Witch (to compare to 'imprints' value)
+# 
+
+# timing of atk/def loops, not actually locking, returns early...
+
+# all myconids gain ...
+
+# witches blood, dark ritual, sac the tomb
 
 # smn with higher psyche but otherwise not great (for combo with soulsquander)
-
-# the_fool, prob too good of an effect at any cost? reduces also the actions that damage self, like Divide? maybe okay?
-
-# action descr ogre, myconid, major demon
 
 # handle umbrae wolf alt form Mist in summon descr (recursive descr of derived actions/summons, for example cadaver, scarab, hook attack...?)
 
@@ -14,9 +22,7 @@
 
 # where page functions tried to bind r-click hotkeys to popup description of the cards being paged, they were calling the function that returns the specific info (action_description()) instead of the function that presents/controls the presentation (app.action_info())
 
-# stats of summons in action descr + popup profile plus profile picture
-
-# all ent ranges, 1,2,3,4
+# redo all ent ranges, 1,2,3,4 ? shorter...
 
 # something action/spell, that reduces str (for use with ogre/myconid swarm)
 
@@ -45,24 +51,13 @@
 # change user-owner, computer-controlled stuff to allow for arb. added actions...
 # their eot control should account for variable attack ranges (use/add Entity.attack_range?), added or removed actions, incr/decr moves/acts/moverange,
 
-# some kind of mulligan protection... all/no-summon? what about non-summon decks? what about information protection/revealing for duel?
-# could actually enforce some kind of pseudo random... arbitrary criteria: within some threshold of proportion of deck total... for example
-#    a 60 card deck with 20 summons would redraw a starting hand where more than twice that proportion exists OR less than half that proportion exists... so hands with MORE THAN 2/3s summons OR LESS THAN 1/6 = auto redraw (do not need to necessarily make this process obvious or a matter of choice for player)
-# auto-redraw depending on IF a threshold of summon to non-summon exists,
-# for example, threshold is 10 percent (deck must consist of 90/10 ratio tombs/summons, either)
-#     then-- auto-redraw rule is in effect for opening hand
-#     - auto-redraw will enforce that opening hand is within some range of the ratio of tombs/summons
-#       - start testing with range at half and twice as much as ratio, 90/10 becomes 95/5 - 80/20
-
-# need gate-like spell for ents (Witch spell that targets ents)
+# mull protection
 
 # add info text for all ents that need it, ent.info_text default None
 
 # debug mass grave, when placing 2 tombs, pressing the first button auto chooses the next?
 
 # difficulty mode for campaign, just change map info 
-
-# something to give caster +1 moves
 
 # ways to destroy/disrupt tombs, like efface, counter? a spell
 # instead of playing a tomb, set spell_entomb to used, discard 1, destroy tomb?
@@ -327,7 +322,7 @@ def action_description(act):
     elif act == 'Tremor':
         return 'On to-hit mm vs dod, X crushing ranged dmg to each non-flying, non-myconid in range bls. X is number of Myconids owned. Costs 2 magick.'
     elif act == 'Confusion':
-        return 'Each non-Witch/Myconid/Tomb, without nonsentient type, in range ballistics, on to-hit wis vs wis, gets -4 sanity effect (if it does not already possess this effect) at duration reason and level wisdom. Costs 4 magick.'
+        return 'Each non-Witch/Myconid/Tomb, without nonsentient type, in range ballistics, on to-hit mm vs dodge, gets -4 sanity effect (if it does not already possess this effect) at duration reason and level wisdom. Costs 4 magick.'
     elif act == 'Faerie Companion':
         return 'Each adjacent, non-Witch, friendly unit gets psyshield effect at duration reason and level wisdom. Costs 2 magick.'
     elif act == 'Dust Cloud':
@@ -383,7 +378,7 @@ def action_description(act):
     elif act == 'The Wheel':
         return 'Shuffle discard and exile into library, draw a card.'
     elif act == 'The Fool':
-        return 'Spell target friendly unit gets wisdom reduced to 1 and defense effect that causes melee, ranged, and spell damage to reduce to maximum of current wisdom and places a +1 wisdom effect at duration of this caster reason and level wisdom.'
+        return 'Spell target friendly unit gets wisdom reduced to 1 and defense effect that causes melee and ranged damage to reduce to maximum of current wisdom and places a +1 wisdom effect at duration of this caster reason and level wisdom.'
     elif act == 'The Moon':
         return 'Spell target list-summon is copied at a random location among closest locations. Copy has base stats equal to current stats of target, except acts and moves.'
     elif act == 'The Tower':
@@ -1925,6 +1920,44 @@ class Sqr():
         else:
             self.anim_counter += 1
         self.img = self.anim_dict[self.anim_counter]
+
+class Deck():
+    def __init__(self, owner = None, cards = None):
+        self.owner = owner
+        tmp = []
+        for card in cards:
+            if card in app.summons_list[:]:
+                x = Card(name = card, kind = 'Summon')
+            else:
+                spell = app.arcane_dict[card]
+                x = Card(name = card, kind = 'Tomb')
+            tmp.append(x)
+        self.cards = tmp[:]
+        self.removed = []
+        
+    def shuffle(self):
+        shuffle(self.cards)
+    
+    def draw(self):
+        if self.cards != []:
+            self.owner.in_hand.append(self.cards[0])
+            self.removed.append(self.cards[0])
+            self.cards = self.cards[1:]
+            
+    def restore(self):
+        self.cards = self.cards[:] + self.removed[:]
+        self.removed = []
+        
+        
+
+class Card():
+    def __init__(self, name = None, kind = None, cost = None, spell_func = None, play_func = None, discard_func = None):
+        self.name = name
+        self.kind = kind
+        self.cost = cost
+        self.spell_func = spell_func
+        self.play_func = play_func
+        self.discard_func = discard_func
 
 
 class Entity():
@@ -16092,8 +16125,8 @@ class Pixie(Summon):
         app.vis_dict['Pixie_Dust'] = Vis(name = 'Pixie_Dust', loc = ent.loc[:])
         app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+14-app.moved_down, text = 'Pixie Dust', justify ='center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
         app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+15-app.moved_down, text = 'Pixie Dust', justify ='center', font = ('chalkduster', 13), fill = 'antiquewhite', tags = 'text')
-        app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+74-app.moved_down, text = 'invisibility', justify ='center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
-        app.canvas.create_text(ent.loc[0]*100+50-app.moved_right, ent.loc[1]*100+75-app.moved_down, text = 'invisibility', justify ='center', font = ('chalkduster', 13), fill = 'white', tags = 'text')
+        app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+74-app.moved_down, text = 'psyshield', justify ='center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
+        app.canvas.create_text(ent.loc[0]*100+50-app.moved_right, ent.loc[1]*100+75-app.moved_down, text = 'psyshield', justify ='center', font = ('chalkduster', 13), fill = 'white', tags = 'text')
         def pdust_effect(types):
             return types + ['psyshield']
         p = partial(pdust_effect)
@@ -22779,7 +22812,7 @@ class Myconid(Summon):
                 name = 'confusion' + str(app.count)
                 app.count += 1
                 app.vis_dict[name] = Vis(name = 'Confusion', loc = ent.loc[:])
-                if to_hit(self.get_abl('wis'), ent.get_abl('wis')):
+                if to_hit(self.get_abl('mm'), ent.get_abl('dodge')):
                     def confusion_stat(stat):
                         return max(1,stat-4)
                     p = partial(confusion_stat)
@@ -27811,6 +27844,7 @@ class Cadaver(Summon):
                     
 class Witch(Summon):
     def __init__(self, name, img, loc, owner, level, entomb_deck):
+        self.arcana_deck = Deck(cards = entomb_deck, owner = owner)
         p = partial(self.page_summons, index = 0)
         self.actions = {'Move':self.move, 'Entomb':self.entomb, 'Arcana':self.arcana}#, 'Summon':p}
         self.level = level
@@ -27907,7 +27941,7 @@ class Witch(Summon):
                 self.mvs = 1
                 self.move_range = 4
                 self.move_type = 'normal'
-                self.str = 7
+                self.str = 4
                 self.agl = 7
                 self.end = 8
                 self.mm = 6
@@ -27971,7 +28005,7 @@ class Witch(Summon):
                 self.mvs = 1
                 self.move_range = 4
                 self.move_type = 'normal'
-                self.str = 8
+                self.str = 5
                 self.agl = 7
                 self.end = 9
                 self.mm = 5
@@ -28121,7 +28155,6 @@ class Witch(Summon):
         for spell in self.arcane_dict.values():
             self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,0)
         
-        
     # clean protagonist object (Witch) between levels DEBUG debug change to new...
     def reset_transient_vars(self):
         # attrs directly altered, reset
@@ -28168,6 +28201,40 @@ class Witch(Summon):
         for spell in self.arcane_dict.values():
             self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,0,0)
         self.inert_effects = []
+    
+    def show_in_hand(self, event = None):
+        cards = self.in_hand[:]
+        self.page_cards(cards = cards)
+        
+    def show_discard(self, event = None):
+        cards = self.discard[:]
+        self.page_cards(cards = cards)
+        
+    def show_exile(self, event = None):
+        cards = self.exile[:]
+        self.page_cards(cards = cards)
+    
+    def page_cards(self, event = None, cards = None, index = 0):
+        app.depop_context(event = None)
+        for i, card in enumerate(cards[index:index+7]):
+            i += 1
+            b1 = tk.Button(app.context_menu, wraplength = 190, text = card.replace('_',' '), font = ('chalkduster', 20), fg='tan3', highlightbackground = 'tan3')
+            b1.pack(side = 'top', pady = 2)
+            b1.bind('<Button-2>', lambda event, b = b1, n = card.replace('_',' ') : app.action_info(event, name = n, button = b))
+            app.context_buttons.append(b1)
+        if index > 0:
+            b4 = tk.Button(app.context_menu, text = 'W : Prev', font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = lambda cards = cards, i = index-7 : self.page_cards(cards = cards, index = i))
+            b4.pack(side = 'top', pady = 2)
+            root.bind('<w>', lambda e, cards = cards, i = index-7 : self.page_cards(cards = cards, index = i))
+            app.context_buttons.append(b4)
+        if len(cards) > len(cards[:index+7]):
+            b3 = tk.Button(app.context_menu, text = 'E : Next', font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = lambda cards = cards, i = index+7 : self.page_cards(cards = cards, index = i))
+            b3.pack(side = 'top', pady = 2)
+            root.bind('<e>', lambda e, cards = cards, i = index+7 : self.page_cards(cards = cards, index = i))
+            app.context_buttons.append(b3)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b2)
     
     
     def page_summons(self, event = None, index = None):
@@ -30669,6 +30736,67 @@ class Witch(Summon):
                 root.after(1666, lambda ents = ents, v = visited : plague_loop(ents, v))
         plague_loop(ents, visited)
 
+    def antigravity(self, event = None):
+        app.depop_context(event = None)
+        root.bind('<q>', lambda name = 'Antigravity' : self.cleanup_spell(name = name))
+        sqrs = [s for s in app.coords if 1 <= dist(self.loc, s) <= self.get_abl('rsn')]
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_antigravity(event = e, sqr = s, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Choose Location For Antigravity', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_antigravity(e, s, sqrs))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
+        
+    def do_antigravity(self, event, sqr, sqrs):
+        if sqr not in sqrs:
+            return
+#         self.init_cast_anims()
+#         effect1 = mixer.Sound('Sound_Effects/plague.ogg')
+#         effect1.set_volume(app.effects_volume.get())
+#         sound_effects.play(effect1, 0)
+        self.magick -= self.arcane_dict['Antigravity'].cost
+        spell = self.arcane_dict['Antigravity']
+        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        app.unbind_all()
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+24-app.moved_down, text = 'Antigravity', font = ('chalkduster', 14), fill = 'black', tags = 'text')
+        app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+25-app.moved_down, text = 'Antigravity', font = ('chalkduster', 14), fill = 'antiquewhite', tags = 'text')
+        def cleanup(n):
+            del app.vis_dict[n]
+            app.canvas.delete(n)
+        locs = [c for c in app.coords if dist(c,sqr) <= 2]
+        ents = [v for k,v in app.all_ents().items() if v.loc in locs and isinstance(v,Tomb) and v.owner == self.owner]
+        def antigravity_loop(ents):
+            if ents == []:
+                self.cleanup_spell(name = 'Antigravity')
+            else:
+                ent = ents[0]
+                ents = ents[1:]
+                un = 'antigravity'+str(app.count)
+                app.count += 1
+                app.vis_dict[un] = Vis(name = 'Antigravity', loc = ent.loc[:])
+                root.after(1777, lambda un = un : cleanup(un))
+                app.get_focus(ent.id)
+                def antigrav_move(t):
+                    return 'flying'
+                p = partial(antigrav_move)
+                ent.move_type_effects.append(p)
+                app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+84-app.moved_down, text = 'Flying', font = ('chalkduster', 14), fill = 'black', tags = 'text')
+                app.canvas.create_text(ent.loc[0]*100+50-app.moved_right, ent.loc[1]*100+85-app.moved_down, text = 'Flying', font = ('chalkduster', 14), fill = 'antiquewhite', tags = 'text')
+                def un(ent, p, lockname = None):
+                    ent.move_type_effects.remove(p)
+                    root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+                u = partial(un, ent, p)
+                n = 'antigravity' + str(app.count)
+                ent.effects_dict[n] = Effect(name = 'Antigravity', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
+                root.after(1333, lambda t = 'text' : app.canvas.delete(t))
+                root.after(1444, lambda ents = ents : antigravity_loop(ents))
+        antigravity_loop(ents)
+
+
     def hallowed_ground(self, event = None):
         app.depop_context(event = None)
         root.bind('<q>', lambda name = 'Hallowed_Ground' : self.cleanup_spell(name = name))
@@ -32929,7 +33057,7 @@ class Witch(Summon):
         p = partial(fool_wis)
         ent.wis_effects.append(p)
         def fool_def(atkr, dfndr, amt, type, sn, st, lockname = None):
-            if st == 'melee' or st == 'ranged' or st == 'spell':
+            if st == 'melee' or st == 'ranged':
                 if amt < 0:
                     wis = dfndr.get_abl('wis')
                     amt = max(-wis,amt)
@@ -34912,8 +35040,8 @@ class Witch(Summon):
         app.vis_dict["Witch's_Blood"] = Vis(name = "Witch's_Blood", loc = sqr[:])
         lock(apply_damage, self, self, -4, 'magick', "Witch's Blood", 'spell')
         ents = [v for k,v in app.spell_target_ents().items() if dist(v.loc,self.loc)==1 and v.owner == self.owner]
-        app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+84-app.moved_down, text = "Witch's Blood, +4 magick", justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
-        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+85-app.moved_down, text = "Witch's Blood, +4 magick", justify = 'center', font = ('chalkduster', 13), fill = 'ghostwhite', tags = 'text')
+        app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+84-app.moved_down, text = "+4 magick", justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
+        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+85-app.moved_down, text = "+4 magick", justify = 'center', font = ('chalkduster', 13), fill = 'ghostwhite', tags = 'text')
         self.magick += 4
         for e in ents:
             e.magick += 4
@@ -38061,6 +38189,7 @@ class App(tk.Frame):
         self.arcane_dict['Hunting_Hawk'] = Spell('Hunting_Hawk',Witch.hunting_hawk, 2, 0, 0)
         self.arcane_dict['Psi_Blades'] = Spell('Psi_Blades',Witch.psi_blades, 2, 0, 0)
         self.arcane_dict['The_Hermit'] = Spell('The_Hermit',Witch.the_hermit, 2, 0, 0)
+        self.arcane_dict['Antigravity'] = Spell('Antigravity',Witch.antigravity, 2, 0, 0)
         self.arcane_dict['Genjutsushi'] = Spell('Genjutsushi',Witch.genjutsushi, 2, 0, 0)
         self.arcane_dict['The_Hanged_Man'] = Spell('The_Hanged_Man',Witch.the_hanged_man, 2, 0, 0)
         self.arcane_dict['Quest_of_the_Hermit_Druid'] = Spell('Quest_of_the_Hermit_Druid',Witch.quest_hermit, 2, 0, 0)
@@ -40521,6 +40650,10 @@ class App(tk.Frame):
         self.context_buttons.append(bg)
         if e == self.active_ent:
             tup_list = list(self.ent_dict[e].get_actions().items())
+            ent = app.ent_dict[e]
+            if isinstance(ent,Witch):
+                witch_hand_actions = [('In-Hand',ent.show_in_hand),('Discard Pile',ent.show_discard),('Exiled Cards',ent.show_exile)]
+                tup_list += witch_hand_actions
             self.page_actions(tup_list = tup_list, index = 0)
             
     def page_actions(self, event = None, tup_list = None, index = None):
@@ -41391,11 +41524,15 @@ class App(tk.Frame):
         app.rebind_all()
         
     def debugger(self, event):
-        sqr = grid_pos
-        id = app.grid[sqr[0]][sqr[1]]
-        if id in app.all_ents().keys():
-            ent = app.ent_dict[id]
-            print(ent.get_base_stats())
+        print(app.ent_dict[app.p1_witch].arcana_deck)
+        for card in app.ent_dict[app.p1_witch].arcana_deck.cards:
+            print(card.name)
+            
+#         sqr = grid_pos
+#         id = app.grid[sqr[0]][sqr[1]]
+#         if id in app.all_ents().keys():
+#             ent = app.ent_dict[id]
+#             print(ent.get_base_stats())
 #         global grid_pos, curs_pos, map_pos
 #         id = app.grid[grid_pos[0]][grid_pos[1]]
 #         if id in app.all_ents().items():
