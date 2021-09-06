@@ -1,3 +1,21 @@
+# 'main menu' button on 'choose map' screen
+
+# change spells/actions that refer to Witch.library (now Witch.deck.get() for draw)
+
+# in do_entomb() handle: in_hand now consists of Card objects with card.name as string/spell/smn name
+
+# need to handle Entomb with new Card/Arcane_deck structs, do I need start_func for summon cards or just use name on use/placement?
+
+# burning hands, self gets fire resist
+
+# Card type is just 'ruleset' of Card,
+# Witch.arcane_deck is Arcane_Deck() instance, which holds Card() instances, just for ordering/drawing/discarding
+# Witch.arcane_dict is map from string_name to Spell (Named_Tuple), which represents the game-state of played Tombs (imprints, times_cast, cost)
+# how does this affect Entomb...?
+# all spells/actions that draw cards, or replace cards among discard/exile/library
+# Witch.library struct needs to change
+# Arcane_Deck class needs both 'get(method=name|top)' (which obtains a Card object by either removing from 'front' of struct (drawing), OR by 'name' which obtains the first 
+
 # card type as class
 # currently, the 'spells' associated with 'cards' (tombs) derive their costs from the function that shares their name, (the value to the key in app.arcane_dict)
 # somehow need to create each 'spell' as an instance of a 'card' with the kickoff function pointed to by some attr (spell_func)
@@ -5,6 +23,8 @@
 # the variables associated with the Witch are not tied to some perm state of the card, need to be separated
 # some struct that tracks imprints, costs which may be temp modified from their base 'card' value in context of Witch, and the number of times cast by Witch (to compare to 'imprints' value)
 # 
+
+# moxes... in notebook...
 
 # timing of atk/def loops, not actually locking, returns early...
 
@@ -297,8 +317,8 @@ def action_description(act):
         return ''
     elif act == '':
         return ''
-    elif act == '':
-        return ''
+    elif act == 'Mox Amethyst':
+        return 'Set the imprint on a Tomb you own with this imprint to blank (Tomb is randomly selected). Place a Tomb with no imprint randomly among the closest locations to the chosen Tomb and set both of these Tombs spirit to 1.'
     elif act == 'Needle Storm':
         return 'A spell target in range reason, on to-hit wisdom vs wisdom, gets -1 dodge effect and takes psyche vs psyche piercing spell damage. Costs 2 magick.'
     elif act == 'Offering to Dagon':
@@ -400,7 +420,7 @@ def action_description(act):
     elif act == 'The Chariot':
         return 'Caster gets +1 move range and ethereal move type.'
     elif act == 'The Lovers':
-        return 'Spell target gets attack and defense effect reduce dealt and recieved melee, ranged, and spell damage to maximum 2.'
+        return 'Spell target gets attack and defense effect reduce dealt and recieved melee and ranged damage to maximum 2.'
     elif act == 'The Hermit':
         return 'Spell target in range reason gets -2 strength, agility, endurance, and dodge; also psyshield and invisibility.'
     elif act == 'Justice':
@@ -1921,41 +1941,61 @@ class Sqr():
             self.anim_counter += 1
         self.img = self.anim_dict[self.anim_counter]
 
-class Deck():
-    def __init__(self, owner = None, cards = None):
-        self.owner = owner
+class Arcane_Deck():
+    def __init__(self, owner_ent = None, cards = None):
+        self.owner_ent = owner_ent
         tmp = []
         for card in cards:
             if card in app.summons_list[:]:
-                x = Card(name = card, kind = 'Summon')
+                p = partial(Witch.place_summon, owner_ent, type = card)
+                x = Card(name = card, kind = 'Summon', start_func = p)
             else:
                 spell = app.arcane_dict[card]
-                x = Card(name = card, kind = 'Tomb')
+                x = Card(name = card, kind = 'Tomb', cost = spell.cost, start_func = spell.func)
             tmp.append(x)
         self.cards = tmp[:]
         self.removed = []
+        # contents/'cards' are populated on init and always moved between either 'cards' OR 'removed', never deleted or added to after init
+        
         
     def shuffle(self):
         shuffle(self.cards)
     
-    def draw(self):
-        if self.cards != []:
-            self.owner.in_hand.append(self.cards[0])
-            self.removed.append(self.cards[0])
-            self.cards = self.cards[1:]
             
     def restore(self):
         self.cards = self.cards[:] + self.removed[:]
         self.removed = []
         
-        
+    #  should get by index or name (draw or search for)
+    # method defaults to 'draw' (replaces 'draw'), if method='search' gets first copy indexed from the 'top' of name 'name'
+    # returns the card object OR None if Library empty or search exhausts
+    def get(self, method = 'draw', name = None):
+        if method == 'draw':
+            if self.cards != []:
+                card = self.cards[0]
+                self.removed.append(card)
+                self.cards = self.cards[1:]
+                return card
+            else:
+                return None
+        else:# method is SEARCH
+            if name in [c.name for c in self.cards[:]]:
+                for c in [c.name for c in self.cards[:]]:
+                    if c.name == name:
+                        card = c
+                        break
+                self.cards.remove(card)
+                self.removed.append(card)
+                return card
+            else:
+                return None
 
 class Card():
-    def __init__(self, name = None, kind = None, cost = None, spell_func = None, play_func = None, discard_func = None):
+    def __init__(self, name = None, kind = None, cost = None, start_func = None, play_func = None, discard_func = None):
         self.name = name
         self.kind = kind
         self.cost = cost
-        self.spell_func = spell_func
+        self.start_func = start_func
         self.play_func = play_func
         self.discard_func = discard_func
 
@@ -4072,8 +4112,10 @@ class Enchantress(Summon):
         else:
             witch = app.ent_dict[app.p2_witch]
         amt = len(self.wis_effects)
-        witch.in_hand += witch.library[:amt]
-        witch.library = witch.library[amt:]
+        for i in range(amt):
+            c = witch.deck.get()
+            if c != None:
+                witch.in_hand.append(c)
         app.canvas.create_text(self.loc[0]*100-app.moved_right+49, self.loc[1]*100-app.moved_down+34, text = 'Draw '+str(amt), justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
         app.canvas.create_text(self.loc[0]*100-app.moved_right+50, self.loc[1]*100-app.moved_down+35, text = 'Draw '+str(amt), justify = 'center', fill = 'white', font = ('chalkduster', 13), tags = 'text')
         root.after(2666, self.finish_enlightenment)
@@ -5951,9 +5993,13 @@ class Beastmaster(Summon):
             witch = app.ent_dict[app.p1_witch]
         else:
             witch = app.ent_dict[app.p2_witch]
-        if witch.library != []:
-            witch.in_hand.append(witch.library[0])
-        witch.library = witch.library[1:]
+        c = witch.deck.get()
+        if c != None:
+            witch.in_hand.append(c)
+#         if witch.library != []:
+#         
+#             witch.in_hand.append(witch.library[0])
+#         witch.library = witch.library[1:]
         root.after(1666, self.finish_unsummon)
         
     def finish_unsummon(self, event = None):
@@ -6166,7 +6212,7 @@ class Artificer(Summon):
         else:
             witch = app.ent_dict[app.p2_witch]
         imprints = [v.imprint for k,v in app.all_ents().items() if isinstance(v,Tomb)]
-        uniq_dis_tombs = [c for c in witch.discard if c not in app.summons_list and c not in imprints]
+        uniq_dis_tombs = [c for c in witch.discard if c.kind=='Tomb' and c not in imprints]
         if uniq_dis_tombs == []:
             return
         if self.magick < 4:
@@ -6205,7 +6251,7 @@ class Artificer(Summon):
             i += 1
             p = partial(self.lost_art_return, card = card)
             root.bind(str(i), p)
-            b1 = tk.Button(app.context_menu, wraplength = 190, text = str(card.replace('_', ' ')), font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = p)
+            b1 = tk.Button(app.context_menu, wraplength = 190, text = str(card.name.replace('_', ' ')), font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = p)
             b1.pack(side = 'top', pady = 2)
             app.context_buttons.append(b1)
 #             b1.bind('<Button-2>', lambda n = card : action_description(n))
@@ -6231,12 +6277,12 @@ class Artificer(Summon):
         # Exile card
         witch.discard.remove(card)
         witch.exile.append(card)
-        app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+14-app.moved_down, text = 'Exile '+card.replace('_',' '), justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
-        app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+15-app.moved_down, text = 'Exile '+card.replace('_',' '), justify = 'center', font = ('chalkduster', 14), fill = 'ghostwhite', tags = 'text')
+        app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+14-app.moved_down, text = 'Exile '+card.name.replace('_',' '), justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
+        app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+15-app.moved_down, text = 'Exile '+card.name.replace('_',' '), justify = 'center', font = ('chalkduster', 14), fill = 'ghostwhite', tags = 'text')
         cs = [c for c in app.coords if app.grid[c[0]][c[1]]=='']
         sqr = reduce(lambda a,b : a if dist(a,self.loc)<dist(b,self.loc) else b,cs)
-        spell = witch.arcane_dict[card]
-        witch.arcane_dict[card] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint+1,spell.times_cast)
+        spell = witch.arcane_dict[card.name]
+        witch.arcane_dict[card.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint+1,spell.times_cast)
         if self.owner == 'p1':
             prefix = 'a'
         else:
@@ -6251,7 +6297,7 @@ class Artificer(Summon):
         app.vis_dict[n] = Vis(name = 'Lost_Artifact', loc = sqr[:])
         root.after(1666, lambda n = n : cleanup_lost_art(n))
         img = ImageTk.PhotoImage(Image.open('summon_imgs/Tomb.png'))
-        app.ent_dict[id] = Tomb(name = 'Tomb', id = id, img = img, loc = sqr[:], owner = self.owner, level = self.level, imprint = card)
+        app.ent_dict[id] = Tomb(name = 'Tomb', id = id, img = img, loc = sqr[:], owner = self.owner, level = self.level, imprint = card.name)
         app.grid[sqr[0]][sqr[1]] = id
         app.ent_dict[id].spirit = 1
         root.after(1999, self.finish_lost_artifact)
@@ -7320,11 +7366,11 @@ class Diabolist(Summon):
             target_end = ent.get_abl('end')
             d = damage(my_str, target_end)
             if isinstance(ent,Witch):
-                if ent.library == []:
+                if ent.deck.cards == []:
                     lock(apply_damage, self, ent, -d, 'piercing', 'Lobotomy', 'melee')
                     root.after(111, self.cancel_lobotomy)
                 else:
-                    self.page_lobotomy(cards = ent.library[:], ent = ent)
+                    self.page_lobotomy(cards = ent.deck.cards, ent = ent)
             else:
                 lock(apply_damage, self, ent, -d, 'piercing', 'Lobotomy', 'melee')
                 root.after(111, self.cancel_lobotomy)
@@ -7343,7 +7389,7 @@ class Diabolist(Summon):
             i += 1
             p = partial(self.lobotomy_remove, card = card, witch = ent)
             root.bind(str(i), p)
-            b1 = tk.Button(app.context_menu, wraplength = 190, text = str(card.replace('_', ' ')), font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = p)
+            b1 = tk.Button(app.context_menu, wraplength = 190, text = str(card.name.replace('_', ' ')), font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = p)
             b1.pack(side = 'top', pady = 2)
             app.context_buttons.append(b1)
 #             b1.bind('<Button-2>', lambda n = card : action_description(n))
@@ -7363,9 +7409,14 @@ class Diabolist(Summon):
     def lobotomy_remove(self, event = None, card = None, witch = None):
         app.depop_context(event = None)
         app.canvas.delete('text')
-        witch.library.remove(card)
+        
+        card = witch.deck.get(method='search',name = card.name)
         witch.exile.append(card)
-        shuffle(witch.library)
+        witch.deck.shuffle()
+        
+#         witch.library.remove(card)
+#         witch.exile.append(card)
+#         shuffle(witch.library)
         app.canvas.create_text(self.loc[0]*100-app.moved_right+49, self.loc[1]*100-app.moved_down+14, text = 'Remove '+str(card).replace('_',' '), justify = 'center', fill = 'black', font = ('chalkduster', 16), tags = 'text')
         app.canvas.create_text(self.loc[0]*100-app.moved_right+50, self.loc[1]*100-app.moved_down+15, text = 'Remove '+str(card).replace('_',' '), justify = 'center', fill = 'gray', font = ('chalkduster', 16), tags = 'text')
         my_str = self.get_abl('str')
@@ -19967,7 +20018,7 @@ class Void_Mage(Bot):
         self.wis = 9
         self.rsn = 5
         self.init = 9
-        self.spirit = 48
+        self.spirit = 18
         self.magick = 366
         self.san = 17
         self.acts = 1
@@ -22963,10 +23014,13 @@ class Myconid(Summon):
             amt = self.get_abl('psyche')
             apply_heal(self, self, amt)
             app.canvas.create_text(self.loc[0]*100-app.moved_right+49, self.loc[1]*100-app.moved_down+14, text = 'Heal '+str(amt), justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
-            app.canvas.create_text(self.loc[0]*100-app.moved_right+50, self.loc[1]*100-app.moved_down+15, text = 'Heal '+str(amt), justify = 'center', fill = 'limegreen', font = ('chalkduster', 13), tags = 'text')
-        if 'psyshield' in self.get_types() and witch.library != []:
-            witch.in_hand.append(witch.library[0])
-            witch.library = witch.library[1:]
+            app.canvas.create_text(self.loc[0]*100-app.moved_right+50, self.loc[1]*100-app.moved_down+15, text = 'Heal '+str(amt), justify = 'center', fill = 'ghostwhite', font = ('chalkduster', 13), tags = 'text')
+        if 'psyshield' in self.get_types() and witch.deck.cards != []:
+            card = witch.get()
+            if card != None:
+                witch.in_hand.append(card)
+#             witch.in_hand.append(witch.library[0])
+#             witch.library = witch.library[1:]
             app.canvas.create_text(self.loc[0]*100-app.moved_right+49, self.loc[1]*100-app.moved_down+34, text = 'Draw 1', justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
             app.canvas.create_text(self.loc[0]*100-app.moved_right+50, self.loc[1]*100-app.moved_down+35, text = 'Draw 1', justify = 'center', fill = 'white', font = ('chalkduster', 13), tags = 'text')
         root.after(1999, self.finish_phosphorescence)
@@ -23475,9 +23529,12 @@ class Major_Demon(Summon):
                 witch = app.ent_dict[app.p2_witch]
             else:
                 witch = app.ent_dict[app.p1_witch]
-            if witch.library != []:
-                witch.in_hand.append(witch.library[0])
-                witch.library = witch.library[1:]
+            if witch.deck.cards != []:
+                card = witch.deck.get()
+                if card != None:
+                    witch.in_hand.append(card)
+#                 witch.in_hand.append(witch.library[0])
+#                 witch.library = witch.library[1:]
                 app.get_focus(witch.id)
                 app.canvas.create_text(witch.loc[0]*100+49-app.moved_right, witch.loc[1]*100+84-app.moved_down, text = 'Draw 1', font = ('chalkduster', 14), fill = 'black', tags = 'text')
                 app.canvas.create_text(witch.loc[0]*100+49-app.moved_right, witch.loc[1]*100+85-app.moved_down, text = 'Draw 1', font = ('chalkduster', 14), fill = 'ghostwhite', tags = 'text')
@@ -23909,7 +23966,7 @@ class Ogre(Summon):
             apply_heal(self, ent, amt)
             un = 'sylvan' + str(app.count)
             app.count += 1
-            app.vis_dict[un] = Vis(name = 'Sylvan Blessing', loc = loc[:])
+            app.vis_dict[un] = Vis(name = 'Sylvan_Blessing', loc = loc[:])
             vis = app.vis_dict[un]
             app.canvas.create_text(ent.loc[0]*100-app.moved_right+49, ent.loc[1]*100-app.moved_down+74, text = '+'+str(amt)+' spirit', justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
             app.canvas.create_text(ent.loc[0]*100-app.moved_right+50, ent.loc[1]*100-app.moved_down+75, text = '+'+str(amt)+' spirit', justify = 'center', fill = 'ghostwhite', font = ('chalkduster', 13), tags = 'text')
@@ -27844,7 +27901,9 @@ class Cadaver(Summon):
                     
 class Witch(Summon):
     def __init__(self, name, img, loc, owner, level, entomb_deck):
-        self.arcana_deck = Deck(cards = entomb_deck, owner = owner)
+        # NEW ARCANE DECK STRUCT holds CARD objects
+        # POPULATE NEW ARCANE DECK STRUCT
+        self.deck = Arcane_Deck(cards = entomb_deck[:], owner_ent = self)
         p = partial(self.page_summons, index = 0)
         self.actions = {'Move':self.move, 'Entomb':self.entomb, 'Arcana':self.arcana}#, 'Summon':p}
         self.level = level
@@ -27857,7 +27916,7 @@ class Witch(Summon):
         self.entomb_deck = entomb_deck
         self.summons = []
         self.in_hand = []
-        self.library = []
+#         self.library = []
         self.discard = []
         self.exile = []
         # populate ARCANE dict
@@ -28145,6 +28204,9 @@ class Witch(Summon):
         id = self.name
         super().__init__(name, id, img, loc, owner, type = 'normal')
         self.needs_reset = True
+
+
+        
     # for each entity that needs it, called by app.end_turn(), resets Object-specific vars/etc... if nscsry
     def reset_vars(self):
         self.smns = self.get_abl('smns')
@@ -28154,6 +28216,8 @@ class Witch(Summon):
         # reset times_cast to 0
         for spell in self.arcane_dict.values():
             self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,0)
+
+
         
     # clean protagonist object (Witch) between levels DEBUG debug change to new...
     def reset_transient_vars(self):
@@ -28218,9 +28282,9 @@ class Witch(Summon):
         app.depop_context(event = None)
         for i, card in enumerate(cards[index:index+7]):
             i += 1
-            b1 = tk.Button(app.context_menu, wraplength = 190, text = card.replace('_',' '), font = ('chalkduster', 20), fg='tan3', highlightbackground = 'tan3')
+            b1 = tk.Button(app.context_menu, wraplength = 190, text = card.name.replace('_',' '), font = ('chalkduster', 20), fg='tan3', highlightbackground = 'tan3')
             b1.pack(side = 'top', pady = 2)
-            b1.bind('<Button-2>', lambda event, b = b1, n = card.replace('_',' ') : app.action_info(event, name = n, button = b))
+            b1.bind('<Button-2>', lambda event, b = b1, n = card.name.replace('_',' ') : app.action_info(event, name = n, button = b))
             app.context_buttons.append(b1)
         if index > 0:
             b4 = tk.Button(app.context_menu, text = 'W : Prev', font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = lambda cards = cards, i = index-7 : self.page_cards(cards = cards, index = i))
@@ -28239,7 +28303,6 @@ class Witch(Summon):
     
     def page_summons(self, event = None, index = None):
         app.depop_context(event = None)
-#         sum_list = ['Berserker','Illusionist','Umbrae_Wolf','Thaumaturge','Murrain_Wolf','Fiend','Wurdulak','Chirurgeon','Hexmage','Fell_Evolver','Drake','Inquisitor','Pixie','Chronomancer']
         sum_list = self.available_summons[:]
         for i, smn in enumerate(sum_list[index:index+7]):
             i += 1
@@ -29638,34 +29701,40 @@ class Witch(Summon):
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
-        smns = app.summons_list[:]
-        spells_for_turn = [k for k in self.in_hand if k not in smns]
-        summons = [k for k in self.in_hand if k in app.summon_dict.keys()]
-        summons = [app.summon_dict[k] for k in summons]
-        spls = [self.arcane_dict[k] for k in spells_for_turn if k not in smns]
-        spells = sorted(list(spls),key=lambda s : s.cost)
-        spells += summons
-        self.page_imprint(tup_list = spells, index = 0, sqr = sqr[:])
+        smns = [c for c in self.in_hand if c.kind == 'Summon']
+        spls = [c for c in self.in_hand if c.kind == 'Tomb']
+        spls = sorted(spls, key=lambda c : c.cost)
+        cards = smns+spls
+#         cards = [c for c in self.in_hand]
+        self.page_entomb(cards = cards, sqr = sqr[:])
+#         smns = app.summons_list[:]
+#         spells_for_turn = [k for k in self.in_hand if k not in smns]
+#         summons = [k for k in self.in_hand if k in app.summon_dict.keys()]
+#         summons = [app.summon_dict[k] for k in summons]
+#         spls = [self.arcane_dict[k] for k in spells_for_turn if k not in smns]
+#         spells = sorted(list(spls),key=lambda s : s.cost)
+#         spells += summons
+#         self.page_imprint(tup_list = spells, index = 0, sqr = sqr[:])
         
-    def page_imprint(self, event = None, tup_list = None, index = None, sqr = None):
+    def page_entomb(self, event = None, cards = None, index = 0, sqr = None):
         app.depop_context(event = None)
-        choose = tk.Label(root, text = 'Choose Arcana to Imprint', fg = 'tan3', bg = 'black', font = ('chalkduster', 20))
+        choose = tk.Label(root, text = 'Choose Tomb', fg = 'tan3', bg = 'black', font = ('chalkduster', 20))
         choose.pack()
         smns = app.summons_list[:]
         app.context_buttons.append(choose)
-        for i, spell in enumerate(tup_list[index:index+7]):
+        for i, card in enumerate(cards[index:index+7]):
             state = 'enabled'
-            if spell[0] in smns:# IS SUMMON
-                name = spell[0].replace('_',' ')
+            if card.name in smns:# IS SUMMON
+                name = card.name.replace('_',' ')
                 cost = 0
                 com = partial(self.continue_entomb_summon, name = name, sqr = sqr[:])
                 color = 'black'
                 if self.summon_entomb_used == True or self.summon_count >= self.summon_cap:
                     state = 'disabled'
             else:# IS SPEll
-                name = spell.name.replace('_', ' ')
-                com = partial(self.continue_entomb_spell, name = spell.name, sqr = sqr[:])
-                cost = spell.cost
+                name = card.name.replace('_', ' ')
+                com = partial(self.continue_entomb_spell, name = name, sqr = sqr[:])
+                cost = card.cost
                 color = 'indianred'
                 if self.spell_entomb_used == True:
                     state = 'disabled'
@@ -29679,14 +29748,14 @@ class Witch(Summon):
             else:
                 root.bind(str(i), com)
         if index > 0:
-            b4 = tk.Button(app.context_menu, text = 'W : Prev', font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = lambda t = tup_list, i = index-7 : self.page_imprint(tup_list = t, index = i, sqr = sqr[:]))
+            b4 = tk.Button(app.context_menu, text = 'W : Prev', font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = lambda cards = cards, i = index-7 : self.page_entomb(cards = cards, index = i, sqr = sqr[:]))
             b4.pack(side = 'top', pady = 2)
-            root.bind('<w>', lambda e, t = tup_list, i = index-7, sqr = sqr : self.page_imprint(tup_list = t, index = i, sqr = sqr))
+            root.bind('<w>', lambda e, cards = cards, i = index-7, sqr = sqr : self.page_entomb(cards = cards, index = i, sqr = sqr))
             app.context_buttons.append(b4)
-        if len(tup_list) > len(tup_list[:index+7]):
-            b3 = tk.Button(app.context_menu, text = 'E : Next', font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = lambda t = tup_list, i = index+7 : self.page_imprint(tup_list = t, index = i, sqr = sqr[:]))
+        if len(cards) > len(cards[:index+7]):
+            b3 = tk.Button(app.context_menu, text = 'E : Next', font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = lambda cards = cards, i = index+7 : self.page_entomb(cards = cards, index = i, sqr = sqr[:]))
             b3.pack(side = 'top', pady = 2)
-            root.bind('<e>', lambda e, t = tup_list, i = index+7, sqr = sqr : self.page_imprint(tup_list = t, index = i, sqr = sqr))
+            root.bind('<e>', lambda e, cards = cards, i = index+7, sqr = sqr : self.page_entomb(cards = cards, index = i, sqr = sqr))
             app.context_buttons.append(b3)
         b2 = tk.Button(app.context_menu, text = 'Cancel', font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = self.cleanup_spell)
         b2.pack(side = 'top', pady = 2)
@@ -29701,8 +29770,17 @@ class Witch(Summon):
 #         self.entomb_used = True
         self.spell_entomb_used = True
 #         self.acts -= 1
-        spell = self.arcane_dict[name]
-        self.arcane_dict[name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint+1,spell.times_cast)
+        name = name.replace(' ','_')
+        for c in self.in_hand[:]:
+            if c.name == name:
+                card = c
+                self.in_hand.remove(c)
+                self.discard.append(c)
+                break
+        if card.play_func != None:
+            lock(card.play_func)
+        spell = self.arcane_dict[card.name]
+        self.arcane_dict[card.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint+1,spell.times_cast)
         app.vis_dict['Entomb'] = Vis(name = 'Entomb', loc = sqr[:])
         if self.owner == 'p1':
             prefix = 'a'
@@ -29715,16 +29793,17 @@ class Witch(Summon):
         app.grid[sqr[0]][sqr[1]] = id
         app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+74-app.moved_down, text = 'Entomb', justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
         app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+75-app.moved_down, text = 'Entomb', justify = 'center', font = ('chalkduster', 14), fill = 'ghostwhite', tags = 'text')
-        for i,spl in enumerate(self.in_hand[:]):
-            if spl == name:
-                if spl == 'Magick_Missle':
-                    self.exile.append(self.in_hand[i])
-                    self.in_hand.remove(self.in_hand[i])
-                    break
-                else:
-                    self.discard.append(self.in_hand[i])
-                    self.in_hand.remove(self.in_hand[i])
-                    break
+        # this should be replaced by card.play_func
+#         for i,spl in enumerate(self.in_hand[:]):
+#             if spl == name:
+#                 if spl == 'Magick_Missle':
+#                     self.exile.append(self.in_hand[i])
+#                     self.in_hand.remove(self.in_hand[i])
+#                     break
+#                 else:
+#                     self.discard.append(self.in_hand[i])
+#                     self.in_hand.remove(self.in_hand[i])
+#                     break
         root.after(1666, self.finish_entomb)
         
         
@@ -29735,16 +29814,24 @@ class Witch(Summon):
         sound_effects.play(effect1, 0)
 #         self.acts -= 1
         self.summon_entomb_used = True
+        for c in self.in_hand[:]:
+            if name.replace(' ','_') == c.name:
+                card = c
+                self.in_hand.remove(c)
+                self.discard.append(c)
+                break
+        if card.play_func != None:
+            lock(card.play_func)
         if name not in self.available_summons:
             self.available_summons.append(name)
         app.vis_dict['Summon_Tomb'] = Vis(name = 'Summon_Tomb', loc = sqr[:])
         app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+74-app.moved_down, text = 'Entomb '+str(name), justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
         app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+75-app.moved_down, text = 'Entomb '+str(name), justify = 'center', font = ('chalkduster', 14), fill = 'ghostwhite', tags = 'text')
-        for i,spl in enumerate(self.in_hand[:]):
-            if spl.replace('_',' ') == name:
-                self.discard.append(self.in_hand[i])
-                self.in_hand.remove(self.in_hand[i])
-                break
+#         for i,spl in enumerate(self.in_hand[:]):
+#             if spl.replace('_',' ') == name:
+#                 self.discard.append(self.in_hand[i])
+#                 self.in_hand.remove(self.in_hand[i])
+#                 break
 #         root.after(1666, self.finish_entomb)
         root.after(1777, lambda t = 'text' : app.canvas.delete(t))
         self.place_summon(type = name.replace(' ','_'), sqr = sqr[:])
@@ -29756,11 +29843,6 @@ class Witch(Summon):
             app.canvas.delete('Entomb')
         except:
             pass
-#         try:
-#             del app.vis_dict['Summon_Tomb']
-#             app.canvas.delete('Summon_Tomb')
-#         except:
-#             pass
         app.canvas.delete('text')
         app.unbind_all()
         app.cleanup_squares()
@@ -30560,13 +30642,17 @@ class Witch(Summon):
             witch = app.ent_dict[app.p2_witch]
         spell = witch.arcane_dict[spl]
         witch.arcane_dict[spl] = Spell(spell.name,spell.func,spell.cost,max(0,spell.times_imprint-1),spell.times_cast)
-        drawn = 0
-        for card in self.library[:]:
-            self.in_hand.append(card)
-            self.library = self.library[1:]
-            drawn += 1
-            if drawn == 2:
-                break
+#         drawn = 0
+        for i in range(2):
+            card = self.deck.get()
+            if card != None:
+                self.in_hand.append(card)
+#         for card in self.library[:]:
+#             self.in_hand.append(card)
+#             self.library = self.library[1:]
+#             drawn += 1
+#             if drawn == 2:
+#                 break
         root.after(1999, lambda n = 'Scour' : self.cleanup_spell(name = n))
 
 
@@ -32536,11 +32622,14 @@ class Witch(Summon):
         app.vis_dict['The_Empress'] = Vis(name = 'The_Empress', loc = sqr[:])
         locs = [c for c in app.coords if dist(c,sqr)<=2]
         ents = [v for k,v in app.all_ents().items() if v.get_abl('wis')>v.get_abl('str') and v.loc in locs and v.owner==self.owner and isinstance(v,Tomb)==False]
-        count = len(ents)
-        while self.library != [] and count > 0:
-            self.in_hand.append(self.library[0])
-            self.library = self.library[1:]
-            count -= 1
+        for i in range(len(ents)):
+            card = self.deck.get()
+            if card != None:
+                self.in_hand.append(card)
+#         while self.library != [] and count > 0:
+#             self.in_hand.append(self.library[0])
+#             self.library = self.library[1:]
+#             count -= 1
         app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+14-app.moved_down, text = 'The Empress, draw '+str(len(ents)), justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
         app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+15-app.moved_down, text = 'The Empress, draw '+str(len(ents)), justify = 'center', font = ('chalkduster', 14), fill = 'ghostwhite', tags = 'text')
         root.after(2111, lambda  name = 'The_Empress' : self.cleanup_spell(name = name))
@@ -32663,13 +32752,17 @@ class Witch(Summon):
             if isinstance(ent,Witch) and ent.save_check('psyche')=='Pass':
                 app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+84-app.moved_down, text = 'Draw 2', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
                 app.canvas.create_text(ent.loc[0]*100+50-app.moved_right, ent.loc[1]*100+85-app.moved_down, text = 'Draw 2', justify = 'center', font = ('chalkduster', 13), fill = 'limegreen', tags = 'text')
-                count = 0
-                while ent.library != []:
-                    ent.in_hand.append(ent.library[0])
-                    ent.library = ent.library[1:]
-                    count += 1
-                    if count == 2:
-                        break
+                for i in range(2):
+                    card = ent.deck.get()
+                    if card != None:
+                        ent.in_hand.append(card)
+#                 count = 0
+#                 while ent.deck.cards != []:
+#                     ent.in_hand.append(ent.library[0])
+#                     ent.library = ent.library[1:]
+#                     count += 1
+#                     if count == 2:
+#                         break
                 root.after(1333, lambda t = 'text' : app.canvas.delete(t))
                 root.after(1777, lambda ln = lockname : app.dethloks[ln].set(1))
             else:
@@ -33323,7 +33416,7 @@ class Witch(Summon):
         app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+84-app.moved_down, text = 'Melee, ranged, and spell atk and def reduced max 2', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
         app.canvas.create_text(ent.loc[0]*100+50-app.moved_right, ent.loc[1]*100+85-app.moved_down, text = 'Melee, ranged, and spell atk and def reduced max 2', justify = 'center', font = ('chalkduster', 13), fill = 'ghostwhite', tags = 'text')
         def lovers_def(atkr, dfndr, amt, type, sn, st, lockname = None):
-            if st == 'melee' or st == 'ranged' or st == 'spell':
+            if st == 'melee' or st == 'ranged':
                 amt = max(-2,amt)
                 app.canvas.create_text(dfndr.loc[0]*100+49-app.moved_right, dfndr.loc[1]*100+54-app.moved_down, text = 'The Lovers, reduce damage', justify ='center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
                 app.canvas.create_text(dfndr.loc[0]*100+50-app.moved_right, dfndr.loc[1]*100+55-app.moved_down, text = 'The Lovers, reduce damage', justify ='center', font = ('chalkduster', 13), fill = 'ghostwhite', tags = 'text')
@@ -33679,8 +33772,11 @@ class Witch(Summon):
         app.vis_dict['Reaping_of_Saturnus'] = Vis(name = 'Reaping_of_Saturnus', loc = sqr)
         app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+84-app.moved_down, text = 'Reaping of Saturnus, draw 1', justify = 'center', font = ('chalkduster', 16), fill = 'black', tags = 'text')
         app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+85-app.moved_down, text = 'Reaping of Saturnus, draw 1', justify = 'center', font = ('chalkduster', 16), fill = 'firebrick', tags = 'text')
-        self.in_hand += self.library[:1]
-        self.library = self.library[1:]
+        card = self.deck.get()
+        if card != None:
+            self.in_hand.append(card)
+#         self.in_hand += self.library[:1]
+#         self.library = self.library[1:]
         self.summon_count = max(0,self.summon_count-1)
         name = 'dethlok'+str(app.death_count)
         lock(app.kill,ent.id)
@@ -33969,7 +34065,7 @@ class Witch(Summon):
     def do_quest_hermit(self, event, sqr, sqrs):
         if sqr not in sqrs:
             return
-        if self.library == []:
+        if self.deck.cards == []:
             return
         self.magick -= self.arcane_dict['Quest_of_the_Hermit_Druid'].cost
         spell = self.arcane_dict['Quest_of_the_Hermit_Druid']
@@ -33985,8 +34081,8 @@ class Witch(Summon):
         app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+84-app.moved_down, text = 'Quest of the Hermit Druid', justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
         app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+85-app.moved_down, text = 'Quest of the Hermit Druid', justify = 'center', font = ('chalkduster', 14), fill = 'olivedrab', tags = 'text')
         discard = []
-        for card in self.library[:]:
-            if card in app.summons_list:
+        for card in self.deck.cards[:]:
+            if card.kind == 'Summon':
                 self.finish_quest_hermit(card = card, discard = discard[:])
                 break
             else:
@@ -33996,16 +34092,19 @@ class Witch(Summon):
         
     def finish_quest_hermit(self, card, discard):
         if card != None:
+            card = self.deck.get(method='search', name = card.name)
             self.in_hand.append(card)
-            self.library.remove(card)
+        for card in discard:
+            card = self.deck.get(method='search', name = card.name)
+#             self.discard += discard
             app.canvas.create_text((self.loc[0]-1)*100+49-app.moved_right, self.loc[1]*100+24-app.moved_down, text = 'Reveal\n'+str(card).replace('_',' '), justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
             app.canvas.create_text((self.loc[0]-1)*100+50-app.moved_right, self.loc[1]*100+25-app.moved_down, text = 'Reveal\n'+str(card).replace('_',' '), justify = 'center', font = ('chalkduster', 14), fill = 'olivedrab', tags = 'text')
         step = 10
         app.canvas.create_text((self.loc[0]+1)*100+49-app.moved_right, self.loc[1]*100-app.moved_down-1, text = 'Discard', justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
         app.canvas.create_text((self.loc[0]+1)*100+50-app.moved_right, self.loc[1]*100-app.moved_down, text = 'Discard', justify = 'center', font = ('chalkduster', 14), fill = 'olivedrab', tags = 'text')
         for c in discard:
-            self.library.remove(c)
-            self.discard.append(c)
+#             self.library.remove(c)
+#             self.discard.append(c)
             app.canvas.create_text((self.loc[0]+1)*100+49-app.moved_right, self.loc[1]*100+step-app.moved_down-1, text = str(c).replace('_',' '), justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
             app.canvas.create_text((self.loc[0]+1)*100+50-app.moved_right, self.loc[1]*100+step-app.moved_down, text = str(c).replace('_',' '), justify = 'center', font = ('chalkduster', 14), fill = 'olivedrab', tags = 'text')
             step += 15
@@ -34036,7 +34135,7 @@ class Witch(Summon):
         ent = app.ent_dict[id]
         if isinstance(ent, Witch) == False:
             return
-        if ent.library == []:
+        if ent.deck.cards == []:
             return
         self.magick -= self.arcane_dict['Foretell'].cost
         spell = self.arcane_dict['Foretell']
@@ -34052,7 +34151,7 @@ class Witch(Summon):
         app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+84-app.moved_down, text = 'Foretell', justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
         app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+85-app.moved_down, text = 'Foretell', justify = 'center', font = ('chalkduster', 14), fill = 'cyan', tags = 'text')
         
-        cards = ent.library[:2]
+        cards = ent.deck.cards[:2]
         self.page_foretell(cards = cards)
         
     def page_foretell(self, event = None, cards = None):
@@ -34064,7 +34163,7 @@ class Witch(Summon):
             i += 1
             p = partial(self.put_foretell, card = card, cards = cards)
             root.bind(str(i), p)
-            b1 = tk.Button(app.context_menu, wraplength = 190, text = str(card.replace('_', ' ')), font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = p)
+            b1 = tk.Button(app.context_menu, wraplength = 190, text = str(card.name.replace('_', ' ')), font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = p)
             b1.pack(side = 'top', pady = 2)
             app.context_buttons.append(b1)
 #             b1.bind('<Button-2>', lambda n = card : action_description(n))
@@ -34078,8 +34177,9 @@ class Witch(Summon):
                 ent = app.ent_dict[app.p2_witch]
             else:
                 ent = app.ent_dict[app.p1_witch]
-            ent.library.remove(card)
-            ent.discard.append(card)
+            card = ent.deck.get(method='search',name=card.name)
+#             ent.library.remove(card)
+#             ent.discard.append(card)
             cards.remove(card)
             if cards == []:
                 app.depop_context(event = None)
@@ -34092,8 +34192,9 @@ class Witch(Summon):
                 ent = app.ent_dict[app.p2_witch]
             else:
                 ent = app.ent_dict[app.p1_witch]
-            ent.library.remove(card)
-            ent.library[-1] = card
+            card = ent.deck.get(method='search',name=card.name)
+#             ent.library.remove(card)
+            ent.deck.cards.append(card)
             cards.remove(card)
             if cards == []:
                 app.depop_context(event = None)
@@ -35079,6 +35180,56 @@ class Witch(Summon):
         self.in_hand += self.library[:amt]
         self.library = self.library[amt:]
         root.after(2333, lambda  name = 'Rite_of_Spring' : self.cleanup_spell(name = name))
+        
+        
+    def mox_amethyst(self, event = None):
+        app.depop_context(event = None)
+        root.bind('<q>', lambda name = 'Mox Amethyst' : self.cleanup_spell(name = name))
+        root.bind('<a>', self.do_mox_amethyst)
+        b = tk.Button(app.context_menu, text = 'Confirm Mox Amethyst', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None : self.do_mox_amethyst(e))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
+        
+    def do_mox_amethyst(self, event):
+        amth_tombs = [v for k,v in app.all_ents().items() if v.owner == self.owner and isinstance(v,Tomb) and v.imprint == 'Mox_Amethyst']
+        if amth_tombs == []:
+            return
+#         self.init_cast_anims()
+        effect1 = mixer.Sound('Sound_Effects/strength_through_wounding.ogg')
+        effect1.set_volume(app.effects_volume.get())
+        sound_effects.play(effect1, 0)
+        app.unbind_all()
+        app.depop_context(event = None)
+        self.magick -= self.arcane_dict['Mox_Amethyst'].cost
+        spell = self.arcane_dict['Mox_Amethyst']
+        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        sqr = self.loc[:]
+        app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+84-app.moved_down, text = 'Mox Amethyst', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
+        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+85-app.moved_down, text = 'Mox Amethyst', justify = 'center', font = ('chalkduster', 13), fill = 'white', tags = 'text')
+        tomb = choice(amth_tombs)
+        spell = self.arcane_dict[tomb.imprint]
+        self.arcane_dict[tomb.imprint] = Spell(spell.name,spell.func,spell.cost,max(0,spell.times_imprint-1),spell.times_cast)
+        tomb.imprint = ''
+        if self.owner == 'p1':
+            prefix = 'a'
+        else:
+            prefix = 'b'
+        id = prefix + str(self.summon_ids)
+        self.summon_ids += 1
+        app.vis_dict['Mox_Amethyst'] = Vis(name = 'Mox_Amethyst', loc = tomb.loc[:])
+        img = ImageTk.PhotoImage(Image.open('summon_imgs/Tomb.png'))
+        cs = [c for c in app.coords if app.grid[c[0]][c[1]]=='']
+        sqr = reduce(lambda a,b : a if dist(tomb.loc,a)<dist(tomb.loc,b) else b, cs)
+        app.ent_dict[id] = Tomb(name = 'Tomb', id = id, img = img, loc = sqr[:], owner = self.owner, level = self.level, imprint = '')
+        app.grid[sqr[0]][sqr[1]] = id
+        tomb2 = app.ent_dict[id]
+        tomb.spirit = 1
+        tomb2.spirit = 1
+        root.after(1999, lambda  name = 'Mox_Amethyst' : self.cleanup_spell(name = name))
+            
         
         
     def grave_twin(self, event = None):
@@ -38153,6 +38304,7 @@ class App(tk.Frame):
         self.arcane_dict['Pillage'] = Spell('Pillage',Witch.pillage, 1, 0, 0)
         self.arcane_dict["Death's_Head_Moth"] = Spell("Death's_Head_Moth",Witch.deaths_head_moth, 1, 0, 0)
         self.arcane_dict['Compromised_Immunity'] = Spell('Compromised_Immunity',Witch.compromised_immunity, 1, 0, 0)
+        self.arcane_dict['Mox_Amethyst'] = Spell('Mox_Amethyst',Witch.mox_amethyst, 1, 0, 0)
         self.arcane_dict['Frantic_Search'] = Spell('Frantic_Search',Witch.frantic_search, 1,0,0)
         self.arcane_dict['Boiling_Blood'] = Spell('Boiling_Blood',Witch.boiling_blood, 1,0,0)
         self.arcane_dict['Meditate'] = Spell('Meditate',Witch.meditate, 1,0,0)
@@ -39952,14 +40104,22 @@ class App(tk.Frame):
         witch = app.ent_dict[app.p1_witch]
 #         shuffle(witch.entomb_deck)
         if app.turn_counter == 0:
-            shuffle(witch.entomb_deck)
-            witch.library = witch.entomb_deck[:]
-            witch.in_hand += witch.library[:9]
-            witch.library = witch.library[9:]
+            witch.deck.shuffle()
+            for i in range(9):
+                card = witch.deck.get()
+                if card != None:
+                    witch.in_hand.append(card)
+#             shuffle(witch.entomb_deck)
+#             witch.library = witch.entomb_deck[:]
+#             witch.in_hand += witch.library[:9]
+#             witch.library = witch.library[9:]
         else:
-            if witch.library != []:
-                witch.in_hand += [witch.library[0]]
-                witch.library = witch.library[1:]
+            card = witch.deck.get()
+            if card != None:
+                witch.in_hand.append(card)
+#             if witch.library != []:
+#                 witch.in_hand += [witch.library[0]]
+#                 witch.library = witch.library[1:]
         tombs = len([k for k,v in app.all_ents().items() if v.name == 'Tomb' and v.owner == witch.owner])
         witch.magick += witch.magick_regen
         witch.magick += (tombs)
@@ -39968,19 +40128,30 @@ class App(tk.Frame):
             witch = app.ent_dict[app.p2_witch]
 #             shuffle(witch.entomb_deck)
             if app.turn_counter == 0:
-                shuffle(witch.entomb_deck)
-                witch.library = witch.entomb_deck[:]
-                witch.in_hand += witch.library[:9]
-                witch.library = witch.library[9:]
+                witch.deck.shuffle()
+                for i in range(9):
+                    card = witch.deck.get()
+                    if card != None:
+                        witch.in_hand.append(card)
+#                 shuffle(witch.entomb_deck)
+#                 witch.library = witch.entomb_deck[:]
+#                 witch.in_hand += witch.library[:9]
+#                 witch.library = witch.library[9:]
             else:
-                if witch.library != []:
-                    witch.in_hand += [witch.library[0]]
-                    witch.library = witch.library[1:]
+                card = witch.deck.get()
+                if card != None:
+                    witch.in_hand.append(card)
+#                 if witch.library != []:
+#                     witch.in_hand += [witch.library[0]]
+#                     witch.library = witch.library[1:]
             tombs = len([k for k,v in app.all_ents().items() if v.name == 'Tomb' and v.owner == witch.owner])
             witch.magick += witch.magick_regen
             if app.turn_counter == 0:
-                witch.in_hand += witch.library[:1]
-                witch.library = witch.library[1:]
+                card = witch.deck.get()
+                if card != None:
+                    witch.in_hand.append(card)
+#                 witch.in_hand += witch.library[:1]
+#                 witch.library = witch.library[1:]
             witch.magick += (tombs)
         self.handle_sot_effects()
         
@@ -41025,11 +41196,11 @@ class App(tk.Frame):
         if isinstance(ent, Witch):
             txt += 'Name: '+ent.id.replace('_',' ') + '\n'
             txt += 'Magick Regen: '+str(ent.magick_regen)+'\n' 
-            txt += 'Library Remains: '+str(len(ent.library))+'\n'
+            txt += 'Library Remains: '+str(len(ent.deck.cards))+'\n'
             txt += 'Summon Cap: ' + str(ent.summon_cap) + '\n'
-            txt += 'In Hand : ' + str(', '.join(ent.in_hand)) + '\n'
-            txt += 'Discard : '+ str(', '.join(ent.discard))+'\n'
-            txt += 'Exile : '+ str(', '.join(ent.exile))+'\n'
+            txt += 'In Hand : ' + str(', '.join([c.name for c in ent.in_hand])) + '\n'
+            txt += 'Discard : '+ str(', '.join([c.name for c in ent.discard]))+'\n'
+            txt += 'Exile : '+ str(', '.join([c.name for c in ent.exile]))+'\n'
         else:
             txt += 'Name: '+ent.name.replace('_',' ') + '\n'
             txt += 'ID: ' +ent.id.replace('_',' ') + '\n'
@@ -41524,9 +41695,14 @@ class App(tk.Frame):
         app.rebind_all()
         
     def debugger(self, event):
-        print(app.ent_dict[app.p1_witch].arcana_deck)
-        for card in app.ent_dict[app.p1_witch].arcana_deck.cards:
-            print(card.name)
+        card = app.ent_dict[app.p1_witch].arcane_deck.get()
+        print(card.name)
+        print(card.start_func)
+        print(card.cost)
+        print(card.kind)
+#         print(app.ent_dict[app.p1_witch].arcane_deck.get())
+#         for card in app.ent_dict[app.p1_witch].arcane_deck.cards:
+#             print(card.name)
             
 #         sqr = grid_pos
 #         id = app.grid[sqr[0]][sqr[1]]
