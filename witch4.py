@@ -1,8 +1,8 @@
+# make sure summon entomb play_func has right timing like spell_entomb,.... summon should be finished being placed before play_func happens
+
 # turn off anti-alias select or whatever is called, that causes selections to subtract pixels to create even vectors...
 
 # hellgate, eliminate some blocked sqrs in first room, where bookstand, candlestand are
-
-# hellgate magick cost for summons vs spirit, will run out of magick way before would be relevant spirit amount
 
 # necropotence
 
@@ -11,8 +11,6 @@
 # mox pyrite - efface all tombs you own including this one, put a blank tomb
 # mox carbonite - list-smn you own without this efct gets efct -1 acts/mvs duration2, put a blank tomb
 # mox chalcydean - destroy an animal and efface this tomb, put a blank tomb
-
-# timing of atk/def loops, not actually locking, returns early...
 
 # all myconids gain ...
 
@@ -1912,14 +1910,36 @@ class Arcane_Deck():
         for card in cards:
             if card in app.summons_list[:]:
                 p = partial(Witch.place_summon, owner_ent, type = card)
-                x = Card(name = card, kind = 'Summon', start_func = p)
+                card = Card(name = card, kind = 'Summon', start_func = p)
             else:
                 spell = app.arcane_dict[card]
-                x = Card(name = card, kind = 'Tomb', cost = spell.cost, start_func = spell.func)
-            tmp.append(x)
+                # instead of just init Card obj here, generate_card() takes the base necessary args for a Card, generates the alt funcs
+                # based on name, inits and returns the Card object with added exotic funcs
+                card = self.generate_card(name = card, kind = 'Tomb', cost = spell.cost, start_func = spell.func)
+#                 x = Card(name = card, kind = 'Tomb', cost = spell.cost, start_func = spell.func)
+            tmp.append(card)
         self.cards = tmp[:]
         self.removed = []
         # contents/'cards' are populated on init and always moved between either 'cards' OR 'removed', never deleted or added to after init
+        
+    def generate_card(self, name = None, kind = None, cost = None, start_func = None):
+        if name == 'Magick_Missle':
+            def play_func(caster = None, lockname = None):
+                # needs to remove card object from caster discard
+                mm_discard = [c for c in caster.discard if c.name=='Magick_Missle']
+                if mm_discard == []:
+                    pass
+                else:
+                    card = choice(mm_discard)
+                    caster.discard.remove(card)
+                    caster.exile.append(card)
+                root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+#                 app.dethloks[lockname].set(1)
+            p = partial(play_func, caster = self.owner_ent)
+            card = Card(name = name, kind = kind, cost = cost, start_func = start_func, play_func = p)
+        else:
+            card = Card(name = name, kind = kind, cost = cost, start_func = start_func)
+        return card
         
         
     def shuffle(self):
@@ -2501,6 +2521,10 @@ class Bot(Entity):
             sound_effects.play(effect1, -1)
         elif isinstance(self, Undead_Knight):
             effect1 = mixer.Sound('Sound_Effects/undead_knight_move.ogg')
+            effect1.set_volume(app.effects_volume.get())
+            sound_effects.play(effect1, -1)
+        elif isinstance(self, Cyberdemon):
+            effect1 = mixer.Sound('Sound_Effects/minotaur_charge_attack.ogg')
             effect1.set_volume(app.effects_volume.get())
             sound_effects.play(effect1, -1)
         else:
@@ -19547,9 +19571,9 @@ class Hellgate(Bot):
         self.wis = 9
         self.rsn = 9
         self.init = 9
-        self.spirit = 99
-        self.magick = 99
-        self.san = 10
+        self.spirit = 33
+        self.magick = 666
+        self.san = 15
         self.acts = 2
         self.mvs = 0
         self.move_range = 0
@@ -29047,8 +29071,8 @@ class Witch(Summon):
         for t in all:
             cs = [c for c in app.coords if app.grid[c[0]][c[1]] == '']
             sqr = reduce(lambda a,b : a if dist(a,loc)<dist(b,loc) else b,cs)
-            spell = self.arcane_dict[t]
-            self.arcane_dict[t] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint+1,spell.times_cast)
+            spell = self.arcane_dict[t.name]
+            self.arcane_dict[t.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint+1,spell.times_cast)
             if self.owner == 'p1':
                 prefix = 'a'
             else:
@@ -29063,10 +29087,10 @@ class Witch(Summon):
             app.vis_dict[n] = Vis(name = 'Grave_Twin', loc = sqr[:])
             root.after(1666, lambda n = n : cleanup_twin(n))
             img = ImageTk.PhotoImage(Image.open('summon_imgs/Tomb.png'))
-            app.ent_dict[id] = Tomb(name = 'Tomb', id = id, img = img, loc = sqr[:], owner = self.owner, level = self.level, imprint = t)
+            app.ent_dict[id] = Tomb(name = 'Tomb', id = id, img = img, loc = sqr[:], owner = self.owner, level = self.level, imprint = t.name)
             app.grid[sqr[0]][sqr[1]] = id
-            app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+74-app.moved_down, text = t.replace('_',' '), justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
-            app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = t.replace('_',' '), justify = 'center', font = ('chalkduster', 14), fill = 'ghostwhite', tags = 'text')
+            app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+74-app.moved_down, text = t.name.replace('_',' '), justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
+            app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = t.name.replace('_',' '), justify = 'center', font = ('chalkduster', 14), fill = 'ghostwhite', tags = 'text')
         root.after(2666, lambda  name = 'Mass_Grave' : self.cleanup_spell(name = name))
         
         
@@ -29910,8 +29934,8 @@ class Witch(Summon):
                 self.in_hand.remove(c)
                 self.discard.append(c)
                 break
-        if card.play_func != None:
-            lock(card.play_func)
+#         if card.play_func != None:
+#             lock(card.play_func)
         spell = self.arcane_dict[card.name]
         self.arcane_dict[card.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint+1,spell.times_cast)
         app.vis_dict['Entomb'] = Vis(name = 'Entomb', loc = sqr[:])
@@ -29926,17 +29950,9 @@ class Witch(Summon):
         app.grid[sqr[0]][sqr[1]] = id
         app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+74-app.moved_down, text = 'Entomb', justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
         app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+75-app.moved_down, text = 'Entomb', justify = 'center', font = ('chalkduster', 14), fill = 'ghostwhite', tags = 'text')
-        # this should be replaced by card.play_func
-#         for i,spl in enumerate(self.in_hand[:]):
-#             if spl == name:
-#                 if spl == 'Magick_Missle':
-#                     self.exile.append(self.in_hand[i])
-#                     self.in_hand.remove(self.in_hand[i])
-#                     break
-#                 else:
-#                     self.discard.append(self.in_hand[i])
-#                     self.in_hand.remove(self.in_hand[i])
-#                     break
+        # PLAY FUNC
+        if c.play_func != None:
+            lock(c.play_func)
         root.after(1666, self.finish_entomb)
         
         
@@ -29960,12 +29976,6 @@ class Witch(Summon):
         app.vis_dict['Summon_Tomb'] = Vis(name = 'Summon_Tomb', loc = sqr[:])
         app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+74-app.moved_down, text = 'Entomb '+str(name), justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
         app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+75-app.moved_down, text = 'Entomb '+str(name), justify = 'center', font = ('chalkduster', 14), fill = 'ghostwhite', tags = 'text')
-#         for i,spl in enumerate(self.in_hand[:]):
-#             if spl.replace('_',' ') == name:
-#                 self.discard.append(self.in_hand[i])
-#                 self.in_hand.remove(self.in_hand[i])
-#                 break
-#         root.after(1666, self.finish_entomb)
         root.after(1777, lambda t = 'text' : app.canvas.delete(t))
         self.place_summon(type = name.replace(' ','_'), sqr = sqr[:])
         
@@ -35281,6 +35291,8 @@ class Witch(Summon):
         self.magick += 4
         for e in ents:
             e.magick += 4
+            if e.magick > e.base_magick:
+                e.magick = e.base_magick
             app.canvas.create_text(e.loc[0]*100+49-app.moved_right, e.loc[1]*100+84-app.moved_down, text = "+4 magick", justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
             app.canvas.create_text(e.loc[0]*100+50-app.moved_right, e.loc[1]*100+85-app.moved_down, text = "+4 magick", justify = 'center', font = ('chalkduster', 13), fill = 'ghostwhite', tags = 'text')
         root.after(1999, lambda  name = "Witch's_Blood" : self.cleanup_spell(name = name))
@@ -40431,9 +40443,6 @@ class App(tk.Frame):
     # exit on handle_eot_effects
     def handle_vivify(self):
         # handle vivify, both players
-        effect1 = mixer.Sound('Sound_Effects/vivify.ogg')
-        effect1.set_volume(app.effects_volume.get())
-        sound_effects.play(effect1, 0)
         def cleanup_vivify(name):
             del app.vis_dict[name]
             app.canvas.delete(name)
@@ -40455,6 +40464,9 @@ class App(tk.Frame):
                                 vivify_loop2(tombs)
                             else:
                                 app.get_focus(t.id)
+                                effect1 = mixer.Sound('Sound_Effects/vivify.ogg')
+                                effect1.set_volume(app.effects_volume.get())
+                                sound_effects.play(effect1, 0)
                                 for e in ents:
                                     u = 'Vivify'+str(app.count)
                                     app.count += 1
@@ -40482,6 +40494,9 @@ class App(tk.Frame):
                     vivify_loop(tombs)
                 else:
                     app.get_focus(t.id)
+                    effect1 = mixer.Sound('Sound_Effects/vivify.ogg')
+                    effect1.set_volume(app.effects_volume.get())
+                    sound_effects.play(effect1, 0)
                     for e in ents:
                         u = 'Vivify'+str(app.count)
                         app.count += 1
