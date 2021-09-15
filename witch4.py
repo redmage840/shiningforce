@@ -1,12 +1,38 @@
-# make sure summon entomb play_func has right timing like spell_entomb,.... summon should be finished being placed before play_func happens
+# Tomb play_func() on alternate comes-into-play 'routes' (like mass grave), spell that places Tomb should decide if play_func() should trigger
+
+# screen/window to log text objects, make popup from menu?
+# TEXT LOGGING IN GAME
+# still many irrelevant pieces of text, even after starting to wrap create_text() after app.start_turn(), for example... initiative queue stuff title and names/ids of stuff, end/start of turn phase, active ent name
+# still need a way to display this, popup from menu
+# INFO PERPETUAL POPUP?, can a toplevel or other window be created that exists in a movable window on top of main toplevel?
+# could be grabbed by mouse to move around the screen, holds logged text and other info
+# repeated text objects, why is grapple repeated so often?
+# any vis_dict entry created (animated in animate loop), on each tick recreates the text object, so each text object created at same speed as the animation, should strip all these in animate_loop?
+'''
+['Entomb Ogre', 'Entomb Ogre', 'Entomb', 'Entomb', 'Entomb Enchantress', 'Entomb Enchantress', '1', '1', '1', '1', 'End-of-Turn Phase', 'End-of-Turn Phase', 'Crush 12 spirit', 'Crush 12 spirit', 'Crush 12 spirit', 'Crush 12 spirit', 'End-of-Turn Phase', 'End-of-Turn Phase', 'End-of-Turn Phase', 'End-of-Turn Phase', '-3 move range', '-3 move range', '-3 move range', '-3 move range', '-3 move range', '-3 move range', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...']
+'''
+
+# miltonian (paradise lost names), moloch, belial, beelzebub, mammon
+
+# hellgate - hellbaron and pink demon spritesheets
+
+# imbue descr (action)
 
 # turn off anti-alias select or whatever is called, that causes selections to subtract pixels to create even vectors...
+# make some kind of permanent note in gimp
 
-# hellgate, eliminate some blocked sqrs in first room, where bookstand, candlestand are
+# multiple defense effects, resolve fine but text objects appear same time (loop continues wo waiting)? spore cloud plus the_fool
+# needs to actually lock in attack/defense loop
 
-# necropotence
+# necropotence - caster gains action (does not use acts)-pay 1 spirit set aside a card, gain eot effect-discard hand and then put cards set aside in hand
 
-# check multiple def/atk effects that need time/text objects when resolving
+# cadaverous bloom- caster gains action 1 turn (does not use acts), rmv 2 cards from discard gain 1 mgk
+
+# stasis - each witch gains sot efct-set spell_entomb_used = True, caster gains sot efct- destroy a tomb you own if None rmv these efcts
+
+# Maze - affect target pathing? randomized block sqrs?
+
+# prosperity - cost 2X- each witch draws X cards, X is any amount paid at casting
 
 # mox pyrite - efface all tombs you own including this one, put a blank tomb
 # mox carbonite - list-smn you own without this efct gets efct -1 acts/mvs duration2, put a blank tomb
@@ -14,23 +40,9 @@
 
 # all myconids gain ...
 
-# witches blood, dark ritual, sac the tomb
-
-# handle umbrae wolf alt form Mist in summon descr (recursive descr of derived actions/summons, for example cadaver, scarab, hook attack...?)
-
-# also types? undead... for summon descr
-
-# something action/spell, that reduces str (for use with ogre/myconid swarm)
+# witches blood, dark ritual, efface the tomb?
 
 # bot that can dispel map effects
-
-# multiple defense effects, resolve fine but text objects appear same time (loop continues wo waiting)? spore cloud plus the_fool
-# needs to actually lock in attack/defense loop
-
-# phobos level, make gates a class with end-of-turn effect that smns specific type if none exist, (cyberdemon, imp, cacodemon...)
-
-# phobos level, 'pens' holding enemies closed off by 'block', subboss vis/action/map_trigger 'opens' gates at various triggers/events, changing 'block' sqrs to open
-# stuff teleporting in through gate...?
 
 # major demon needs one more action using 'excess cards in owner hand', like black vise
 
@@ -61,13 +73,7 @@
 
 # mokujin- self gets def efct that redirects dmg to ent you own
 
-# cant insert logging in to_hit, does not have context of what called it (the ent.ids)
-# maybe in atk/def loop
-# insert logging here, write to some buffer, use that to populate some canvas/image/popup
-
 # rec nightmare, destroy a tomb with this imprint and a smn you own in smn list, smn a smn that exists in your discard
-
-# screen/window to log text objects, make popup from menu?
 
 # levels where you must encroach on groups of mostly stationary enemies, to progress through some terrain/walls/rooms
 
@@ -185,6 +191,7 @@ sound_effects = mixer.Channel(1)
 # background_music.music.play(-1, 0)
 # filehandler = open(filename, 'r') 
 # object = pickle.load(filehandler)
+
 
 def unique(listoflists):
     tx = [tuple(s) for s in listoflists]
@@ -490,7 +497,7 @@ def action_description(act):
     elif act == 'Lost Artifact':
         return 'If a tomb is in your discard that is unique among tombs in play, return it to play with 1 spirit remaining.'
     elif act == 'Globe of Invulnerability':
-        return 'Create a map effect at a location. Gives -5 move range, attack and defense effects that reduce melee, ranged, and spell damage to maximum of 2. Cannot be cast on same location as Witch. Costs 6 magick.'
+        return 'Create a map effect at a location. Gives -5 move range, attack and defense effects that reduce melee, ranged, and spell damage by 5. Cannot be cast on same location as Witch. At end of turn, if unit contained in Globe passes a strength save at -5, place it in the nearest empty location to globe. Costs 6 magick.'
     elif act == 'Globe Hover':
         return 'Relocate Globe of Invulnerability created by caster and any contained unit to a location within range reason. Costs 2 magick.'
     elif act == 'Globe Roll':
@@ -1064,7 +1071,7 @@ def loc_effect_description(ef):
     elif ef.name == 'Hindering_Mucilage':
         return '-3 agility, dodge, and move range for units with normal move type.'+' Duration = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Globe_of_Invulnerability':
-        return '-5 move range, reduce melee, ranged, and spell damage (attack and defense) to max 2.'+' Duration = '+str(ef.duration)+', level = '+str(ef.level)
+        return '-5 move range, reduce melee, ranged, and spell damage (attack and defense) by 5. At end of turn, unit contained in Globe makes a strength save at -5, on pass is placed at nearest empty location'+' Duration = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == 'Cloudkill':
         return 'During end of turn phase, occupying unit gets effect causing end of turn 2 poison damage. Duration is reason and level is wisdom of caster.'+' Duration = '+str(ef.duration)+', level = '+str(ef.level)
     elif ef.name == '':
@@ -6298,7 +6305,8 @@ class Artificer(Summon):
         app.rebind_all()
         app.exists_check(app.active_ent)
         
-    # map effect, atk and def efct (reduce incoming and outgoing dmg to max 2), move range -5, max 1 in play
+    # map effect, atk and def efct (reduce incoming and outgoing dmg by 5), move range -5, max 1 in play
+    # ADD eot str save check to escape
     def globe(self, event = None):
         if self.acts < 1:
             return
@@ -6345,8 +6353,9 @@ class Artificer(Summon):
         p = partial(globe_efct)
         def globe_attack(atkr, dfndr, amt, type, sn, st, lockname = None):
             if st == 'melee' or st == 'ranged' or st == 'spell':
-                if amt < -2:
-                    amt = -2
+                amt += 5
+                if amt > 0:
+                    amt = 0
                 app.canvas.create_text(atkr.loc[0]*100+49-app.moved_right, atkr.loc[1]*100+54-app.moved_down, text = 'Globe reduces attack', justify ='center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
                 app.canvas.create_text(atkr.loc[0]*100+50-app.moved_right, atkr.loc[1]*100+55-app.moved_down, text = 'Globe reduces attack', justify ='center', font = ('chalkduster', 13), fill = 'green3', tags = 'text')
                 root.after(1333, lambda t = 'text' : app.canvas.delete(t))
@@ -6358,8 +6367,9 @@ class Artificer(Summon):
         p2 = partial(globe_attack)
         def globe_defense(atkr, dfndr, amt, type, sn, st, lockname = None):
             if st == 'melee' or st == 'ranged' or st == 'spell':
-                if amt < -2:
-                    amt = -2
+                amt += 5
+                if amt > 0:
+                    amt = 0
                 app.canvas.create_text(dfndr.loc[0]*100+49-app.moved_right, dfndr.loc[1]*100+54-app.moved_down, text = 'Globe reduces attack', justify ='center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
                 app.canvas.create_text(dfndr.loc[0]*100+50-app.moved_right, dfndr.loc[1]*100+55-app.moved_down, text = 'Globe reduces attack', justify ='center', font = ('chalkduster', 13), fill = 'green3', tags = 'text')
                 root.after(1333, lambda t = 'text' : app.canvas.delete(t))
@@ -6372,6 +6382,41 @@ class Artificer(Summon):
         app.loc_dict[tuple(sqr)].move_range_effects.append(p)
         app.loc_dict[tuple(sqr)].atk_effects.append(p2)
         app.loc_dict[tuple(sqr)].def_effects.append(p3)
+        # pop context menu with locked function creating 2 buttons ONLY when ent is present in globe, pressing either unlocks and then EITHER returns immediately 
+        # OR attempts save check 
+        def globe_escape(sqr = None, lockname = None):
+            cs = [c for c in app.coords if app.grid[c[0]][c[1]]=='']
+            if ent := [v for k,v in app.all_ents().items() if v.loc == sqr]:
+                ent = ent[0]
+                app.get_focus(ent.id)
+                def attempt_escape(ent = None, lockname = None):
+                    app.depop_context(event = None)
+                    cs = [c for c in app.coords if app.grid[c[0]][c[1]]=='']
+                    if ent.save_check('str',mod=-5) == 'Pass' and cs != []:
+                        loc = reduce(lambda a,b : a if dist(a,ent.loc)<dist(b,ent.loc) else b, cs)
+                        app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+84-app.moved_down, text = 'Strength escape globe', font = ('chalkduster', 14), fill = 'black', tags = 'text')
+                        app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+85-app.moved_down, text = 'Strength escape globe', font = ('chalkduster', 14), fill = 'ghostwhite', tags = 'text')
+                        lock(Bot.ai_flying_move, ent, loc)
+                        root.after(555, lambda t = 'text' : app.canvas.delete(t))
+                        root.after(666, lambda ln = lockname : app.dethloks[ln].set(1))
+                    else:
+                        app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+84-app.moved_down, text = 'Strength fail globe', font = ('chalkduster', 14), fill = 'black', tags = 'text')
+                        app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+85-app.moved_down, text = 'Strength fail globe', font = ('chalkduster', 14), fill = 'ghostwhite', tags = 'text')
+                        root.after(1222, lambda t = 'text' : app.canvas.delete(t))
+                        root.after(1333, lambda ln = lockname : app.dethloks[ln].set(1))
+                p = partial(attempt_escape, ent = ent, lockname = lockname)
+                def remain(lockname = None):
+                    app.depop_context(event = None)
+                    root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+                p2 = partial(remain, lockname = lockname)
+                app.depop_context(event = None)
+                b1 = tk.Button(app.context_menu, text = 'Attempt Globe Escape', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = p)
+                b1.pack(side='top')
+                app.context_buttons.append(b1)
+                b2 = tk.Button(app.context_menu, text = 'Remain in Globe', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = p2)
+                b2.pack(side='top')
+                app.context_buttons.append(b2)
+        p4 = partial(globe_escape, sqr = sqr[:])
         def undo(s, un, p, p2, p3, lockname = None):
             # need to get current sqr
             cs = [c for c in app.coords]
@@ -6384,7 +6429,7 @@ class Artificer(Summon):
             app.canvas.delete(un)
             root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
         u = partial(undo, sqr[:], un, p, p2, p3)
-        app.loc_dict[tuple(sqr)].effects_dict[un] = Local_Effect(name = 'Globe_of_Invulnerability', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'), loc = sqr[:], avoid = -5)
+        app.loc_dict[tuple(sqr)].effects_dict[un] = Local_Effect(name = 'Globe_of_Invulnerability', undo_func = u, eot_func = p4, duration = self.get_abl('rsn'), level = self.get_abl('wis'), loc = sqr[:], avoid = -5)
         root.after(1999, self.cleanup_globe)
         
     def cleanup_globe(self, event = None):
@@ -18219,17 +18264,17 @@ class Tortured_Soul(Bot):
         self.actions = {'Agony':self.ranged_attack, 'Rend':self.melee_attack}
         self.str = 8
         self.agl = 5
-        self.end = 8
+        self.end = 5
         self.mm = 9
         self.msl = 8
         self.bls = 0
-        self.dodge = 9
+        self.dodge = 11
         self.psyche = 9
         self.wis = 9
-        self.rsn = 6
+        self.rsn = 4
         self.init = 7
-        self.spirit = 23
-        self.magick = 17
+        self.spirit = 29
+        self.magick = 18
         self.san = 12
         self.acts = 1
         self.mvs = 1
@@ -18247,7 +18292,7 @@ class Tortured_Soul(Bot):
             app.handle_action()
         else:
             if self.acts > 0 and self.magick >= 1 and [k for k,v in app.spell_target_ents().items() if dist(v.loc, self.loc) <= self.get_abl('rsn') and v.owner != self.owner and 'Agony' in self.actions.keys()]:
-                self.magick -= 1
+                self.magick -= 2
                 self.acts -= 1
                 target = choice([k for k,v in app.spell_target_ents().items() if dist(v.loc,self.loc) <= self.get_abl('rsn') and v.owner != self.owner])
                 self.ranged_attack(target)
@@ -28492,58 +28537,9 @@ class Witch(Summon):
         app.unbind_all()
         app.rebind_all()
     
-    def place_summon(self, event = None, type = None, sqr = None):
-        if type == 'Berserker':
-            cls = Berserker
-        elif type == 'Illusionist':
-            cls = Illusionist
-        elif type == 'Umbrae_Wolf':
-            cls = Umbrae_Wolf
-        elif type == 'Thaumaturge':
-            cls = Thaumaturge
-        elif type == 'Murrain_Wolf':
-            cls = Murrain_Wolf
-        elif type == 'Fiend':
-            cls = Fiend
-        elif type == 'Wurdulak':
-            cls = Wurdulak
-        elif type == 'Chirurgeon':
-            cls = Chirurgeon
-        elif type == 'Hexmage':
-            cls = Hexmage
-        elif type == 'Fell_Evolver':
-            cls = Fell_Evolver
-        elif type == 'Drake':
-            cls = Drake
-        elif type == 'Inquisitor':
-            cls = Inquisitor
-        elif type == 'Pixie':
-            cls = Pixie
-        elif type == 'Chronomancer':
-            cls = Chronomancer
-        elif type == 'Enchantress':
-            cls = Enchantress
-        elif type == 'Diabolist':
-            cls = Diabolist
-        elif type == 'Artificer':
-            cls = Artificer
-        elif type == 'Yellow_Priest':
-            cls = Yellow_Priest
-        elif type == 'Goblin_Shaman':
-            cls = Goblin_Shaman
-        elif type == 'Beastmaster':
-            cls = Beastmaster
-        elif type == 'Ogre':
-            cls = Ogre
-        elif type == 'Major_Demon':
-            cls = Major_Demon
-        elif type == 'Myconid':
-            cls = Myconid
-        self.continue_place_summon(cls, sqr)
-        
-        
-#     def continue_place_summon(self, event, summon, sqrs, sqr):
-    def continue_place_summon(self, summon, sqr):
+    
+    def place_summon(self, event = None, card = None, sqr = None):
+        cls = eval(card.name)
         def cleanup_summon():
             app.canvas.delete('Summon_Tomb')
             del app.vis_dict['Summon_Tomb']
@@ -28556,86 +28552,20 @@ class Witch(Summon):
             id = 'b' + str(self.summon_ids)
             self.summon_ids += 1
             self.summon_count += 1
-        if summon == Berserker:
-            name = 'Berserker'
-            img = ImageTk.PhotoImage(Image.open('summon_imgs/Berserker.png'))
-        elif summon == Illusionist:
-            name = 'Illusionist'
-            img = ImageTk.PhotoImage(Image.open('summon_imgs/Illusionist.png'))
-        elif summon == Umbrae_Wolf:
-            name = 'Umbrae_Wolf'
-            img = ImageTk.PhotoImage(Image.open('summon_imgs/Umbrae_Wolf.png'))
-        elif summon == Thaumaturge:
-            name = 'Thaumaturge'
-            img = ImageTk.PhotoImage(Image.open('summon_imgs/Thaumaturge.png'))
-        elif summon == Murrain_Wolf:
-            name = 'Murrain_Wolf'
-            img = ImageTk.PhotoImage(Image.open('summon_imgs/Murrain_Wolf.png'))
-        elif summon == Fiend:
-            name = 'Fiend'
-            img = ImageTk.PhotoImage(Image.open('summon_imgs/Fiend.png'))
-        elif summon == Wurdulak:
-            name = 'Wurdulak'
-            img = ImageTk.PhotoImage(Image.open('summon_imgs/Wurdulak.png'))
-        elif summon == Chirurgeon:
-            name = 'Chirurgeon'
-            img = ImageTk.PhotoImage(Image.open('summon_imgs/Chirurgeon.png'))
-        elif summon == Hexmage:
-            name = 'Hexmage'
-            img = ImageTk.PhotoImage(Image.open('summon_imgs/Hexmage.png'))
-        elif summon == Fell_Evolver:
-            name = 'Fell_Evolver'
-            img = ImageTk.PhotoImage(Image.open('summon_imgs/Fell_Evolver.png'))
-        elif summon == Drake:
-            name = 'Drake'
-            img = ImageTk.PhotoImage(Image.open('summon_imgs/Drake.png'))
-        elif summon == Inquisitor:
-            name = 'Inquisitor'
-            img = ImageTk.PhotoImage(Image.open('summon_imgs/Inquisitor.png'))
-        elif summon == Pixie:
-            name = 'Pixie'
-            img = ImageTk.PhotoImage(Image.open('summon_imgs/Pixie.png'))
-        elif summon == Chronomancer:
-            name = 'Chronomancer'
-            img = ImageTk.PhotoImage(Image.open('summon_imgs/Chronomancer.png'))
-        elif summon == Enchantress:
-            name = 'Enchantress'
-            img = ImageTk.PhotoImage(Image.open('summon_imgs/Enchantress.png'))
-        elif summon == Diabolist:
-            name = 'Diabolist'
-            img = ImageTk.PhotoImage(Image.open('summon_imgs/Diabolist.png'))
-        elif summon == Artificer:
-            name = 'Artificer'
-            img = ImageTk.PhotoImage(Image.open('summon_imgs/Artificer.png'))
-        elif summon == Yellow_Priest:
-            name = 'Yellow_Priest'
-            img = ImageTk.PhotoImage(Image.open('summon_imgs/Yellow_Priest.png'))
-        elif summon == Goblin_Shaman:
-            name = 'Goblin_Shaman'
-            img = ImageTk.PhotoImage(Image.open('summon_imgs/Goblin_Shaman.png'))
-        elif summon == Beastmaster:
-            name = 'Beastmaster'
-            img = ImageTk.PhotoImage(Image.open('summon_imgs/Beastmaster.png'))
-        elif summon == Ogre:
-            name = 'Ogre'
-            img = ImageTk.PhotoImage(Image.open('summon_imgs/Ogre.png'))
-        elif summon == Major_Demon:
-            name = 'Major_Demon'
-            img = ImageTk.PhotoImage(Image.open('summon_imgs/Major_Demon.png'))
-        elif summon == Myconid:
-            name = 'Myconid'
-            img = ImageTk.PhotoImage(Image.open('summon_imgs/Myconid.png'))
-        s = summon(name = name, id = id, img = img, loc = sqr[:], owner = self.owner, level = self.level)
+        name = card.name
+        img = ImageTk.PhotoImage(Image.open('summon_imgs/'+card.name+'.png'))
+        s = eval(name)(name = name, id = id, img = img, loc = sqr[:], owner = self.owner, level = self.level)
         app.cleanup_squares()
         app.depop_context(event = None)
         # separate here to finish summon vis, place ent after a sec or two
-        root.after(1999, lambda s = s, sqr = sqr, id = id : self.finish_place(s, sqr, id))
-        
-    def finish_place(self, summon, sqr, id):
-        app.ent_dict[id] = summon
-        app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = summon.img, tags = summon.tags)
+        app.ent_dict[id] = s
         app.grid[sqr[0]][sqr[1]] = id
         self.smns -= 1
+        if card.play_func != None:
+            lock(card.play_func)
+        root.after(999, self.finish_place)
+        
+    def finish_place(self):
         app.unbind_all()
         app.rebind_all()
         
@@ -29091,6 +29021,8 @@ class Witch(Summon):
             app.grid[sqr[0]][sqr[1]] = id
             app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+74-app.moved_down, text = t.name.replace('_',' '), justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
             app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = t.name.replace('_',' '), justify = 'center', font = ('chalkduster', 14), fill = 'ghostwhite', tags = 'text')
+            if t.play_func != None:
+                lock(t.play_func)
         root.after(2666, lambda  name = 'Mass_Grave' : self.cleanup_spell(name = name))
         
         
@@ -29862,16 +29794,7 @@ class Witch(Summon):
         spls = [c for c in self.in_hand if c.kind == 'Tomb']
         spls = sorted(spls, key=lambda c : c.cost)
         cards = smns+spls
-#         cards = [c for c in self.in_hand]
         self.page_entomb(cards = cards, sqr = sqr[:])
-#         smns = app.summons_list[:]
-#         spells_for_turn = [k for k in self.in_hand if k not in smns]
-#         summons = [k for k in self.in_hand if k in app.summon_dict.keys()]
-#         summons = [app.summon_dict[k] for k in summons]
-#         spls = [self.arcane_dict[k] for k in spells_for_turn if k not in smns]
-#         spells = sorted(list(spls),key=lambda s : s.cost)
-#         spells += summons
-#         self.page_imprint(tup_list = spells, index = 0, sqr = sqr[:])
         
     def page_entomb(self, event = None, cards = None, index = 0, sqr = None):
         app.depop_context(event = None)
@@ -29924,9 +29847,7 @@ class Witch(Summon):
         effect1 = mixer.Sound('Sound_Effects/strength_through_wounding.ogg')
         effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
-#         self.entomb_used = True
         self.spell_entomb_used = True
-#         self.acts -= 1
         name = name.replace(' ','_')
         for c in self.in_hand[:]:
             if c.name == name:
@@ -29934,8 +29855,6 @@ class Witch(Summon):
                 self.in_hand.remove(c)
                 self.discard.append(c)
                 break
-#         if card.play_func != None:
-#             lock(card.play_func)
         spell = self.arcane_dict[card.name]
         self.arcane_dict[card.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint+1,spell.times_cast)
         app.vis_dict['Entomb'] = Vis(name = 'Entomb', loc = sqr[:])
@@ -29969,15 +29888,13 @@ class Witch(Summon):
                 self.in_hand.remove(c)
                 self.discard.append(c)
                 break
-        if card.play_func != None:
-            lock(card.play_func)
         if name not in self.available_summons:
             self.available_summons.append(name)
         app.vis_dict['Summon_Tomb'] = Vis(name = 'Summon_Tomb', loc = sqr[:])
         app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+74-app.moved_down, text = 'Entomb '+str(name), justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
         app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+75-app.moved_down, text = 'Entomb '+str(name), justify = 'center', font = ('chalkduster', 14), fill = 'ghostwhite', tags = 'text')
         root.after(1777, lambda t = 'text' : app.canvas.delete(t))
-        self.place_summon(type = name.replace(' ','_'), sqr = sqr[:])
+        self.place_summon(card = card, sqr = sqr[:])
         
         
     def finish_entomb(self, event = None):
@@ -33397,7 +33314,7 @@ class Witch(Summon):
     def the_hanged_man(self, event = None):
         app.depop_context(event = None)
         root.bind('<q>', self.cleanup_spell)
-        sqrs = [s for s in app.coords if dist(self.loc, s)==1]
+        sqrs = [s for s in app.coords if 1 <= dist(self.loc, s) <= self.get_abl('rsn')]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_the_hanged_man(event = e, sqr = s, sqrs = sqrs))
         b = tk.Button(app.context_menu, text = 'Choose Target For The Hanged Man', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_the_hanged_man(e, s, sqrs = sqrs))
@@ -38474,6 +38391,7 @@ class App(tk.Frame):
         self.music_volume.set(1)
         self.effects_volume = tk.DoubleVar()
         self.effects_volume.set(1)
+        self.logged_text = []
         self.ent_dict = {}
         self.sqr_dict = {}
         self.vis_dict = {}
@@ -38740,6 +38658,13 @@ class App(tk.Frame):
             
         self.choose_num_players()
         
+        
+    def log_text(self, someString):
+        blocked_text = ['Initiative Queue: ']
+        ids = app.all_ents().keys()
+        blocked_text += ids
+        if someString not in blocked_text:
+            self.logged_text.append(someString)
         
     # testing func for 'check for ent existence after action, if removed then go to next round'
     def exists_check(self, id):
@@ -40178,6 +40103,13 @@ class App(tk.Frame):
             
     # handle_sot_campaign() for Campaign mode OTHERWISE generate initiative queue (app.generate_init_q)
     def start_turn(self): # AWAIT button press, start level popup
+        def log_wrapper(func, *args, **kwargs):
+            # make sure field actually exists
+            if 'text' in kwargs.keys():
+                to_log = kwargs['text']
+                app.log_text(to_log)
+            func(*args, **kwargs)
+        app.canvas.create_text = partial(log_wrapper, app.canvas.create_text)
         if self.num_players == 1:
             self.handle_sot_campaign()
         else:
@@ -40801,6 +40733,10 @@ class App(tk.Frame):
             self.canvas.create_text(15, 15, text='Initiative Queue: ', anchor = 'nw', font = ('chalkduster', 16), width = 900, fill = 'indianred', tags = 'init_q')
             self.canvas.create_text(174, 14, text= txt, anchor = 'nw', font = ('chalkduster', 16), width = 900, fill = 'black', tags = 'init_ents')
             self.canvas.create_text(175, 15, text= txt, anchor = 'nw', font = ('chalkduster', 16), width = 900, fill = 'indianred', tags = 'init_ents')
+            # REMOVE INIT Q TEXT FROM LOGGED TEXT
+            for t in app.logged_text[:]:
+                if t == txt:
+                    app.logged_text.remove(t)
         # Show Name, Active Ent
         self.redraw_active_ent()
         # MINI MAP
@@ -41158,6 +41094,10 @@ class App(tk.Frame):
             loc = app.ent_dict[self.active_ent].loc
             self.canvas.create_text(loc[0]*100+49-self.moved_right, loc[1]*100+99-self.moved_down, text=self.ent_dict[self.active_ent].name.replace('_',' '), font = ('chalkduster', 13), fill = 'black', tags = 'active_ent')
             self.canvas.create_text(loc[0]*100+50-self.moved_right, loc[1]*100+100-self.moved_down, text=self.ent_dict[self.active_ent].name.replace('_',' '), font = ('chalkduster', 13), fill = 'ghostwhite', tags = 'active_ent')
+            txt = self.ent_dict[self.active_ent].name.replace('_',' ')
+            for t in app.logged_text[:]:
+                if t == txt:
+                    app.logged_text.remove(t)
         
         
     def move_map(self, direction):
@@ -41911,11 +41851,7 @@ class App(tk.Frame):
         app.rebind_all()
         
     def debugger(self, event):
-        card = app.ent_dict[app.p1_witch].arcane_deck.get()
-        print(card.name)
-        print(card.start_func)
-        print(card.cost)
-        print(card.kind)
+        print(app.logged_text)
 #         print(app.ent_dict[app.p1_witch].arcane_deck.get())
 #         for card in app.ent_dict[app.p1_witch].arcane_deck.cards:
 #             print(card.name)
