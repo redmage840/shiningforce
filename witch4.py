@@ -1,28 +1,8 @@
-# Tomb play_func() on alternate comes-into-play 'routes' (like mass grave), spell that places Tomb should decide if play_func() should trigger
+# in corroding touch, protean mage
 
-# screen/window to log text objects, make popup from menu?
-# TEXT LOGGING IN GAME
-# still many irrelevant pieces of text, even after starting to wrap create_text() after app.start_turn(), for example... initiative queue stuff title and names/ids of stuff, end/start of turn phase, active ent name
-# still need a way to display this, popup from menu
-# INFO PERPETUAL POPUP?, can a toplevel or other window be created that exists in a movable window on top of main toplevel?
-# could be grabbed by mouse to move around the screen, holds logged text and other info
-# repeated text objects, why is grapple repeated so often?
-# any vis_dict entry created (animated in animate loop), on each tick recreates the text object, so each text object created at same speed as the animation, should strip all these in animate_loop?
-'''
-['Entomb Ogre', 'Entomb Ogre', 'Entomb', 'Entomb', 'Entomb Enchantress', 'Entomb Enchantress', '1', '1', '1', '1', 'End-of-Turn Phase', 'End-of-Turn Phase', 'Crush 12 spirit', 'Crush 12 spirit', 'Crush 12 spirit', 'Crush 12 spirit', 'End-of-Turn Phase', 'End-of-Turn Phase', 'End-of-Turn Phase', 'End-of-Turn Phase', '-3 move range', '-3 move range', '-3 move range', '-3 move range', '-3 move range', '-3 move range', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...', 'Grapple...']
-'''
+# cyberdemon, 1 act rocket that explodes
 
-# miltonian (paradise lost names), moloch, belial, beelzebub, mammon
-
-# hellgate - hellbaron and pink demon spritesheets
-
-# imbue descr (action)
-
-# turn off anti-alias select or whatever is called, that causes selections to subtract pixels to create even vectors...
-# make some kind of permanent note in gimp
-
-# multiple defense effects, resolve fine but text objects appear same time (loop continues wo waiting)? spore cloud plus the_fool
-# needs to actually lock in attack/defense loop
+# can separate what text is logged according to text tags, in app.log_text()
 
 # necropotence - caster gains action (does not use acts)-pay 1 spirit set aside a card, gain eot effect-discard hand and then put cards set aside in hand
 
@@ -125,7 +105,6 @@ transform all umbrae wolves (friendly and enemy), tar shadow gains invis
 lament of the void
 bard gets way to dispel invis psyshield chance
 
-guardian of the chthonic gate
 summon cerberus, slashing and fire atk, lasts only this turn
 
 plutos verdict
@@ -282,10 +261,10 @@ def action_description(act):
         return ''
     elif act == '':
         return ''
-    elif act == '':
-        return ''
-    elif act == '':
-        return ''
+    elif act == 'Imbue':
+        return 'Set an adjacent unit stat to that of caster. Costs 1 act and 1 magick.'
+    elif act == 'Imbue Thrall':
+        return 'Caster gets action costing 1 act and 1 magick that sets an adjacent unit stat to the same as that of caster.'
     elif act == 'Mox Amethyst':
         return 'Set the imprint on a Tomb you own with this imprint to blank (Tomb is randomly selected). Place a Tomb with no imprint randomly among the closest locations to the chosen Tomb and set both of these Tombs spirit to 1.'
     elif act == 'Needle Storm':
@@ -1971,7 +1950,7 @@ class Arcane_Deck():
                 return None
         else:# method is SEARCH
             if name in [c.name for c in self.cards[:]]:
-                for c in [c.name for c in self.cards[:]]:
+                for c in self.cards[:]:
                     if c.name == name:
                         card = c
                         break
@@ -6384,15 +6363,16 @@ class Artificer(Summon):
         app.loc_dict[tuple(sqr)].def_effects.append(p3)
         # pop context menu with locked function creating 2 buttons ONLY when ent is present in globe, pressing either unlocks and then EITHER returns immediately 
         # OR attempts save check 
-        def globe_escape(sqr = None, lockname = None):
+        def globe_escape(globe_id = None, lockname = None):
+            # here, find the sqr by searching the loc_dict for this globes id
+            sqr = [c for c in app.coords for k,v in app.loc_dict[tuple(c)].effects_dict.items() if k == globe_id]
+            sqr = sqr[0]
             cs = [c for c in app.coords if app.grid[c[0]][c[1]]=='']
             if ent := [v for k,v in app.all_ents().items() if v.loc == sqr]:
                 ent = ent[0]
                 app.get_focus(ent.id)
-                def attempt_escape(ent = None, lockname = None):
-                    app.depop_context(event = None)
-                    cs = [c for c in app.coords if app.grid[c[0]][c[1]]=='']
-                    if ent.save_check('str',mod=-5) == 'Pass' and cs != []:
+                if ent.owner == 'p2' and app.num_players == 1: # IS COMPUTER ENT, no buttons, automate choice to 'escape'
+                    if ent.save_check('str', mod = -5) == 'Pass' and cs != []:
                         loc = reduce(lambda a,b : a if dist(a,ent.loc)<dist(b,ent.loc) else b, cs)
                         app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+84-app.moved_down, text = 'Strength escape globe', font = ('chalkduster', 14), fill = 'black', tags = 'text')
                         app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+85-app.moved_down, text = 'Strength escape globe', font = ('chalkduster', 14), fill = 'ghostwhite', tags = 'text')
@@ -6404,19 +6384,37 @@ class Artificer(Summon):
                         app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+85-app.moved_down, text = 'Strength fail globe', font = ('chalkduster', 14), fill = 'ghostwhite', tags = 'text')
                         root.after(1222, lambda t = 'text' : app.canvas.delete(t))
                         root.after(1333, lambda ln = lockname : app.dethloks[ln].set(1))
-                p = partial(attempt_escape, ent = ent, lockname = lockname)
-                def remain(lockname = None):
+                else:
+                    def attempt_escape(ent = None, lockname = None):
+                        app.depop_context(event = None)
+                        cs = [c for c in app.coords if app.grid[c[0]][c[1]]=='']
+                        if ent.save_check('str',mod=-5) == 'Pass' and cs != []:
+                            loc = reduce(lambda a,b : a if dist(a,ent.loc)<dist(b,ent.loc) else b, cs)
+                            app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+84-app.moved_down, text = 'Strength escape globe', font = ('chalkduster', 14), fill = 'black', tags = 'text')
+                            app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+85-app.moved_down, text = 'Strength escape globe', font = ('chalkduster', 14), fill = 'ghostwhite', tags = 'text')
+                            lock(Bot.ai_flying_move, ent, loc)
+                            root.after(555, lambda t = 'text' : app.canvas.delete(t))
+                            root.after(666, lambda ln = lockname : app.dethloks[ln].set(1))
+                        else:
+                            app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+84-app.moved_down, text = 'Strength fail globe', font = ('chalkduster', 14), fill = 'black', tags = 'text')
+                            app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+85-app.moved_down, text = 'Strength fail globe', font = ('chalkduster', 14), fill = 'ghostwhite', tags = 'text')
+                            root.after(1222, lambda t = 'text' : app.canvas.delete(t))
+                            root.after(1333, lambda ln = lockname : app.dethloks[ln].set(1))
+                    p = partial(attempt_escape, ent = ent, lockname = lockname)
+                    def remain(lockname = None):
+                        app.depop_context(event = None)
+                        root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+                    p2 = partial(remain, lockname = lockname)
                     app.depop_context(event = None)
-                    root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
-                p2 = partial(remain, lockname = lockname)
-                app.depop_context(event = None)
-                b1 = tk.Button(app.context_menu, text = 'Attempt Globe Escape', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = p)
-                b1.pack(side='top')
-                app.context_buttons.append(b1)
-                b2 = tk.Button(app.context_menu, text = 'Remain in Globe', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = p2)
-                b2.pack(side='top')
-                app.context_buttons.append(b2)
-        p4 = partial(globe_escape, sqr = sqr[:])
+                    b1 = tk.Button(app.context_menu, text = 'Attempt Globe Escape', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = p)
+                    b1.pack(side='top')
+                    app.context_buttons.append(b1)
+                    b2 = tk.Button(app.context_menu, text = 'Remain in Globe', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = p2)
+                    b2.pack(side='top')
+                    app.context_buttons.append(b2)
+            else:
+                root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+        p4 = partial(globe_escape, globe_id = 'Globe_of_Invulnerability'+self.id)
         def undo(s, un, p, p2, p3, lockname = None):
             # need to get current sqr
             cs = [c for c in app.coords]
@@ -7751,7 +7749,7 @@ class Protean_Mage(Summon):
     resist = []
     def __init__(self, name, id, img, loc, owner, level):
         if level == 1:
-            self.actions = {'Move':self.move, 'Overtake Organism':self.overtake_organism, 'Shapeshift':self.shapeshift,'Polymorph Self':self.polymorph_self, 'Polymorph Other':self.polymorph_other, 'Corroding Virus':self.corroding_virus}
+            self.actions = {'Move':self.move, 'Overtake Organism':self.overtake_organism, 'Shapeshift':self.shapeshift,'Polymorph Self':self.polymorph_self, 'Polymorph Other':self.polymorph_other, 'Corroding Touch':self.corroding_touch}
             self.str = 2
             self.agl = 2
             self.end = 2
@@ -7771,7 +7769,7 @@ class Protean_Mage(Summon):
             self.move_range = 5
             self.level = level
         elif level == 2:
-            self.actions = {'Move':self.move, 'Overtake Organism':self.overtake_organism, 'Shapeshift':self.shapeshift,'Polymorph Self':self.polymorph_self, 'Polymorph Other':self.polymorph_other, 'Corroding Virus':self.corroding_virus}
+            self.actions = {'Move':self.move, 'Overtake Organism':self.overtake_organism, 'Shapeshift':self.shapeshift,'Polymorph Self':self.polymorph_self, 'Polymorph Other':self.polymorph_other, 'Corroding Touch':self.corroding_touch}
             self.str = 2
             self.agl = 2
             self.end = 2
@@ -7796,7 +7794,141 @@ class Protean_Mage(Summon):
         super().__init__(name, id, img, loc, owner)
         
 # - corroding virus - give -X stat to self to give -X stat of same kind to action target adjacent entity
-    def corroding_virus(self, event = None):
+#     def corroding_touch(self, event = None):
+#         if self.acts < 1:
+#             return
+#         app.unbind_nonarrows()
+#         app.depop_context(event = None)
+#         root.bind('<q>', self.cleanup_pyrotechnics)
+#         sqrs = [s for s in app.coords if dist(self.loc, s) == 1]
+#         app.animate_squares(sqrs)
+#         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_corroding_touch(event = e, sqr = s, sqrs = sqrs))
+#         b = tk.Button(app.context_menu, text = 'Choose Target For Corroding Touch', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_corroding_touch(e, s, sqrs))
+#         b.pack(side = 'top', pady = 2)
+#         app.context_buttons.append(b)
+#         b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+#         b2.pack(side = 'top')
+#         app.context_buttons.append(b2)
+#         
+#         
+#     def do_corroding_touch(self, event, sqr, sqrs):
+#         if sqr not in sqrs:
+#             return
+#         id = app.grid[sqr[0]][sqr[1]]
+#         if id not in app.action_target_ents().keys():
+#             return
+#         app.unbind_all()
+#         effect1 = mixer.Sound('Sound_Effects/plague.ogg')
+#         effect1.set_volume(app.effects_volume.get())
+#         sound_effects.play(effect1, 0)
+#         app.depop_context(event = None)
+#         app.cleanup_squares()
+#         self.acts -= 1
+#         ent = app.ent_dict[id]
+#         app.vis_dict['Corroding_Touch'] = Vis(name = 'Corroding_Touch', loc = sqr[:])
+#         # now choose abl
+#         bg.create_text(15, 15, text= 'Choose Ability...', width = 190, anchor = 'nw', font = ('chalkduster', 16), fill = 'indianred')
+#         app.context_buttons.append(bg)
+#         abls = ['str', 'agl', 'end', 'mm', 'msl', 'bls', 'dodge', 'wis', 'rsn', 'init']
+#         for abl in abls:
+#             b = tk.Button(app.context_menu, text = abl, wraplength = 190, font = ('chalkduster', 16), fg = 'tan3', highlightbackground = 'tan3', command = lambda ent = ent, abl = abl : self.choose_corr_touch(ent, abl))
+#             b.pack(side = 'top')
+#             app.context_buttons.append(b)
+#         
+#     def choose_corr_touch(self, ent, abl):
+#         if self.get_abl(abl) < 1:
+#             return
+#         app.depop_context(event=None)
+#         # create label with +/- buttons, 'own abl' label tied to abl
+#         excess = self.get_abl(abl)
+#         app.excess = tk.IntVar()
+#         app.excess.set(excess)
+#         # +/- buttons linked to Label
+#         app.tmp = tk.IntVar()
+#         app.tmp.set(0)
+#         def plus():
+#             cur = app.tmp.get()
+#             ex = app.excess.get()
+#             if ex < 1:
+#                 return
+#             else:
+#                 app.tmp.set(cur+1)
+#                 app.excess.set(ex-1)
+#         p = partial(plus)
+#         b = tk.Button(app.context_menu, text = '+', wraplength = 190, font = ('chalkduster', 22), fg = 'indianred', highlightbackground = 'tan3', command = p)
+#         b.pack(side = 'top', pady = 2)
+#         app.context_buttons.append(b)
+#         def minus():
+#             cur = app.tmp.get()
+#             ex = app.excess.get()
+#             if cur < 1:
+#                 return
+#             else:
+#                 app.tmp.set(cur-1)
+#                 app.excess.set(ex+1)
+#         p2 = partial(minus)
+#         b2 = tk.Button(app.context_menu, text = '-', wraplength = 190, font = ('chalkduster', 22), fg = 'indianred', highlightbackground = 'tan3', command = p2)
+#         b2.pack(side = 'top', pady = 2)
+#         app.context_buttons.append(b2)
+#         total_label = tk.Label(app.context_menu, textvariable = app.tmp, bg = 'black', fg = 'indianred')
+#         total_label.pack(side = 'top', pady = 2)
+#         app.context_buttons.append(total_label)
+#         # title of 'excess' ability
+#         ex_title = tk.Label(app.context_menu, text = 'Own '+abl, bg = 'black', fg = 'indianred')
+#         ex_title.pack(side = 'top', pady = 2)
+#         app.context_buttons.append(ex_title)
+#         # excess int label
+#         ex_label = tk.Label(app.context_menu, textvariable = app.excess, bg = 'black', fg = 'indianred')
+#         ex_label.pack(side = 'top', pady = 2)
+#         app.context_buttons.append(ex_label)
+#         def done(ent, abl):
+#             amt = app.tmp.get()
+#             self.cont_corr_touch(ent, abl, amt)
+#         p3 = partial(done, ent, abl)
+#         b3 = tk.Button(app.context_menu, text = 'DONE', wraplength = 190, font = ('chalkduster', 22), fg = 'indianred', highlightbackground = 'tan3', command = p3)
+#         b3.pack(side = 'top', pady = 2)
+#         app.context_buttons.append(b3)
+#         
+#     
+#     def cont_corr_touch(self, ent, abl, amt):
+#         # cleanup tmps
+#         app.depop_context(event=None)
+#         del app.tmp, app.excess
+# #         del app.excess
+#         # apply amt neg efct to abl, self and ent
+#         def cor_abl(stat, amt=None):
+#             return max(1,stat-amt)
+#         p = partial(cor_abl, amt=amt)
+#         tmp_str = 'ent.'+abl+'_effects.append(p)'
+#         eval(tmp_str)
+#         tmp_str2 = 'self.'+abl+'_effects.append(p)'
+#         eval(tmp_str2)
+#         # needs 2 dif undo funcs, for self/caster and target
+#         
+#         
+#         def undo(ent, caster_ent, abl, p, lockname = None):
+#             tmp_str = 'ent.'+abl+'_effects.remove(p)'
+#             eval(tmp_str)
+#             tmp_str2 = 'caster_ent.'+abl+'_effects.remove(p)'
+#             eval(tmp_str2)
+#             root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+#         u = partial(undo, ent, self, abl, p)
+#         
+#             
+#         
+#     def cleanup_(self, event = None):
+#         try: 
+#             del app.vis_dict['Pyrotechnics']
+#             app.canvas.delete('Pyrotechnics')
+#         except: pass
+#         app.depop_context(event = None)
+#         app.cleanup_squares()
+#         app.canvas.delete('text')
+#         app.unbind_all()
+#         app.rebind_all()
+#         app.exists_check(app.active_ent)
+
+    def corroding_touch(self, event = None):
         pass
 
 # - overtake organism - destroy an entity you own and -1 sum-count, put protean_mage in play with 1 spirit/magick
@@ -11117,7 +11249,7 @@ class Murrain_Wolf(Summon):
                     root.after(1666, lambda ln = lockname : app.dethloks[ln].set(1))
                     return (-1,type)
                 else:
-                    root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+                    root.after(1666, lambda ln = lockname : app.dethloks[ln].set(1))
                     return (amount,type)
             else:
                 root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
@@ -18367,9 +18499,9 @@ class Cacodemon(Bot):
         self.str = 5
         self.agl = 8
         self.end = 11
-        self.mm = 7
-        self.msl = 7
-        self.bls = 5
+        self.mm = 9
+        self.msl = 5
+        self.bls = 4
         self.dodge = 8
         self.psyche = 6
         self.wis = 6
@@ -18425,21 +18557,21 @@ class Cacodemon(Bot):
 class Cyberdemon(Bot):
     def __init__(self, name, img, loc, owner, waiting = False):
         self.actions = {'Blast':self.blast}
-        self.str = 13
+        self.str = 11
         self.agl = 10
-        self.end = 13
+        self.end = 11
         self.mm = 9
-        self.msl = 11
-        self.bls = 6
+        self.msl = 7
+        self.bls = 9
         self.dodge = 10
         self.psyche = 9
         self.wis = 9
         self.rsn = 9
         self.init = 11
-        self.spirit = 99
+        self.spirit = 79
         self.magick = 0
         self.san = 15
-        self.acts = 3
+        self.acts = 2
         self.mvs = 2
         self.move_range = 5
         self.waiting = waiting
@@ -21917,6 +22049,77 @@ class Orc_Axeman(Bot):
         self.do_round()
         
         
+class Pink_Demon(Bot):
+    def __init__(self, name, img, loc, owner, waiting = False):
+        self.actions = {'Chomp':self.melee_attack}
+        self.str = 7
+        self.agl = 7
+        self.end = 6
+        self.mm = 1
+        self.msl = 0
+        self.bls = 0
+        self.dodge = 6
+        self.psyche = 4
+        self.wis = 4
+        self.rsn = 3
+        self.init = 10
+        self.spirit = 19
+        self.magick = 0
+        self.san = 11
+        self.acts = 1
+        self.mvs = 1
+        self.move_range = 7
+        self.waiting = waiting
+        self.move_type = 'normal'
+        self.resist = []
+        self.weak = []
+        super().__init__(name, img, loc, owner)
+        self.types = ['animal']
+        
+    def do_round(self):
+        if self.waiting == True or self.id not in app.all_ents().keys():
+            app.handle_action()
+        else:
+            if self.acts > 0 and [k for k,v in app.action_target_ents().items() if dist(v.loc, self.loc) == 1 and v.owner != self.owner] and 'Chop' in self.get_actions().keys():
+                target = choice([k for k,v in app.action_target_ents().items() if dist(v.loc, self.loc) == 1 and v.owner != self.owner])
+                self.acts -= 1
+                self.melee_attack(target)
+            elif [k for k,v in app.action_target_ents().items() if v.owner != self.owner] != [] and self.mvs > 0 and self.legal_moves() != []:
+                Ai_man.pursue(self, 'action', 'smart', self.get_move_type(), 1)
+            else:
+                app.handle_action()
+
+    def pass_priority(self):
+        app.handle_action()
+        
+    # abstract this func into Ai_man, change to accept needed abl scores and apply_damage args
+    def melee_attack(self, id):
+        self.init_attack_anims()
+        app.get_focus(id)
+        effect1 = mixer.Sound('Sound_Effects/orc_axeman_attack.ogg')
+        sound_effects.play(effect1, 0)
+        my_agl = self.get_abl('agl')
+        target_agl = app.ent_dict[id].get_abl('agl')
+        if to_hit(my_agl, target_agl) == True:# HIT
+            my_str = self.get_abl('str')
+            tar_end = app.ent_dict[id].get_abl('end')
+            d = damage(my_str, tar_end)
+            root.after(1666, self.init_normal_anims)
+            lock(apply_damage, self, app.ent_dict[id], -d, 'slashing', 'Chomp', 'melee')
+            self.finish_attack()
+        else:# MISS
+            loc = app.ent_dict[id].loc[:]
+            miss(loc)
+            root.after(1333, lambda t = 'text' : app.canvas.delete(t))
+            root.after(1666, self.finish_attack)
+                
+    def finish_attack(self):
+        self.init_normal_anims()
+        try: app.canvas.delete('text')
+        except: pass
+        self.do_round()
+        
+        
 class Alien_Warrior(Bot):
     def __init__(self, name, img, loc, owner, waiting = False, timer = 3):
         self.actions = {'Eviscerate':self.melee_attack}
@@ -23354,7 +23557,7 @@ class Myconid(Summon):
                     root.after(1666, lambda ln = lockname : app.dethloks[ln].set(1))
                     return (-1,type)
                 else:
-                    root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+                    root.after(1666, lambda ln = lockname : app.dethloks[ln].set(1))
                     return (amount,type)
             else:
                 root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
@@ -23942,7 +24145,7 @@ class Ogre(Summon):
     mm = 3
     msl = 0
     bls = 0
-    dodge = 6
+    dodge = 4
     psyche = 4
     wis = 4
     rsn = 4
@@ -28968,7 +29171,7 @@ class Witch(Summon):
             b1 = tk.Button(app.context_menu, wraplength = 190, text = str(card.name.replace('_', ' ')), font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = p)
             b1.pack(side = 'top', pady = 2)
             app.context_buttons.append(b1)
-#             b1.bind('<Button-2>', lambda n = card : action_description(n))
+            b1.bind('<Button-2>', lambda n = card : action_description(n))
         if index > 0:
             b4 = tk.Button(app.context_menu, text = 'W : Prev', font = ('chalkduster', 14), fg='tan3', highlightbackground = 'tan3', command = lambda hand = hand, i = index-9, all = all, loc = loc : self.page_mass_grave(hand = hand, index = i, all = all, loc = loc))
             b4.pack(side = 'top', pady = 2)
@@ -33922,8 +34125,10 @@ class Witch(Summon):
     def do_carrion_wyrm(self, event, sqr, sqrs):
         if sqr not in sqrs:
             return
-        discard_names = [c.name for c in self.discard]
-        cards = list(filter(lambda c : discard_names.count(c.name)>=2 ,self.discard))
+        cards = []
+        for card in self.discard:
+            if card not in cards:
+                cards.append(card)
         if cards == []:
             return
         self.magick -= self.arcane_dict['Carrion_Wyrm'].cost
@@ -33977,8 +34182,7 @@ class Witch(Summon):
         app.depop_context(event = None)
         self.discard.remove(card)
         self.exile.append(card)
-        discard_names = [c.name for c in self.discard]
-        cards = list(filter(lambda c : discard_names.count(c.name)>=2 ,self.discard))
+        cards.remove(card)
         amt += 1
         if cards == []:
             self.finish_carrion_wyrm(amt = amt, loc = loc)
@@ -35722,8 +35926,8 @@ class Witch(Summon):
         self.in_hand.append(card)
         self.deck.shuffle()
         sqr = self.loc[:]
-        app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+14-app.moved_down, text = 'Fetch '+str(card).replace('_',' '), justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
-        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+15-app.moved_down, text = 'Fetch '+str(card).replace('_',' '), justify = 'center', font = ('chalkduster', 13), fill = 'antiquewhite', tags = 'text')
+        app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+14-app.moved_down, text = 'Fetch '+str(card.name).replace('_',' '), justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
+        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+15-app.moved_down, text = 'Fetch '+str(card.name).replace('_',' '), justify = 'center', font = ('chalkduster', 13), fill = 'antiquewhite', tags = 'text')
         root.after(1999, lambda  name = 'Styxian_Guide' : self.cleanup_spell(name = name))
         
         
@@ -35752,7 +35956,6 @@ class Witch(Summon):
         app.vis_dict['Wrath_of_Samael'] = Vis(name = 'Wrath_of_Samael', loc = sqr[:])
         app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+84-app.moved_down, text = 'Wrath of Samael', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
         app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+85-app.moved_down, text = 'Wrath of Samael', justify = 'center', font = ('chalkduster', 13), fill = 'antiquewhite', tags = 'text')
-        
         # +/- buttons linked to Label
         app.tmp = tk.IntVar()
         app.tmp.set(0)
@@ -36996,7 +37199,7 @@ class Witch(Summon):
     def mind_rot(self, event = None):
         app.depop_context(event = None)
         root.bind('<q>', self.cleanup_spell)
-        sqrs = [s for s in app.coords if 1 <= dist(self.loc, s) <= max(1,self.get_abl('rsn')//2)]
+        sqrs = [s for s in app.coords if 1 <= dist(self.loc, s) <= self.get_abl('rsn')]
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_mind_rot(event = e, sqr = s, sqrs = sqrs))
         b = tk.Button(app.context_menu, text = 'Choose Target For Mind Rot', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_mind_rot(e, s, sqrs = sqrs))
@@ -38526,7 +38729,6 @@ class App(tk.Frame):
         self.arcane_dict['Rite_of_Spring'] = Spell('Rite_of_Spring',Witch.rite_of_spring, 5, 0, 0)
         self.arcane_dict['Living_Death'] = Spell('Living_Death',Witch.living_death, 5, 0, 0)
         self.arcane_dict['Mass_Grave'] = Spell('Mass_Grave',Witch.mass_grave, 5, 0, 0)
-        self.arcane_dict['The_Moon'] = Spell('The_Moon',Witch.the_moon, 5, 0, 0)
         self.arcane_dict['Mirror_Armor'] = Spell('Mirror_Armor',Witch.mirror_armor, 5, 0, 0)
         self.arcane_dict['Black_Blade_of_Disaster'] = Spell('Black_Blade_of_Disaster',Witch.black_blade_of_disaster, 5, 0, 0)
         self.arcane_dict['The_Emperor'] = Spell('The_Emperor',Witch.the_emperor, 5, 0, 0)
@@ -38541,6 +38743,7 @@ class App(tk.Frame):
         self.arcane_dict['Enmeshing_Coils'] = Spell('Enmeshing_Coils',Witch.enmeshing_coils, 5, 0, 0)
         self.arcane_dict['Mind_Rot'] = Spell('Mind_Rot',Witch.mind_rot, 5,0,0)
         self.arcane_dict['Immolate'] = Spell('Immolate',Witch.immolate, 5,0,0)
+        self.arcane_dict['The_Moon'] = Spell('The_Moon',Witch.the_moon, 6, 0, 0)
         self.arcane_dict['Command_of_Osiris'] = Spell('Command_of_Osiris',Witch.command_of_osiris, 6,0,0)
         self.arcane_dict['Justice'] = Spell('Justice',Witch.justice, 6,0,0)
         self.arcane_dict['Vengeance'] = Spell('Vengeance',Witch.vengeance, 6, 0, 0)
@@ -38660,7 +38863,7 @@ class App(tk.Frame):
         
         
     def log_text(self, someString):
-        blocked_text = ['Initiative Queue: ']
+        blocked_text = ['Initiative Queue: ', 'End-of-Turn Phase', 'Start-of-Turn Phase','1','2','3','4','5','6','7','8','9','0']
         ids = app.all_ents().keys()
         blocked_text += ids
         if someString not in blocked_text:
@@ -40105,7 +40308,7 @@ class App(tk.Frame):
     def start_turn(self): # AWAIT button press, start level popup
         def log_wrapper(func, *args, **kwargs):
             # make sure field actually exists
-            if 'text' in kwargs.keys():
+            if 'text' in kwargs.keys() and 'effects_text' != kwargs['tags']:
                 to_log = kwargs['text']
                 app.log_text(to_log)
             func(*args, **kwargs)
@@ -40658,12 +40861,14 @@ class App(tk.Frame):
             efs = [v for v in ent.effects_dict.values()]
             starty = 5
             for ef in efs[0:5]:
-                self.canvas.create_text(ent.loc[0]*100+4-self.moved_right, ent.loc[1]*100+starty-1-self.moved_down, text=ef.name.replace('_',' ')[0:9]+'...', anchor = 'nw', font = ('chalkduster', 10), width = 95, fill = 'black', tags = 'effects_text')
-                self.canvas.create_text(ent.loc[0]*100+5-self.moved_right, ent.loc[1]*100+starty-self.moved_down, text=ef.name.replace('_',' ')[0:9]+'...', anchor = 'nw', font = ('chalkduster', 10), width = 95, fill = 'gray66', tags = 'effects_text')
+                txt = ef.name.replace('_',' ')[0:9]+'...'
+                self.canvas.create_text(ent.loc[0]*100+4-self.moved_right, ent.loc[1]*100+starty-1-self.moved_down, text=txt, anchor = 'nw', font = ('chalkduster', 10), width = 95, fill = 'black', tags = 'effects_text')
+                self.canvas.create_text(ent.loc[0]*100+5-self.moved_right, ent.loc[1]*100+starty-self.moved_down, text=txt, anchor = 'nw', font = ('chalkduster', 10), width = 95, fill = 'gray66', tags = 'effects_text')
                 starty += 10
             if len(efs) > 5:
-                self.canvas.create_text(ent.loc[0]*100+4-self.moved_right, ent.loc[1]*100+starty-1-self.moved_down, text='...', anchor = 'nw', font = ('chalkduster', 10), width = 95, fill = 'black', tags = 'effects_text')
-                self.canvas.create_text(ent.loc[0]*100+5-self.moved_right, ent.loc[1]*100+starty-self.moved_down, text='...', anchor = 'nw', font = ('chalkduster', 10), width = 95, fill = 'gray66', tags = 'effects_text')
+                txt = '...'
+                self.canvas.create_text(ent.loc[0]*100+4-self.moved_right, ent.loc[1]*100+starty-1-self.moved_down, text=txt, anchor = 'nw', font = ('chalkduster', 10), width = 95, fill = 'black', tags = 'effects_text')
+                self.canvas.create_text(ent.loc[0]*100+5-self.moved_right, ent.loc[1]*100+starty-self.moved_down, text=txt, anchor = 'nw', font = ('chalkduster', 10), width = 95, fill = 'gray66', tags = 'effects_text')
         
         
     def animate(self):
@@ -41505,6 +41710,10 @@ class App(tk.Frame):
         en_ents = [k for k,v in app.ent_dict.items() if v.owner != 'p1']
         app.cycle_q = ents[:]
         app.enemy_cycle_q = en_ents[:]
+        # DESTROY THIS ENT EFFECTS VISUALS
+        for k,ef in ent.effects_dict.items():
+            if ef.vis != None:
+                self.canvas.delete(ef.vis.tags)
         # DEBUG handle if killing witch
         # If witch is dead, show popup with victory/defeat
         if app.num_players == 1:

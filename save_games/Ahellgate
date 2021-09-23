@@ -1,6 +1,6 @@
 Agnes_Sampson
 2
-['Frantic_Search', 'Dark_Ritual', 'Mass_Grave', 'Scour', 'The_Fool', 'The_Empress', 'The_Chariot', 'The_Hermit', 'The_Hanged_Man', 'The_Moon', 'The_Devil', "Witch's_Blood", 'Acid_Arrow', 'Iron_Skins', 'Black_Blade_of_Disaster', 'Imbue_Thrall', 'Quicksilver', 'Magick_Missle', 'Pull_from_the_Aether', 'Spectral_Pillory']
+['Thaumaturge', 'Enchantress', 'Frantic_Search', 'Dark_Ritual', 'Inquisitor', 'Mass_Grave', 'Artificer', 'The_Fool', 'The_Chariot', 'The_Moon', 'Iron_Skins', 'Illusionist', 'Umbrae_Wolf', 'Beastmaster', 'Goblin_Shaman', 'Yellow_Priest', 'Magick_Missle', 'Pull_from_the_Aether', 'Spectral_Pillory', 'Reaping_of_Saturnus', 'The_World', 'Haunted_Cairn', 'Legerdemain', 'The_Magician', 'Carrion_Wyrm', 'Wreathed_in_Flame', 'Mox_Byzantium', 'Survival_of_the_Fittest', 'Mox_Amethyst', 'Mind_Rot', 'Blind', 'Cloudkill', 'Pain', 'Styxian_Guide', 'Ogre', 'Myconid']
 6
 7
 7
@@ -20,4 +20,4 @@ Agnes_Sampson
 30
 4
 5
-['Iron_Skins', 'Frantic_Search', 'Spectral_Pillory', 'Imbue_Thrall', 'Frantic_Search', 'Black_Blade_of_Disaster', 'The_Fool', "Witch's_Blood", 'Pull_from_the_Aether', 'Enchantress', 'The_Hermit', 'Quicksilver', 'Inquisitor', 'Beastmaster', 'Artificer', 'Inquisitor', 'The_Devil', 'Enchantress', 'The_Fool', 'Mass_Grave', 'Quicksilver', 'The_Hermit', 'Frantic_Search', 'Umbrae_Wolf', 'Enchantress', 'Scour', 'The_Hanged_Man', 'Inquisitor', 'Iron_Skins', 'Thaumaturge', 'Frantic_Search', 'Magick_Missle', 'Dark_Ritual', 'Scour', 'Dark_Ritual', 'The_Empress', 'The_Chariot', 'The_Moon', 'Dark_Ritual', 'The_Empress', 'Acid_Arrow', 'Goblin_Shaman', 'Thaumaturge', 'Iron_Skins', 'Mass_Grave', 'Yellow_Priest', 'Magick_Missle', 'Artificer', "Witch's_Blood", 'The_Fool', 'Artificer', 'Thaumaturge', 'Spectral_Pillory', 'Artificer', 'Enchantress', 'The_Chariot', 'Illusionist', 'Acid_Arrow', 'The_Empress', 'Mass_Grave']
+['Thaumaturge', 'Thaumaturge', 'Enchantress', 'Enchantress', 'Enchantress', 'Frantic_Search', 'Frantic_Search', 'Frantic_Search', 'Frantic_Search', 'Dark_Ritual', 'Dark_Ritual', 'Dark_Ritual', 'Inquisitor', 'Mass_Grave', 'Mass_Grave', 'Mass_Grave', 'Artificer', 'Artificer', 'Artificer', 'Artificer', 'The_Fool', 'The_Fool', 'The_Chariot', 'The_Chariot', 'The_Moon', 'Iron_Skins', 'Illusionist', 'Illusionist', 'Illusionist', 'Umbrae_Wolf', 'Beastmaster', 'Goblin_Shaman', 'Yellow_Priest', 'Magick_Missle', 'Magick_Missle', 'Pull_from_the_Aether', 'Spectral_Pillory', 'Reaping_of_Saturnus', 'The_World', 'The_World', 'Haunted_Cairn', 'Legerdemain', 'The_Magician', 'Carrion_Wyrm', 'Wreathed_in_Flame', 'Mox_Byzantium', 'Mox_Byzantium', 'Survival_of_the_Fittest', 'Mox_Amethyst', 'Mox_Amethyst', 'Mind_Rot', 'Blind', 'Cloudkill', 'Pain', 'Styxian_Guide', 'Styxian_Guide', 'Styxian_Guide', 'Ogre', 'Ogre', 'Myconid']
