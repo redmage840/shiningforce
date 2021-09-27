@@ -1,7 +1,6 @@
 # in shapeshift, protean mage
 # app.tmp_dict deletion in shapeshift...
-
-# mox amethyst name to mox porcelain
+# shapeshift should grab current values and apply to base, or else abl points can be spent when value is lower than 0/1...
 
 # cyberdemon, 1 act rocket that explodes
 
@@ -268,7 +267,7 @@ def action_description(act):
         return 'Set an adjacent unit stat to that of caster. Costs 1 act and 1 magick.'
     elif act == 'Imbue Thrall':
         return 'Caster gets action costing 1 act and 1 magick that sets an adjacent unit stat to the same as that of caster.'
-    elif act == 'Mox Amethyst':
+    elif act == 'Mox Porcelain':
         return 'Set the imprint on a Tomb you own with this imprint to blank (Tomb is randomly selected). Place a Tomb with no imprint randomly among the closest locations to the chosen Tomb and set both of these Tombs spirit to 1.'
     elif act == 'Needle Storm':
         return 'A spell target in range reason, on to-hit wisdom vs wisdom, gets -1 dodge effect and takes psyche vs psyche piercing spell damage. Costs 2 magick.'
@@ -781,7 +780,7 @@ def action_description(act):
     elif act == 'Nullify':
         return 'All units within range reason, that do not have either psyshield or invisibility, have each of their effects attempted to dispel using the caster wisdom. Costs 3 magick.'
     elif act == 'Roar':
-        return 'All enemy units within range reason that do not have this effect, on strength vs strength to-hit get -3 sanity. Duration is endurance. Level is srength.'
+        return 'All enemy units (except Witches, Undead, and Nonsentient) within range reason that do not have this effect, on strength vs strength to-hit get -3 sanity. Duration is endurance. Level is srength.'
     elif act == "Devil's Mark":
         return 'A non-Witch spell target unit gets +1 to any chosen ability. Costs 2 magick. Duration is reason. Level is wisdom.'
     elif act == 'Mesmerize':
@@ -7868,7 +7867,7 @@ class Protean_Mage(Summon):
             b3 = tk.Button(app.context_menu, text = '-', wraplength = 190, font = ('chalkduster', 20), fg = 'indianred', highlightbackground = 'tan3', command = p2)
             b3.grid(column = 3, row = row_counter, pady = 2)
             app.context_buttons.append(b3)
-            app.tmp_dict[abl].set(eval('self.'+abl))
+            app.tmp_dict[abl].set(self.get_abl(abl))
             b4 = tk.Label(app.context_menu, textvariable = app.tmp_dict[abl], wraplength = 190, font = ('chalkduster', 16), fg = 'tan3', highlightbackground = 'tan3')
             b4.grid(column = 4, row = row_counter)
             app.context_buttons.append(b4)
@@ -17958,7 +17957,7 @@ class Fiend(Summon):
         s = self.loc[:]
         app.canvas.create_text(s[0]*100+49-app.moved_right, s[1]*100+84-app.moved_down, text = 'Roar', font = ('chalkduster', 13), fill = 'black', tags = 'text')
         app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+85-app.moved_down, text = 'Roar', font = ('chalkduster', 13), fill = 'ghostwhite', tags = 'text')
-        ents = [k for k,v in app.all_ents().items() if v.loc in sqrs and v.owner != self.owner]
+        ents = [k for k,v in app.all_ents().items() if v.loc in sqrs and v.owner != self.owner and 'Roar' not in [j.name for i,j in v.effects_dict.items()] and isinstance(v,Witch)==False and 'undead' not in v.get_types() and 'nonsentient' not in v.get_types()]
         def cleanup_roar(n):
             del app.vis_dict[n]
             app.canvas.delete(n)
@@ -24561,7 +24560,7 @@ class Ogre(Summon):
         s = self.loc[:]
         app.canvas.create_text(s[0]*100+49-app.moved_right, s[1]*100+84-app.moved_down, text = 'Roar', font = ('chalkduster', 13), fill = 'gray33', tags = 'text')
         app.canvas.create_text(s[0]*100+50-app.moved_right, s[1]*100+85-app.moved_down, text = 'Roar', font = ('chalkduster', 13), fill = 'gray88', tags = 'text')
-        ents = [k for k,v in app.all_ents().items() if v.loc in sqrs and v.owner != self.owner and 'Roar' not in [j.name for i,j in v.effects_dict.items()] and isinstance(v,Witch)==False]
+        ents = [k for k,v in app.all_ents().items() if v.loc in sqrs and v.owner != self.owner and 'Roar' not in [j.name for i,j in v.effects_dict.items()] and isinstance(v,Witch)==False and 'undead' not in v.get_types() and 'nonsentient' not in v.get_types()]
         def cleanup_roar(n):
             del app.vis_dict[n]
             app.canvas.delete(n)
@@ -35650,19 +35649,19 @@ class Witch(Summon):
         root.after(1999, lambda  name = 'Mox_Byzantium' : self.cleanup_spell(name = name))
         
         
-    def mox_amethyst(self, event = None):
+    def mox_porcelain(self, event = None):
         app.depop_context(event = None)
-        root.bind('<q>', lambda name = 'Mox Amethyst' : self.cleanup_spell(name = name))
-        root.bind('<a>', self.do_mox_amethyst)
-        b = tk.Button(app.context_menu, text = 'Confirm Mox Amethyst', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None : self.do_mox_amethyst(e))
+        root.bind('<q>', lambda name = 'Mox Porcelain' : self.cleanup_spell(name = name))
+        root.bind('<a>', self.do_mox_porcelain)
+        b = tk.Button(app.context_menu, text = 'Confirm Mox Porcelain', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None : self.do_mox_porcelain(e))
         b.pack(side = 'top', pady = 2)
         app.context_buttons.append(b)
         b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
         b2.pack(side = 'top')
         app.context_buttons.append(b2)
         
-    def do_mox_amethyst(self, event):
-        amth_tombs = [v for k,v in app.all_ents().items() if v.owner == self.owner and isinstance(v,Tomb) and v.imprint == 'Mox_Amethyst']
+    def do_mox_porcelain(self, event):
+        amth_tombs = [v for k,v in app.all_ents().items() if v.owner == self.owner and isinstance(v,Tomb) and v.imprint == 'Mox_Porcelain']
         if amth_tombs == []:
             return
 #         self.init_cast_anims()
@@ -35671,12 +35670,12 @@ class Witch(Summon):
         sound_effects.play(effect1, 0)
         app.unbind_all()
         app.depop_context(event = None)
-        self.magick -= self.arcane_dict['Mox_Amethyst'].cost
-        spell = self.arcane_dict['Mox_Amethyst']
+        self.magick -= self.arcane_dict['Mox_Porcelain'].cost
+        spell = self.arcane_dict['Mox_Porcelain']
         self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
         sqr = self.loc[:]
-        app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+84-app.moved_down, text = 'Mox Amethyst', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
-        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+85-app.moved_down, text = 'Mox Amethyst', justify = 'center', font = ('chalkduster', 13), fill = 'white', tags = 'text')
+        app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+84-app.moved_down, text = 'Mox Porcelain', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
+        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+85-app.moved_down, text = 'Mox Porcelain', justify = 'center', font = ('chalkduster', 13), fill = 'white', tags = 'text')
         tomb = choice(amth_tombs)
         spell = self.arcane_dict[tomb.imprint]
         self.arcane_dict[tomb.imprint] = Spell(spell.name,spell.func,spell.cost,max(0,spell.times_imprint-1),spell.times_cast)
@@ -35687,7 +35686,7 @@ class Witch(Summon):
             prefix = 'b'
         id = prefix + str(self.summon_ids)
         self.summon_ids += 1
-        app.vis_dict['Mox_Amethyst'] = Vis(name = 'Mox_Amethyst', loc = tomb.loc[:])
+        app.vis_dict['Mox_Porcelain'] = Vis(name = 'Mox_Porcelain', loc = tomb.loc[:])
         img = ImageTk.PhotoImage(Image.open('summon_imgs/Tomb.png'))
         cs = [c for c in app.coords if app.grid[c[0]][c[1]]=='']
         sqr = reduce(lambda a,b : a if dist(tomb.loc,a)<dist(tomb.loc,b) else b, cs)
@@ -35696,7 +35695,7 @@ class Witch(Summon):
         tomb2 = app.ent_dict[id]
         tomb.spirit = 1
         tomb2.spirit = 1
-        root.after(1999, lambda  name = 'Mox_Amethyst' : self.cleanup_spell(name = name))
+        root.after(1999, lambda  name = 'Mox_Porcelain' : self.cleanup_spell(name = name))
             
         
         
@@ -38777,7 +38776,7 @@ class App(tk.Frame):
         self.arcane_dict['Pillage'] = Spell('Pillage',Witch.pillage, 1, 0, 0)
         self.arcane_dict["Death's_Head_Moth"] = Spell("Death's_Head_Moth",Witch.deaths_head_moth, 1, 0, 0)
         self.arcane_dict['Compromised_Immunity'] = Spell('Compromised_Immunity',Witch.compromised_immunity, 1, 0, 0)
-        self.arcane_dict['Mox_Amethyst'] = Spell('Mox_Amethyst',Witch.mox_amethyst, 1, 0, 0)
+        self.arcane_dict['Mox_Porcelain'] = Spell('Mox_Porcelain',Witch.mox_porcelain, 1, 0, 0)
         self.arcane_dict['Frantic_Search'] = Spell('Frantic_Search',Witch.frantic_search, 1,0,0)
         self.arcane_dict['Boiling_Blood'] = Spell('Boiling_Blood',Witch.boiling_blood, 1,0,0)
         self.arcane_dict['Meditate'] = Spell('Meditate',Witch.meditate, 1,0,0)
