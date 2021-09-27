@@ -1,4 +1,7 @@
-# in corroding touch, protean mage
+# in shapeshift, protean mage
+# app.tmp_dict deletion in shapeshift...
+
+# mox amethyst name to mox porcelain
 
 # cyberdemon, 1 act rocket that explodes
 
@@ -7793,151 +7796,137 @@ class Protean_Mage(Summon):
         self.resist = []
         super().__init__(name, id, img, loc, owner)
         
-# - corroding virus - give -X stat to self to give -X stat of same kind to action target adjacent entity
-#     def corroding_touch(self, event = None):
-#         if self.acts < 1:
-#             return
-#         app.unbind_nonarrows()
-#         app.depop_context(event = None)
-#         root.bind('<q>', self.cleanup_pyrotechnics)
-#         sqrs = [s for s in app.coords if dist(self.loc, s) == 1]
-#         app.animate_squares(sqrs)
-#         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_corroding_touch(event = e, sqr = s, sqrs = sqrs))
-#         b = tk.Button(app.context_menu, text = 'Choose Target For Corroding Touch', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_corroding_touch(e, s, sqrs))
-#         b.pack(side = 'top', pady = 2)
-#         app.context_buttons.append(b)
-#         b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
-#         b2.pack(side = 'top')
-#         app.context_buttons.append(b2)
-#         
-#         
-#     def do_corroding_touch(self, event, sqr, sqrs):
-#         if sqr not in sqrs:
-#             return
-#         id = app.grid[sqr[0]][sqr[1]]
-#         if id not in app.action_target_ents().keys():
-#             return
-#         app.unbind_all()
-#         effect1 = mixer.Sound('Sound_Effects/plague.ogg')
-#         effect1.set_volume(app.effects_volume.get())
-#         sound_effects.play(effect1, 0)
-#         app.depop_context(event = None)
-#         app.cleanup_squares()
-#         self.acts -= 1
-#         ent = app.ent_dict[id]
-#         app.vis_dict['Corroding_Touch'] = Vis(name = 'Corroding_Touch', loc = sqr[:])
-#         # now choose abl
-#         bg.create_text(15, 15, text= 'Choose Ability...', width = 190, anchor = 'nw', font = ('chalkduster', 16), fill = 'indianred')
-#         app.context_buttons.append(bg)
-#         abls = ['str', 'agl', 'end', 'mm', 'msl', 'bls', 'dodge', 'wis', 'rsn', 'init']
-#         for abl in abls:
-#             b = tk.Button(app.context_menu, text = abl, wraplength = 190, font = ('chalkduster', 16), fg = 'tan3', highlightbackground = 'tan3', command = lambda ent = ent, abl = abl : self.choose_corr_touch(ent, abl))
-#             b.pack(side = 'top')
-#             app.context_buttons.append(b)
-#         
-#     def choose_corr_touch(self, ent, abl):
-#         if self.get_abl(abl) < 1:
-#             return
-#         app.depop_context(event=None)
-#         # create label with +/- buttons, 'own abl' label tied to abl
-#         excess = self.get_abl(abl)
-#         app.excess = tk.IntVar()
-#         app.excess.set(excess)
-#         # +/- buttons linked to Label
-#         app.tmp = tk.IntVar()
-#         app.tmp.set(0)
-#         def plus():
-#             cur = app.tmp.get()
-#             ex = app.excess.get()
-#             if ex < 1:
-#                 return
-#             else:
-#                 app.tmp.set(cur+1)
-#                 app.excess.set(ex-1)
-#         p = partial(plus)
-#         b = tk.Button(app.context_menu, text = '+', wraplength = 190, font = ('chalkduster', 22), fg = 'indianred', highlightbackground = 'tan3', command = p)
-#         b.pack(side = 'top', pady = 2)
-#         app.context_buttons.append(b)
-#         def minus():
-#             cur = app.tmp.get()
-#             ex = app.excess.get()
-#             if cur < 1:
-#                 return
-#             else:
-#                 app.tmp.set(cur-1)
-#                 app.excess.set(ex+1)
-#         p2 = partial(minus)
-#         b2 = tk.Button(app.context_menu, text = '-', wraplength = 190, font = ('chalkduster', 22), fg = 'indianred', highlightbackground = 'tan3', command = p2)
-#         b2.pack(side = 'top', pady = 2)
-#         app.context_buttons.append(b2)
-#         total_label = tk.Label(app.context_menu, textvariable = app.tmp, bg = 'black', fg = 'indianred')
-#         total_label.pack(side = 'top', pady = 2)
-#         app.context_buttons.append(total_label)
-#         # title of 'excess' ability
-#         ex_title = tk.Label(app.context_menu, text = 'Own '+abl, bg = 'black', fg = 'indianred')
-#         ex_title.pack(side = 'top', pady = 2)
-#         app.context_buttons.append(ex_title)
-#         # excess int label
-#         ex_label = tk.Label(app.context_menu, textvariable = app.excess, bg = 'black', fg = 'indianred')
-#         ex_label.pack(side = 'top', pady = 2)
-#         app.context_buttons.append(ex_label)
-#         def done(ent, abl):
-#             amt = app.tmp.get()
-#             self.cont_corr_touch(ent, abl, amt)
-#         p3 = partial(done, ent, abl)
-#         b3 = tk.Button(app.context_menu, text = 'DONE', wraplength = 190, font = ('chalkduster', 22), fg = 'indianred', highlightbackground = 'tan3', command = p3)
-#         b3.pack(side = 'top', pady = 2)
-#         app.context_buttons.append(b3)
-#         
-#     
-#     def cont_corr_touch(self, ent, abl, amt):
-#         # cleanup tmps
-#         app.depop_context(event=None)
-#         del app.tmp, app.excess
-# #         del app.excess
-#         # apply amt neg efct to abl, self and ent
-#         def cor_abl(stat, amt=None):
-#             return max(1,stat-amt)
-#         p = partial(cor_abl, amt=amt)
-#         tmp_str = 'ent.'+abl+'_effects.append(p)'
-#         eval(tmp_str)
-#         tmp_str2 = 'self.'+abl+'_effects.append(p)'
-#         eval(tmp_str2)
-#         # needs 2 dif undo funcs, for self/caster and target
-#         
-#         
-#         def undo(ent, caster_ent, abl, p, lockname = None):
-#             tmp_str = 'ent.'+abl+'_effects.remove(p)'
-#             eval(tmp_str)
-#             tmp_str2 = 'caster_ent.'+abl+'_effects.remove(p)'
-#             eval(tmp_str2)
-#             root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
-#         u = partial(undo, ent, self, abl, p)
-#         
-#             
-#         
-#     def cleanup_(self, event = None):
-#         try: 
-#             del app.vis_dict['Pyrotechnics']
-#             app.canvas.delete('Pyrotechnics')
-#         except: pass
-#         app.depop_context(event = None)
-#         app.cleanup_squares()
-#         app.canvas.delete('text')
-#         app.unbind_all()
-#         app.rebind_all()
-#         app.exists_check(app.active_ent)
-
-    def corroding_touch(self, event = None):
-        pass
-
+        
+# - shapeshift - redistribute stat total among stats (perm, not effect)
+    def shapeshift(self, event = None):
+        if self.acts < 1:
+            return
+        app.unbind_nonarrows()
+        app.depop_context(event = None)
+        root.bind('<q>', self.cleanup_shapeshift)
+        sqrs = [self.loc]
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_shapeshift(event = e, sqr = s, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Confirm Shapeshift', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_shapeshift(e, s, sqrs))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
+        
+        
+    def do_shapeshift(self, event, sqr, sqrs):
+        if sqr not in sqrs:
+            return
+        app.unbind_all()
+        effect1 = mixer.Sound('Sound_Effects/plague.ogg')
+        effect1.set_volume(app.effects_volume.get())
+        sound_effects.play(effect1, 0)
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        self.acts -= 1
+        app.vis_dict['Shapeshift'] = Vis(name = 'Shapeshift', loc = sqr[:])
+        # DIST POINTS
+        app.choose_label = tk.Label(app.context_menu, text = 'Distribute Ability Points', bg = 'black', fg = 'indianred')
+        app.choose_label.grid(row = 1, column = 1)
+        app.context_buttons.append(app.choose_label)
+        abls = ['str', 'agl', 'end', 'mm', 'msl', 'bls', 'dodge', 'psyche', 'wis', 'rsn', 'san', 'init']
+        app.excess = tk.IntVar()
+#         ttl = sum([self.get_abl(a) for a in abls])
+        ttl = 0
+        app.excess.set(ttl)
+        app.excess_label = tk.Label(app.context_menu, textvariable=app.excess, bg = 'black', fg = 'indianred')
+        app.excess_label.grid(row = 1, column = 2)
+        app.context_buttons.append(app.excess_label)
+        row_counter = 2
+        app.tmp_dict = {}
+        for abl in abls:
+            b = tk.Label(app.context_menu, text = abl, wraplength = 190, font = ('chalkduster', 14), fg = 'tan3', highlightbackground = 'tan3', bg = 'black')
+            b.grid(column = 1, row = row_counter)
+            app.context_buttons.append(b)
+            app.tmp_dict[abl] = tk.IntVar()
+            def plusser(abl):
+                ttl = app.excess.get()
+                if ttl < 1:
+                    return
+                else:
+                    app.excess.set(ttl-1)
+                    cur = app.tmp_dict[abl].get()
+                    app.tmp_dict[abl].set(cur+1)
+            p = partial(plusser, abl)
+            b2 = tk.Button(app.context_menu, text = '+', wraplength = 190, font = ('chalkduster', 20), fg = 'indianred', highlightbackground = 'tan3', command = p)
+            b2.grid(column = 2, row = row_counter, pady = 2)
+            app.context_buttons.append(b2)
+            def minus(abl):
+                cur = app.tmp_dict[abl].get()
+                if cur == 1:
+                    return
+                else:
+                    app.excess.set(app.excess.get()+1)
+                    app.tmp_dict[abl].set(cur-1)
+            p2 = partial(minus, abl)
+            b3 = tk.Button(app.context_menu, text = '-', wraplength = 190, font = ('chalkduster', 20), fg = 'indianred', highlightbackground = 'tan3', command = p2)
+            b3.grid(column = 3, row = row_counter, pady = 2)
+            app.context_buttons.append(b3)
+            app.tmp_dict[abl].set(eval('self.'+abl))
+            b4 = tk.Label(app.context_menu, textvariable = app.tmp_dict[abl], wraplength = 190, font = ('chalkduster', 16), fg = 'tan3', highlightbackground = 'tan3')
+            b4.grid(column = 4, row = row_counter)
+            app.context_buttons.append(b4)
+            row_counter += 1
+        vals = zip(abls,[x.get() for x in app.tmp_dict.values()])
+        def done_shapeshift(vals, ent):
+            for v in vals:
+                abl = v[0]
+                amt = app.tmp_dict[abl].get()
+                if abl == 'str':
+                    ent.str = amt
+                elif abl == 'agl':
+                    ent.agl = amt
+                elif abl == 'end':
+                    ent.end = amt
+                elif abl == 'dodge':
+                    ent.dodge = amt
+                elif abl == 'mm':
+                    ent.mm = amt
+                elif abl == 'msl':
+                    ent.msl = amt
+                elif abl == 'bls':
+                    ent.bls = amt
+                elif abl == 'rsn':
+                    ent.rsn = amt
+                elif abl == 'wis':
+                    ent.wis = amt
+                elif abl == 'psyche':
+                    ent.psyche = amt
+                elif abl == 'san':
+                    ent.san = amt
+                elif abl == 'init':
+                    ent.init = amt
+            ent.cleanup_shapeshift()
+        final_p = partial(done_shapeshift, vals, self)
+        b5 = tk.Button(app.context_menu, text = 'Done', wraplength = 190, font = ('chalkduster', 20), fg = 'indianred', highlightbackground = 'tan3', command = final_p)
+        b5.grid(column = 2, row = row_counter, pady = 2)
+        app.context_buttons.append(b5)
+            
+            
+    def cleanup_shapeshift(self, event = None):
+        try: 
+            del app.vis_dict['Shapeshift']
+            app.canvas.delete('Shapeshift')
+        except: pass
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        app.canvas.delete('text')
+        app.unbind_all()
+        app.rebind_all()
+        app.exists_check(app.active_ent)
+        
+        
+        
 # - overtake organism - destroy an entity you own and -1 sum-count, put protean_mage in play with 1 spirit/magick
     def overtake_organism(self, event = None):
         pass
         
-# - shapeshift - redistribute stat total among stats (perm, not effect)
-    def shapeshift(self, event = None):
-        pass
         
 # - polymorph self - caster becomes copy (class) of an entity, except stats are those of current total (perm, not effect)
     def polymorph_self(self, event = None):
@@ -7946,6 +7935,163 @@ class Protean_Mage(Summon):
 # - polymorph other...
     def polymorph_other(self, event = None):
         pass
+        
+# - corroding virus - give -X stat to self to give -X stat of same kind to action target adjacent entity
+    def corroding_touch(self, event = None):
+        if self.acts < 1:
+            return
+        app.unbind_nonarrows()
+        app.depop_context(event = None)
+        root.bind('<q>', self.cleanup_corroding_touch)
+        sqrs = [s for s in app.coords if dist(self.loc, s) == 1]
+        app.animate_squares(sqrs)
+        root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_corroding_touch(event = e, sqr = s, sqrs = sqrs))
+        b = tk.Button(app.context_menu, text = 'Choose Target For Corroding Touch', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_corroding_touch(e, s, sqrs))
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+        b2 = tk.Button(app.context_menu, text = 'Cancel', wraplength = 190, font = ('chalkduster', 22), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
+        b2.pack(side = 'top')
+        app.context_buttons.append(b2)
+        
+        
+    def do_corroding_touch(self, event, sqr, sqrs):
+        if sqr not in sqrs:
+            return
+        id = app.grid[sqr[0]][sqr[1]]
+        if id not in app.action_target_ents().keys():
+            return
+        ent = app.ent_dict[id]
+        if 'Corroding_Touch' in [v.name for k,v in ent.effects_dict.items()]:
+            return
+        app.unbind_all()
+        effect1 = mixer.Sound('Sound_Effects/plague.ogg')
+        effect1.set_volume(app.effects_volume.get())
+        sound_effects.play(effect1, 0)
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        self.acts -= 1
+        app.vis_dict['Corroding_Touch'] = Vis(name = 'Corroding_Touch', loc = sqr[:])
+        # now choose abl
+        app.choose_label = tk.Label(app.context_menu, text = 'Choose Ability', bg = 'black', fg = 'indianred')
+        app.choose_label.pack(side = 'top', pady = 2)
+        app.context_buttons.append(app.choose_label)
+        abls = ['str', 'agl', 'end', 'mm', 'msl', 'bls', 'dodge', 'wis', 'rsn', 'init']
+        for abl in abls:
+            b = tk.Button(app.context_menu, text = abl, wraplength = 190, font = ('chalkduster', 16), fg = 'tan3', highlightbackground = 'tan3', command = lambda ent = ent, abl = abl : self.choose_corr_touch(ent, abl))
+            b.pack(side = 'top')
+            app.context_buttons.append(b)
+        
+    def choose_corr_touch(self, ent, abl):
+        if self.get_abl(abl) < 2:
+            return
+        del app.choose_label
+        app.depop_context(event=None)
+        # create label with +/- buttons, 'own abl' label tied to abl
+        excess = self.get_abl(abl)
+        app.excess = tk.IntVar()
+        app.excess.set(excess)
+        # +/- buttons linked to Label
+        app.tmp = tk.IntVar()
+        app.tmp.set(0)
+        def plus():
+            cur = app.tmp.get()
+            ex = app.excess.get()
+            if ex < 2:
+                return
+            else:
+                app.tmp.set(cur+1)
+                app.excess.set(ex-1)
+        p = partial(plus)
+        b = tk.Button(app.context_menu, text = '+', wraplength = 190, font = ('chalkduster', 22), fg = 'indianred', highlightbackground = 'tan3', command = p)
+        b.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b)
+        def minus():
+            cur = app.tmp.get()
+            ex = app.excess.get()
+            if cur < 2:
+                return
+            else:
+                app.tmp.set(cur-1)
+                app.excess.set(ex+1)
+        p2 = partial(minus)
+        b2 = tk.Button(app.context_menu, text = '-', wraplength = 190, font = ('chalkduster', 22), fg = 'indianred', highlightbackground = 'tan3', command = p2)
+        b2.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b2)
+        total_label = tk.Label(app.context_menu, textvariable = app.tmp, bg = 'black', fg = 'indianred')
+        total_label.pack(side = 'top', pady = 2)
+        app.context_buttons.append(total_label)
+        # title of 'excess' ability
+        ex_title = tk.Label(app.context_menu, text = 'Own '+abl, bg = 'black', fg = 'indianred')
+        ex_title.pack(side = 'top', pady = 2)
+        app.context_buttons.append(ex_title)
+        # excess int label
+        ex_label = tk.Label(app.context_menu, textvariable = app.excess, bg = 'black', fg = 'indianred')
+        ex_label.pack(side = 'top', pady = 2)
+        app.context_buttons.append(ex_label)
+        def done(ent, abl):
+            amt = app.tmp.get()
+            self.cont_corr_touch(ent, abl, amt)
+        p3 = partial(done, ent, abl)
+        b3 = tk.Button(app.context_menu, text = 'DONE', wraplength = 190, font = ('chalkduster', 22), fg = 'indianred', highlightbackground = 'tan3', command = p3)
+        b3.pack(side = 'top', pady = 2)
+        app.context_buttons.append(b3)
+        
+    
+    def cont_corr_touch(self, ent, abl, amt):
+        # cleanup tmps
+        app.depop_context(event=None)
+        del app.tmp, app.excess
+        app.canvas.create_text(ent.loc[0]*100-app.moved_right+49, ent.loc[1]*100-app.moved_down+84, text = '-'+str(amt)+' '+abl, justify = 'center', fill = 'black', font = ('chalkduster', 16), tags = 'text')
+        app.canvas.create_text(ent.loc[0]*100-app.moved_right+50, ent.loc[1]*100-app.moved_down+85, text = '-'+str(amt)+' '+abl, justify = 'center', fill = 'limegreen', font = ('chalkduster', 16), tags = 'text')
+        #Caster text
+        app.canvas.create_text(self.loc[0]*100-app.moved_right+49, self.loc[1]*100-app.moved_down+84, text = '-'+str(amt)+' '+abl, justify = 'center', fill = 'black', font = ('chalkduster', 16), tags = 'text')
+        app.canvas.create_text(self.loc[0]*100-app.moved_right+50, self.loc[1]*100-app.moved_down+85, text = '-'+str(amt)+' '+abl, justify = 'center', fill = 'limegreen', font = ('chalkduster', 16), tags = 'text')
+        # apply amt neg efct to abl, self and ent
+        def cor_abl(stat, amt=None):
+            return max(1,stat-amt)
+        p = partial(cor_abl, amt=amt)
+        tmp_str = 'ent.'+abl+'_effects.append(p)'
+        eval(tmp_str)
+        
+        def caster_cor_abl(stat, amt=None):
+            return max(1,stat-amt)
+        p2 = partial(caster_cor_abl, amt=amt)
+        tmp_str2 = 'self.'+abl+'_effects.append(p2)'
+        eval(tmp_str2)
+        
+        def undo(ent, abl, p, lockname = None):
+            tmp_str = 'ent.'+abl+'_effects.remove(p)'
+            eval(tmp_str)
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+        u = partial(undo, ent, abl, p)
+        
+        def undo2(ent, abl, p, lockname = None):
+            tmp_str = 'ent.'+abl+'_effects.remove(p)'
+            eval(tmp_str)
+            root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+        u2 = partial(undo2, self, abl, p2)
+        
+        n = 'corr_touch'+str(app.count)
+        app.count += 1
+        ent.effects_dict[n] = Effect(name = 'Corroding_Touch', undo_func = u, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
+        n2 = 'corr_touch'+str(app.count)
+        app.count += 1
+        self.effects_dict[n2] = Effect(name = 'Corroding_Touch', undo_func = u2, duration = self.get_abl('rsn'), level = self.get_abl('wis'))
+        root.after(1888, lambda t = 'text' : app.canvas.delete(t))
+        root.after(1999, self.cleanup_corroding_touch)
+        
+        
+    def cleanup_corroding_touch(self, event = None):
+        try: 
+            del app.vis_dict['Corroding_Touch']
+            app.canvas.delete('Corroding_Touch')
+        except: pass
+        app.depop_context(event = None)
+        app.cleanup_squares()
+        app.canvas.delete('text')
+        app.unbind_all()
+        app.rebind_all()
+        app.exists_check(app.active_ent)
 
 
 class Illusionist(Summon):
@@ -38778,7 +38924,8 @@ class App(tk.Frame):
         self.summon_dict['Ogre'] = ('Ogre',0)
         self.summon_dict['Major_Demon'] = ('Major_Demon',0)
         self.summon_dict['Myconid'] = ('Myconid',0)
-        self.summons_list = ['Berserker','Illusionist','Umbrae_Wolf','Thaumaturge','Murrain_Wolf','Fiend','Wurdulak','Chirurgeon','Hexmage','Fell_Evolver','Drake','Inquisitor','Pixie','Chronomancer','Enchantress', 'Diabolist', 'Artificer', 'Yellow_Priest', 'Goblin_Shaman', 'Beastmaster', 'Ogre', 'Major_Demon','Myconid']
+        self.summon_dict['Protean_Mage'] = ('Protean_Mage',0)
+        self.summons_list = ['Berserker','Illusionist','Umbrae_Wolf','Thaumaturge','Murrain_Wolf','Fiend','Wurdulak','Chirurgeon','Hexmage','Fell_Evolver','Drake','Inquisitor','Pixie','Chronomancer','Enchantress', 'Diabolist', 'Artificer', 'Yellow_Priest', 'Goblin_Shaman', 'Beastmaster', 'Ogre', 'Major_Demon','Myconid', 'Protean_Mage']
         # the following few anim dicts are for testing 'load images on game start, instead of as needed'
         # results in faster response for image loading in game, longer load time (as would be expected)
         self.sqr_anims = {}
