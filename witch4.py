@@ -1,6 +1,53 @@
-# in shapeshift, protean mage
-# app.tmp_dict deletion in shapeshift...
-# shapeshift should grab current values and apply to base, or else abl points can be spent when value is lower than 0/1...
+# below is because Object/Class resolution is not used... Class name dot exotic_func_dict tries to resolve 'static' class struct which does not exist, is added by superclass on instance init
+'''
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/tkinter/__init__.py", line 1883, in __call__
+    return self.func(*args)
+  File "witch4.py", line 40357, in <lambda>
+    cmd = lambda win = self.avatar_popup, p = p : self.release_wrapper(win, p)
+  File "witch4.py", line 41886, in release_wrapper
+    partial()
+  File "witch4.py", line 40351, in wrap
+    somePartial()
+  File "witch4.py", line 40313, in create_map_curs_context
+    self.load_witch(witch = self.p1_witch, player_num = 1, protaganist_object = None, entomb_deck = entomb_deck_p1[:])
+  File "witch4.py", line 40396, in load_witch
+    self.ent_dict[witch] = Witch(name = witch, img = witch_img, loc = loc, owner = 'p' + str(player_num), level = 2, entomb_deck = entomb_deck[:])
+  File "witch4.py", line 28498, in __init__
+    self.deck = Arcane_Deck(cards = entomb_deck[:], owner_ent = self)
+  File "witch4.py", line 1923, in __init__
+    card = Card(name = card, kind = 'Summon', start_func = p, owner = self.owner_ent)
+  File "witch4.py", line 1977, in __init__
+    for k,v in eval(self.name).play_actions.items():
+AttributeError: type object 'Artificer' has no attribute 'play_actions'
+'''
+
+
+# how to define all Spell/Summon exotic funcs by their own class/organization and get the caster entity context for future use....
+# IN arcane deck obj, when it populates itself of Card objs it has an owner (Witch entity), store the func as a partial then, referencing the Spell class by the Card name to get exotic funcs and the owner of the Deck obj, who will be stored as the caster...
+# PROBLEM for exotic funcs that need strange args stored within the partial... Deck obj cannot use a generic method (storing just the caster ent and func in a partial) UNLESS checking by name again...
+
+# where exactly should Spell instance exotic funcs be stored?
+
+# just make Spell into class instead of Named tuple, app.arcane_dict[name] = Spell obj that instance of unaltered Spells (for reference, compared to..) each Witch.arcane_dict[name] that holds Spell obj with Witch specific modifiable values (imprint, times_cast, cost, ...)
+# so... init of Card objects can use the same method (for Summons/Spells) for generating the exotic_zone (discard, in_hand, exile) funcs of cards...
+# Each Card can hold multiple funcs for each zone
+# These are currently only accessed by Witch during round with funcs show_in_hand(), show_discard(), etc..., each is dict
+# Any future needed ref can refer to Card instance itself
+
+# show_in_hand/discard/exile() are called by the buttons from Witch round, this is where class can queried for exotic funcs UNLESS each card object in each zone (discard/in_hand/exile) should remember its specific state/history, for example... can be altered by other actions to remove/add-to the natural actions that would exist for the kind of specific card (whether summon or spell)
+# So... either can have the state of exotic funcs be static and unalterable (except for broadly allowing/disallowing use of) which can then be gotten in show_in_hand....etc based on lookup by kind/class/card?
+# IF ALTERABLE IN GAME...
+# each card should remember its state (exotic funcs) and attach them on init
+# should transfer of zones affect remembered state?...
+# can possibly attach all from info popup window as buttons in window, but is not obvious which has available actions from menu (all appear as buttons of same type)
+# main problem is the difference between defining/retrieving exotic funcs BETWEEN SUMMON and SPELL type, summons have a class assoc which can store the funcs, the spell has a Spell named-tuple...
+
+
+# how to access in_hand/discard/exile funcs from Witch-round?
+# should use the already existing buttons/menus that view those areas, clicking each card/button that normally brings up a descr popup, will now also have those action/func descr and a button to launch, the button should depop context, check for any costs/acts/magick, offer generic_cancel, 
+
+# shapeshift blinking screen when quickly pressing +/- buttons, possibly because of 'fill=x', overwrite of other widgets?...
 
 # cyberdemon, 1 act rocket that explodes
 
@@ -1654,7 +1701,7 @@ class Dummy():
     def __init__(self):
         pass
 
-Spell = namedtuple('Spell',['name','func','cost','times_imprint','times_cast'])
+# Spell = namedtuple('Spell',['name','func','cost','times_imprint','times_cast'])
 
 class Death_Trigger():
     def __init__(self, name = None, level = None, undo_func = None, dt = None):
@@ -1898,36 +1945,14 @@ class Arcane_Deck():
         for card in cards:
             if card in app.summons_list[:]:
                 p = partial(Witch.place_summon, owner_ent, type = card)
-                card = Card(name = card, kind = 'Summon', start_func = p)
+                card = Card(name = card, kind = 'Summon', start_func = p, owner = self.owner_ent)
             else:
                 spell = app.arcane_dict[card]
-                # instead of just init Card obj here, generate_card() takes the base necessary args for a Card, generates the alt funcs
-                # based on name, inits and returns the Card object with added exotic funcs
-                card = self.generate_card(name = card, kind = 'Tomb', cost = spell.cost, start_func = spell.func)
-#                 x = Card(name = card, kind = 'Tomb', cost = spell.cost, start_func = spell.func)
+#                 card = self.generate_spell_card(name = card, kind = 'Tomb', cost = spell.cost, start_func = spell.start_func)
+                card = Card(name = card, kind = 'Tomb', cost = spell.cost, start_func = spell.start_func, owner = self.owner_ent)
             tmp.append(card)
         self.cards = tmp[:]
         self.removed = []
-        # contents/'cards' are populated on init and always moved between either 'cards' OR 'removed', never deleted or added to after init
-        
-    def generate_card(self, name = None, kind = None, cost = None, start_func = None):
-        if name == 'Magick_Missle':
-            def play_func(caster = None, lockname = None):
-                # needs to remove card object from caster discard
-                mm_discard = [c for c in caster.discard if c.name=='Magick_Missle']
-                if mm_discard == []:
-                    pass
-                else:
-                    card = choice(mm_discard)
-                    caster.discard.remove(card)
-                    caster.exile.append(card)
-                root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
-#                 app.dethloks[lockname].set(1)
-            p = partial(play_func, caster = self.owner_ent)
-            card = Card(name = name, kind = kind, cost = cost, start_func = start_func, play_func = p)
-        else:
-            card = Card(name = name, kind = kind, cost = cost, start_func = start_func)
-        return card
         
         
     def shuffle(self):
@@ -1963,14 +1988,49 @@ class Arcane_Deck():
                 return None
 
 class Card():
-    def __init__(self, name = None, kind = None, cost = None, start_func = None, play_func = None, discard_func = None):
+    def __init__(self, name = None, kind = None, cost = None, start_func = None, play_func = None, owner = None):
         self.name = name
         self.kind = kind
         self.cost = cost
+        self.owner = owner
         self.start_func = start_func
-        self.play_func = play_func
-        self.discard_func = discard_func
-
+        self.play_funcs = {}
+        self.discard_funcs = {}
+        self.in_hand_funcs = {}
+        self.exile_funcs = {}
+        if kind == 'Summon':# SUMMONS GET EXOTIC FUNCS FROM CLASS
+            for k,v in eval(self.name).play_actions.items():
+                self.play_funcs[k] = v
+            for k,v in eval(self.name).discard_actions.items():
+                self.discard_funcs[k] = v
+            for k,v in eval(self.name).in_hand_actions.items():
+                self.in_hand_funcs[k] = v
+            for k,v in eval(self.name).exile_actions.items():
+                self.exile_funcs[k] = v
+        else:# SPELLS GET EXOTIC FUNCS DEFINED HERE
+            if name == 'Magick_Missle': # Remove this card from discard (to exile) on entomb
+                def play_func(caster = None, lockname = None):
+                    mm_discard = [c for c in caster.discard if c.name=='Magick_Missle']
+                    if mm_discard == []:
+                        pass
+                    else:
+                        card = choice(mm_discard)
+                        caster.discard.remove(card)
+                        caster.exile.append(card)
+                    root.after(111, lambda ln = lockname : app.dethloks[ln].set(1))
+                p = partial(play_func, caster = self.owner)
+                self.play_funcs['magick_missle_play'] = p
+            else:
+                pass
+                
+                
+class Spell():
+    def __init__(self, name, start_func, cost, times_imprint, times_cast):
+        self.name = name
+        self.start_func = start_func
+        self.cost = cost
+        self.times_imprint = times_imprint
+        self.times_cast = times_cast
 
 class Entity():
     # class name passed as string, return stats, weak, resist, move type, actions, as DICT
@@ -2031,6 +2091,10 @@ class Entity():
         self.action_effects = []
         self.move_type_effects = []
         self.inert_effects = []
+        self.discard_actions = {}
+        self.in_hand_actions = {}
+        self.exile_actions = {}
+        
         
     # just a testing func
     def get_stat_total(self):
@@ -7728,7 +7792,7 @@ class Diabolist(Summon):
 
 
 class Protean_Mage(Summon):
-    actions = ['Move', 'Corroding Virus', 'Overtake Organism', 'Shapeshift','Polymorph Self', 'Polymorph Other']
+    actions = ['Move', 'Corroding Virus', 'Shapeshift','Polymorph Self', 'Polymorph Other']
     str = 2
     agl = 2
     end = 2
@@ -7751,7 +7815,7 @@ class Protean_Mage(Summon):
     resist = []
     def __init__(self, name, id, img, loc, owner, level):
         if level == 1:
-            self.actions = {'Move':self.move, 'Overtake Organism':self.overtake_organism, 'Shapeshift':self.shapeshift,'Polymorph Self':self.polymorph_self, 'Polymorph Other':self.polymorph_other, 'Corroding Touch':self.corroding_touch}
+            self.actions = {'Move':self.move, 'Shapeshift':self.shapeshift,'Polymorph Self':self.polymorph_self, 'Polymorph Other':self.polymorph_other, 'Corroding Touch':self.corroding_touch}
             self.str = 2
             self.agl = 2
             self.end = 2
@@ -7771,7 +7835,7 @@ class Protean_Mage(Summon):
             self.move_range = 5
             self.level = level
         elif level == 2:
-            self.actions = {'Move':self.move, 'Overtake Organism':self.overtake_organism, 'Shapeshift':self.shapeshift,'Polymorph Self':self.polymorph_self, 'Polymorph Other':self.polymorph_other, 'Corroding Touch':self.corroding_touch}
+            self.actions = {'Move':self.move, 'Shapeshift':self.shapeshift,'Polymorph Self':self.polymorph_self, 'Polymorph Other':self.polymorph_other, 'Corroding Touch':self.corroding_touch}
             self.str = 2
             self.agl = 2
             self.end = 2
@@ -7794,6 +7858,21 @@ class Protean_Mage(Summon):
         self.weak = []
         self.resist = []
         super().__init__(name, id, img, loc, owner)
+        self.discard_actions = {'Overtake Organism':self.overtake_organism}
+        
+        
+# - overtake organism - FROM DISCARD, destroy an entity you own and -1 sum-count, put protean_mage in play with 1 spirit/magick
+    def overtake_organism(self, event = None):
+        print('got here')
+        
+        
+# - polymorph self - caster becomes copy (class) of an entity, except stats are those of current total (perm, not effect)
+    def polymorph_self(self, event = None):
+        pass
+        
+# - polymorph other...
+    def polymorph_other(self, event = None):
+        pass
         
         
 # - shapeshift - redistribute stat total among stats (perm, not effect)
@@ -7901,6 +7980,7 @@ class Protean_Mage(Summon):
                     ent.san = amt
                 elif abl == 'init':
                     ent.init = amt
+            del app.tmp_dict
             ent.cleanup_shapeshift()
         final_p = partial(done_shapeshift, vals, self)
         b5 = tk.Button(app.context_menu, text = 'Done', wraplength = 190, font = ('chalkduster', 20), fg = 'indianred', highlightbackground = 'tan3', command = final_p)
@@ -7922,18 +8002,6 @@ class Protean_Mage(Summon):
         
         
         
-# - overtake organism - destroy an entity you own and -1 sum-count, put protean_mage in play with 1 spirit/magick
-    def overtake_organism(self, event = None):
-        pass
-        
-        
-# - polymorph self - caster becomes copy (class) of an entity, except stats are those of current total (perm, not effect)
-    def polymorph_self(self, event = None):
-        pass
-        
-# - polymorph other...
-    def polymorph_other(self, event = None):
-        pass
         
 # - corroding virus - give -X stat to self to give -X stat of same kind to action target adjacent entity
     def corroding_touch(self, event = None):
@@ -23563,7 +23631,7 @@ class Myconid(Summon):
             app.canvas.create_text(self.loc[0]*100-app.moved_right+49, self.loc[1]*100-app.moved_down+14, text = 'Heal '+str(amt), justify = 'center', fill = 'black', font = ('chalkduster', 13), tags = 'text')
             app.canvas.create_text(self.loc[0]*100-app.moved_right+50, self.loc[1]*100-app.moved_down+15, text = 'Heal '+str(amt), justify = 'center', fill = 'ghostwhite', font = ('chalkduster', 13), tags = 'text')
         if 'psyshield' in self.get_types() and witch.deck.cards != []:
-            card = witch.get()
+            card = witch.deck.get()
             if card != None:
                 witch.in_hand.append(card)
 #             witch.in_hand.append(witch.library[0])
@@ -28817,17 +28885,17 @@ class Witch(Summon):
     
     def show_in_hand(self, event = None):
         cards = self.in_hand[:]
-        self.page_cards(cards = cards)
+        self.page_cards(cards = cards, where = 'in_hand')
         
     def show_discard(self, event = None):
         cards = self.discard[:]
-        self.page_cards(cards = cards)
+        self.page_cards(cards = cards, where = 'discard')
         
     def show_exile(self, event = None):
         cards = self.exile[:]
-        self.page_cards(cards = cards)
+        self.page_cards(cards = cards, where = 'exile')
     
-    def page_cards(self, event = None, cards = None, index = 0):
+    def page_cards(self, event = None, cards = None, index = 0, where = None):
         app.depop_context(event = None)
         for i, card in enumerate(cards[index:index+7]):
             i += 1
@@ -28835,15 +28903,31 @@ class Witch(Summon):
             b1.pack(side = 'top', pady = 2)
             b1.bind('<Button-2>', lambda event, b = b1, n = card.name.replace('_',' ') : app.action_info(event, name = n, button = b))
             app.context_buttons.append(b1)
+            
+            if where == 'in_hand':
+                for k,v in card.in_hand_func.items():
+                    b5 = tk.Button(app.context_menu, wraplength = 190, text = k.replace('_',' '), font = ('chalkduster', 20), fg='tan3', highlightbackground = 'tan3', command = v)
+                    b5.pack(side = 'top', pady = 2)
+                    app.context_buttons.append(b5)
+            elif where == 'discard':
+                for k,v in card.discard_func.items():
+                    b5 = tk.Button(app.context_menu, wraplength = 190, text = k.replace('_',' '), font = ('chalkduster', 20), fg='tan3', highlightbackground = 'tan3', command = v)
+                    b5.pack(side = 'top', pady = 2)
+                    app.context_buttons.append(b5)
+            elif where == 'exile':
+                for k,v in card.exile_func.items():
+                    b5 = tk.Button(app.context_menu, wraplength = 190, text = k.replace('_',' '), font = ('chalkduster', 20), fg='tan3', highlightbackground = 'tan3', command = v)
+                    b5.pack(side = 'top', pady = 2)
+                    app.context_buttons.append(b5)
         if index > 0:
-            b4 = tk.Button(app.context_menu, text = 'W : Prev', font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = lambda cards = cards, i = index-7 : self.page_cards(cards = cards, index = i))
+            b4 = tk.Button(app.context_menu, text = 'W : Prev', font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = lambda cards = cards, i = index-7, where = where : self.page_cards(cards = cards, index = i, where = where))
             b4.pack(side = 'top', pady = 2)
-            root.bind('<w>', lambda e, cards = cards, i = index-7 : self.page_cards(cards = cards, index = i))
+            root.bind('<w>', lambda e, cards = cards, i = index-7, where = where : self.page_cards(cards = cards, index = i, where = where))
             app.context_buttons.append(b4)
         if len(cards) > len(cards[:index+7]):
-            b3 = tk.Button(app.context_menu, text = 'E : Next', font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = lambda cards = cards, i = index+7 : self.page_cards(cards = cards, index = i))
+            b3 = tk.Button(app.context_menu, text = 'E : Next', font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = lambda cards = cards, i = index+7, where = where : self.page_cards(cards = cards, index = i, where = where))
             b3.pack(side = 'top', pady = 2)
-            root.bind('<e>', lambda e, cards = cards, i = index+7 : self.page_cards(cards = cards, index = i))
+            root.bind('<e>', lambda e, cards = cards, i = index+7, where = where : self.page_cards(cards = cards, index = i, where = where))
             app.context_buttons.append(b3)
         b2 = tk.Button(app.context_menu, text = 'Cancel', font = ('chalkduster', 16), fg='tan3', highlightbackground = 'tan3', command = app.generic_cancel)
         b2.pack(side = 'top', pady = 2)
@@ -35664,6 +35748,9 @@ class Witch(Summon):
         amth_tombs = [v for k,v in app.all_ents().items() if v.owner == self.owner and isinstance(v,Tomb) and v.imprint == 'Mox_Porcelain']
         if amth_tombs == []:
             return
+        cs = [c for c in app.coords if app.grid[c[0]][c[1]]=='']
+        if cs == []:
+            return
 #         self.init_cast_anims()
         effect1 = mixer.Sound('Sound_Effects/strength_through_wounding.ogg')
         effect1.set_volume(app.effects_volume.get())
@@ -35674,8 +35761,6 @@ class Witch(Summon):
         spell = self.arcane_dict['Mox_Porcelain']
         self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
         sqr = self.loc[:]
-        app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+84-app.moved_down, text = 'Mox Porcelain', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
-        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+85-app.moved_down, text = 'Mox Porcelain', justify = 'center', font = ('chalkduster', 13), fill = 'white', tags = 'text')
         tomb = choice(amth_tombs)
         spell = self.arcane_dict[tomb.imprint]
         self.arcane_dict[tomb.imprint] = Spell(spell.name,spell.func,spell.cost,max(0,spell.times_imprint-1),spell.times_cast)
@@ -35688,8 +35773,10 @@ class Witch(Summon):
         self.summon_ids += 1
         app.vis_dict['Mox_Porcelain'] = Vis(name = 'Mox_Porcelain', loc = tomb.loc[:])
         img = ImageTk.PhotoImage(Image.open('summon_imgs/Tomb.png'))
-        cs = [c for c in app.coords if app.grid[c[0]][c[1]]=='']
         sqr = reduce(lambda a,b : a if dist(tomb.loc,a)<dist(tomb.loc,b) else b, cs)
+        app.focus_square(sqr)
+        app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+84-app.moved_down, text = 'Mox Porcelain', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
+        app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+85-app.moved_down, text = 'Mox Porcelain', justify = 'center', font = ('chalkduster', 13), fill = 'white', tags = 'text')
         app.ent_dict[id] = Tomb(name = 'Tomb', id = id, img = img, loc = sqr[:], owner = self.owner, level = self.level, imprint = '')
         app.grid[sqr[0]][sqr[1]] = id
         tomb2 = app.ent_dict[id]
