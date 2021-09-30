@@ -1,10 +1,20 @@
 # will need to change all refs to old spell named tuple now class, imprints and casting?
 # all refs to play_funcs...
 # eliminate refs to Spell named tuple
+'''
+self.arcane_dict[name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint+1,spell.times_cast)
+
+'''
+
+# legerdemain, depop context/cleanup sqrs before finishing resolution/wisdom fail...
+
+# magick missle max amt? too good late game
+
+# globe dmg reduction min 1 not 0
 
 # the world in campaign mode?
 
-# have tortured soul and pink demon hellgate generate one per turn?
+# have tortured soul and pink demon hellgate generate one per turn? OR 3or4 at once instead of 2
 
 # shapeshift blinking screen when quickly pressing +/- buttons, possibly because of 'fill=x', overwrite of other widgets?...
 
@@ -161,7 +171,7 @@ from fractions import Fraction
 # from pickle import dump, load
 from copy import deepcopy
 from math import ceil
-from collections import namedtuple
+# from collections import namedtuple
 # change to only import what is neededmm
 # import pygame
 from pygame import mixer
