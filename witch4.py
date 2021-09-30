@@ -1,51 +1,10 @@
-# below is because Object/Class resolution is not used... Class name dot exotic_func_dict tries to resolve 'static' class struct which does not exist, is added by superclass on instance init
-'''
-Traceback (most recent call last):
-  File "/Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/tkinter/__init__.py", line 1883, in __call__
-    return self.func(*args)
-  File "witch4.py", line 40357, in <lambda>
-    cmd = lambda win = self.avatar_popup, p = p : self.release_wrapper(win, p)
-  File "witch4.py", line 41886, in release_wrapper
-    partial()
-  File "witch4.py", line 40351, in wrap
-    somePartial()
-  File "witch4.py", line 40313, in create_map_curs_context
-    self.load_witch(witch = self.p1_witch, player_num = 1, protaganist_object = None, entomb_deck = entomb_deck_p1[:])
-  File "witch4.py", line 40396, in load_witch
-    self.ent_dict[witch] = Witch(name = witch, img = witch_img, loc = loc, owner = 'p' + str(player_num), level = 2, entomb_deck = entomb_deck[:])
-  File "witch4.py", line 28498, in __init__
-    self.deck = Arcane_Deck(cards = entomb_deck[:], owner_ent = self)
-  File "witch4.py", line 1923, in __init__
-    card = Card(name = card, kind = 'Summon', start_func = p, owner = self.owner_ent)
-  File "witch4.py", line 1977, in __init__
-    for k,v in eval(self.name).play_actions.items():
-AttributeError: type object 'Artificer' has no attribute 'play_actions'
-'''
+# will need to change all refs to old spell named tuple now class, imprints and casting?
+# all refs to play_funcs...
+# eliminate refs to Spell named tuple
 
+# the world in campaign mode?
 
-# how to define all Spell/Summon exotic funcs by their own class/organization and get the caster entity context for future use....
-# IN arcane deck obj, when it populates itself of Card objs it has an owner (Witch entity), store the func as a partial then, referencing the Spell class by the Card name to get exotic funcs and the owner of the Deck obj, who will be stored as the caster...
-# PROBLEM for exotic funcs that need strange args stored within the partial... Deck obj cannot use a generic method (storing just the caster ent and func in a partial) UNLESS checking by name again...
-
-# where exactly should Spell instance exotic funcs be stored?
-
-# just make Spell into class instead of Named tuple, app.arcane_dict[name] = Spell obj that instance of unaltered Spells (for reference, compared to..) each Witch.arcane_dict[name] that holds Spell obj with Witch specific modifiable values (imprint, times_cast, cost, ...)
-# so... init of Card objects can use the same method (for Summons/Spells) for generating the exotic_zone (discard, in_hand, exile) funcs of cards...
-# Each Card can hold multiple funcs for each zone
-# These are currently only accessed by Witch during round with funcs show_in_hand(), show_discard(), etc..., each is dict
-# Any future needed ref can refer to Card instance itself
-
-# show_in_hand/discard/exile() are called by the buttons from Witch round, this is where class can queried for exotic funcs UNLESS each card object in each zone (discard/in_hand/exile) should remember its specific state/history, for example... can be altered by other actions to remove/add-to the natural actions that would exist for the kind of specific card (whether summon or spell)
-# So... either can have the state of exotic funcs be static and unalterable (except for broadly allowing/disallowing use of) which can then be gotten in show_in_hand....etc based on lookup by kind/class/card?
-# IF ALTERABLE IN GAME...
-# each card should remember its state (exotic funcs) and attach them on init
-# should transfer of zones affect remembered state?...
-# can possibly attach all from info popup window as buttons in window, but is not obvious which has available actions from menu (all appear as buttons of same type)
-# main problem is the difference between defining/retrieving exotic funcs BETWEEN SUMMON and SPELL type, summons have a class assoc which can store the funcs, the spell has a Spell named-tuple...
-
-
-# how to access in_hand/discard/exile funcs from Witch-round?
-# should use the already existing buttons/menus that view those areas, clicking each card/button that normally brings up a descr popup, will now also have those action/func descr and a button to launch, the button should depop context, check for any costs/acts/magick, offer generic_cancel, 
+# have tortured soul and pink demon hellgate generate one per turn?
 
 # shapeshift blinking screen when quickly pressing +/- buttons, possibly because of 'fill=x', overwrite of other widgets?...
 
@@ -1949,7 +1908,7 @@ class Arcane_Deck():
             else:
                 spell = app.arcane_dict[card]
 #                 card = self.generate_spell_card(name = card, kind = 'Tomb', cost = spell.cost, start_func = spell.start_func)
-                card = Card(name = card, kind = 'Tomb', cost = spell.cost, start_func = spell.start_func, owner = self.owner_ent)
+                card = Card(name = card, kind = 'Tomb', cost = spell.cost, start_func = spell.func, owner = self.owner_ent)
             tmp.append(card)
         self.cards = tmp[:]
         self.removed = []
@@ -1999,14 +1958,11 @@ class Card():
         self.in_hand_funcs = {}
         self.exile_funcs = {}
         if kind == 'Summon':# SUMMONS GET EXOTIC FUNCS FROM CLASS
-            for k,v in eval(self.name).play_actions.items():
-                self.play_funcs[k] = v
-            for k,v in eval(self.name).discard_actions.items():
-                self.discard_funcs[k] = v
-            for k,v in eval(self.name).in_hand_actions.items():
-                self.in_hand_funcs[k] = v
-            for k,v in eval(self.name).exile_actions.items():
-                self.exile_funcs[k] = v
+            if name == 'Protean_Mage': # DISCARD func
+                def overtake_organism(event = None, card = None, owner = None):
+                    print('got here')
+                p = partial(overtake_organism, card = self, owner = self.owner)
+                self.discard_funcs['Overtake_Organism'] = p
         else:# SPELLS GET EXOTIC FUNCS DEFINED HERE
             if name == 'Magick_Missle': # Remove this card from discard (to exile) on entomb
                 def play_func(caster = None, lockname = None):
@@ -2025,9 +1981,9 @@ class Card():
                 
                 
 class Spell():
-    def __init__(self, name, start_func, cost, times_imprint, times_cast):
+    def __init__(self, name, func, cost, times_imprint, times_cast):
         self.name = name
-        self.start_func = start_func
+        self.func = func
         self.cost = cost
         self.times_imprint = times_imprint
         self.times_cast = times_cast
@@ -12408,7 +12364,7 @@ class Migo(Summon):
             self.actions = {'Move':self.move, 'Proboscis':self.proboscis}
             self.str = 3
             self.agl = 10
-            self.end = 14
+            self.end = 12
             self.mm = 1
             self.msl = 0
             self.bls = 0
@@ -12427,7 +12383,7 @@ class Migo(Summon):
             self.actions = {'Move':self.move, 'Proboscis':self.proboscis}
             self.str = 3
             self.agl = 10
-            self.end = 14
+            self.end = 12
             self.mm = 1
             self.msl = 0
             self.bls = 0
@@ -28832,7 +28788,8 @@ class Witch(Summon):
         self.magick = 0
         # reset times_cast to 0
         for spell in self.arcane_dict.values():
-            self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,0)
+            self.arcane_dict[spell.name].times_cast = 0
+#             self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,0)
 
 
         
@@ -28905,17 +28862,17 @@ class Witch(Summon):
             app.context_buttons.append(b1)
             
             if where == 'in_hand':
-                for k,v in card.in_hand_func.items():
+                for k,v in card.in_hand_funcs.items():
                     b5 = tk.Button(app.context_menu, wraplength = 190, text = k.replace('_',' '), font = ('chalkduster', 20), fg='tan3', highlightbackground = 'tan3', command = v)
                     b5.pack(side = 'top', pady = 2)
                     app.context_buttons.append(b5)
             elif where == 'discard':
-                for k,v in card.discard_func.items():
+                for k,v in card.discard_funcs.items():
                     b5 = tk.Button(app.context_menu, wraplength = 190, text = k.replace('_',' '), font = ('chalkduster', 20), fg='tan3', highlightbackground = 'tan3', command = v)
                     b5.pack(side = 'top', pady = 2)
                     app.context_buttons.append(b5)
             elif where == 'exile':
-                for k,v in card.exile_func.items():
+                for k,v in card.exile_funcs.items():
                     b5 = tk.Button(app.context_menu, wraplength = 190, text = k.replace('_',' '), font = ('chalkduster', 20), fg='tan3', highlightbackground = 'tan3', command = v)
                     b5.pack(side = 'top', pady = 2)
                     app.context_buttons.append(b5)
@@ -28993,8 +28950,10 @@ class Witch(Summon):
         app.ent_dict[id] = s
         app.grid[sqr[0]][sqr[1]] = id
         self.smns -= 1
-        if card.play_func != None:
-            lock(card.play_func)
+        for k,v in card.play_funcs.items():
+            lock(v)
+#         if card.play_func != None:
+#             lock(card.play_func)
         root.after(999, self.finish_place)
         
     def finish_place(self):
@@ -29127,7 +29086,7 @@ class Witch(Summon):
         app.cleanup_squares()
         self.magick -= self.arcane_dict['Summon_Lesser_Demon'].cost
         spell = self.arcane_dict['Summon_Lesser_Demon']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         app.canvas.delete(id)
         app.grid[app.ent_dict[id].loc[0]][app.ent_dict[id].loc[1]] = ''
         del app.ent_dict[id]
@@ -29182,7 +29141,7 @@ class Witch(Summon):
         app.cleanup_squares()
         self.magick -= self.arcane_dict['Haunted_Cairn'].cost
         spell = self.arcane_dict['Haunted_Cairn']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         app.vis_dict['Summon'] = Vis(name = 'Summon', loc = sqr)
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Summon'].img, tags = 'Summon')
         root.after(1666, lambda s = sqr : self.finish_haunted_cairn(s))
@@ -29233,7 +29192,7 @@ class Witch(Summon):
         app.cleanup_squares()
         self.magick -= self.arcane_dict['Voodoo_Doll'].cost
         spell = self.arcane_dict['Voodoo_Doll']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         app.vis_dict['Curse_of_Oriax'] = Vis(name = 'Curse_of_Oriax', loc = sqr)
         def cleanup():
             del app.vis_dict['Curse_of_Oriax']
@@ -29283,7 +29242,7 @@ class Witch(Summon):
         app.cleanup_squares()
         self.magick -= self.arcane_dict['Summon_Cenobite'].cost
         spell = self.arcane_dict['Summon_Cenobite']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         app.vis_dict['Summon'] = Vis(name = 'Summon', loc = sqr)
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Summon'].img, tags = 'Summon')
         root.after(1666, lambda s = sqr : self.finish_summon_cenobite(s))
@@ -29332,7 +29291,7 @@ class Witch(Summon):
         app.cleanup_squares()
         self.magick -= self.arcane_dict["Siren's_Call"].cost
         spell = self.arcane_dict["Siren's_Call"]
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         app.vis_dict["Siren's_Call"] = Vis(name = "Siren's_Call", loc = sqr)
         ents = [v for k,v in app.all_ents().items() if v.owner != self.owner and v.get_inert() == False and isinstance(v,Witch) == False and v.immovable==False]
         s = sqr[:]
@@ -29381,7 +29340,7 @@ class Witch(Summon):
         app.cleanup_squares()
         self.magick -= self.arcane_dict['Mass_Grave'].cost
         spell = self.arcane_dict['Mass_Grave']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         app.vis_dict['Mass_Grave'] = Vis(name = 'Mass_Grave', loc = sqr)
         # page hand/spls
         spls = [c for c in self.in_hand if c.kind=='Tomb']
@@ -29453,8 +29412,10 @@ class Witch(Summon):
             app.grid[sqr[0]][sqr[1]] = id
             app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+74-app.moved_down, text = t.name.replace('_',' '), justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
             app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = t.name.replace('_',' '), justify = 'center', font = ('chalkduster', 14), fill = 'ghostwhite', tags = 'text')
-            if t.play_func != None:
-                lock(t.play_func)
+            for k,v in t.play_funcs.items():
+                lock(v)
+#             if t.play_func != None:
+#                 lock(t.play_func)
         root.after(2666, lambda  name = 'Mass_Grave' : self.cleanup_spell(name = name))
         
         
@@ -29486,7 +29447,7 @@ class Witch(Summon):
         app.cleanup_squares()
         self.magick -= self.arcane_dict['Living_Death'].cost
         spell = self.arcane_dict['Living_Death']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         app.vis_dict['Living_Death'] = Vis(name = 'Living_Death', loc = sqr)
         app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+14-app.moved_down, text = 'Living Death', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
         app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+15-app.moved_down, text = 'Living Death', justify = 'center', font = ('chalkduster', 13), fill = 'magenta', tags = 'text')
@@ -29544,7 +29505,7 @@ class Witch(Summon):
         app.cleanup_squares()
         self.magick -= self.arcane_dict['Energize'].cost
         spell = self.arcane_dict['Energize']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+14-app.moved_down, text = 'Energize', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
         app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+15-app.moved_down, text = 'Energize', justify = 'center', font = ('chalkduster', 13), fill = 'cyan2', tags = 'text')
         app.canvas.create_text(ent.loc[0]*100+49-app.moved_right, ent.loc[1]*100+74-app.moved_down, text = '+1 moves', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
@@ -29592,7 +29553,7 @@ class Witch(Summon):
         app.cleanup_squares()
         self.magick -= self.arcane_dict['Cloudkill'].cost
         spell = self.arcane_dict['Cloudkill']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         locs = [c for c in app.coords if dist(c,sqr)<=2]
         for loc in locs:
             if 'Cloudkill' not in [v.name for k,v in app.loc_dict[tuple(loc)].effects_dict.items()]:
@@ -29650,7 +29611,7 @@ class Witch(Summon):
         app.cleanup_squares()
         self.magick -= self.arcane_dict['Dessicate'].cost
         spell = self.arcane_dict['Dessicate']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         ents = [v for k,v in app.all_ents().items() if dist(v.loc,sqr) <= 1]
         def cleanup_dessicate(n):
             del app.vis_dict[n]
@@ -29743,7 +29704,7 @@ class Witch(Summon):
         self.exile.append(card)
         self.magick -= self.arcane_dict['The_Star'].cost
         spell = self.arcane_dict['The_Star']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         spell_obj = self.arcane_dict[card]
         self.magick += spell_obj.cost
         sqr = self.loc[:]
@@ -29800,7 +29761,7 @@ class Witch(Summon):
         # wrap/call func
         self.magick -= self.arcane_dict['Fork'].cost
         spell = self.arcane_dict['Fork']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         app.vis_dict['Fork'] = Vis(name = 'Fork', loc = sqr[:])
         app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+14-app.moved_down, text = 'Fork', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
         app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+15-app.moved_down, text = 'Fork', justify = 'center', font = ('chalkduster', 13), fill = 'indianred', tags = 'text')
@@ -29840,7 +29801,7 @@ class Witch(Summon):
         app.cleanup_squares()
         self.magick -= self.arcane_dict['Compromised_Immunity'].cost
         spell = self.arcane_dict['Compromised_Immunity']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         app.vis_dict['Compromised_Immunity'] = Vis(name = 'Compromised_Immunity', loc = sqr[:])
         if to_hit(self.get_abl('wis'),ent.get_abl('wis')):
             app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+84-app.moved_down, text = 'Weak poison', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
@@ -29892,7 +29853,8 @@ class Witch(Summon):
         app.cleanup_squares()
         self.magick -= self.arcane_dict["Minerva's_Gift"].cost
         spell = self.arcane_dict["Minerva's_Gift"]
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        spell.times_cast += 1
+#         self.arcane_dict[spell.name].times_cast += 1
         app.vis_dict["Minerva's_Gift"] = Vis(name = "Minerva's_Gift", loc = sqr[:])
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict["Minerva's_Gift"].img, tags = "Minerva's_Gift")
         app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+84-app.moved_down, text = '+1 agl, init\n+1 spirit', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
@@ -29950,7 +29912,7 @@ class Witch(Summon):
         app.cleanup_squares()
         self.magick -= self.arcane_dict['Bewitch'].cost
         spell = self.arcane_dict['Bewitch']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         app.vis_dict['Bewitch'] = Vis(name = 'Bewitch', loc = sqr[:])
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Bewitch'].img, tags = 'Bewitch')
         app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+84-app.moved_down, text = 'Psyshield', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
@@ -30000,7 +29962,7 @@ class Witch(Summon):
         app.cleanup_squares()
         self.magick -= self.arcane_dict['Read_the_Stars'].cost
         spell = self.arcane_dict['Read_the_Stars']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         ent = app.ent_dict[id]
         app.vis_dict['Read_the_Stars'] = Vis(name = 'Read_the_Stars', loc = sqr[:])
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Read_the_Stars'].img, tags = 'Read_the_Stars')
@@ -30060,7 +30022,7 @@ class Witch(Summon):
         app.cleanup_squares()
         self.magick -= self.arcane_dict['Psi_Blades'].cost
         spell = self.arcane_dict['Psi_Blades']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         app.vis_dict['Psi_Blades'] = Vis(name = 'Psi_Blades', loc = sqr[:])
         app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+84-app.moved_down, text = 'Psi Blades', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
         app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+85-app.moved_down, text = 'Psi Blades', justify = 'center', font = ('chalkduster', 13), fill = 'white', tags = 'text')
@@ -30173,7 +30135,7 @@ class Witch(Summon):
         app.cleanup_squares()
         self.magick -= self.arcane_dict['Foul_Familiar'].cost
         spell = self.arcane_dict['Foul_Familiar']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         app.vis_dict['Foul_Familiar'] = Vis(name = 'Foul_Familiar', loc = sqr)
         # summon familiar based on witch
         num = self.summon_ids
@@ -30302,8 +30264,8 @@ class Witch(Summon):
         app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+74-app.moved_down, text = 'Entomb', justify = 'center', font = ('chalkduster', 14), fill = 'black', tags = 'text')
         app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+75-app.moved_down, text = 'Entomb', justify = 'center', font = ('chalkduster', 14), fill = 'ghostwhite', tags = 'text')
         # PLAY FUNC
-        if c.play_func != None:
-            lock(c.play_func)
+        for k,v in c.play_funcs.items():
+            lock(v)
         root.after(1666, self.finish_entomb)
         
         
@@ -30369,7 +30331,7 @@ class Witch(Summon):
 #         self.init_cast_anims()
         self.magick -= self.arcane_dict['Magick_Missle'].cost
         spell = self.arcane_dict['Magick_Missle']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -30408,7 +30370,7 @@ class Witch(Summon):
         sound_effects.play(effect1, 0)
         self.magick -= self.arcane_dict['Defile'].cost
         spell = self.arcane_dict['Defile']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -30459,7 +30421,7 @@ class Witch(Summon):
         sound_effects.play(effect1, 0)
         self.magick -= self.arcane_dict['Judgment'].cost
         spell = self.arcane_dict['Judgment']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -30503,7 +30465,7 @@ class Witch(Summon):
         sound_effects.play(effect1, 0)
         self.magick -= self.arcane_dict['Vengeance'].cost
         spell = self.arcane_dict['Vengeance']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -30577,7 +30539,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['Wreathed_in_Flame'].cost
         spell = self.arcane_dict['Wreathed_in_Flame']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
 #         effect1 = mixer.Sound('Sound_Effects/hatred.ogg')
 #         effect1.set_volume(.9)
 #         sound_effects.play(effect1, 0)
@@ -30644,7 +30606,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['Fists_of_Stone'].cost
         spell = self.arcane_dict['Fists_of_Stone']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
 #         effect1 = mixer.Sound('Sound_Effects/hatred.ogg')
 #         effect1.set_volume(.9)
 #         sound_effects.play(effect1, 0)
@@ -30700,7 +30662,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['Fangs_of_Apophis'].cost
         spell = self.arcane_dict['Fangs_of_Apophis']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
 #         effect1 = mixer.Sound('Sound_Effects/hatred.ogg')
 #         effect1.set_volume(.9)
 #         sound_effects.play(effect1, 0)
@@ -30764,7 +30726,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['Hatred'].cost
         spell = self.arcane_dict['Hatred']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         effect1 = mixer.Sound('Sound_Effects/hatred.ogg')
         effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
@@ -30837,7 +30799,7 @@ class Witch(Summon):
         sound_effects.play(effect1, 0)
         self.magick -= self.arcane_dict['Torment'].cost
         spell = self.arcane_dict['Torment']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -30893,7 +30855,7 @@ class Witch(Summon):
         sound_effects.play(effect1, 0)
         self.magick -= self.arcane_dict['Pain'].cost
         spell = self.arcane_dict['Pain']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -30991,7 +30953,7 @@ class Witch(Summon):
         sound_effects.play(effect1, 0)
         self.magick -= self.arcane_dict['Offering'].cost
         spell = self.arcane_dict['Offering']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -31055,7 +31017,7 @@ class Witch(Summon):
         sound_effects.play(effect1, 0)
         self.magick -= self.arcane_dict['Aftershock'].cost
         spell = self.arcane_dict['Aftershock']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -31118,7 +31080,7 @@ class Witch(Summon):
         sound_effects.play(effect1, 0)
         self.magick -= self.arcane_dict['Scour'].cost
         spell = self.arcane_dict['Scour']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -31177,7 +31139,7 @@ class Witch(Summon):
         sound_effects.play(effect1, 0)
         self.magick -= self.arcane_dict['Pillage'].cost
         spell = self.arcane_dict['Pillage']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -31220,7 +31182,7 @@ class Witch(Summon):
         sound_effects.play(effect1, 0)
         self.magick -= self.arcane_dict['Plague'].cost
         spell = self.arcane_dict['Plague']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -31336,7 +31298,7 @@ class Witch(Summon):
 #         sound_effects.play(effect1, 0)
         self.magick -= self.arcane_dict['Antigravity'].cost
         spell = self.arcane_dict['Antigravity']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -31397,7 +31359,7 @@ class Witch(Summon):
 #         sound_effects.play(effect1, 0)
         self.magick -= self.arcane_dict['Hallowed_Ground'].cost
         spell = self.arcane_dict['Hallowed_Ground']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -31457,7 +31419,7 @@ class Witch(Summon):
 #         sound_effects.play(effect1, 0)
         self.magick -= self.arcane_dict['Enmeshing_Coils'].cost
         spell = self.arcane_dict['Enmeshing_Coils']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -31529,7 +31491,7 @@ class Witch(Summon):
         app.cleanup_squares()
         self.magick -= self.arcane_dict['Psionic_Push'].cost
         spell = self.arcane_dict['Psionic_Push']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         loc = app.ent_dict[id].loc[:]
         ps = []
         ps.append(loc)
@@ -31682,7 +31644,7 @@ class Witch(Summon):
         sound_effects.play(effect1, 0)
         self.magick -= self.arcane_dict['Pestilence'].cost
         spell = self.arcane_dict['Pestilence']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
 #         self.init_cast_anims()
         app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+84-app.moved_down, text = 'Pestilence', justify ='center', font = ('chalkduster', 16), fill = 'black', tags = 'text')
         app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+85-app.moved_down, text = 'Pestilence', justify ='center', font = ('chalkduster', 16), fill = 'gray75', tags = 'text')
@@ -31810,7 +31772,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['Curse_of_Oriax'].cost
         spell = self.arcane_dict['Curse_of_Oriax']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         effect1 = mixer.Sound('Sound_Effects/curse_of_oriax.ogg')
         effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
@@ -31883,7 +31845,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['Dampening_Emanation'].cost
         spell = self.arcane_dict['Dampening_Emanation']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
 #         effect1 = mixer.Sound('Sound_Effects/gravity.ogg')
 #         effect1.set_volume(.9)
 #         sound_effects.play(effect1, 0)
@@ -31945,7 +31907,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['Aura_of_Agony'].cost
         spell = self.arcane_dict['Aura_of_Agony']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
 #         effect1 = mixer.Sound('Sound_Effects/gravity.ogg')
 #         effect1.set_volume(.9)
 #         sound_effects.play(effect1, 0)
@@ -32005,7 +31967,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['Molecular_Subversion'].cost
         spell = self.arcane_dict['Molecular_Subversion']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
 #         effect1 = mixer.Sound('Sound_Effects/gravity.ogg')
 #         effect1.set_volume(.9)
 #         sound_effects.play(effect1, 0)
@@ -32058,7 +32020,7 @@ class Witch(Summon):
         ent = app.ent_dict[id]
         self.magick -= self.arcane_dict['Lift'].cost
         spell = self.arcane_dict['Lift']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         effect1 = mixer.Sound('Sound_Effects/meditate.ogg')
         effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
@@ -32108,7 +32070,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['Cloister'].cost
         spell = self.arcane_dict['Cloister']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
 #         effect1 = mixer.Sound('Sound_Effects/lift.ogg')
 #         effect1.set_volume(.9)
 #         sound_effects.play(effect1, 0)
@@ -32150,7 +32112,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['Plutonian_Cloak'].cost
         spell = self.arcane_dict['Plutonian_Cloak']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
 #         effect1 = mixer.Sound('Sound_Effects/gravity.ogg')
 #         effect1.set_volume(.9)
 #         sound_effects.play(effect1, 0)
@@ -32242,7 +32204,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['Mirror_Armor'].cost
         spell = self.arcane_dict['Mirror_Armor']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
 #         effect1 = mixer.Sound('Sound_Effects/gravity.ogg')
 #         effect1.set_volume(.9)
 #         sound_effects.play(effect1, 0)
@@ -32317,7 +32279,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['Forcefield'].cost
         spell = self.arcane_dict['Forcefield']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
 #         effect1 = mixer.Sound('Sound_Effects/gravity.ogg')
 #         effect1.set_volume(.9)
 #         sound_effects.play(effect1, 0)
@@ -32393,7 +32355,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['Genjutsushi'].cost
         spell = self.arcane_dict['Genjutsushi']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
 #         effect1 = mixer.Sound('Sound_Effects/gravity.ogg')
 #         effect1.set_volume(.9)
 #         sound_effects.play(effect1, 0)
@@ -32462,7 +32424,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['Gift_of_Mars'].cost
         spell = self.arcane_dict['Gift_of_Mars']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
 #         effect1 = mixer.Sound('Sound_Effects/gift_of_mars.ogg')
 #         effect1.set_volume(.9)
 #         sound_effects.play(effect1, 0)
@@ -32520,7 +32482,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict["Mercury's_Blessing"].cost
         spell = self.arcane_dict["Mercury's_Blessing"]
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
 #         effect1 = mixer.Sound('Sound_Effects/mercurys_blessing.ogg')
 #         effect1.set_volume(.9)
 #         sound_effects.play(effect1, 0)
@@ -32577,7 +32539,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['Iron_Spirit'].cost
         spell = self.arcane_dict['Iron_Spirit']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
 #         effect1 = mixer.Sound('Sound_Effects/iron_spirit.ogg')
 #         effect1.set_volume(.9)
 #         sound_effects.play(effect1, 0)
@@ -32633,7 +32595,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['Strength_of_the_Void'].cost
         spell = self.arcane_dict['Strength_of_the_Void']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
 #         effect1 = mixer.Sound('Sound_Effects/strength_of_the_void.ogg')
 #         effect1.set_volume(.9)
 #         sound_effects.play(effect1, 0)
@@ -32690,7 +32652,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['Quicksilver'].cost
         spell = self.arcane_dict['Quicksilver']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         effect1 = mixer.Sound('Sound_Effects/hidden_from_the_stars.ogg')
         effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
@@ -32742,7 +32704,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['Calm'].cost
         spell = self.arcane_dict['Calm']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         effect1 = mixer.Sound('Sound_Effects/hidden_from_the_stars.ogg')
         effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
@@ -32792,7 +32754,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['The_Moon'].cost
         spell = self.arcane_dict['The_Moon']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         effect1 = mixer.Sound('Sound_Effects/hidden_from_the_stars.ogg')
         effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
@@ -32872,7 +32834,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['Hidden_From_the_Stars'].cost
         spell = self.arcane_dict['Hidden_From_the_Stars']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         effect1 = mixer.Sound('Sound_Effects/hidden_from_the_stars.ogg')
         effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
@@ -32929,7 +32891,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['The_Devil'].cost
         spell = self.arcane_dict['The_Devil']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         effect1 = mixer.Sound('Sound_Effects/strength_through_wounding.ogg')
         effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
@@ -32992,7 +32954,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['The_High_Priestess'].cost
         spell = self.arcane_dict['The_High_Priestess']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         effect1 = mixer.Sound('Sound_Effects/hidden_from_the_stars.ogg')
         effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
@@ -33054,7 +33016,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['Justice'].cost
         spell = self.arcane_dict['Justice']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         effect1 = mixer.Sound('Sound_Effects/hidden_from_the_stars.ogg')
         effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
@@ -33103,7 +33065,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['The_Empress'].cost
         spell = self.arcane_dict['The_Empress']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         effect1 = mixer.Sound('Sound_Effects/hidden_from_the_stars.ogg')
         effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
@@ -33147,7 +33109,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['The_Emperor'].cost
         spell = self.arcane_dict['The_Emperor']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         effect1 = mixer.Sound('Sound_Effects/hidden_from_the_stars.ogg')
         effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
@@ -33206,7 +33168,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['The_Tower'].cost
         spell = self.arcane_dict['The_Tower']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         effect1 = mixer.Sound('Sound_Effects/hidden_from_the_stars.ogg')
         effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
@@ -33288,7 +33250,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['Death'].cost
         spell = self.arcane_dict['Death']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         effect1 = mixer.Sound('Sound_Effects/strength_through_wounding.ogg')
         effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
@@ -33339,7 +33301,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['The_Chariot'].cost
         spell = self.arcane_dict['The_Chariot']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         effect1 = mixer.Sound('Sound_Effects/scrye.ogg')
         effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
@@ -33389,7 +33351,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['The_Sun'].cost
         spell = self.arcane_dict['The_Sun']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         effect1 = mixer.Sound('Sound_Effects/hidden_from_the_stars.ogg')
         effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
@@ -33454,7 +33416,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['Iron_Skins'].cost
         spell = self.arcane_dict['Iron_Skins']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         effect1 = mixer.Sound('Sound_Effects/hidden_from_the_stars.ogg')
         effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
@@ -33545,7 +33507,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['Inertia'].cost
         spell = self.arcane_dict['Inertia']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         effect1 = mixer.Sound('Sound_Effects/gravity.ogg')
         effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
@@ -33624,7 +33586,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['The_Fool'].cost
         spell = self.arcane_dict['The_Fool']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         effect1 = mixer.Sound('Sound_Effects/hidden_from_the_stars.ogg')
         effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
@@ -33705,7 +33667,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['The_Hermit'].cost
         spell = self.arcane_dict['The_Hermit']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         effect1 = mixer.Sound('Sound_Effects/hidden_from_the_stars.ogg')
         effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
@@ -33769,7 +33731,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['The_Hanged_Man'].cost
         spell = self.arcane_dict['The_Hanged_Man']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         effect1 = mixer.Sound('Sound_Effects/strength_through_wounding.ogg')
         effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
@@ -33828,7 +33790,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['Strength'].cost
         spell = self.arcane_dict['Strength']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         effect1 = mixer.Sound('Sound_Effects/hidden_from_the_stars.ogg')
         effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
@@ -33894,7 +33856,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['The_Lovers'].cost
         spell = self.arcane_dict['The_Lovers']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         effect1 = mixer.Sound('Sound_Effects/hidden_from_the_stars.ogg')
         effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
@@ -33969,7 +33931,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['Animate_Tomb'].cost
         spell = self.arcane_dict['Animate_Tomb']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
 #         effect1 = mixer.Sound('Sound_Effects/hidden_from_the_stars.ogg')
 #         effect1.set_volume(.9)
 #         sound_effects.play(effect1, 0)
@@ -34121,7 +34083,7 @@ class Witch(Summon):
         app.depop_context(event = None)
         self.magick -= self.arcane_dict['Cosmic_Sight'].cost
         spell = self.arcane_dict['Cosmic_Sight']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         id = self.id
         sqr = self.loc[:]
         app.vis_dict['Cosmic_Sight'] = Vis(name = 'Cosmic_Sight', loc = sqr[:])
@@ -34197,7 +34159,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['Demonic_Sight'].cost
         spell = self.arcane_dict['Demonic_Sight']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
 #         effect1 = mixer.Sound('Sound_Effects/gravity.ogg')
 #         effect1.set_volume(.9)
 #         sound_effects.play(effect1, 0)
@@ -34257,7 +34219,7 @@ class Witch(Summon):
         sound_effects.play(effect1, 0)
         self.magick -= self.arcane_dict['Reaping_of_Saturnus'].cost
         spell = self.arcane_dict['Reaping_of_Saturnus']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -34293,7 +34255,7 @@ class Witch(Summon):
 #         sound_effects.play(effect1, 0)
         self.magick -= self.arcane_dict['Mass_Hysteria'].cost
         spell = self.arcane_dict['Mass_Hysteria']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         app.unbind_all()
         app.depop_context(event = None)
         app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+84-app.moved_down, text = 'Mass Hysteria', justify = 'center', font = ('chalkduster', 16), fill = 'black', tags = 'text')
@@ -34362,7 +34324,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['Carrion_Wyrm'].cost
         spell = self.arcane_dict['Carrion_Wyrm']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         effect1 = mixer.Sound('Sound_Effects/dark_sun.ogg')
         effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
@@ -34462,7 +34424,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['Giant_Growth'].cost
         spell = self.arcane_dict['Giant_Growth']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         effect1 = mixer.Sound('Sound_Effects/dark_sun.ogg')
         effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
@@ -34564,7 +34526,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['Quest_of_the_Hermit_Druid'].cost
         spell = self.arcane_dict['Quest_of_the_Hermit_Druid']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         effect1 = mixer.Sound('Sound_Effects/dark_sun.ogg')
         effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
@@ -34634,7 +34596,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['Foretell'].cost
         spell = self.arcane_dict['Foretell']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         effect1 = mixer.Sound('Sound_Effects/scrye.ogg')
         effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
@@ -34733,7 +34695,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['Coercion'].cost
         spell = self.arcane_dict['Coercion']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         effect1 = mixer.Sound('Sound_Effects/dark_sun.ogg')
         effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
@@ -34828,7 +34790,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['Survival_of_the_Fittest'].cost
         spell = self.arcane_dict['Survival_of_the_Fittest']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         effect1 = mixer.Sound('Sound_Effects/dark_sun.ogg')
         effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
@@ -34936,7 +34898,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['Myopic_Neuroticism'].cost
         spell = self.arcane_dict['Myopic_Neuroticism']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         effect1 = mixer.Sound('Sound_Effects/dark_sun.ogg')
         effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
@@ -35030,7 +34992,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['Stupor'].cost
         spell = self.arcane_dict['Stupor']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         effect1 = mixer.Sound('Sound_Effects/dark_sun.ogg')
         effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
@@ -35081,7 +35043,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['Blind'].cost
         spell = self.arcane_dict['Blind']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         effect1 = mixer.Sound('Sound_Effects/dark_sun.ogg')
         effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
@@ -35161,7 +35123,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['Astrological_Guidance'].cost
         spell = self.arcane_dict['Astrological_Guidance']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         app.depop_context(event = None)
         app.unbind_nonarrows()
         app.cleanup_squares()
@@ -35211,7 +35173,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['The_Magician'].cost
         spell = self.arcane_dict['The_Magician']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         app.depop_context(event = None)
         app.unbind_nonarrows()
         app.cleanup_squares()
@@ -35257,7 +35219,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['Spectral_Pillory'].cost
         spell = self.arcane_dict['Spectral_Pillory']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         effect1 = mixer.Sound('Sound_Effects/gravity.ogg')
         effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
@@ -35323,7 +35285,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['Gravity'].cost
         spell = self.arcane_dict['Gravity']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         effect1 = mixer.Sound('Sound_Effects/gravity.ogg')
         effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
@@ -35388,7 +35350,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict["Beleth's_Command"].cost
         spell = self.arcane_dict["Beleth's_Command"]
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         effect1 = mixer.Sound('Sound_Effects/beleths_command.ogg')
         effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
@@ -35554,7 +35516,7 @@ class Witch(Summon):
                 return
             self.magick -= self.arcane_dict['Legerdemain'].cost
             spell = self.arcane_dict['Legerdemain']
-            self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+            self.arcane_dict[spell.name].times_cast += 1
             app.depop_context(event = None)
             app.unbind_nonarrows()
             app.cleanup_squares()
@@ -35599,7 +35561,7 @@ class Witch(Summon):
         app.depop_context(event = None)
         self.magick -= self.arcane_dict['Dark_Ritual'].cost
         spell = self.arcane_dict['Dark_Ritual']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         sqr = self.loc[:]
         app.vis_dict['Dark_Ritual'] = Vis(name = 'Dark_Ritual', loc = sqr[:])
         ents = [v for k,v in app.spell_target_ents().items() if dist(v.loc,self.loc)==1 and v.owner == self.owner and isinstance(v,Tomb)==False]
@@ -35631,7 +35593,7 @@ class Witch(Summon):
         app.depop_context(event = None)
         self.magick -= self.arcane_dict["Witch's_Blood"].cost
         spell = self.arcane_dict["Witch's_Blood"]
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         sqr = self.loc[:]
         app.vis_dict["Witch's_Blood"] = Vis(name = "Witch's_Blood", loc = sqr[:])
         lock(apply_damage, self, self, -4, 'magick', "Witch's Blood", 'spell')
@@ -35668,7 +35630,7 @@ class Witch(Summon):
         app.depop_context(event = None)
         self.magick -= self.arcane_dict['Rite_of_Spring'].cost
         spell = self.arcane_dict['Rite_of_Spring']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         sqr = self.loc[:]
         app.vis_dict['Rite_of_Spring'] = Vis(name = 'Rite_of_Spring', loc = sqr[:])
         amt = self.summon_cap-self.summon_count
@@ -35702,7 +35664,7 @@ class Witch(Summon):
         app.depop_context(event = None)
         self.magick -= self.arcane_dict['Mox_Byzantium'].cost
         spell = self.arcane_dict['Mox_Byzantium']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         sqr = self.loc[:]
         app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+84-app.moved_down, text = 'Mox Byzantium', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
         app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+85-app.moved_down, text = 'Mox Byzantium', justify = 'center', font = ('chalkduster', 13), fill = 'white', tags = 'text')
@@ -35759,7 +35721,7 @@ class Witch(Summon):
         app.depop_context(event = None)
         self.magick -= self.arcane_dict['Mox_Porcelain'].cost
         spell = self.arcane_dict['Mox_Porcelain']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         sqr = self.loc[:]
         tomb = choice(amth_tombs)
         spell = self.arcane_dict[tomb.imprint]
@@ -35816,7 +35778,7 @@ class Witch(Summon):
         app.depop_context(event = None)
         self.magick -= self.arcane_dict['Grave_Twin'].cost
         spell = self.arcane_dict['Grave_Twin']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         sqr = self.loc[:]
         app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+84-app.moved_down, text = 'Grave Twin', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
         app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+85-app.moved_down, text = 'Grave Twin', justify = 'center', font = ('chalkduster', 13), fill = 'white', tags = 'text')
@@ -35937,7 +35899,7 @@ class Witch(Summon):
         app.depop_context(event = None)
         self.magick -= self.arcane_dict['Temperance'].cost
         spell = self.arcane_dict['Temperance']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         sqr = self.loc[:]
         app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+84-app.moved_down, text = 'Temperance', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
         app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+85-app.moved_down, text = 'Temperance', justify = 'center', font = ('chalkduster', 13), fill = 'limegreen', tags = 'text')
@@ -36044,7 +36006,7 @@ class Witch(Summon):
         app.depop_context(event = None)
         self.magick -= self.arcane_dict['Foresight'].cost
         spell = self.arcane_dict['Foresight']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         sqr = self.loc[:]
         app.vis_dict['Foresight'] = Vis(name = 'Foresight', loc = sqr[:])
         app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+84-app.moved_down, text = 'Foresight', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
@@ -36116,7 +36078,7 @@ class Witch(Summon):
         app.depop_context(event = None)
         self.magick -= self.arcane_dict['Styxian_Guide'].cost
         spell = self.arcane_dict['Styxian_Guide']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         sqr = self.loc[:]
         app.vis_dict['Styxian_Guide'] = Vis(name = 'Styxian_Guide', loc = sqr[:])
         app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+84-app.moved_down, text = 'Styxian Guide', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
@@ -36183,7 +36145,7 @@ class Witch(Summon):
         app.depop_context(event = None)
         self.magick -= self.arcane_dict['Wrath_of_Samael'].cost
         spell = self.arcane_dict['Wrath_of_Samael']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         sqr = self.loc[:]
         app.vis_dict['Wrath_of_Samael'] = Vis(name = 'Wrath_of_Samael', loc = sqr[:])
         app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+84-app.moved_down, text = 'Wrath of Samael', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
@@ -36289,7 +36251,7 @@ class Witch(Summon):
         app.depop_context(event = None)
         self.magick -= self.arcane_dict['Pull_from_the_Aether'].cost
         spell = self.arcane_dict['Pull_from_the_Aether']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         sqr = self.loc[:]
         app.vis_dict['Pull_from_the_Aether'] = Vis(name = 'Pull_from_the_Aether', loc = sqr[:])
         cards = self.exile[:]
@@ -36349,7 +36311,7 @@ class Witch(Summon):
         app.depop_context(event = None)
         self.magick -= self.arcane_dict['The_Hierophant'].cost
         spell = self.arcane_dict['The_Hierophant']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         sqr = self.loc[:]
         app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+84-app.moved_down, text = 'The Hierophant', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
         app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+85-app.moved_down, text = 'The Hierophant', justify = 'center', font = ('chalkduster', 13), fill = 'ghostwhite', tags = 'text')
@@ -36397,7 +36359,7 @@ class Witch(Summon):
         app.depop_context(event = None)
         self.magick -= self.arcane_dict['The_Wheel'].cost
         spell = self.arcane_dict['The_Wheel']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         sqr = self.loc[:]
         app.vis_dict['The_Wheel'] = Vis(name = 'The_Wheel', loc = sqr[:])
         app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+84-app.moved_down, text = 'The Wheel...\n shuffle exile, discard, library, draw 1', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
@@ -36438,7 +36400,7 @@ class Witch(Summon):
         app.depop_context(event = None)
         self.magick -= self.arcane_dict['The_World'].cost
         spell = self.arcane_dict['The_World']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         sqr = self.loc[:]
         app.vis_dict['The_World'] = Vis(name = 'The_World', loc = sqr[:])
         app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+84-app.moved_down, text = 'The World...\n Each player draws for each tomb', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
@@ -36481,7 +36443,7 @@ class Witch(Summon):
         app.depop_context(event = None)
         self.magick -= self.arcane_dict['Scrye'].cost
         spell = self.arcane_dict['Scrye']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         sqr = self.loc[:]
         app.vis_dict['Scrye'] = Vis(name = 'Scrye', loc = sqr[:])
         app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+84-app.moved_down, text = 'Scrye, draw 1', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
@@ -36512,7 +36474,7 @@ class Witch(Summon):
         app.depop_context(event = None)
         self.magick -= self.arcane_dict['Frantic_Search'].cost
         spell = self.arcane_dict['Frantic_Search']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         sqr = self.loc[:]
         app.vis_dict['Frantic_Search'] = Vis(name = 'Frantic_Search', loc = sqr[:])
         app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+84-app.moved_down, text = 'Frantic Search, draw 2, discard 3', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
@@ -36588,7 +36550,7 @@ class Witch(Summon):
         app.depop_context(event = None)
         self.magick -= self.arcane_dict['Upheaval'].cost
         spell = self.arcane_dict['Upheaval']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         app.vis_dict['Upheaval'] = Vis(name = 'Upheaval', loc = self.loc[:])
         app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+84-app.moved_down, text = 'Upheaval', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
         app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+85-app.moved_down, text = 'Upheaval', justify = 'center', font = ('chalkduster', 13), fill = 'white', tags = 'text')
@@ -36630,7 +36592,7 @@ class Witch(Summon):
         app.depop_context(event = None)
         self.magick -= self.arcane_dict['Profane_Pshent'].cost
         spell = self.arcane_dict['Profane_Pshent']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         id = self.id
         sqr = self.loc[:]
         app.vis_dict['Profane_Pshent'] = Vis(name = 'Profane_Pshent', loc = sqr[:])
@@ -36754,7 +36716,7 @@ class Witch(Summon):
         app.depop_context(event = None)
         self.magick -= self.arcane_dict['Imbue_Thrall'].cost
         spell = self.arcane_dict['Imbue_Thrall']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         id = self.id
         sqr = self.loc[:]
         app.vis_dict['Imbue_Thrall'] = Vis(name = 'Imbue_Thrall', loc = sqr[:])
@@ -36922,7 +36884,7 @@ class Witch(Summon):
         app.depop_context(event = None)
         self.magick -= self.arcane_dict['Black_Blade_of_Disaster'].cost
         spell = self.arcane_dict['Black_Blade_of_Disaster']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         id = self.id
         sqr = self.loc[:]
         app.vis_dict['Black_Blade_of_Disaster'] = Vis(name = 'Black_Blade_of_Disaster', loc = sqr[:])
@@ -37086,7 +37048,7 @@ class Witch(Summon):
         app.depop_context(event = None)
         self.magick -= self.arcane_dict['Vorpal_Blade'].cost
         spell = self.arcane_dict['Vorpal_Blade']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         id = self.id
         sqr = self.loc[:]
         app.vis_dict['Vorpal_Blade'] = Vis(name = 'Vorpal_Blade', loc = sqr[:])
@@ -37192,7 +37154,7 @@ class Witch(Summon):
         app.depop_context(event = None)
         self.magick -= self.arcane_dict['Burning_Hands'].cost
         spell = self.arcane_dict['Burning_Hands']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         id = self.id
         sqr = self.loc[:]
         app.vis_dict['Burning_Hands'] = Vis(name = 'Burning_Hands', loc = sqr[:])
@@ -37301,7 +37263,7 @@ class Witch(Summon):
         app.depop_context(event = None)
         self.magick -= self.arcane_dict['Acid_Arrow'].cost
         spell = self.arcane_dict['Acid_Arrow']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         id = self.id
         sqr = self.loc[:]
         app.vis_dict['Acid_Arrow'] = Vis(name = 'Acid_Arrow', loc = sqr[:])
@@ -37401,7 +37363,7 @@ class Witch(Summon):
         app.depop_context(event = None)
         self.magick -= self.arcane_dict['Meditate'].cost
         spell = self.arcane_dict['Meditate']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         id = self.id
         sqr = self.loc[:]
         app.vis_dict['Meditate'] = Vis(name = 'Meditate', loc = sqr[:])
@@ -37454,7 +37416,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['Mind_Rot'].cost
         spell = self.arcane_dict['Mind_Rot']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         effect1 = mixer.Sound('Sound_Effects/disintegrate.ogg')
         effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
@@ -37515,7 +37477,7 @@ class Witch(Summon):
         app.cleanup_squares()
         self.magick -= self.arcane_dict['Horrid_Wilting'].cost
         spell = self.arcane_dict['Horrid_Wilting']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         ents = [k for k,v in app.all_ents().items() if dist(v.loc,sqr) <= 2]
         def horrid_loop(ents):
             if ents == []:
@@ -37579,7 +37541,7 @@ class Witch(Summon):
         app.cleanup_squares()
         self.magick -= self.arcane_dict['Grasp_of_the_Old_Ones'].cost
         spell = self.arcane_dict['Grasp_of_the_Old_Ones']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         ent = app.ent_dict[id]
         app.vis_dict['Grasp_of_the_Old_Ones'] = Vis(name = 'Grasp_of_the_Old_Ones', loc = sqr[:])
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Grasp_of_the_Old_Ones'].img, tags = 'Grasp_of_the_Old_Ones')
@@ -37642,7 +37604,7 @@ class Witch(Summon):
         app.cleanup_squares()
         self.magick -= self.arcane_dict['Boiling_Blood'].cost
         spell = self.arcane_dict['Boiling_Blood']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         app.vis_dict['Boiling_Blood'] = Vis(name = 'Boiling_Blood', loc = sqr[:])
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Boiling_Blood'].img, tags = 'Boiling_Blood')
         app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+75-app.moved_down, text = 'Boiling\nBlood', justify = 'center', font = ('chalkduster', 14), fill = 'white', tags = 'text')
@@ -37701,7 +37663,7 @@ class Witch(Summon):
         app.unbind_all()
         self.magick -= self.arcane_dict['Dark_Sun'].cost
         spell = self.arcane_dict['Dark_Sun']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         app.cleanup_squares()
         app.vis_dict['Dark_Sun'] = Vis(name = 'Dark_Sun', loc = sqr[:]) #[sqr[0],sqr[1]-1])
         app.canvas.create_image(sqr[0]*100+50-app.moved_right, sqr[1]*100+50-app.moved_down, image = app.vis_dict['Dark_Sun'].img, tags = 'Dark_Sun')
@@ -37774,7 +37736,7 @@ class Witch(Summon):
         sound_effects.play(effect1, 0)
         self.magick -= self.arcane_dict['Mummify'].cost
         spell = self.arcane_dict['Mummify']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
 #         self.init_cast_anims()
         app.unbind_all()
         app.depop_context(event = None)
@@ -37837,7 +37799,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['Dust_Devil'].cost
         spell = self.arcane_dict['Dust_Devil']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
 #         self.init_cast_anims()
 #         effect1 = mixer.Sound('Sound_Effects/immolate.ogg')
 #         effect1.set_volume(app.effects_volume.get())
@@ -37894,7 +37856,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['Dispel'].cost
         spell = self.arcane_dict['Dispel']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
 #         effect1 = mixer.Sound('Sound_Effects/dispel.ogg')
 #         effect1.set_volume(app.effects_volume.get())
 #         sound_effects.play(effect1, 0)
@@ -37963,7 +37925,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['Immolate'].cost
         spell = self.arcane_dict['Immolate']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
 #         self.init_cast_anims()
         effect1 = mixer.Sound('Sound_Effects/immolate.ogg')
         effect1.set_volume(app.effects_volume.get())
@@ -38009,7 +37971,7 @@ class Witch(Summon):
             return
         self.magick -= self.arcane_dict['Disintegrate'].cost
         spell = self.arcane_dict['Disintegrate']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         effect1 = mixer.Sound('Sound_Effects/disintegrate.ogg')
         effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
@@ -38113,7 +38075,7 @@ class Witch(Summon):
     def do_command_of_osiris(self, event, sqrs):
         self.magick -= self.arcane_dict['Command_of_Osiris'].cost
         spell = self.arcane_dict['Command_of_Osiris']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
 #         self.init_cast_anims()
         app.unbind_all()
         app.depop_context(event = None)
@@ -38276,7 +38238,7 @@ class Witch(Summon):
 #         sound_effects.play(effect1, 0)
         self.magick -= self.arcane_dict['Hypnotic_Spectre'].cost
         spell = self.arcane_dict['Hypnotic_Spectre']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -38324,7 +38286,7 @@ class Witch(Summon):
 #         sound_effects.play(effect1, 0)
         self.magick -= self.arcane_dict['Barrow_Wight'].cost
         spell = self.arcane_dict['Barrow_Wight']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -38374,7 +38336,7 @@ class Witch(Summon):
 #         sound_effects.play(effect1, 0)
         self.magick -= self.arcane_dict["Death's_Head_Moth"].cost
         spell = self.arcane_dict["Death's_Head_Moth"]
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -38422,7 +38384,7 @@ class Witch(Summon):
 #         sound_effects.play(effect1, 0)
         self.magick -= self.arcane_dict['Hunting_Hawk'].cost
         spell = self.arcane_dict['Hunting_Hawk']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint,spell.times_cast+1)
+        self.arcane_dict[spell.name].times_cast += 1
         app.unbind_all()
         app.depop_context(event = None)
         app.cleanup_squares()
@@ -38855,6 +38817,7 @@ class App(tk.Frame):
         self.bot_minimap_img = ImageTk.PhotoImage(Image.open('animations/Bot_Minimap_Img/0.png').resize((10,10)))
         self.block_minimap_img = ImageTk.PhotoImage(Image.open('minimap_block.png').resize((10,10)))
         self.arcane_dict["Minerva's_Gift"] = Spell("Minerva's_Gift",Witch.minervas_gift, 1, 0, 0)
+        
         self.arcane_dict['Psionic_Push'] = Spell('Psionic_Push',Witch.psionic_push, 1, 0, 0)
         self.arcane_dict['Foretell'] = Spell('Foretell',Witch.foretell, 1, 0, 0)
         self.arcane_dict['Defile'] = Spell('Defile',Witch.defile, 1, 0, 0)
