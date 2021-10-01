@@ -1,20 +1,8 @@
-# will need to change all refs to old spell named tuple now class, imprints and casting?
-# all refs to play_funcs...
-# eliminate refs to Spell named tuple
-'''
-self.arcane_dict[name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint+1,spell.times_cast)
-
-'''
-
-# legerdemain, depop context/cleanup sqrs before finishing resolution/wisdom fail...
+# the star, in bloodramp
 
 # magick missle max amt? too good late game
 
-# globe dmg reduction min 1 not 0
-
 # the world in campaign mode?
-
-# have tortured soul and pink demon hellgate generate one per turn? OR 3or4 at once instead of 2
 
 # shapeshift blinking screen when quickly pressing +/- buttons, possibly because of 'fill=x', overwrite of other widgets?...
 
@@ -492,7 +480,7 @@ def action_description(act):
     elif act == 'Warpfire Cloud':
         return 'All in range 3, on to-hit wisdom vs wisdom, get -2 psyche, wisdom, reason, sanity.'
     elif act == 'Lost Artifact':
-        return 'If a tomb is in your discard that is unique among tombs in play, return it to play with 1 spirit remaining.'
+        return 'If a tomb is in your discard that is unique among tombs in play, return it to play with 1 spirit remaining. Does not count as playing a Tomb. Does not trigger play effects of the card removed from discard.'
     elif act == 'Globe of Invulnerability':
         return 'Create a map effect at a location. Gives -5 move range, attack and defense effects that reduce melee, ranged, and spell damage by 5. Cannot be cast on same location as Witch. At end of turn, if unit contained in Globe passes a strength save at -5, place it in the nearest empty location to globe. Costs 6 magick.'
     elif act == 'Globe Hover':
@@ -534,7 +522,7 @@ def action_description(act):
     elif act == 'Wrath of Samael':
         return 'Pay X magick in addition to casting. Deals X elec ranged and X fire spell to each summon that is not inert.'
     elif act == 'Mass Grave':
-        return 'Put a number of tombs into play up to your summon_cap minus summon_count. They are distributed randomly around a location within range reason.'
+        return 'Put a number of tombs into play up to your summon_cap minus summon_count. They are distributed randomly around a location within range reason. Triggers the play effects as if the Tomb had been played from the card in hand.'
     elif act == 'Myopic Neuroticism':
         return 'Discard any number of cards to add that much magick.'
     elif act == 'Quest of the Hermit Druid':
@@ -552,7 +540,7 @@ def action_description(act):
     elif act == 'Dark Ritual':
         return 'Gain 1 magick plus 1 for each adjacent friendly summon that is not a Tomb, then caster does 3 magick spell damage to each of those summons.'
     elif act == 'Grave Twin':
-        return 'If caster has at least 2 empty adjacent locations, may place 2 tombs of the same name instead of the normal 1.'
+        return 'If caster has at least 2 empty adjacent locations, may place 2 tombs of the same name in play. Using this spell counts as playing a Tomb for the turn. Does not trigger play effects of the cards used to play the tombs.'
     elif act == 'Rite of Spring':
         return 'Draw a card for each less than the summon cap your current summon total.'
     elif act == 'Frantic Search':
@@ -6288,7 +6276,8 @@ class Artificer(Summon):
         cs = [c for c in app.coords if app.grid[c[0]][c[1]]=='']
         sqr = reduce(lambda a,b : a if dist(a,self.loc)<dist(b,self.loc) else b,cs)
         spell = witch.arcane_dict[card.name]
-        witch.arcane_dict[card.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint+1,spell.times_cast)
+        spell.times_imprint += 1
+#         witch.arcane_dict[card.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint+1,spell.times_cast)
         if self.owner == 'p1':
             prefix = 'a'
         else:
@@ -6365,8 +6354,8 @@ class Artificer(Summon):
         def globe_attack(atkr, dfndr, amt, type, sn, st, lockname = None):
             if st == 'melee' or st == 'ranged' or st == 'spell':
                 amt += 5
-                if amt > 0:
-                    amt = 0
+                if amt > -1:
+                    amt = -1
                 app.canvas.create_text(atkr.loc[0]*100+49-app.moved_right, atkr.loc[1]*100+54-app.moved_down, text = 'Globe reduces attack', justify ='center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
                 app.canvas.create_text(atkr.loc[0]*100+50-app.moved_right, atkr.loc[1]*100+55-app.moved_down, text = 'Globe reduces attack', justify ='center', font = ('chalkduster', 13), fill = 'green3', tags = 'text')
                 root.after(1333, lambda t = 'text' : app.canvas.delete(t))
@@ -6379,8 +6368,8 @@ class Artificer(Summon):
         def globe_defense(atkr, dfndr, amt, type, sn, st, lockname = None):
             if st == 'melee' or st == 'ranged' or st == 'spell':
                 amt += 5
-                if amt > 0:
-                    amt = 0
+                if amt > -1:
+                    amt = -1
                 app.canvas.create_text(dfndr.loc[0]*100+49-app.moved_right, dfndr.loc[1]*100+54-app.moved_down, text = 'Globe reduces attack', justify ='center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
                 app.canvas.create_text(dfndr.loc[0]*100+50-app.moved_right, dfndr.loc[1]*100+55-app.moved_down, text = 'Globe reduces attack', justify ='center', font = ('chalkduster', 13), fill = 'green3', tags = 'text')
                 root.after(1333, lambda t = 'text' : app.canvas.delete(t))
@@ -7255,17 +7244,21 @@ class Diabolist(Summon):
         if self.owner == 'p1':
             witch1 = app.ent_dict[app.p1_witch]
             spell = witch1.arcane_dict[tomb1.imprint]
-            witch1.arcane_dict[tomb1.imprint] = Spell(spell.name,spell.func,spell.cost,max(0,spell.times_imprint-1),spell.times_cast)
+            spell.times_imprint = max(0,spell.times_imprint-1)
+#             witch1.arcane_dict[tomb1.imprint] = Spell(spell.name,spell.func,spell.cost,max(0,spell.times_imprint-1),spell.times_cast)
             witch2 = app.ent_dict[app.p2_witch]
             spell = witch2.arcane_dict[tomb2.imprint]
-            witch2.arcane_dict[tomb2.imprint] = Spell(spell.name,spell.func,spell.cost,max(0,spell.times_imprint-1),spell.times_cast)
+            spell.times_imprint = max(0,spell.times_imprint-1)
+#             witch2.arcane_dict[tomb2.imprint] = Spell(spell.name,spell.func,spell.cost,max(0,spell.times_imprint-1),spell.times_cast)
         else:
             witch1 = app.ent_dict[app.p2_witch]
             spell = witch1.arcane_dict[tomb1.imprint]
-            witch1.arcane_dict[tomb1.imprint] = Spell(spell.name,spell.func,spell.cost,max(0,spell.times_imprint-1),spell.times_cast)
+            spell.times_imprint = max(0,spell.times_imprint-1)
+#             witch1.arcane_dict[tomb1.imprint] = Spell(spell.name,spell.func,spell.cost,max(0,spell.times_imprint-1),spell.times_cast)
             witch2 = app.ent_dict[app.p1_witch]
             spell = witch2.arcane_dict[tomb2.imprint]
-            witch2.arcane_dict[tomb2.imprint] = Spell(spell.name,spell.func,spell.cost,max(0,spell.times_imprint-1),spell.times_cast)
+            spell.times_imprint = max(0,spell.times_imprint-1)
+#             witch2.arcane_dict[tomb2.imprint] = Spell(spell.name,spell.func,spell.cost,max(0,spell.times_imprint-1),spell.times_cast)
         tomb1.imprint = ''
         tomb2.imprint = ''
         def cleanup_efface(n):
@@ -19930,7 +19923,7 @@ class Hellgate(Bot):
         self.spirit = 33
         self.magick = 666
         self.san = 15
-        self.acts = 2
+        self.acts = 1
         self.mvs = 0
         self.move_range = 0
         self.waiting = waiting
@@ -19949,6 +19942,9 @@ class Hellgate(Bot):
                 self.acts -= 1
                 count = len([v for k,v in app.all_ents().items() if v.owner == self.owner and v.name == self.kind])
                 if count < 2 and self.kind != 'Cyberdemon':
+                    self.hellwarp()
+                    self.hellwarp()
+                elif self.kind == 'Pink_Demon' or self.kind == 'Tortured_Soul':
                     self.hellwarp()
                 elif count < 1 and self.kind == 'Cyberdemon':
                     self.hellwarp()
@@ -29403,7 +29399,8 @@ class Witch(Summon):
             cs = [c for c in app.coords if app.grid[c[0]][c[1]] == '']
             sqr = reduce(lambda a,b : a if dist(a,loc)<dist(b,loc) else b,cs)
             spell = self.arcane_dict[t.name]
-            self.arcane_dict[t.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint+1,spell.times_cast)
+            spell.times_imprint += 1
+#             self.arcane_dict[t.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint+1,spell.times_cast)
             if self.owner == 'p1':
                 prefix = 'a'
             else:
@@ -29667,10 +29664,10 @@ class Witch(Summon):
     def do_the_star(self, event, sqr, sqrs):
         if sqr not in sqrs:
             return
-        discard_spls = [c for c in self.discard if c.name in self.arcane_dict.keys()]
+        discard_spls = [c for c in self.discard if c.kind == 'Tomb']
         if discard_spls == []:
             return
-        hand_spls = [c for c in self.in_hand if c.name in self.arcane_dict.keys()]
+        hand_spls = [c for c in self.in_hand if c.kind == 'Tomb']
         both = [c for c in discard_spls if c in hand_spls]
         if both == []:
             return
@@ -30260,7 +30257,8 @@ class Witch(Summon):
                 self.discard.append(c)
                 break
         spell = self.arcane_dict[card.name]
-        self.arcane_dict[card.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint+1,spell.times_cast)
+        spell.times_imprint += 1
+#         self.arcane_dict[card.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint+1,spell.times_cast)
         app.vis_dict['Entomb'] = Vis(name = 'Entomb', loc = sqr[:])
         if self.owner == 'p1':
             prefix = 'a'
@@ -31105,7 +31103,8 @@ class Witch(Summon):
         else:
             witch = app.ent_dict[app.p2_witch]
         spell = witch.arcane_dict[spl]
-        witch.arcane_dict[spl] = Spell(spell.name,spell.func,spell.cost,max(0,spell.times_imprint-1),spell.times_cast)
+        spell.times_imprint = max(0,spell.times_imprint-1)
+#         witch.arcane_dict[spl] = Spell(spell.name,spell.func,spell.cost,max(0,spell.times_imprint-1),spell.times_cast)
 #         drawn = 0
         for i in range(2):
             card = self.deck.get()
@@ -35519,6 +35518,9 @@ class Witch(Summon):
             return
         if id1 == id2:
             return
+        app.depop_context(event = None)
+        app.unbind_nonarrows()
+        app.cleanup_squares()
         if self.save_check('wis', mod=-3)=='Pass':
             ent1 = app.ent_dict[id1]
             ent2 = app.ent_dict[id2]
@@ -35527,9 +35529,6 @@ class Witch(Summon):
             self.magick -= self.arcane_dict['Legerdemain'].cost
             spell = self.arcane_dict['Legerdemain']
             self.arcane_dict[spell.name].times_cast += 1
-            app.depop_context(event = None)
-            app.unbind_nonarrows()
-            app.cleanup_squares()
             app.canvas.create_text(self.loc[0]*100+49-app.moved_right, self.loc[1]*100+14-app.moved_down, text = 'Legerdemain', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
             app.canvas.create_text(self.loc[0]*100+50-app.moved_right, self.loc[1]*100+15-app.moved_down, text = 'Legerdemain', justify = 'center', font = ('chalkduster', 13), fill = 'darkorchid1', tags = 'text')
             # have each call teleport move, same time, no need to avoid ent or vis loc collision
@@ -35690,7 +35689,8 @@ class Witch(Summon):
         sqr = reduce(lambda a,b : a if dist(self.loc,a)<dist(self.loc,b) else b, cs)
         app.ent_dict[id] = Tomb(name = 'Tomb', id = id, img = img, loc = sqr[:], owner = self.owner, level = self.level, imprint = 'Mox_Byzantium')
         spell = self.arcane_dict['Mox_Byzantium']
-        self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint+1,spell.times_cast)
+        spell.times_imprint += 1
+#         self.arcane_dict[spell.name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint+1,spell.times_cast)
         app.grid[sqr[0]][sqr[1]] = id
         def byzan_ef(stat):
             return max(1,stat-4)
@@ -35735,7 +35735,8 @@ class Witch(Summon):
         sqr = self.loc[:]
         tomb = choice(amth_tombs)
         spell = self.arcane_dict[tomb.imprint]
-        self.arcane_dict[tomb.imprint] = Spell(spell.name,spell.func,spell.cost,max(0,spell.times_imprint-1),spell.times_cast)
+        spell.times_imprint = max(0,spell.times_imprint-1)
+#         self.arcane_dict[tomb.imprint] = Spell(spell.name,spell.func,spell.cost,max(0,spell.times_imprint-1),spell.times_cast)
         tomb.imprint = ''
         if self.owner == 'p1':
             prefix = 'a'
@@ -35851,7 +35852,8 @@ class Witch(Summon):
         self.spell_entomb_used = True
 #         self.acts -= 1
         spell = self.arcane_dict[name]
-        self.arcane_dict[name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint+1,spell.times_cast)
+        self.arcane_dict[name].times_imprint += 1
+#         self.arcane_dict[name] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint+1,spell.times_cast)
         if self.owner == 'p1':
             prefix = 'a'
         else:
@@ -35970,7 +35972,8 @@ class Witch(Summon):
             loc = reduce(lambda a,b : a if dist(self.loc,a)<dist(self.loc,b) else b, cs)
             app.vis_dict['Temperance'] = Vis(name = 'Temperance', loc = loc)
             spell = self.arcane_dict[card]
-            self.arcane_dict[card] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint+1,spell.times_cast)
+            spell.times_imprint += 1
+#             self.arcane_dict[card] = Spell(spell.name,spell.func,spell.cost,spell.times_imprint+1,spell.times_cast)
             if self.owner == 'p1':
                 prefix = 'a'
             else:
@@ -36235,7 +36238,8 @@ class Witch(Summon):
                 t.imprint = ''
                 break
         spell = self.arcane_dict['Wrath_of_Samael']
-        self.arcane_dict['Wrath_of_Samael'] = Spell(spell.name,spell.func,spell.cost,max(0,spell.times_imprint-1),spell.times_cast)
+        spell.times_imprint = max(0,spell.times_imprint-1)
+#         self.arcane_dict['Wrath_of_Samael'] = Spell(spell.name,spell.func,spell.cost,max(0,spell.times_imprint-1),spell.times_cast)
         self.cleanup_spell(name = 'Wrath_of_Samael')
         
         
@@ -41951,7 +41955,8 @@ class App(tk.Frame):
                 witch_ent = app.ent_dict[app.p2_witch]
             if name != '':
                 spell = witch_ent.arcane_dict[ent.imprint]
-                witch_ent.arcane_dict[ent.imprint] = Spell(spell.name,spell.func,spell.cost,max(0,spell.times_imprint-1),spell.times_cast)
+                spell.times_imprint = max(0,spell.times_imprint-1)
+#                 witch_ent.arcane_dict[ent.imprint] = Spell(spell.name,spell.func,spell.cost,max(0,spell.times_imprint-1),spell.times_cast)
         app.dethloks[lockname].set(1)
 
     def unbind_arrows(self):
