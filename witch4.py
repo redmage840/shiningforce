@@ -1,14 +1,49 @@
-# the star, in bloodramp
+# in ranged pursue...
+# tortured soul do_round calling this
+'''
+Ai_man.pursue(self, 'spell', 'smart', self.get_move_type(), self.get_abl('rsn'))
 
-# magick missle max amt? too good late game
+'''
+'''
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/tkinter/__init__.py", line 1883, in __call__
+    return self.func(*args)
+  File "/Library/Frameworks/Python.framework/Versions/3.8/lib/python3.8/tkinter/__init__.py", line 804, in callit
+    func(*args)
+  File "witch4.py", line 18612, in do_round
+    self.acts -= 1
+  File "witch4.py", line 40843, in handle_action
+    self.get_focus(id)
+  File "witch4.py", line 18604, in do_round
+    if self.acts > 0 and self.magick >= 1 and [k for k,v in app.spell_target_ents().items() if dist(v.loc, self.loc) <= self.get_abl('rsn') and v.owner != self.owner and 'Agony' in self.actions.keys()]:
+  File "witch4.py", line 38577, in pursue
+    else:
+  File "witch4.py", line 38703, in ranged_pursue
+    mv = g
+  File "witch4.py", line 1643, in intersect
+    if target.spirit > target.base_spirit:
+TypeError: 'NoneType' object is not iterable
+2021-10-03 22:05:18.296 Python[501:7140] 22:05:18.295 ERROR:    177: timed out after 0.012s (260936 260938); mMajorChangePending=0
+'''
 
-# the world in campaign mode?
+# hellgate victory trigger, only gates not all enemies
+
+# cloudkill dust_cloud vis...
+
+# quickview cur spirit all ents
+
+# some widget is not being cleaned up, and exists as 1 pixel screen element, which creates off-by-one - dividing screen height by 10 (1000 becomes 999) - on load game hellgate level
+
+# dice groupings N of side J, instead of percent of 100?
 
 # shapeshift blinking screen when quickly pressing +/- buttons, possibly because of 'fill=x', overwrite of other widgets?...
 
 # cyberdemon, 1 act rocket that explodes
+# sound effects move... at least...
+# something to punish massed stuff, especially on hellgate level
 
 # can separate what text is logged according to text tags, in app.log_text()
+# on each addition to app.logged_text (each call of app.log_text()), create a text object on the app.context_menu.canvas (or whatever holds that image) to a queue-like struct that holds a limited number (the last N logged text objects of a certain criteria) of text objects where new ones are added to the bottom of the screen
 
 # necropotence - caster gains action (does not use acts)-pay 1 spirit set aside a card, gain eot effect-discard hand and then put cards set aside in hand
 
@@ -20,6 +55,7 @@
 
 # prosperity - cost 2X- each witch draws X cards, X is any amount paid at casting
 
+# make artifact kind card for these
 # mox pyrite - efface all tombs you own including this one, put a blank tomb
 # mox carbonite - list-smn you own without this efct gets efct -1 acts/mvs duration2, put a blank tomb
 # mox chalcydean - destroy an animal and efface this tomb, put a blank tomb
@@ -35,8 +71,6 @@
 # load save game AND load grimoire (in grimoire editor) button-boxes need to be scrollable with mousewheel (button 3)
 
 # make windows, linux exes...
-
-# make other comp-controlled stuff behave like pyrrhic gnome move, hunting hawk, hypnotic spectre, barrow wight, deaths head moth, 
 
 # change user-owner, computer-controlled stuff to allow for arb. added actions...
 # their eot control should account for variable attack ranges (use/add Entity.attack_range?), added or removed actions, incr/decr moves/acts/moverange,
@@ -316,7 +350,7 @@ def action_description(act):
     elif act == 'Inertia':
         return 'Spell target gets defense effect that redirects melee, ranged, or spell damage that is crushing type to all adjacent units and reduces the damage to the original unit to zero.'
     elif act == 'The World':
-        return 'Each player draws a card for each Tomb they own.'
+        return 'Each player draws a card for each Tomb they own, up to maximum number of 5 cards drawn.'
     elif act == 'Burning Hands':
         return 'Adds Flame Fan action and Fire resistance to caster. Spell target adjacent unit on to-hit wis vs wis, takes psy vs psy fire spell damage. Flame Fan costs 1 magick and 1 action.'
     elif act == 'Flame Fan':
@@ -414,7 +448,7 @@ def action_description(act):
     elif act == 'Hallowed Ground':
         return 'All Tombs without this effect in range 2 of a location in range rsn, gain psyshield and invisibility at duration reason and level wisdom.'
     elif act == 'Magick Missle':
-        return 'Deal magick spell damage equal to the number of Tombs you own to a spell target unit in range rsn. When putting this tomb in play, put it into caster exile instead of discard.'
+        return 'Deal magick spell damage equal to the number of Tombs you own (up to a maximum value of 9) to a spell target unit in range rsn. When putting this tomb in play, put it into caster exile instead of discard.'
     elif act == 'Profane Pshent':
         return 'Add Devour Intellect action to caster. On to-hit agl vs agl to an adjacent action target unit with psyche greater than 1, target gets -1 psyche effect and caster gets +1 psyche effect at duration reason and level wisdom. Devour Intellect cost 1 action to use.'
     elif act == 'Devour Intellect':
@@ -6672,7 +6706,7 @@ class Artificer(Summon):
         app.depop_context(event = None)
         app.unbind_all()
         app.cleanup_squares()
-        app.rebind_arrows()
+#         app.rebind_arrows()
         # move globe incrmntly, and ent if exists, move same time, use fly-type move
         global selected, selected_vis
         selected_vis = ['Globe_of_Invulnerability'+self.id]
@@ -18595,12 +18629,12 @@ class Tortured_Soul(Bot):
         if self.waiting == True or self.id not in app.all_ents().keys():
             app.handle_action()
         else:
-            if self.acts > 0 and self.magick >= 1 and [k for k,v in app.spell_target_ents().items() if dist(v.loc, self.loc) <= self.get_abl('rsn') and v.owner != self.owner and 'Agony' in self.actions.keys()]:
+            if self.acts > 0 and self.magick >= 2 and [k for k,v in app.spell_target_ents().items() if dist(v.loc, self.loc) <= self.get_abl('rsn') and v.owner != self.owner and 'Agony' in self.actions.keys()]:
                 self.magick -= 2
                 self.acts -= 1
                 target = choice([k for k,v in app.spell_target_ents().items() if dist(v.loc,self.loc) <= self.get_abl('rsn') and v.owner != self.owner])
                 self.ranged_attack(target)
-            elif self.magick >= 1 and [k for k,v in app.spell_target_ents().items() if v.owner != self.owner] != [] and self.mvs > 0 and self.legal_moves() != []:
+            elif self.magick >= 2 and [k for k,v in app.spell_target_ents().items() if v.owner != self.owner] != [] and self.mvs > 0 and self.legal_moves() != []:
                 Ai_man.pursue(self, 'spell', 'smart', self.get_move_type(), self.get_abl('rsn'))
             elif self.acts > 0 and [k for k,v in app.action_target_ents().items() if dist(v.loc,self.loc) == 1 and v.owner != self.owner] and 'Rend' in self.actions.keys():
                 self.acts -= 1
@@ -19923,7 +19957,7 @@ class Hellgate(Bot):
         self.spirit = 33
         self.magick = 666
         self.san = 15
-        self.acts = 1
+        self.acts = 2
         self.mvs = 0
         self.move_range = 0
         self.waiting = waiting
@@ -19943,8 +19977,7 @@ class Hellgate(Bot):
                 count = len([v for k,v in app.all_ents().items() if v.owner == self.owner and v.name == self.kind])
                 if count < 2 and self.kind != 'Cyberdemon':
                     self.hellwarp()
-                    self.hellwarp()
-                elif self.kind == 'Pink_Demon' or self.kind == 'Tortured_Soul':
+                elif (self.kind == 'Pink_Demon' or self.kind == 'Tortured_Soul') and count < 5:
                     self.hellwarp()
                 elif count < 1 and self.kind == 'Cyberdemon':
                     self.hellwarp()
@@ -22255,7 +22288,7 @@ class Pink_Demon(Bot):
         if self.waiting == True or self.id not in app.all_ents().keys():
             app.handle_action()
         else:
-            if self.acts > 0 and [k for k,v in app.action_target_ents().items() if dist(v.loc, self.loc) == 1 and v.owner != self.owner] and 'Chop' in self.get_actions().keys():
+            if self.acts > 0 and [k for k,v in app.action_target_ents().items() if dist(v.loc, self.loc) == 1 and v.owner != self.owner] and 'Chomp' in self.get_actions().keys():
                 target = choice([k for k,v in app.action_target_ents().items() if dist(v.loc, self.loc) == 1 and v.owner != self.owner])
                 self.acts -= 1
                 self.melee_attack(target)
@@ -22264,8 +22297,6 @@ class Pink_Demon(Bot):
             else:
                 app.handle_action()
 
-    def pass_priority(self):
-        app.handle_action()
         
     # abstract this func into Ai_man, change to accept needed abl scores and apply_damage args
     def melee_attack(self, id):
@@ -22285,7 +22316,7 @@ class Pink_Demon(Bot):
         else:# MISS
             loc = app.ent_dict[id].loc[:]
             miss(loc)
-            root.after(1333, lambda t = 'text' : app.canvas.delete(t))
+#             root.after(1555, lambda t = 'text' : app.canvas.delete(t))
             root.after(1666, self.finish_attack)
                 
     def finish_attack(self):
@@ -24450,7 +24481,7 @@ class Ogre(Summon):
             return
         app.unbind_nonarrows()
         root.bind('<q>', self.finish_dust_cloud)
-        sqrs = [c for c in app.coords if dist(self.loc,c) <= 1]
+        sqrs = [c for c in app.coords if dist(self.loc,c) <= 1 and app.grid[c[0]][c[1]] != 'block']
         app.animate_squares(sqrs)
         app.depop_context(event = None)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_dust_cloud(event = e, sqr = s, sqrs = sqrs)) 
@@ -29538,7 +29569,7 @@ class Witch(Summon):
     def cloudkill(self, event = None):
         app.depop_context(event = None)
         root.bind('<q>', lambda name = 'Cloudkill' : self.cleanup_spell(name = name))
-        sqrs = [s for s in app.coords if 1 <= dist(self.loc, s) <= self.get_abl('rsn')]
+        sqrs = [s for s in app.coords if 1 <= dist(self.loc, s) <= self.get_abl('rsn') and app.grid[s[0]][s[1]] != 'block']
         app.animate_squares(sqrs)
         root.bind('<a>', lambda e, s = grid_pos, sqrs = sqrs : self.do_cloudkill(event = e, sqr = s, sqrs = sqrs))
         b = tk.Button(app.context_menu, text = 'Choose Location For Cloudkill', wraplength = 190, font = ('chalkduster', 22), fg = 'tan3', highlightbackground = 'tan3', command = lambda e = None, s = grid_pos, sqrs = sqrs : self.do_cloudkill(e, s, sqrs))
@@ -29561,7 +29592,7 @@ class Witch(Summon):
         self.magick -= self.arcane_dict['Cloudkill'].cost
         spell = self.arcane_dict['Cloudkill']
         self.arcane_dict[spell.name].times_cast += 1
-        locs = [c for c in app.coords if dist(c,sqr)<=2]
+        locs = [c for c in app.coords if dist(c,sqr)<=2 and app.grid[c[0]][c[1]]!='block']
         for loc in locs:
             if 'Cloudkill' not in [v.name for k,v in app.loc_dict[tuple(loc)].effects_dict.items()]:
                 un = 'cloudkill' + str(app.count)
@@ -29664,13 +29695,15 @@ class Witch(Summon):
     def do_the_star(self, event, sqr, sqrs):
         if sqr not in sqrs:
             return
-        discard_spls = [c for c in self.discard if c.kind == 'Tomb']
+        discard_spls = [c.name for c in self.discard if c.kind == 'Tomb']
         if discard_spls == []:
             return
-        hand_spls = [c for c in self.in_hand if c.kind == 'Tomb']
-        both = [c for c in discard_spls if c in hand_spls]
-        if both == []:
+        hand_spls = [c.name for c in self.in_hand if c.kind == 'Tomb']
+        both_names = [c for c in discard_spls if c in hand_spls]
+        if both_names == []:
             return
+        # transform back to cards from names
+        both = [c for c in self.in_hand if c.name in both_names]
         effect1 = mixer.Sound('Sound_Effects/energize.ogg')
         effect1.set_volume(app.effects_volume.get())
         sound_effects.play(effect1, 0)
@@ -30335,6 +30368,8 @@ class Witch(Summon):
         amt = len([k for k,v in app.all_ents().items() if v.owner == self.owner and isinstance(v,Tomb)])
         if amt < 1:
             return
+        if amt > 9:
+            amt = 9
         ent = app.ent_dict[id]
 #         self.init_cast_anims()
         self.magick -= self.arcane_dict['Magick_Missle'].cost
@@ -36420,6 +36455,8 @@ class Witch(Summon):
         app.canvas.create_text(sqr[0]*100+49-app.moved_right, sqr[1]*100+84-app.moved_down, text = 'The World...\n Each player draws for each tomb', justify = 'center', font = ('chalkduster', 13), fill = 'black', tags = 'text')
         app.canvas.create_text(sqr[0]*100+50-app.moved_right, sqr[1]*100+85-app.moved_down, text = 'The World...\n Each player draws for each tomb', justify = 'center', font = ('chalkduster', 13), fill = 'ghostwhite', tags = 'text')
         amt = len([k for k,v in app.all_ents().items() if isinstance(v,Tomb) and v.owner == self.owner])
+        if amt > 5:
+            amt = 5
         for i in range(amt):
             card = self.deck.get()
             if card != None:
@@ -36430,6 +36467,8 @@ class Witch(Summon):
             else:
                 witch = app.ent_dict[app.p1_witch]
             amt = len([k for k,v in app.all_ents().items() if isinstance(v,Tomb) and v.owner == witch.owner])
+            if amt > 5:
+                amt = 5
             for i in range(amt):
                 card = witch.deck.get()
                 if card != None:
@@ -38648,11 +38687,9 @@ class Ai_man():
             gs1 = list(filter(lambda a : dist(a,ent.loc) == min([dist(x,ent.loc) for x in gs1]), gs1))
             gs2 = list(filter(lambda a : dist(a,ent.loc) == min([dist(x,ent.loc) for x in gs2]), gs2))
             cs = [c for c in app.coords if sum([ef.avoid for k,ef in app.loc_dict[tuple(c)].effects_dict.items()])*10 < randrange(30,60)]
-            # 
             cs1 = cs + gs1
             cs2 = cs + gs2
             mvs = ent.legal_moves()
-            # 'flee' to maxim dist among legal_moves if already inside range of atk, already atked
             if target_type == 'spell':
                 close_ents = [k for k,v in app.spell_target_ents().items() if dist(v.loc,ent.loc) <= ir and v.owner != ent.owner]
             elif target_type == 'action':
@@ -38661,6 +38698,9 @@ class Ai_man():
                 close_ents = [k for k,v in app.all_ents().items() if dist(v.loc,ent.loc) <= ir and v.owner != ent.owner]
             else:
                 print('ranged_pursue unknown target_type')
+            path = bfs(ent.loc[:], gs1, app.grid[:])
+            epath = bfs(ent.loc[:], gs2, egrid)
+            # 'flee' to maxim dist among legal_moves if already inside range of atk, already atked
             if close_ents and ent.acts <= 0:
                 ms = intersect(mvs,cs)
                 if ms == []:
@@ -38670,30 +38710,66 @@ class Ai_man():
                 ent.mvs -= 1
                 lock(ent.do_move, mv)
                 root.after(666, app.handle_action)
-            elif path := bfs(ent.loc[:], gs1, app.grid[:]):
-                g = reduce(lambda a,b : a if dist(a,ent.loc)>dist(b,ent.loc) else b, intersect(path,mvs))
-                if intersect(mvs,cs) == []:
-                    mv = g
-                else:
-                    mv = reduce(lambda a,b : a if dist(a,g)<dist(b,g) else b, intersect(mvs,cs1))
-                ent.mvs -= 1
-#                 root.after(444, lambda mv = mv : app.focus_square(mv))
-                lock(ent.do_move, mv)
-                root.after(666, ent.do_round)
-            elif path := bfs(ent.loc[:], gs2, egrid[:]):
-                if mvs := intersect(path,mvs):
+            # BEGIN normal pursue (not retreat) HERE
+            # if path much longer than epath, prefer epath, ENSURE PATH EXISTS
+            elif path:
+                if (len(path)/len(epath)) > 1.3: # PREFER EPATH, assumes that path exists for comparison to epath here
+                    if mvs := intersect(epath,mvs):
+                        g = reduce(lambda a,b : a if dist(a,ent.loc)>dist(b,ent.loc) else b, intersect(epath,mvs))
+                        if intersect(mvs,cs) == []:
+                            mv = g
+                        else:
+                            mv = reduce(lambda a,b : a if dist(a,g)<dist(b,g) else b, intersect(mvs,cs2))
+                        ent.mvs -= 1
+                        lock(ent.do_move, mv)
+                        root.after(666, ent.do_round)
+                    else:
+                        root.after(666, app.handle_action)
+                else: # USE PATH, PATH EXISTS
                     g = reduce(lambda a,b : a if dist(a,ent.loc)>dist(b,ent.loc) else b, intersect(path,mvs))
                     if intersect(mvs,cs) == []:
                         mv = g
                     else:
-                        mv = reduce(lambda a,b : a if dist(a,g)<dist(b,g) else b, intersect(mvs,cs2))
+                        mv = reduce(lambda a,b : a if dist(a,g)<dist(b,g) else b, intersect(mvs,cs1))
                     ent.mvs -= 1
                     lock(ent.do_move, mv)
                     root.after(666, ent.do_round)
+            elif mvs := intersect(epath,mvs):# CANNOT ASSUME that path exists here even for comparison
+                g = reduce(lambda a,b : a if dist(a,ent.loc)>dist(b,ent.loc) else b, intersect(epath,mvs))
+                if intersect(mvs,cs) == []:
+                    mv = g
                 else:
-                    root.after(666, app.handle_action)
+                    mv = reduce(lambda a,b : a if dist(a,g)<dist(b,g) else b, intersect(mvs,cs2))
+                ent.mvs -= 1
+                lock(ent.do_move, mv)
+                root.after(666, ent.do_round)
             else:
                 root.after(666, app.handle_action)
+            
+#             elif path := bfs(ent.loc[:], gs1, app.grid[:]):
+#                 g = reduce(lambda a,b : a if dist(a,ent.loc)>dist(b,ent.loc) else b, intersect(path,mvs))
+#                 if intersect(mvs,cs) == []:
+#                     mv = g
+#                 else:
+#                     mv = reduce(lambda a,b : a if dist(a,g)<dist(b,g) else b, intersect(mvs,cs1))
+#                 ent.mvs -= 1
+# #                 root.after(444, lambda mv = mv : app.focus_square(mv))
+#                 lock(ent.do_move, mv)
+#                 root.after(666, ent.do_round)
+#             elif path := bfs(ent.loc[:], gs2, egrid[:]):
+#                 if mvs := intersect(path,mvs):
+#                     g = reduce(lambda a,b : a if dist(a,ent.loc)>dist(b,ent.loc) else b, intersect(path,mvs))
+#                     if intersect(mvs,cs) == []:
+#                         mv = g
+#                     else:
+#                         mv = reduce(lambda a,b : a if dist(a,g)<dist(b,g) else b, intersect(mvs,cs2))
+#                     ent.mvs -= 1
+#                     lock(ent.do_move, mv)
+#                     root.after(666, ent.do_round)
+#                 else:
+#                     root.after(666, app.handle_action)
+#             else:
+#                 root.after(666, app.handle_action)
             
     # Purse while avoiding detrimental local effects (based on rand val compared to cumulative 'avoid' val of efcts at location)
     # change to prefer paths that stagger axis moved
@@ -38721,29 +38797,40 @@ class Ai_man():
             cs = [c for c in app.coords if sum([ef.avoid for k,ef in app.loc_dict[tuple(c)].effects_dict.items()])*10 < randrange(40,60)]
             cs1 = cs + gs1
             cs2 = cs + gs2
-            if path := bfs(ent.loc[:], gs1, app.grid[:]):
-                g = reduce(lambda a,b : a if dist(a,ent.loc)>dist(b,ent.loc) else b, intersect(path,mvs))
-                if intersect(mvs,cs) == []:
-                    mv = g
-                else:
-                    mv = reduce(lambda a,b : a if dist(a,g)<dist(b,g) else b, intersect(mvs,cs1))
-                ent.mvs -= 1
-#                 root.after(444, lambda mv = mv : app.focus_square(mv))
-                lock(ent.do_move, mv)
-                root.after(666, ent.do_round)
-            elif path := bfs(ent.loc[:], gs2, egrid[:]):
-                if mvs := intersect(path,mvs):
+            path = bfs(ent.loc[:], gs1, app.grid[:])
+            epath = bfs(ent.loc[:], gs2, egrid)
+            # if path much longer than epath, prefer epath, ENSURE PATH EXISTS
+            if path:
+                if (len(path)/len(epath)) > 1.3: # PREFER EPATH, assumes that path exists for comparison to epath here
+                    if mvs := intersect(epath,mvs):
+                        g = reduce(lambda a,b : a if dist(a,ent.loc)>dist(b,ent.loc) else b, intersect(epath,mvs))
+                        if intersect(mvs,cs) == []:
+                            mv = g
+                        else:
+                            mv = reduce(lambda a,b : a if dist(a,g)<dist(b,g) else b, intersect(mvs,cs2))
+                        ent.mvs -= 1
+                        lock(ent.do_move, mv)
+                        root.after(666, ent.do_round)
+                    else:
+                        root.after(666, app.handle_action)
+                else: # USE PATH, PATH EXISTS
                     g = reduce(lambda a,b : a if dist(a,ent.loc)>dist(b,ent.loc) else b, intersect(path,mvs))
                     if intersect(mvs,cs) == []:
                         mv = g
                     else:
-                        mv = reduce(lambda a,b : a if dist(a,g)<dist(b,g) else b, intersect(mvs,cs2))
+                        mv = reduce(lambda a,b : a if dist(a,g)<dist(b,g) else b, intersect(mvs,cs1))
                     ent.mvs -= 1
-#                     root.after(444, lambda mv = mv : app.focus_square(mv))
                     lock(ent.do_move, mv)
                     root.after(666, ent.do_round)
+            elif mvs := intersect(epath,mvs):# CANNOT ASSUME that epath exists here even for comparison
+                g = reduce(lambda a,b : a if dist(a,ent.loc)>dist(b,ent.loc) else b, intersect(epath,mvs))
+                if intersect(mvs,cs) == []:
+                    mv = g
                 else:
-                    root.after(666, app.handle_action)
+                    mv = reduce(lambda a,b : a if dist(a,g)<dist(b,g) else b, intersect(mvs,cs2))
+                ent.mvs -= 1
+                lock(ent.do_move, mv)
+                root.after(666, ent.do_round)
             else:
                 root.after(666, app.handle_action)
                 
@@ -38769,24 +38856,44 @@ class Ai_man():
             gs1 = unique(gs1)
             gs2 = [g for g in cs for el in els if dist(el,g) == 1 and egrid[g[0]][g[1]] == '']
             gs2 = unique(gs2)
-            if path := bfs(ent.loc[:], gs1, app.grid[:]):
-                mv = reduce(lambda a,b : a if dist(a,ent.loc)>dist(b,ent.loc) else b, intersect(path,ent.legal_moves()))
-                ent.mvs -= 1
-#                 root.after(444, lambda mv = mv : app.focus_square(mv))
-                lock(ent.do_move, mv)
-                root.after(666, ent.do_round)
-            elif path := bfs(ent.loc[:], gs2, egrid[:]):
-                mvs = intersect(path, ent.legal_moves())
-                if mvs:
-                    mv = reduce(lambda a,b : a if dist(a,ent.loc)>dist(b,ent.loc) else b, mvs)
+            path = bfs(ent.loc[:], gs1, app.grid[:])
+            epath = bfs(ent.loc[:], gs2, egrid)
+            # if path much longer than epath, prefer epath, ENSURE PATH EXISTS
+            path = bfs(ent.loc[:], gs1, app.grid[:])
+            epath = bfs(ent.loc[:], gs2, egrid)
+            # if path much longer than epath, prefer epath, ENSURE PATH EXISTS
+            if path:
+                if (len(path)/len(epath)) > 1.3: # PREFER EPATH, assumes that path exists for comparison to epath here
+                    if mvs := intersect(epath,mvs):
+                        g = reduce(lambda a,b : a if dist(a,ent.loc)>dist(b,ent.loc) else b, intersect(epath,mvs))
+                        if intersect(mvs,cs) == []:
+                            mv = g
+                        else:
+                            mv = reduce(lambda a,b : a if dist(a,g)<dist(b,g) else b, intersect(mvs,cs2))
+                        ent.mvs -= 1
+                        lock(ent.do_move, mv)
+                        root.after(666, ent.do_round)
+                    else:
+                        root.after(666, app.handle_action)
+                else: # USE PATH, PATH EXISTS
+                    g = reduce(lambda a,b : a if dist(a,ent.loc)>dist(b,ent.loc) else b, intersect(path,mvs))
+                    if intersect(mvs,cs) == []:
+                        mv = g
+                    else:
+                        mv = reduce(lambda a,b : a if dist(a,g)<dist(b,g) else b, intersect(mvs,cs1))
                     ent.mvs -= 1
-#                     root.after(444, lambda mv = mv : app.focus_square(mv))
                     lock(ent.do_move, mv)
                     root.after(666, ent.do_round)
+            elif mvs := intersect(epath,mvs):# CANNOT ASSUME that epath exists here even for comparison
+                g = reduce(lambda a,b : a if dist(a,ent.loc)>dist(b,ent.loc) else b, intersect(epath,mvs))
+                if intersect(mvs,cs) == []:
+                    mv = g
                 else:
-                    root.after(666, app.handle_action)
+                    mv = reduce(lambda a,b : a if dist(a,g)<dist(b,g) else b, intersect(mvs,cs2))
+                ent.mvs -= 1
+                lock(ent.do_move, mv)
+                root.after(666, ent.do_round)
             else:
-                print('no paths grid or egrid, should not be here unless levels altered')
                 root.after(666, app.handle_action)
             
             
@@ -38867,7 +38974,6 @@ class App(tk.Frame):
         self.arcane_dict['Dessicate'] = Spell('Dessicate',Witch.dessicate, 2, 0, 0)
         self.arcane_dict['The_Chariot'] = Spell('The_Chariot',Witch.the_chariot, 2, 0, 0)
         self.arcane_dict["Siren's_Call"] = Spell("Siren's_Call",Witch.sirens_call, 2, 0, 0)
-        self.arcane_dict['The_Fool'] = Spell('The_Fool',Witch.the_fool, 2, 0, 0)
         self.arcane_dict['Scour'] = Spell('Scour',Witch.scour, 2, 0, 0)
         self.arcane_dict['Molecular_Subversion'] = Spell('Molecular_Subversion',Witch.molecular_subversion, 2, 0, 0)
         self.arcane_dict['Demonic_Sight'] = Spell('Demonic_Sight',Witch.demonic_sight, 2, 0, 0)
@@ -38892,6 +38998,7 @@ class App(tk.Frame):
         self.arcane_dict["Witch's_Blood"] = Spell("Witch's_Blood",Witch.witchs_blood, 2,0,0)
         self.arcane_dict['Hallowed_Ground'] = Spell('Hallowed_Ground',Witch.hallowed_ground, 2, 0, 0)
         self.arcane_dict['Grasp_of_the_Old_Ones'] = Spell('Grasp_of_the_Old_Ones',Witch.grasp_of_the_old_ones, 2,0,0)
+        self.arcane_dict['The_Fool'] = Spell('The_Fool',Witch.the_fool, 3, 0, 0)
         self.arcane_dict['Dark_Sun'] = Spell('Dark_Sun',Witch.dark_sun, 3,0,0)
         self.arcane_dict['Spectral_Pillory'] = Spell('Spectral_Pillory',Witch.spectral_pillory, 3, 0, 0)
         self.arcane_dict['The_Sun'] = Spell('The_Sun',Witch.the_sun, 3, 0, 0)
